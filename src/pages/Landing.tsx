@@ -6,7 +6,8 @@
 
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { BookOpen, Shield, Users, Brain, Star, Heart, Sparkles, Check, MessageCircle, Award } from 'lucide-react';
+import { BookOpen, Shield, Users, Brain, Star, Heart, Sparkles, Check, MessageCircle, Award, User } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 import yolunoLogo from '@/assets/yoluno-logo.svg';
 import heroImage from '@/assets/Header.jpg';
 import familyImage from '@/assets/family-storytime.jpg';
@@ -15,6 +16,8 @@ import coppaImage from '@/assets/coppa-certified-badge.png';
 import kidsafeImage from '@/assets/kidsafe-certified-badge.png';
 
 function Navigation() {
+  const { user, isAuthenticated, isLoading } = useAuth();
+
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-pastel-blue/50 backdrop-blur-md">
       <div className="mx-auto max-w-7xl flex items-center justify-between px-6 h-16">
@@ -33,14 +36,30 @@ function Navigation() {
           </a>
         </nav>
         <div className="flex items-center gap-3">
-          <Link to="/login">
-            <Button variant="ghost" className="text-charcoal hover:text-cyan">Sign In</Button>
-          </Link>
-          <Link to="/signup">
-            <Button className="bg-cyan hover:bg-cyan-600 text-white rounded-full px-6">
-              Start Free
-            </Button>
-          </Link>
+          {isLoading ? null : isAuthenticated ? (
+            <>
+              <span className="text-charcoal text-sm flex items-center gap-2">
+                <User className="h-4 w-4" />
+                {user?.email}
+              </span>
+              <Link to="/dashboard">
+                <Button className="bg-cyan hover:bg-cyan-600 text-white rounded-full px-6">
+                  Dashboard
+                </Button>
+              </Link>
+            </>
+          ) : (
+            <>
+              <Link to="/login">
+                <Button variant="ghost" className="text-charcoal hover:text-cyan">Sign In</Button>
+              </Link>
+              <Link to="/signup">
+                <Button className="bg-cyan hover:bg-cyan-600 text-white rounded-full px-6">
+                  Start Free
+                </Button>
+              </Link>
+            </>
+          )}
         </div>
       </div>
     </header>
