@@ -23,7 +23,6 @@ import {
   BookOpen,
   Settings,
   LogOut,
-  Sparkles,
   Shield,
   Map,
   AlertTriangle,
@@ -33,7 +32,9 @@ import {
   Clock,
   Plus,
   ChevronRight,
+  Sparkles,
 } from 'lucide-react';
+import yolunoLogo from '@/assets/yoluno-logo.svg';
 
 // Dashboard Home - Main overview
 function DashboardHome() {
@@ -447,9 +448,8 @@ export function DashboardPage() {
         <div className="flex h-full flex-col">
           {/* Logo */}
           <div className="flex items-center border-b px-6 py-4">
-            <Link to="/dashboard" className="font-logo text-2xl tracking-tight">
-              <span className="text-charcoal">Yoluno</span>
-              <span className="text-cyan"> AI</span>
+            <Link to="/dashboard">
+              <img src={yolunoLogo} alt="Yoluno" className="h-9" />
             </Link>
           </div>
 

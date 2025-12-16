@@ -14,6 +14,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Loader2 } from 'lucide-react';
 import { Link as RouterLink } from 'react-router-dom';
 import { toast } from 'sonner';
+import yolunoLogo from '@/assets/yoluno-logo.svg';
 
 export function SignupPage() {
   const navigate = useNavigate();
@@ -56,9 +57,8 @@ export function SignupPage() {
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-pastel-blue to-white p-4">
       <Card className="w-full max-w-md shadow-xl border-0">
         <CardHeader className="text-center">
-          <RouterLink to="/" className="mx-auto mb-4 font-logo text-3xl tracking-tight">
-            <span className="text-charcoal">Yoluno</span>
-            <span className="text-cyan"> AI</span>
+          <RouterLink to="/" className="mx-auto mb-4 block">
+            <img src={yolunoLogo} alt="Yoluno" className="h-12 mx-auto" />
           </RouterLink>
           <CardTitle className="text-2xl text-charcoal">Create account</CardTitle>
           <CardDescription className="text-charcoal-muted">Start your family's learning journey</CardDescription>
