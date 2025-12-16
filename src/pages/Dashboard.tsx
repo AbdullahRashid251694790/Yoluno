@@ -438,17 +438,19 @@ export function DashboardPage() {
   const unreadAlerts = safetyReports.length;
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-pastel-blue/30">
       {/* Real-time safety alerts */}
       <SafetyAlertNotification />
 
       {/* Sidebar */}
-      <aside className="fixed left-0 top-0 z-40 h-screen w-64 border-r bg-card">
+      <aside className="fixed left-0 top-0 z-40 h-screen w-64 border-r bg-white shadow-sm">
         <div className="flex h-full flex-col">
           {/* Logo */}
-          <div className="flex items-center gap-2 border-b px-6 py-4">
-            <Sparkles className="h-8 w-8 text-primary" />
-            <span className="text-xl font-bold">Yoluno</span>
+          <div className="flex items-center border-b px-6 py-4">
+            <Link to="/dashboard" className="font-logo text-2xl tracking-tight">
+              <span className="text-charcoal">Yoluno</span>
+              <span className="text-cyan"> AI</span>
+            </Link>
           </div>
 
           {/* Navigation */}

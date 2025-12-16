@@ -12,7 +12,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { handleError } from '@/lib/errors';
-import { Sparkles, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
+import { Link as RouterLink } from 'react-router-dom';
 
 export function LoginPage() {
   const navigate = useNavigate();
@@ -39,14 +40,15 @@ export function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-background to-muted p-4">
-      <Card className="w-full max-w-md">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-pastel-blue to-white p-4">
+      <Card className="w-full max-w-md shadow-xl border-0">
         <CardHeader className="text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-            <Sparkles className="h-6 w-6 text-primary" />
-          </div>
-          <CardTitle className="text-2xl">Welcome back</CardTitle>
-          <CardDescription>Sign in to your Yoluno account</CardDescription>
+          <RouterLink to="/" className="mx-auto mb-4 font-logo text-3xl tracking-tight">
+            <span className="text-charcoal">Yoluno</span>
+            <span className="text-cyan"> AI</span>
+          </RouterLink>
+          <CardTitle className="text-2xl text-charcoal">Welcome back</CardTitle>
+          <CardDescription className="text-charcoal-muted">Sign in to your Yoluno account</CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
@@ -86,9 +88,9 @@ export function LoginPage() {
                 'Sign In'
               )}
             </Button>
-            <p className="text-center text-sm text-muted-foreground">
+            <p className="text-center text-sm text-charcoal-muted">
               Don't have an account?{' '}
-              <Link to="/signup" className="text-primary hover:underline">
+              <Link to="/signup" className="text-cyan hover:underline font-medium">
                 Sign up
               </Link>
             </p>

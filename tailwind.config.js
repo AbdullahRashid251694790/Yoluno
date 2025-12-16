@@ -51,6 +51,34 @@ export default {
           primary: 'hsl(var(--story-primary))',
           magic: 'hsl(var(--story-magic))',
         },
+        // Yoluno brand colors
+        cyan: {
+          DEFAULT: '#00d8d8',
+          50: '#e6ffff',
+          100: '#ccfffe',
+          200: '#99fffd',
+          300: '#66fffc',
+          400: '#33f5f5',
+          500: '#00d8d8',
+          600: '#00b3b3',
+          700: '#008f8f',
+          800: '#006b6b',
+          900: '#004747',
+        },
+        charcoal: {
+          DEFAULT: '#2e2e2e',
+          light: '#4d4d4d',
+          muted: '#6d6d6d',
+        },
+        pastel: {
+          pink: '#ffeef5',
+          blue: '#eef7ff',
+          'blue-dark': '#c9e5ff',
+          purple: '#f7d9f5',
+          'purple-dark': '#eadcfb',
+          yellow: '#ffe888',
+          'yellow-dark': '#fcd635',
+        },
       },
       borderRadius: {
         lg: 'var(--radius)',
@@ -60,6 +88,7 @@ export default {
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
         display: ['Nunito', 'system-ui', 'sans-serif'],
+        logo: ['Boldonse', 'Nunito', 'system-ui', 'sans-serif'],
       },
       keyframes: {
         'accordion-down': {

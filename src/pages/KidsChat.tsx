@@ -54,14 +54,14 @@ export function KidsChatPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-gradient-to-b from-child-primary/10 to-background">
+    <div className="flex min-h-screen flex-col bg-gradient-to-b from-pastel-blue to-white">
       {/* Header */}
-      <header className="flex items-center justify-between border-b bg-card px-4 py-3">
-        <Button variant="ghost" size="sm" onClick={handleBack}>
+      <header className="flex items-center justify-between border-b bg-white/80 backdrop-blur-sm px-4 py-3 shadow-sm">
+        <Button variant="ghost" size="sm" onClick={handleBack} className="text-charcoal-muted">
           <ArrowLeft className="mr-2 h-4 w-4" />
           Exit
         </Button>
-        <h1 className="text-lg font-semibold">Hi, {child.name}!</h1>
+        <h1 className="text-lg font-semibold text-charcoal">Hi, {child.name}!</h1>
         <div className="w-20" /> {/* Spacer for centering */}
       </header>
 

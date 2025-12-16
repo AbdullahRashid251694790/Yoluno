@@ -503,11 +503,11 @@ export function StoryWizardPage() {
   const StepIcon = stepIcons[currentStep];
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-pink-100/50 to-purple-100/50 p-4">
+    <div className="min-h-screen bg-gradient-to-b from-pastel-pink to-pastel-purple p-4">
       <div className="mx-auto max-w-2xl">
         {/* Header */}
         <div className="mb-8">
-          <Button variant="ghost" size="sm" onClick={handleBack}>
+          <Button variant="ghost" size="sm" onClick={handleBack} className="text-charcoal-muted">
             <ArrowLeft className="mr-2 h-4 w-4" />
             {currentStep > 0 ? 'Back' : 'Cancel'}
           </Button>
@@ -525,10 +525,10 @@ export function StoryWizardPage() {
         </div>
 
         {/* Step content */}
-        <Card className="border-0 shadow-lg">
+        <Card className="border-0 shadow-xl bg-white">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <StepIcon className="h-5 w-5 text-pink-500" />
+            <CardTitle className="flex items-center gap-2 text-charcoal">
+              <StepIcon className="h-5 w-5 text-cyan" />
               Create a Story for {child.name}
             </CardTitle>
           </CardHeader>
@@ -549,7 +549,7 @@ export function StoryWizardPage() {
               <Button
                 onClick={handleGenerate}
                 disabled={isGenerating}
-                className="gap-2 bg-gradient-to-r from-pink-500 to-purple-500 hover:opacity-90"
+                className="gap-2"
               >
                 {isGenerating ? (
                   <>
