@@ -61,6 +61,16 @@ app.use(passport.initialize());
 const uploadDir = process.env.UPLOAD_DIR || './uploads';
 app.use('/uploads', express.static(uploadDir));
 
+// Root route
+app.get('/', (req, res) => {
+  res.json({
+    name: 'Yoluno API',
+    version: '1.0.0',
+    status: 'running',
+    docs: '/api/health',
+  });
+});
+
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
