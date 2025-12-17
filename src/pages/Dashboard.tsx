@@ -17,7 +17,7 @@ import {
   StoriesPage,
   JourneysPage,
   SettingsPage,
-} from './dashboard';
+} from './dashboardPages';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
