@@ -83,8 +83,7 @@ export function FamilyTreePage() {
         <div>
           <h1 className="text-2xl font-bold">Family Tree</h1>
           <p className="text-muted-foreground">
-            Add family members so your child's buddy can answer questions about
-            your family
+            Add family members so Luno can answer questions about your family
           </p>
         </div>
 
@@ -145,7 +144,7 @@ export function FamilyTreePage() {
               <Users className="h-12 w-12 text-muted-foreground/50 mb-4" />
               <h3 className="font-medium">No family members yet</h3>
               <p className="text-sm text-muted-foreground mt-1">
-                Add family members to help your child's buddy answer questions
+                Add family members to help Luno answer questions
               </p>
               <Button onClick={handleAddMember} className="mt-4">
                 <Plus className="h-4 w-4 mr-2" />
@@ -171,14 +170,14 @@ export function FamilyTreePage() {
         <h4 className="font-medium mb-2">How the Family Tree helps your child</h4>
         <ul className="list-disc list-inside space-y-1 text-muted-foreground">
           <li>
-            The buddy can answer questions like "Who is grandma?" or "What does
-            dad do?"
+            Luno can answer questions like "Who is grandma?" or "What does dad
+            do?"
           </li>
           <li>
-            Add hobbies and fun facts so the buddy can share interesting stories
+            Add hobbies and fun facts so Luno can share interesting stories
           </li>
           <li>
-            Photo descriptions help the buddy describe family members naturally
+            Photo descriptions help Luno describe family members naturally
           </li>
           <li>
             Connection descriptions (like "Dad's sister") help explain

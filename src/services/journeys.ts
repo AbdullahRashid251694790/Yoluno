@@ -2,10 +2,10 @@
  * Journeys Service
  *
  * Data access layer for learning journey operations.
- * Uses Railway API instead of Supabase.
+ * Refactored to use generic API wrapper for DRY compliance.
  */
 
-import { apiClient } from '@/integrations/api';
+import { apiGet, apiGetOrNull, apiPost, apiPut } from '@/lib/api';
 import type {
   JourneyRow,
   JourneyInsert,
@@ -13,91 +13,57 @@ import type {
   JourneyStepRow,
 } from '@/types/database';
 import type { JourneyWithSteps, JourneyStep } from '@/types/domain';
-import { handleError } from '@/lib/errors';
+
+const CONTEXT = 'journeys';
 
 export async function getActiveJourneys(childId: string): Promise<JourneyWithSteps[]> {
-  try {
-    const { data } = await apiClient.get<JourneyRow[]>('/journeys', {
-      params: { childId, status: 'active' },
-    });
+  const journeys = await apiGet<JourneyRow[]>(
+    '/journeys',
+    `${CONTEXT}.getActiveJourneys`,
+    { params: { childId, status: 'active' }, defaultValue: [] }
+  );
 
-    // Fetch steps for each journey
-    const journeysWithSteps = await Promise.all(
-      (data ?? []).map(async (journey) => {
-        const { data: steps } = await apiClient.get<JourneyStepRow[]>(`/journeys/${journey.id}/steps`);
-        return mapJourneyWithSteps({ ...journey, journey_steps: steps });
-      })
-    );
+  const journeysWithSteps = await Promise.all(
+    journeys.map(async (journey) => {
+      const steps = await apiGet<JourneyStepRow[]>(
+        `/journeys/${journey.id}/steps`,
+        `${CONTEXT}.getActiveJourneys.steps`,
+        { defaultValue: [] }
+      );
+      return mapJourneyWithSteps({ ...journey, journey_steps: steps });
+    })
+  );
 
-    return journeysWithSteps;
-  } catch (error) {
-    throw handleError(error, {
-      context: 'journeys.getActiveJourneys',
-      strategy: 'throw',
-    });
-  }
+  return journeysWithSteps;
 }
 
 export async function getJourneyById(id: string): Promise<JourneyWithSteps | null> {
-  try {
-    const { data: journey } = await apiClient.get<JourneyRow>(`/journeys/${id}`);
-    const { data: steps } = await apiClient.get<JourneyStepRow[]>(`/journeys/${id}/steps`);
+  const journey = await apiGetOrNull<JourneyRow>(`/journeys/${id}`, `${CONTEXT}.getJourneyById`);
+  if (!journey) return null;
 
-    return mapJourneyWithSteps({ ...journey, journey_steps: steps });
-  } catch (error: unknown) {
-    if ((error as { response?: { status?: number } })?.response?.status === 404) {
-      return null;
-    }
-    throw handleError(error, {
-      context: 'journeys.getJourneyById',
-      strategy: 'throw',
-    });
-  }
+  const steps = await apiGet<JourneyStepRow[]>(
+    `/journeys/${id}/steps`,
+    `${CONTEXT}.getJourneyById.steps`,
+    { defaultValue: [] }
+  );
+
+  return mapJourneyWithSteps({ ...journey, journey_steps: steps });
 }
 
 export async function createJourney(journey: JourneyInsert): Promise<JourneyRow> {
-  try {
-    const { data } = await apiClient.post<JourneyRow>('/journeys', journey);
-    return data;
-  } catch (error) {
-    throw handleError(error, {
-      context: 'journeys.createJourney',
-      strategy: 'throw',
-    });
-  }
+  return apiPost<JourneyRow>('/journeys', `${CONTEXT}.createJourney`, journey);
 }
 
-export async function updateJourney(
-  id: string,
-  updates: JourneyUpdate
-): Promise<JourneyRow> {
-  try {
-    const { data } = await apiClient.put<JourneyRow>(`/journeys/${id}`, updates);
-    return data;
-  } catch (error) {
-    throw handleError(error, {
-      context: 'journeys.updateJourney',
-      strategy: 'throw',
-    });
-  }
+export async function updateJourney(id: string, updates: JourneyUpdate): Promise<JourneyRow> {
+  return apiPut<JourneyRow>(`/journeys/${id}`, `${CONTEXT}.updateJourney`, updates);
 }
 
 export async function completeStep(stepId: string, journeyId: string): Promise<JourneyStepRow> {
-  try {
-    const { data } = await apiClient.put<JourneyStepRow>(
-      `/journeys/${journeyId}/steps/${stepId}`,
-      {
-        progress: 100,
-        completed_at: new Date().toISOString(),
-      }
-    );
-    return data;
-  } catch (error) {
-    throw handleError(error, {
-      context: 'journeys.completeStep',
-      strategy: 'throw',
-    });
-  }
+  return apiPut<JourneyStepRow>(
+    `/journeys/${journeyId}/steps/${stepId}`,
+    `${CONTEXT}.completeStep`,
+    { progress: 100, completed_at: new Date().toISOString() }
+  );
 }
 
 export async function updateStepProgress(
@@ -105,40 +71,32 @@ export async function updateStepProgress(
   journeyId: string,
   progress: number
 ): Promise<JourneyStepRow> {
-  try {
-    const { data } = await apiClient.put<JourneyStepRow>(
-      `/journeys/${journeyId}/steps/${stepId}`,
-      { progress }
-    );
-    return data;
-  } catch (error) {
-    throw handleError(error, {
-      context: 'journeys.updateStepProgress',
-      strategy: 'throw',
-    });
-  }
+  return apiPut<JourneyStepRow>(
+    `/journeys/${journeyId}/steps/${stepId}`,
+    `${CONTEXT}.updateStepProgress`,
+    { progress }
+  );
 }
 
 export async function getCompletedJourneys(childId: string): Promise<JourneyWithSteps[]> {
-  try {
-    const { data } = await apiClient.get<JourneyRow[]>('/journeys', {
-      params: { childId, status: 'completed' },
-    });
+  const journeys = await apiGet<JourneyRow[]>(
+    '/journeys',
+    `${CONTEXT}.getCompletedJourneys`,
+    { params: { childId, status: 'completed' }, defaultValue: [] }
+  );
 
-    const journeysWithSteps = await Promise.all(
-      (data ?? []).map(async (journey) => {
-        const { data: steps } = await apiClient.get<JourneyStepRow[]>(`/journeys/${journey.id}/steps`);
-        return mapJourneyWithSteps({ ...journey, journey_steps: steps });
-      })
-    );
+  const journeysWithSteps = await Promise.all(
+    journeys.map(async (journey) => {
+      const steps = await apiGet<JourneyStepRow[]>(
+        `/journeys/${journey.id}/steps`,
+        `${CONTEXT}.getCompletedJourneys.steps`,
+        { defaultValue: [] }
+      );
+      return mapJourneyWithSteps({ ...journey, journey_steps: steps });
+    })
+  );
 
-    return journeysWithSteps;
-  } catch (error) {
-    throw handleError(error, {
-      context: 'journeys.getCompletedJourneys',
-      strategy: 'throw',
-    });
-  }
+  return journeysWithSteps;
 }
 
 export async function getJourneyProgress(journeyId: string): Promise<{
@@ -146,20 +104,17 @@ export async function getJourneyProgress(journeyId: string): Promise<{
   completedSteps: number;
   progressPercent: number;
 }> {
-  try {
-    const { data: steps } = await apiClient.get<JourneyStepRow[]>(`/journeys/${journeyId}/steps`);
+  const steps = await apiGet<JourneyStepRow[]>(
+    `/journeys/${journeyId}/steps`,
+    `${CONTEXT}.getJourneyProgress`,
+    { defaultValue: [] }
+  );
 
-    const totalSteps = steps?.length ?? 0;
-    const completedSteps = (steps ?? []).filter((s) => s.progress === 100).length;
-    const progressPercent = totalSteps > 0 ? Math.round((completedSteps / totalSteps) * 100) : 0;
+  const totalSteps = steps.length;
+  const completedSteps = steps.filter((s) => s.progress === 100).length;
+  const progressPercent = totalSteps > 0 ? Math.round((completedSteps / totalSteps) * 100) : 0;
 
-    return { totalSteps, completedSteps, progressPercent };
-  } catch (error) {
-    throw handleError(error, {
-      context: 'journeys.getJourneyProgress',
-      strategy: 'throw',
-    });
-  }
+  return { totalSteps, completedSteps, progressPercent };
 }
 
 function mapJourneyWithSteps(

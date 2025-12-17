@@ -2,7 +2,10 @@
  * API Types
  *
  * Types for API responses, async states, and data fetching patterns.
+ * Uses SafetyLevel from domain.ts as single source of truth.
  */
+
+import type { SafetyLevel } from './domain';
 
 /**
  * Discriminated union for async operation states.
@@ -93,7 +96,7 @@ export interface MutationResult<T> {
  */
 export interface ChatResponse {
   message: string;
-  safetyLevel: 'green' | 'yellow' | 'red';
+  safetyLevel: SafetyLevel;
   suggestions?: string[];
   memoryUpdates?: {
     type: string;
@@ -127,7 +130,7 @@ export interface NarrationResponse {
 }
 
 export interface ValidationResponse {
-  level: 'green' | 'yellow' | 'red';
+  level: SafetyLevel;
   reason?: string;
   suggestions?: string[];
 }

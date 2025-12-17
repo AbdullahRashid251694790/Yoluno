@@ -1,7 +1,7 @@
 /**
  * Safety Dashboard Page
  *
- * Parent dashboard for monitoring buddy chat safety and managing buddy settings.
+ * Parent dashboard for monitoring Luno chat safety and managing Luno settings.
  */
 
 import { useState } from 'react';
@@ -44,16 +44,16 @@ export function SafetyDashboardPage() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold">Safety & Buddy Chat</h1>
+          <h1 className="text-3xl font-bold">Safety & Luno Chat</h1>
           <p className="mt-2 text-muted-foreground">
-            Monitor conversations and customize your children's AI buddy
+            Monitor conversations and customize your children's AI companion Luno
           </p>
         </div>
 
         <EmptyState
           icon={Users}
           title="No child profiles yet"
-          description="Create a child profile to start monitoring buddy chat conversations."
+          description="Create a child profile to start monitoring Luno chat conversations."
           className="py-12"
         />
       </div>
@@ -64,9 +64,9 @@ export function SafetyDashboardPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold">Safety & Buddy Chat</h1>
+        <h1 className="text-3xl font-bold">Safety & Luno Chat</h1>
         <p className="mt-2 text-muted-foreground">
-          Monitor conversations and customize your children's AI buddy
+          Monitor conversations and customize your children's AI companion Luno
         </p>
       </div>
 
@@ -102,7 +102,7 @@ export function SafetyDashboardPage() {
         <Tabs defaultValue="reports" className="space-y-6">
           <TabsList>
             <TabsTrigger value="reports">Safety Reports</TabsTrigger>
-            <TabsTrigger value="buddy">Buddy Settings</TabsTrigger>
+            <TabsTrigger value="buddy">Luno Settings</TabsTrigger>
           </TabsList>
 
           <TabsContent value="reports" className="space-y-4">
@@ -122,7 +122,7 @@ export function SafetyDashboardPage() {
             <Alert>
               <Shield className="h-4 w-4" />
               <AlertDescription>
-                Customize {selectedChild.name}'s buddy to match their personality and
+                Customize {selectedChild.name}'s Luno to match their personality and
                 learning needs. Changes take effect immediately.
               </AlertDescription>
             </Alert>
@@ -135,7 +135,7 @@ export function SafetyDashboardPage() {
         </Tabs>
       ) : (
         <Alert>
-          <AlertDescription>Please select a child to view their safety reports and buddy settings.</AlertDescription>
+          <AlertDescription>Please select a child to view their safety reports and Luno settings.</AlertDescription>
         </Alert>
       )}
     </div>

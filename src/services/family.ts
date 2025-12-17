@@ -2,10 +2,10 @@
  * Family Service
  *
  * Data access layer for family member operations.
- * Uses Railway API instead of Supabase.
+ * Refactored to use generic API wrapper for DRY compliance.
  */
 
-import { apiClient } from '@/integrations/api';
+import { apiGet, apiGetOrNull, apiPost, apiPut, apiDelete, apiPostFormData } from '@/lib/api';
 import type {
   FamilyMemberRow,
   FamilyMemberInsert,
@@ -13,114 +13,67 @@ import type {
   FamilyRelationshipRow,
   FamilyRelationshipInsert,
 } from '@/types/database';
-import { handleError } from '@/lib/errors';
 
 export interface FamilyMemberWithRelations extends FamilyMemberRow {
   relationships?: FamilyRelationshipRow[];
 }
 
+const CONTEXT = 'family';
+
 export async function getFamilyMembers(userId: string): Promise<FamilyMemberWithRelations[]> {
-  try {
-    const { data } = await apiClient.get<FamilyMemberWithRelations[]>('/family/members');
-    return data ?? [];
-  } catch (error) {
-    throw handleError(error, {
-      context: 'family.getFamilyMembers',
-      strategy: 'throw',
-    });
-  }
+  return apiGet<FamilyMemberWithRelations[]>(
+    '/family/members',
+    `${CONTEXT}.getFamilyMembers`,
+    { defaultValue: [] }
+  );
 }
 
 export async function getFamilyMemberById(id: string): Promise<FamilyMemberWithRelations | null> {
-  try {
-    const { data } = await apiClient.get<FamilyMemberWithRelations>(`/family/members/${id}`);
-    return data;
-  } catch (error: unknown) {
-    if ((error as { response?: { status?: number } })?.response?.status === 404) {
-      return null;
-    }
-    throw handleError(error, {
-      context: 'family.getFamilyMemberById',
-      strategy: 'throw',
-    });
-  }
+  return apiGetOrNull<FamilyMemberWithRelations>(
+    `/family/members/${id}`,
+    `${CONTEXT}.getFamilyMemberById`
+  );
 }
 
-export async function createFamilyMember(
-  member: FamilyMemberInsert
-): Promise<FamilyMemberRow> {
-  try {
-    const { data } = await apiClient.post<FamilyMemberRow>('/family/members', member);
-    return data;
-  } catch (error) {
-    throw handleError(error, {
-      context: 'family.createFamilyMember',
-      strategy: 'throw',
-    });
-  }
+export async function createFamilyMember(member: FamilyMemberInsert): Promise<FamilyMemberRow> {
+  return apiPost<FamilyMemberRow>('/family/members', `${CONTEXT}.createFamilyMember`, member);
 }
 
 export async function updateFamilyMember(
   id: string,
   updates: FamilyMemberUpdate
 ): Promise<FamilyMemberRow> {
-  try {
-    const { data } = await apiClient.put<FamilyMemberRow>(`/family/members/${id}`, updates);
-    return data;
-  } catch (error) {
-    throw handleError(error, {
-      context: 'family.updateFamilyMember',
-      strategy: 'throw',
-    });
-  }
+  return apiPut<FamilyMemberRow>(
+    `/family/members/${id}`,
+    `${CONTEXT}.updateFamilyMember`,
+    updates
+  );
 }
 
 export async function deleteFamilyMember(id: string): Promise<void> {
-  try {
-    await apiClient.delete(`/family/members/${id}`);
-  } catch (error) {
-    throw handleError(error, {
-      context: 'family.deleteFamilyMember',
-      strategy: 'throw',
-    });
-  }
+  return apiDelete(`/family/members/${id}`, `${CONTEXT}.deleteFamilyMember`);
 }
 
 export async function getRelationships(userId: string): Promise<FamilyRelationshipRow[]> {
-  try {
-    const { data } = await apiClient.get<FamilyRelationshipRow[]>('/family/relationships');
-    return data ?? [];
-  } catch (error) {
-    throw handleError(error, {
-      context: 'family.getRelationships',
-      strategy: 'throw',
-    });
-  }
+  return apiGet<FamilyRelationshipRow[]>(
+    '/family/relationships',
+    `${CONTEXT}.getRelationships`,
+    { defaultValue: [] }
+  );
 }
 
 export async function createRelationship(
   relationship: FamilyRelationshipInsert
 ): Promise<FamilyRelationshipRow> {
-  try {
-    const { data } = await apiClient.post<FamilyRelationshipRow>('/family/relationships', relationship);
-    return data;
-  } catch (error) {
-    throw handleError(error, {
-      context: 'family.createRelationship',
-      strategy: 'throw',
-    });
-  }
+  return apiPost<FamilyRelationshipRow>(
+    '/family/relationships',
+    `${CONTEXT}.createRelationship`,
+    relationship
+  );
 }
 
 export async function deleteRelationship(id: string): Promise<void> {
-  try {
-    await apiClient.delete(`/family/relationships/${id}`);
-  } catch (error) {
-    throw handleError(error, {
-      context: 'family.deleteRelationship',
-      strategy: 'throw',
-    });
-  }
+  return apiDelete(`/family/relationships/${id}`, `${CONTEXT}.deleteRelationship`);
 }
 
 export async function getFamilyTree(userId: string): Promise<{
@@ -140,67 +93,41 @@ export async function uploadFamilyPhoto(
   memberId: string,
   file: File
 ): Promise<string> {
-  try {
-    const formData = new FormData();
-    formData.append('file', file);
+  const formData = new FormData();
+  formData.append('file', file);
 
-    const { data } = await apiClient.post<{ url: string }>(
-      '/upload/family-photos',
-      formData,
-      {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      }
-    );
+  const response = await apiPostFormData<{ url: string }>(
+    '/upload/family-photos',
+    `${CONTEXT}.uploadFamilyPhoto`,
+    formData
+  );
 
-    return data.url;
-  } catch (error) {
-    throw handleError(error, {
-      context: 'family.uploadFamilyPhoto',
-      strategy: 'throw',
-    });
-  }
+  return response.url;
 }
 
 export async function updateTreePositions(
   userId: string,
   positions: Array<{ memberId: string; positionX: number; positionY: number }>
 ): Promise<void> {
-  try {
-    // Update each position
-    await Promise.all(
-      positions.map((pos) =>
-        apiClient.put(`/family/members/${pos.memberId}`, {
-          position_x: pos.positionX,
-          position_y: pos.positionY,
-        })
+  await Promise.all(
+    positions.map((pos) =>
+      apiPut(
+        `/family/members/${pos.memberId}`,
+        `${CONTEXT}.updateTreePositions`,
+        { position_x: pos.positionX, position_y: pos.positionY }
       )
-    );
-  } catch (error) {
-    throw handleError(error, {
-      context: 'family.updateTreePositions',
-      strategy: 'throw',
-    });
-  }
+    )
+  );
 }
 
 export async function deleteFamilyPhoto(photoUrl: string): Promise<void> {
-  try {
-    // Extract filename from URL
-    const urlParts = photoUrl.split('/family-photos/');
-    if (urlParts.length < 2) return;
+  const urlParts = photoUrl.split('/family-photos/');
+  if (urlParts.length < 2) return;
 
-    const parts = urlParts[1].split('/');
-    const filename = parts[parts.length - 1];
+  const parts = urlParts[1].split('/');
+  const filename = parts[parts.length - 1];
 
-    await apiClient.delete(`/upload/family-photos/${filename}`);
-  } catch (error) {
-    throw handleError(error, {
-      context: 'family.deleteFamilyPhoto',
-      strategy: 'throw',
-    });
-  }
+  return apiDelete(`/upload/family-photos/${filename}`, `${CONTEXT}.deleteFamilyPhoto`);
 }
 
 export const familyService = {

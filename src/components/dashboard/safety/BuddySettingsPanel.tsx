@@ -73,19 +73,19 @@ export function BuddySettingsPanel({ childId, childName }: BuddySettingsPanelPro
   };
 
   const traitDescriptions: Record<keyof typeof traits, string> = {
-    curious: 'How often the buddy asks questions and encourages exploration',
-    patient: 'How calm and understanding the buddy is with repeated questions',
-    playful: 'How fun and silly the buddy is in conversations',
-    educational: 'How focused the buddy is on teaching and learning opportunities',
-    empathetic: 'How caring and emotionally supportive the buddy is',
+    curious: 'How often Luno asks questions and encourages exploration',
+    patient: 'How calm and understanding Luno is with repeated questions',
+    playful: 'How fun and silly Luno is in conversations',
+    educational: 'How focused Luno is on teaching and learning opportunities',
+    empathetic: 'How caring and emotionally supportive Luno is',
   };
 
   if (isLoading) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Buddy Settings</CardTitle>
-          <CardDescription>Loading buddy settings...</CardDescription>
+          <CardTitle>Luno Settings</CardTitle>
+          <CardDescription>Loading Luno settings...</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-center py-8">
@@ -100,13 +100,13 @@ export function BuddySettingsPanel({ childId, childName }: BuddySettingsPanelPro
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Buddy Settings</CardTitle>
-          <CardDescription>No buddy found for {childName}</CardDescription>
+          <CardTitle>Luno Settings</CardTitle>
+          <CardDescription>No Luno settings found for {childName}</CardDescription>
         </CardHeader>
         <CardContent>
           <Alert>
             <AlertDescription>
-              A buddy will be automatically created when {childName} starts their first chat.
+              Luno will be automatically set up when {childName} starts their first chat.
             </AlertDescription>
           </Alert>
         </CardContent>
@@ -119,10 +119,10 @@ export function BuddySettingsPanel({ childId, childName }: BuddySettingsPanelPro
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Sparkles className="h-5 w-5" />
-          {childName}'s Buddy Settings
+          {childName}'s Luno Settings
         </CardTitle>
         <CardDescription>
-          Customize the AI buddy's personality and behavior
+          Customize Luno's personality and behavior
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -135,12 +135,12 @@ export function BuddySettingsPanel({ childId, childName }: BuddySettingsPanelPro
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 space-y-2">
-            <Label htmlFor="buddy-name">Buddy Name</Label>
+            <Label htmlFor="buddy-name">Luno's Name</Label>
             <Input
               id="buddy-name"
               value={buddyName}
               onChange={(e) => setBuddyName(e.target.value)}
-              placeholder="Enter buddy name"
+              placeholder="Enter Luno's name"
               maxLength={20}
             />
           </div>
@@ -172,7 +172,7 @@ export function BuddySettingsPanel({ childId, childName }: BuddySettingsPanelPro
         <div className="space-y-4">
           <h3 className="font-semibold">Personality Traits</h3>
           <p className="text-sm text-muted-foreground">
-            Adjust the sliders to customize how the buddy interacts with {childName}.
+            Adjust the sliders to customize how Luno interacts with {childName}.
           </p>
 
           {Object.entries(traits).map(([trait, value]) => (

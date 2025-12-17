@@ -2,20 +2,22 @@
  * Stories Query Hooks
  *
  * React Query hooks for story operations.
+ * Refactored to use mutation factory for DRY compliance.
  */
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { queryKeys } from './keys';
-import { storiesService, type StoryWithDetails } from '@/services/stories';
-import type { StoryInsert, StoryUpdate } from '@/types/database';
-import { handleError } from '@/lib/errors';
+import { createMutationHook } from './useMutationFactory';
+import { storiesService } from '@/services/stories';
+import type { StoryInsert, StoryUpdate, StoryRow } from '@/types/database';
 
+// Query hooks
 export function useStoriesByChild(childId: string | undefined) {
   return useQuery({
     queryKey: queryKeys.stories.listByChild(childId ?? ''),
     queryFn: () => storiesService.getByChild(childId!),
     enabled: !!childId,
-    staleTime: 2 * 60 * 1000, // 2 minutes
+    staleTime: 2 * 60 * 1000,
   });
 }
 
@@ -42,102 +44,49 @@ export function useRecentStories(userId: string | undefined, limit = 10) {
     queryKey: queryKeys.stories.recent(userId ?? ''),
     queryFn: () => storiesService.getRecent(userId!, limit),
     enabled: !!userId,
-    staleTime: 1 * 60 * 1000, // 1 minute
+    staleTime: 1 * 60 * 1000,
   });
 }
 
-export function useCreateStory() {
-  const queryClient = useQueryClient();
+// Mutation hooks using factory
+export const useCreateStory = createMutationHook<StoryRow, StoryInsert>({
+  mutationFn: storiesService.create,
+  context: 'useCreateStory',
+  userMessage: 'Failed to create story',
+  invalidateKeys: (data) => [
+    queryKeys.stories.listByChild(data.child_profile_id),
+    queryKeys.stories.recent(''),
+  ],
+});
 
-  return useMutation({
-    mutationFn: (story: StoryInsert) => storiesService.create(story),
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.stories.listByChild(data.child_profile_id),
-      });
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.stories.recent(''),
-        exact: false,
-      });
-      return data;
-    },
-    onError: (error) => {
-      handleError(error, {
-        context: 'useCreateStory',
-        userMessage: 'Failed to create story',
-      });
-    },
-  });
-}
+export const useUpdateStory = createMutationHook<StoryRow, { id: string; updates: StoryUpdate }>({
+  mutationFn: ({ id, updates }) => storiesService.update(id, updates),
+  context: 'useUpdateStory',
+  userMessage: 'Failed to update story',
+  invalidateKeys: (data) => [
+    queryKeys.stories.listByChild(data.child_profile_id),
+    queryKeys.stories.detail(data.id),
+  ],
+});
 
-export function useUpdateStory() {
-  const queryClient = useQueryClient();
+export const useDeleteStory = createMutationHook<void, string>({
+  mutationFn: storiesService.delete,
+  context: 'useDeleteStory',
+  userMessage: 'Failed to delete story',
+  invalidateKeys: () => [queryKeys.stories.lists()],
+  removeKeys: (_, id) => [queryKeys.stories.detail(id)],
+});
 
-  return useMutation({
-    mutationFn: ({ id, updates }: { id: string; updates: StoryUpdate }) =>
-      storiesService.update(id, updates),
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.stories.listByChild(data.child_profile_id),
-      });
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.stories.detail(data.id),
-      });
-      return data;
-    },
-    onError: (error) => {
-      handleError(error, {
-        context: 'useUpdateStory',
-        userMessage: 'Failed to update story',
-      });
-    },
-  });
-}
-
-export function useDeleteStory() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (id: string) => storiesService.delete(id),
-    onSuccess: (_, id) => {
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.stories.lists(),
-      });
-      queryClient.removeQueries({
-        queryKey: queryKeys.stories.detail(id),
-      });
-    },
-    onError: (error) => {
-      handleError(error, {
-        context: 'useDeleteStory',
-        userMessage: 'Failed to delete story',
-      });
-    },
-  });
-}
-
-export function useToggleFavorite() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({ id, isFavorite }: { id: string; isFavorite: boolean }) =>
-      storiesService.toggleFavorite(id, isFavorite),
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.stories.listByChild(data.child_profile_id),
-      });
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.stories.favorites(data.child_profile_id),
-      });
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.stories.detail(data.id),
-      });
-    },
-    onError: (error) => {
-      handleError(error, {
-        context: 'useToggleFavorite',
-        userMessage: 'Failed to update favorite status',
-      });
-    },
-  });
-}
+export const useToggleFavorite = createMutationHook<
+  StoryRow,
+  { id: string; isFavorite: boolean }
+>({
+  mutationFn: ({ id, isFavorite }) => storiesService.toggleFavorite(id, isFavorite),
+  context: 'useToggleFavorite',
+  userMessage: 'Failed to update favorite status',
+  invalidateKeys: (data) => [
+    queryKeys.stories.listByChild(data.child_profile_id),
+    queryKeys.stories.favorites(data.child_profile_id),
+    queryKeys.stories.detail(data.id),
+  ],
+});

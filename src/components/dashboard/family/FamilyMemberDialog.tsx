@@ -139,7 +139,7 @@ export function FamilyMemberDialog({
           <DialogDescription>
             {isEditing
               ? 'Update the information for this family member.'
-              : 'Add a new member to your family tree. The more details you add, the better your child\'s buddy can answer questions about your family.'}
+              : 'Add a new member to your family tree. The more details you add, the better Luno can answer questions about your family.'}
           </DialogDescription>
         </DialogHeader>
 

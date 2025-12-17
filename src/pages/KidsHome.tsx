@@ -86,9 +86,9 @@ const activities = [
 
 // Daily challenges
 const dailyChallenges = [
-  { text: 'Ask your buddy about dinosaurs!', emoji: '🦖' },
+  { text: 'Ask Luno about dinosaurs!', emoji: '🦖' },
   { text: 'Learn something new about space!', emoji: '🚀' },
-  { text: 'Tell your buddy about your day!', emoji: '📝' },
+  { text: 'Tell Luno about your day!', emoji: '📝' },
   { text: "Ask 'Why?' about something!", emoji: '🤔' },
   { text: 'Create a fun story together!', emoji: '📖' },
   { text: 'Learn about an animal!', emoji: '🐾' },

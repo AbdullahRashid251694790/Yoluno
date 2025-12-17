@@ -158,8 +158,8 @@ function FeaturesSection() {
     },
     {
       icon: MessageCircle,
-      title: 'AI Buddy Chat',
-      description: 'A friendly AI companion that answers questions, encourages curiosity, and keeps conversations safe and age-appropriate.',
+      title: 'Chat with Luno',
+      description: 'Meet Luno, a friendly AI companion that answers questions, encourages curiosity, and keeps conversations safe and age-appropriate.',
       color: 'bg-cyan-100',
       iconColor: 'text-cyan-600',
     },

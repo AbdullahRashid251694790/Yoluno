@@ -4,6 +4,8 @@
  * Main buddy chat interface for children.
  * Uses buddy chat service with AI-powered conversations.
  * Enhanced with suggestion chips, star counter, and expressive avatar.
+ *
+ * Refactored to use avatarExpressionService for SOLID compliance.
  */
 
 import { useRef, useEffect, useState, useMemo } from 'react';
@@ -11,106 +13,19 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useBuddyMessages, useChatBuddy, useSendBuddyMessage } from '@/hooks/queries/useBuddyChat';
 import { queryKeys } from '@/hooks/queries/keys';
 import { getSocket, joinChildRoom, leaveChildRoom, onNewMessage } from '@/integrations/api/socket';
+import { avatarExpressionService } from '@/services/avatarExpression';
 import { ChatMessage } from './ChatMessage';
 import { ChatInput } from './ChatInput';
 import { ChatAvatar, TypingIndicator } from './ChatAvatar';
-import { SuggestionChips, defaultSuggestions } from './SuggestionChips';
+import { SuggestionChips } from './SuggestionChips';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Star, AlertTriangle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import type { AvatarExpression } from '@/types/domain';
 import type { BuddyMessage } from '@/services/buddyChat';
 
 interface BuddyChatProps {
   childId: string;
   childName: string;
-}
-
-// Smart avatar expression based on context
-function getSmartExpression(
-  isSending: boolean,
-  isTyping: boolean,
-  lastMessage?: BuddyMessage,
-  messageCount?: number
-): AvatarExpression {
-  if (isSending) return 'thinking';
-  if (isTyping) return 'listening';
-
-  if (lastMessage) {
-    const content = lastMessage.content.toLowerCase();
-    // Check for educational content
-    if (content.includes('learn') || content.includes('did you know') || content.includes('?')) {
-      return 'teaching';
-    }
-    // Check for stories/creative content
-    if (content.includes('once upon') || content.includes('story') || content.includes('imagine')) {
-      return 'creative';
-    }
-    // Check for supportive content
-    if (content.includes('great') || content.includes('proud') || content.includes('amazing')) {
-      return 'proud';
-    }
-    // Check for empathetic content
-    if (content.includes('understand') || content.includes('feel') || content.includes('okay')) {
-      return 'caring';
-    }
-  }
-
-  // First few messages - excited to chat
-  if (messageCount !== undefined && messageCount < 3) {
-    return 'excited';
-  }
-
-  return 'happy';
-}
-
-// Context-aware suggestions based on conversation
-function getContextualSuggestions(messages: BuddyMessage[]) {
-  if (messages.length === 0) {
-    return defaultSuggestions;
-  }
-
-  const lastBuddyMessage = [...messages].reverse().find((m) => m.role === 'buddy');
-  if (!lastBuddyMessage) return defaultSuggestions;
-
-  const content = lastBuddyMessage.content.toLowerCase();
-
-  // If asking a question, provide relevant follow-ups
-  if (content.includes('?')) {
-    if (content.includes('want to') || content.includes('would you like')) {
-      return [
-        { id: 'yes', label: 'Yes please!', emoji: '👍' },
-        { id: 'no', label: 'Maybe later', emoji: '🤔' },
-        { id: 'different', label: 'Something else', emoji: '💭' },
-      ];
-    }
-    if (content.includes('animal') || content.includes('favorite')) {
-      return [
-        { id: 'dog', label: 'Dogs', emoji: '🐕' },
-        { id: 'cat', label: 'Cats', emoji: '🐱' },
-        { id: 'other', label: 'Something else', emoji: '🦋' },
-      ];
-    }
-  }
-
-  // Topic-based suggestions
-  if (content.includes('space') || content.includes('planet') || content.includes('star')) {
-    return [
-      { id: 'moon', label: 'The Moon', emoji: '🌙' },
-      { id: 'planets', label: 'Planets', emoji: '🪐' },
-      { id: 'astronauts', label: 'Astronauts', emoji: '👨‍🚀' },
-    ];
-  }
-
-  if (content.includes('dinosaur')) {
-    return [
-      { id: 'trex', label: 'T-Rex', emoji: '🦖' },
-      { id: 'flying', label: 'Flying dinosaurs', emoji: '🦅' },
-      { id: 'biggest', label: 'Biggest dinosaur', emoji: '🦕' },
-    ];
-  }
-
-  return defaultSuggestions;
 }
 
 export function BuddyChat({ childId, childName }: BuddyChatProps) {
@@ -127,19 +42,29 @@ export function BuddyChat({ childId, childName }: BuddyChatProps) {
   // Send message mutation
   const { mutate: sendMessage, isPending: isSending } = useSendBuddyMessage();
 
-  // Calculate avatar expression
+  // Find last buddy message
   const lastBuddyMessage = useMemo(
     () => [...messages].reverse().find((m) => m.role === 'buddy'),
     [messages]
   );
 
+  // Calculate avatar expression using service
   const avatarExpression = useMemo(
-    () => getSmartExpression(isSending, isTyping, lastBuddyMessage, messages.length),
-    [isSending, isTyping, lastBuddyMessage, messages.length]
+    () =>
+      avatarExpressionService.getExpression({
+        isSending,
+        isTyping,
+        lastMessageContent: lastBuddyMessage?.content,
+        messageCount: messages.length,
+      }),
+    [isSending, isTyping, lastBuddyMessage?.content, messages.length]
   );
 
-  // Get contextual suggestions
-  const suggestions = useMemo(() => getContextualSuggestions(messages), [messages]);
+  // Get contextual suggestions using service
+  const suggestions = useMemo(
+    () => avatarExpressionService.getSuggestions(lastBuddyMessage?.content),
+    [lastBuddyMessage?.content]
+  );
 
   // Star count (would come from gamification service)
   const starCount = messages.length * 2 + 10;
@@ -191,7 +116,7 @@ export function BuddyChat({ childId, childName }: BuddyChatProps) {
 
   // Check for recent red flags
   const hasRedFlag = messages.some(
-    (msg) =>
+    (msg: BuddyMessage) =>
       msg.safety_level === 'red' &&
       new Date(msg.created_at).getTime() > Date.now() - 5 * 60 * 1000
   );
@@ -253,7 +178,7 @@ export function BuddyChat({ childId, childName }: BuddyChatProps) {
           <div className="flex flex-col items-center justify-center py-12">
             <ChatAvatar expression="excited" size="hero" showName buddyName={buddyName} />
             <p className="mt-6 text-lg text-center text-muted-foreground max-w-xs">
-              Hi {childName}! I'm {buddyName}, your buddy!
+              Hi {childName}! I'm {buddyName}, your AI friend!
               What would you like to talk about today?
             </p>
             <div className="mt-6">
@@ -265,7 +190,7 @@ export function BuddyChat({ childId, childName }: BuddyChatProps) {
           </div>
         ) : (
           <div className="space-y-4 py-4">
-            {messages.map((message, index) => (
+            {messages.map((message: BuddyMessage, index: number) => (
               <div
                 key={message.id}
                 className={index === messages.length - 1 ? 'animate-slide-up' : ''}

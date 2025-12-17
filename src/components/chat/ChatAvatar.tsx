@@ -37,7 +37,7 @@ const nameSizeClasses = {
 
 export function ChatAvatar({
   imageUrl,
-  buddyName = 'Buddy',
+  buddyName = 'Luno',
   expression = 'neutral',
   size = 'md',
   showName = false,

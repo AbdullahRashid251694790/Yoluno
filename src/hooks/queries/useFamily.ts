@@ -2,18 +2,22 @@
  * Family Query Hooks
  *
  * React Query hooks for family member operations.
+ * Refactored to use mutation factory for DRY compliance.
  */
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { queryKeys } from './keys';
-import { familyService, type FamilyMemberWithRelations } from '@/services/family';
+import { createMutationHook } from './useMutationFactory';
+import { familyService } from '@/services/family';
 import type {
   FamilyMemberInsert,
   FamilyMemberUpdate,
+  FamilyMemberRow,
   FamilyRelationshipInsert,
+  FamilyRelationshipRow,
 } from '@/types/database';
-import { handleError } from '@/lib/errors';
 
+// Query hooks
 export function useFamilyMembers(userId: string | undefined) {
   return useQuery({
     queryKey: queryKeys.family.members(userId ?? ''),
@@ -50,185 +54,82 @@ export function useFamilyTree(userId: string | undefined) {
   });
 }
 
-export function useCreateFamilyMember() {
-  const queryClient = useQueryClient();
+// Helper to get invalidation keys for family mutations
+const getFamilyInvalidationKeys = (userId: string) => [
+  queryKeys.family.members(userId),
+  queryKeys.family.tree(userId),
+];
 
-  return useMutation({
-    mutationFn: (member: FamilyMemberInsert) => familyService.createMember(member),
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.family.members(data.user_id),
-      });
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.family.tree(data.user_id),
-      });
-      return data;
-    },
-    onError: (error) => {
-      handleError(error, {
-        context: 'useCreateFamilyMember',
-        userMessage: 'Failed to add family member',
-      });
-    },
-  });
-}
+// Mutation hooks using factory
+export const useCreateFamilyMember = createMutationHook<FamilyMemberRow, FamilyMemberInsert>({
+  mutationFn: familyService.createMember,
+  context: 'useCreateFamilyMember',
+  userMessage: 'Failed to add family member',
+  invalidateKeys: (data) => getFamilyInvalidationKeys(data.user_id),
+});
 
-export function useUpdateFamilyMember() {
-  const queryClient = useQueryClient();
+export const useUpdateFamilyMember = createMutationHook<
+  FamilyMemberRow,
+  { id: string; updates: FamilyMemberUpdate }
+>({
+  mutationFn: ({ id, updates }) => familyService.updateMember(id, updates),
+  context: 'useUpdateFamilyMember',
+  userMessage: 'Failed to update family member',
+  invalidateKeys: (data) => [
+    ...getFamilyInvalidationKeys(data.user_id),
+    queryKeys.family.member(data.id),
+  ],
+});
 
-  return useMutation({
-    mutationFn: ({ id, updates }: { id: string; updates: FamilyMemberUpdate }) =>
-      familyService.updateMember(id, updates),
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.family.members(data.user_id),
-      });
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.family.member(data.id),
-      });
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.family.tree(data.user_id),
-      });
-      return data;
-    },
-    onError: (error) => {
-      handleError(error, {
-        context: 'useUpdateFamilyMember',
-        userMessage: 'Failed to update family member',
-      });
-    },
-  });
-}
+export const useDeleteFamilyMember = createMutationHook<void, string>({
+  mutationFn: familyService.deleteMember,
+  context: 'useDeleteFamilyMember',
+  userMessage: 'Failed to remove family member',
+  invalidateKeys: () => [queryKeys.family.all],
+});
 
-export function useDeleteFamilyMember() {
-  const queryClient = useQueryClient();
+export const useCreateRelationship = createMutationHook<
+  FamilyRelationshipRow,
+  FamilyRelationshipInsert
+>({
+  mutationFn: familyService.createRelationship,
+  context: 'useCreateRelationship',
+  userMessage: 'Failed to create relationship',
+  invalidateKeys: (data) => [
+    queryKeys.family.relationships(data.user_id),
+    queryKeys.family.tree(data.user_id),
+  ],
+});
 
-  return useMutation({
-    mutationFn: (id: string) => familyService.deleteMember(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.family.all,
-      });
-    },
-    onError: (error) => {
-      handleError(error, {
-        context: 'useDeleteFamilyMember',
-        userMessage: 'Failed to remove family member',
-      });
-    },
-  });
-}
+export const useDeleteRelationship = createMutationHook<void, string>({
+  mutationFn: familyService.deleteRelationship,
+  context: 'useDeleteRelationship',
+  userMessage: 'Failed to remove relationship',
+  invalidateKeys: () => [queryKeys.family.all],
+});
 
-export function useCreateRelationship() {
-  const queryClient = useQueryClient();
+export const useUploadFamilyPhoto = createMutationHook<
+  string,
+  { userId: string; memberId: string; file: File }
+>({
+  mutationFn: ({ userId, memberId, file }) => familyService.uploadPhoto(userId, memberId, file),
+  context: 'useUploadFamilyPhoto',
+  userMessage: 'Failed to upload photo',
+  invalidateKeys: (_, { userId }) => getFamilyInvalidationKeys(userId),
+});
 
-  return useMutation({
-    mutationFn: (relationship: FamilyRelationshipInsert) =>
-      familyService.createRelationship(relationship),
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.family.relationships(data.user_id),
-      });
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.family.tree(data.user_id),
-      });
-      return data;
-    },
-    onError: (error) => {
-      handleError(error, {
-        context: 'useCreateRelationship',
-        userMessage: 'Failed to create relationship',
-      });
-    },
-  });
-}
+export const useDeleteFamilyPhoto = createMutationHook<void, string>({
+  mutationFn: familyService.deletePhoto,
+  context: 'useDeleteFamilyPhoto',
+  userMessage: 'Failed to delete photo',
+});
 
-export function useDeleteRelationship() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (id: string) => familyService.deleteRelationship(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.family.all,
-      });
-    },
-    onError: (error) => {
-      handleError(error, {
-        context: 'useDeleteRelationship',
-        userMessage: 'Failed to remove relationship',
-      });
-    },
-  });
-}
-
-export function useUploadFamilyPhoto() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({
-      userId,
-      memberId,
-      file,
-    }: {
-      userId: string;
-      memberId: string;
-      file: File;
-    }) => familyService.uploadPhoto(userId, memberId, file),
-    onSuccess: (photoUrl, { userId }) => {
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.family.members(userId),
-      });
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.family.tree(userId),
-      });
-      return photoUrl;
-    },
-    onError: (error) => {
-      handleError(error, {
-        context: 'useUploadFamilyPhoto',
-        userMessage: 'Failed to upload photo',
-      });
-    },
-  });
-}
-
-export function useDeleteFamilyPhoto() {
-  return useMutation({
-    mutationFn: (photoUrl: string) => familyService.deletePhoto(photoUrl),
-    onError: (error) => {
-      handleError(error, {
-        context: 'useDeleteFamilyPhoto',
-        userMessage: 'Failed to delete photo',
-      });
-    },
-  });
-}
-
-export function useUpdateTreePositions() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({
-      userId,
-      positions,
-    }: {
-      userId: string;
-      positions: Array<{ memberId: string; positionX: number; positionY: number }>;
-    }) => familyService.updateTreePositions(userId, positions),
-    onSuccess: (_, { userId }) => {
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.family.members(userId),
-      });
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.family.tree(userId),
-      });
-    },
-    onError: (error) => {
-      handleError(error, {
-        context: 'useUpdateTreePositions',
-        userMessage: 'Failed to save tree positions',
-      });
-    },
-  });
-}
+export const useUpdateTreePositions = createMutationHook<
+  void,
+  { userId: string; positions: Array<{ memberId: string; positionX: number; positionY: number }> }
+>({
+  mutationFn: ({ userId, positions }) => familyService.updateTreePositions(userId, positions),
+  context: 'useUpdateTreePositions',
+  userMessage: 'Failed to save tree positions',
+  invalidateKeys: (_, { userId }) => getFamilyInvalidationKeys(userId),
+});
