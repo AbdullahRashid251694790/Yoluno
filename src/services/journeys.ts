@@ -2,52 +2,50 @@
  * Journeys Service
  *
  * Data access layer for learning journey operations.
+ * Uses Railway API instead of Supabase.
  */
 
-import { supabase } from '@/integrations/supabase/client';
+import { apiClient } from '@/integrations/api';
 import type {
   JourneyRow,
   JourneyInsert,
   JourneyUpdate,
   JourneyStepRow,
-  JourneyStepUpdate,
 } from '@/types/database';
 import type { JourneyWithSteps, JourneyStep } from '@/types/domain';
 import { handleError } from '@/lib/errors';
 
 export async function getActiveJourneys(childId: string): Promise<JourneyWithSteps[]> {
-  const { data, error } = await supabase
-    .from('journeys')
-    .select(`
-      *,
-      journey_steps(*)
-    `)
-    .eq('child_profile_id', childId)
-    .in('status', ['active', 'in_progress'])
-    .order('created_at', { ascending: false });
+  try {
+    const { data } = await apiClient.get<JourneyRow[]>('/journeys', {
+      params: { childId, status: 'active' },
+    });
 
-  if (error) {
+    // Fetch steps for each journey
+    const journeysWithSteps = await Promise.all(
+      (data ?? []).map(async (journey) => {
+        const { data: steps } = await apiClient.get<JourneyStepRow[]>(`/journeys/${journey.id}/steps`);
+        return mapJourneyWithSteps({ ...journey, journey_steps: steps });
+      })
+    );
+
+    return journeysWithSteps;
+  } catch (error) {
     throw handleError(error, {
       context: 'journeys.getActiveJourneys',
       strategy: 'throw',
     });
   }
-
-  return (data ?? []).map(mapJourneyWithSteps);
 }
 
 export async function getJourneyById(id: string): Promise<JourneyWithSteps | null> {
-  const { data, error } = await supabase
-    .from('journeys')
-    .select(`
-      *,
-      journey_steps(*)
-    `)
-    .eq('id', id)
-    .single();
+  try {
+    const { data: journey } = await apiClient.get<JourneyRow>(`/journeys/${id}`);
+    const { data: steps } = await apiClient.get<JourneyStepRow[]>(`/journeys/${id}/steps`);
 
-  if (error) {
-    if (error.code === 'PGRST116') {
+    return mapJourneyWithSteps({ ...journey, journey_steps: steps });
+  } catch (error: unknown) {
+    if ((error as { response?: { status?: number } })?.response?.status === 404) {
       return null;
     }
     throw handleError(error, {
@@ -55,111 +53,92 @@ export async function getJourneyById(id: string): Promise<JourneyWithSteps | nul
       strategy: 'throw',
     });
   }
-
-  return mapJourneyWithSteps(data);
 }
 
 export async function createJourney(journey: JourneyInsert): Promise<JourneyRow> {
-  const { data, error } = await supabase
-    .from('journeys')
-    .insert(journey)
-    .select()
-    .single();
-
-  if (error) {
+  try {
+    const { data } = await apiClient.post<JourneyRow>('/journeys', journey);
+    return data;
+  } catch (error) {
     throw handleError(error, {
       context: 'journeys.createJourney',
       strategy: 'throw',
     });
   }
-
-  return data;
 }
 
 export async function updateJourney(
   id: string,
   updates: JourneyUpdate
 ): Promise<JourneyRow> {
-  const { data, error } = await supabase
-    .from('journeys')
-    .update(updates)
-    .eq('id', id)
-    .select()
-    .single();
-
-  if (error) {
+  try {
+    const { data } = await apiClient.put<JourneyRow>(`/journeys/${id}`, updates);
+    return data;
+  } catch (error) {
     throw handleError(error, {
       context: 'journeys.updateJourney',
       strategy: 'throw',
     });
   }
-
-  return data;
 }
 
-export async function completeStep(stepId: string): Promise<JourneyStepRow> {
-  const updates: JourneyStepUpdate = {
-    status: 'completed',
-    completed_at: new Date().toISOString(),
-  };
-
-  const { data, error } = await supabase
-    .from('journey_steps')
-    .update(updates)
-    .eq('id', stepId)
-    .select()
-    .single();
-
-  if (error) {
+export async function completeStep(stepId: string, journeyId: string): Promise<JourneyStepRow> {
+  try {
+    const { data } = await apiClient.put<JourneyStepRow>(
+      `/journeys/${journeyId}/steps/${stepId}`,
+      {
+        progress: 100,
+        completed_at: new Date().toISOString(),
+      }
+    );
+    return data;
+  } catch (error) {
     throw handleError(error, {
       context: 'journeys.completeStep',
       strategy: 'throw',
     });
   }
-
-  return data;
 }
 
 export async function updateStepProgress(
   stepId: string,
+  journeyId: string,
   progress: number
 ): Promise<JourneyStepRow> {
-  const { data, error } = await supabase
-    .from('journey_steps')
-    .update({ progress })
-    .eq('id', stepId)
-    .select()
-    .single();
-
-  if (error) {
+  try {
+    const { data } = await apiClient.put<JourneyStepRow>(
+      `/journeys/${journeyId}/steps/${stepId}`,
+      { progress }
+    );
+    return data;
+  } catch (error) {
     throw handleError(error, {
       context: 'journeys.updateStepProgress',
       strategy: 'throw',
     });
   }
-
-  return data;
 }
 
 export async function getCompletedJourneys(childId: string): Promise<JourneyWithSteps[]> {
-  const { data, error } = await supabase
-    .from('journeys')
-    .select(`
-      *,
-      journey_steps(*)
-    `)
-    .eq('child_profile_id', childId)
-    .eq('status', 'completed')
-    .order('completed_at', { ascending: false });
+  try {
+    const { data } = await apiClient.get<JourneyRow[]>('/journeys', {
+      params: { childId, status: 'completed' },
+    });
 
-  if (error) {
+    const journeysWithSteps = await Promise.all(
+      (data ?? []).map(async (journey) => {
+        const { data: steps } = await apiClient.get<JourneyStepRow[]>(`/journeys/${journey.id}/steps`);
+        return mapJourneyWithSteps({ ...journey, journey_steps: steps });
+      })
+    );
+
+    return journeysWithSteps;
+  } catch (error) {
     throw handleError(error, {
       context: 'journeys.getCompletedJourneys',
       strategy: 'throw',
     });
   }
-
-  return (data ?? []).map(mapJourneyWithSteps);
 }
 
 export async function getJourneyProgress(journeyId: string): Promise<{
@@ -167,38 +146,34 @@ export async function getJourneyProgress(journeyId: string): Promise<{
   completedSteps: number;
   progressPercent: number;
 }> {
-  const { data, error } = await supabase
-    .from('journey_steps')
-    .select('status')
-    .eq('journey_id', journeyId);
+  try {
+    const { data: steps } = await apiClient.get<JourneyStepRow[]>(`/journeys/${journeyId}/steps`);
 
-  if (error) {
+    const totalSteps = steps?.length ?? 0;
+    const completedSteps = (steps ?? []).filter((s) => s.progress === 100).length;
+    const progressPercent = totalSteps > 0 ? Math.round((completedSteps / totalSteps) * 100) : 0;
+
+    return { totalSteps, completedSteps, progressPercent };
+  } catch (error) {
     throw handleError(error, {
       context: 'journeys.getJourneyProgress',
       strategy: 'throw',
     });
   }
-
-  const steps = data ?? [];
-  const totalSteps = steps.length;
-  const completedSteps = steps.filter((s) => s.status === 'completed').length;
-  const progressPercent = totalSteps > 0 ? Math.round((completedSteps / totalSteps) * 100) : 0;
-
-  return { totalSteps, completedSteps, progressPercent };
 }
 
 function mapJourneyWithSteps(
   data: JourneyRow & { journey_steps?: JourneyStepRow[] }
 ): JourneyWithSteps {
   const steps: JourneyStep[] = (data.journey_steps ?? [])
-    .sort((a, b) => a.order_index - b.order_index)
+    .sort((a, b) => (a.step_order ?? 0) - (b.step_order ?? 0))
     .map((step) => ({
       id: step.id,
-      title: step.title,
-      description: step.description ?? '',
+      title: step.type,
+      description: '',
       type: step.type as JourneyStep['type'],
-      status: step.status as JourneyStep['status'],
-      order: step.order_index,
+      status: step.progress === 100 ? 'completed' : 'pending' as JourneyStep['status'],
+      order: step.step_order ?? 0,
       progress: step.progress ?? 0,
       completedAt: step.completed_at ? new Date(step.completed_at) : undefined,
     }));
@@ -206,14 +181,14 @@ function mapJourneyWithSteps(
   return {
     id: data.id,
     title: data.title,
-    description: data.description ?? '',
+    description: '',
     status: data.status as JourneyWithSteps['status'],
     templateId: data.template_id ?? undefined,
     childProfileId: data.child_profile_id,
     steps,
     progress: calculateProgress(steps),
     createdAt: new Date(data.created_at),
-    completedAt: data.completed_at ? new Date(data.completed_at) : undefined,
+    completedAt: undefined,
   };
 }
 

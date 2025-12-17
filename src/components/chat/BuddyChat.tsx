@@ -10,7 +10,7 @@ import { useRef, useEffect, useState, useMemo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useBuddyMessages, useChatBuddy, useSendBuddyMessage } from '@/hooks/queries/useBuddyChat';
 import { queryKeys } from '@/hooks/queries/keys';
-import { supabase } from '@/integrations/supabase/client';
+import { getSocket, joinChildRoom, leaveChildRoom, onNewMessage } from '@/integrations/api/socket';
 import { ChatMessage } from './ChatMessage';
 import { ChatInput } from './ChatInput';
 import { ChatAvatar, TypingIndicator } from './ChatAvatar';
@@ -144,33 +144,29 @@ export function BuddyChat({ childId, childName }: BuddyChatProps) {
   // Star count (would come from gamification service)
   const starCount = messages.length * 2 + 10;
 
-  // Real-time subscription for new messages
+  // Real-time subscription for new messages via Socket.io
   useEffect(() => {
     if (!childId) return;
 
-    const channel = supabase
-      .channel(`buddy-messages:${childId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'buddy_messages',
-          filter: `child_profile_id=eq.${childId}`,
-        },
-        () => {
-          queryClient.invalidateQueries({
-            queryKey: queryKeys.buddyChat.messages(childId),
-          });
-          queryClient.invalidateQueries({
-            queryKey: queryKeys.buddyChat.buddy(childId),
-          });
-        }
-      )
-      .subscribe();
+    const socket = getSocket();
+    if (!socket) return;
+
+    // Join the child's chat room
+    joinChildRoom(childId);
+
+    // Listen for new messages
+    const unsubscribe = onNewMessage(() => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.buddyChat.messages(childId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.buddyChat.buddy(childId),
+      });
+    });
 
     return () => {
-      supabase.removeChannel(channel);
+      leaveChildRoom(childId);
+      unsubscribe();
     };
   }, [childId, queryClient]);
 

@@ -2,9 +2,10 @@
  * Avatars Service
  *
  * Data access layer for avatar library operations.
+ * Uses Railway API instead of Supabase.
  */
 
-import { supabase } from '@/integrations/supabase/client';
+import { apiClient } from '@/integrations/api';
 import type { AvatarLibraryRow } from '@/types/database';
 import type { AvatarLibraryItem, AvatarCategory } from '@/types/domain';
 import { handleError } from '@/lib/errors';
@@ -18,24 +19,19 @@ export async function getAllAvatars(): Promise<AvatarLibraryItem[]> {
     return JSON.parse(cached) as AvatarLibraryItem[];
   }
 
-  const { data, error } = await supabase
-    .from('avatar_library')
-    .select('*')
-    .eq('is_active', true)
-    .order('category', { ascending: true })
-    .order('name', { ascending: true });
+  try {
+    const { data } = await apiClient.get<AvatarLibraryRow[]>('/avatars');
 
-  if (error) {
+    const avatars = (data ?? []).map(mapRowToAvatar);
+    await avatarCache.set(cacheKey, JSON.stringify(avatars));
+
+    return avatars;
+  } catch (error) {
     throw handleError(error, {
       context: 'avatars.getAllAvatars',
       strategy: 'throw',
     });
   }
-
-  const avatars = (data ?? []).map(mapRowToAvatar);
-  await avatarCache.set(cacheKey, JSON.stringify(avatars));
-
-  return avatars;
 }
 
 export async function getAvatarsByCategory(
@@ -48,35 +44,29 @@ export async function getAvatarsByCategory(
     return JSON.parse(cached) as AvatarLibraryItem[];
   }
 
-  const { data, error } = await supabase
-    .from('avatar_library')
-    .select('*')
-    .eq('category', category)
-    .eq('is_active', true)
-    .order('name', { ascending: true });
+  try {
+    const { data } = await apiClient.get<AvatarLibraryRow[]>('/avatars', {
+      params: { category },
+    });
 
-  if (error) {
+    const avatars = (data ?? []).map(mapRowToAvatar);
+    await avatarCache.set(cacheKey, JSON.stringify(avatars));
+
+    return avatars;
+  } catch (error) {
     throw handleError(error, {
       context: 'avatars.getAvatarsByCategory',
       strategy: 'throw',
     });
   }
-
-  const avatars = (data ?? []).map(mapRowToAvatar);
-  await avatarCache.set(cacheKey, JSON.stringify(avatars));
-
-  return avatars;
 }
 
 export async function getAvatarById(id: string): Promise<AvatarLibraryItem | null> {
-  const { data, error } = await supabase
-    .from('avatar_library')
-    .select('*')
-    .eq('id', id)
-    .single();
-
-  if (error) {
-    if (error.code === 'PGRST116') {
+  try {
+    const { data } = await apiClient.get<AvatarLibraryRow>(`/avatars/${id}`);
+    return mapRowToAvatar(data);
+  } catch (error: unknown) {
+    if ((error as { response?: { status?: number } })?.response?.status === 404) {
       return null;
     }
     throw handleError(error, {
@@ -84,8 +74,6 @@ export async function getAvatarById(id: string): Promise<AvatarLibraryItem | nul
       strategy: 'throw',
     });
   }
-
-  return mapRowToAvatar(data);
 }
 
 export async function getAvatarUrl(id: string): Promise<string | null> {
@@ -94,39 +82,29 @@ export async function getAvatarUrl(id: string): Promise<string | null> {
 }
 
 export async function getCategories(): Promise<AvatarCategory[]> {
-  const { data, error } = await supabase
-    .from('avatar_library')
-    .select('category')
-    .eq('is_active', true);
-
-  if (error) {
+  try {
+    const { data } = await apiClient.get<string[]>('/avatars/categories');
+    return (data ?? []) as AvatarCategory[];
+  } catch (error) {
     throw handleError(error, {
       context: 'avatars.getCategories',
       strategy: 'throw',
     });
   }
-
-  const categories = [...new Set((data ?? []).map((d) => d.category))];
-  return categories as AvatarCategory[];
 }
 
 export async function searchAvatars(query: string): Promise<AvatarLibraryItem[]> {
-  const { data, error } = await supabase
-    .from('avatar_library')
-    .select('*')
-    .eq('is_active', true)
-    .or(`name.ilike.%${query}%,description.ilike.%${query}%`)
-    .order('name', { ascending: true })
-    .limit(20);
-
-  if (error) {
+  try {
+    const { data } = await apiClient.get<AvatarLibraryRow[]>('/avatars', {
+      params: { search: query },
+    });
+    return (data ?? []).map(mapRowToAvatar);
+  } catch (error) {
     throw handleError(error, {
       context: 'avatars.searchAvatars',
       strategy: 'throw',
     });
   }
-
-  return (data ?? []).map(mapRowToAvatar);
 }
 
 export async function clearAvatarCache(): Promise<void> {
@@ -139,8 +117,8 @@ function mapRowToAvatar(row: AvatarLibraryRow): AvatarLibraryItem {
     name: row.name,
     category: row.category as AvatarCategory,
     imageUrl: row.image_url,
-    thumbnailUrl: row.thumbnail_url ?? row.image_url,
-    isAnimated: row.is_animated ?? false,
+    thumbnailUrl: row.image_url,
+    isAnimated: false,
     isPremium: row.is_premium ?? false,
     tags: row.tags ?? [],
   };

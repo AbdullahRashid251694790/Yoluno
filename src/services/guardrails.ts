@@ -2,9 +2,10 @@
  * Guardrails Service
  *
  * Data access layer for safety guardrail settings.
+ * Uses Railway API instead of Supabase.
  */
 
-import { supabase } from '@/integrations/supabase/client';
+import { apiClient } from '@/integrations/api';
 import type {
   GuardrailSettingsRow,
   GuardrailSettingsInsert,
@@ -17,14 +18,11 @@ import { handleError } from '@/lib/errors';
 export async function getGuardrailSettings(
   childId: string
 ): Promise<GuardrailSettings> {
-  const { data, error } = await supabase
-    .from('guardrail_settings')
-    .select('*')
-    .eq('child_profile_id', childId)
-    .single();
-
-  if (error) {
-    if (error.code === 'PGRST116') {
+  try {
+    const { data } = await apiClient.get<GuardrailSettingsRow>(`/guardrails/${childId}`);
+    return mapRowToSettings(data);
+  } catch (error: unknown) {
+    if ((error as { response?: { status?: number } })?.response?.status === 404) {
       return { ...DEFAULT_GUARDRAIL_SETTINGS } as GuardrailSettings;
     }
     throw handleError(error, {
@@ -32,61 +30,41 @@ export async function getGuardrailSettings(
       strategy: 'throw',
     });
   }
-
-  return mapRowToSettings(data);
 }
 
 export async function createGuardrailSettings(
   settings: GuardrailSettingsInsert
 ): Promise<GuardrailSettingsRow> {
-  const { data, error } = await supabase
-    .from('guardrail_settings')
-    .insert(settings)
-    .select()
-    .single();
-
-  if (error) {
+  try {
+    const { data } = await apiClient.post<GuardrailSettingsRow>(
+      `/guardrails/${settings.child_profile_id}`,
+      settings
+    );
+    return data;
+  } catch (error) {
     throw handleError(error, {
       context: 'guardrails.createGuardrailSettings',
       strategy: 'throw',
     });
   }
-
-  return data;
 }
 
 export async function updateGuardrailSettings(
   childId: string,
   updates: GuardrailSettingsUpdate
 ): Promise<GuardrailSettingsRow> {
-  const { data: existing } = await supabase
-    .from('guardrail_settings')
-    .select('id')
-    .eq('child_profile_id', childId)
-    .single();
-
-  if (!existing) {
-    return createGuardrailSettings({
-      child_profile_id: childId,
-      ...updates,
-    } as GuardrailSettingsInsert);
-  }
-
-  const { data, error } = await supabase
-    .from('guardrail_settings')
-    .update(updates)
-    .eq('child_profile_id', childId)
-    .select()
-    .single();
-
-  if (error) {
+  try {
+    const { data } = await apiClient.put<GuardrailSettingsRow>(
+      `/guardrails/${childId}`,
+      updates
+    );
+    return data;
+  } catch (error) {
     throw handleError(error, {
       context: 'guardrails.updateGuardrailSettings',
       strategy: 'throw',
     });
   }
-
-  return data;
 }
 
 export async function resetGuardrailSettings(childId: string): Promise<GuardrailSettingsRow> {
@@ -129,7 +107,7 @@ export async function removeBlockedTopic(
 
 function mapRowToSettings(row: GuardrailSettingsRow): GuardrailSettings {
   return {
-    safetyLevel: row.safety_level as GuardrailSettings['safetyLevel'],
+    safetyLevel: (row.safety_level ?? 'strict') as GuardrailSettings['safetyLevel'],
     allowedTopics: row.allowed_topics ?? [],
     blockedTopics: row.blocked_topics ?? [],
     maxSessionMinutes: row.max_session_minutes ?? 30,

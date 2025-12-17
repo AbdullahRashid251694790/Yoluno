@@ -80,6 +80,10 @@ export const createFamilyMemberSchema = z.object({
   occupation: z.string().max(100).optional(),
   bio: z.string().max(2000).optional(),
   isLiving: z.boolean().default(true),
+  hobbies: z.array(z.string().max(50)).max(20).optional(),
+  funFacts: z.string().max(2000).optional(),
+  connectionDescription: z.string().max(200).optional(),
+  photoDescription: z.string().max(1000).optional(),
 });
 
 export type CreateFamilyMemberFormData = z.infer<typeof createFamilyMemberSchema>;

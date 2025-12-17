@@ -2,9 +2,10 @@
  * Text-to-Speech Service
  *
  * Client-side service for TTS functionality.
+ * Uses Railway API instead of Supabase.
  */
 
-import { supabase } from '@/integrations/supabase/client';
+import { apiClient } from '@/integrations/api';
 import { handleError } from '@/lib/errors';
 
 export type TTSVoice = 'alloy' | 'echo' | 'fable' | 'onyx' | 'nova' | 'shimmer';
@@ -17,33 +18,29 @@ export interface TTSOptions {
 
 export interface TTSResponse {
   audio: string; // base64 encoded
-  format: string;
-  textLength: number;
+  contentType: string;
 }
 
 export async function generateSpeech(
   text: string,
   options: TTSOptions = {}
 ): Promise<TTSResponse> {
-  const { voice = 'nova', speed = 1.0, childProfileId } = options;
+  const { voice = 'nova', speed = 1.0 } = options;
 
-  const { data, error } = await supabase.functions.invoke('text-to-speech', {
-    body: {
+  try {
+    const { data } = await apiClient.post<TTSResponse>('/tts', {
       text,
       voice,
       speed,
-      childProfileId,
-    },
-  });
+    });
 
-  if (error) {
+    return data;
+  } catch (error) {
     throw handleError(error, {
       context: 'textToSpeech.generateSpeech',
       strategy: 'throw',
     });
   }
-
-  return data as TTSResponse;
 }
 
 export function playAudioFromBase64(base64Audio: string): HTMLAudioElement {

@@ -2,6 +2,7 @@
  * Auth Context
  *
  * Provides authentication state and methods throughout the app.
+ * Uses self-hosted JWT authentication instead of Supabase Auth.
  */
 
 import {
@@ -12,13 +13,25 @@ import {
   useCallback,
   type ReactNode,
 } from 'react';
-import type { User, Session } from '@supabase/supabase-js';
-import { supabase } from '@/integrations/supabase/client';
+import {
+  login as apiLogin,
+  register as apiRegister,
+  logout as apiLogout,
+  getSession,
+  forgotPassword,
+  updatePassword as apiUpdatePassword,
+  isAuthenticated as checkIsAuthenticated,
+  type User,
+} from '@/integrations/api';
+import {
+  initSocket,
+  disconnectSocket,
+  reconnectSocket,
+} from '@/integrations/api/socket';
 import { handleError } from '@/lib/errors';
 
 interface AuthState {
   user: User | null;
-  session: Session | null;
   isLoading: boolean;
   isAuthenticated: boolean;
 }
@@ -28,7 +41,7 @@ interface AuthContextValue extends AuthState {
   signUp: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
-  updatePassword: (newPassword: string) => Promise<void>;
+  updatePassword: (currentPassword: string, newPassword: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -40,44 +53,69 @@ interface AuthProviderProps {
 export function AuthProvider({ children }: AuthProviderProps) {
   const [state, setState] = useState<AuthState>({
     user: null,
-    session: null,
     isLoading: true,
     isAuthenticated: false,
   });
 
+  // Check for existing session on mount
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setState({
-        user: session?.user ?? null,
-        session,
-        isLoading: false,
-        isAuthenticated: !!session?.user,
-      });
-    });
+    async function checkSession() {
+      // Quick check for tokens
+      if (!checkIsAuthenticated()) {
+        setState({
+          user: null,
+          isLoading: false,
+          isAuthenticated: false,
+        });
+        return;
+      }
 
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setState({
-        user: session?.user ?? null,
-        session,
-        isLoading: false,
-        isAuthenticated: !!session?.user,
-      });
-    });
+      try {
+        const session = await getSession();
+        if (session?.user) {
+          setState({
+            user: session.user,
+            isLoading: false,
+            isAuthenticated: true,
+          });
+          // Initialize socket connection
+          initSocket();
+        } else {
+          setState({
+            user: null,
+            isLoading: false,
+            isAuthenticated: false,
+          });
+        }
+      } catch (error) {
+        console.error('Failed to restore session:', error);
+        setState({
+          user: null,
+          isLoading: false,
+          isAuthenticated: false,
+        });
+      }
+    }
 
-    return () => subscription.unsubscribe();
+    checkSession();
+
+    // Cleanup socket on unmount
+    return () => {
+      disconnectSocket();
+    };
   }, []);
 
   const signIn = useCallback(async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (error) {
+    try {
+      const response = await apiLogin(email, password);
+      setState({
+        user: response.user,
+        isLoading: false,
+        isAuthenticated: true,
+      });
+      // Initialize socket with new token
+      reconnectSocket();
+    } catch (error) {
       throw handleError(error, {
         context: 'AuthContext.signIn',
         strategy: 'throw',
@@ -86,45 +124,46 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, []);
 
   const signUp = useCallback(async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/dashboard`,
-      },
-    });
-
-    if (error) {
+    try {
+      const response = await apiRegister(email, password);
+      setState({
+        user: response.user,
+        isLoading: false,
+        isAuthenticated: true,
+      });
+      // Initialize socket
+      reconnectSocket();
+    } catch (error) {
       console.error('Signup error:', error);
       throw handleError(error, {
         context: 'AuthContext.signUp',
         strategy: 'throw',
       });
     }
-
-    // Check if user was created but needs email confirmation
-    if (data?.user && !data.session) {
-      console.log('User created, email confirmation required');
-    }
   }, []);
 
   const signOut = useCallback(async () => {
-    const { error } = await supabase.auth.signOut();
-
-    if (error) {
+    try {
+      await apiLogout();
+    } catch (error) {
       handleError(error, {
         context: 'AuthContext.signOut',
         userMessage: 'Failed to sign out',
       });
+    } finally {
+      setState({
+        user: null,
+        isLoading: false,
+        isAuthenticated: false,
+      });
+      disconnectSocket();
     }
   }, []);
 
   const resetPassword = useCallback(async (email: string) => {
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
-
-    if (error) {
+    try {
+      await forgotPassword(email);
+    } catch (error) {
       throw handleError(error, {
         context: 'AuthContext.resetPassword',
         strategy: 'throw',
@@ -132,12 +171,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }, []);
 
-  const updatePassword = useCallback(async (newPassword: string) => {
-    const { error } = await supabase.auth.updateUser({
-      password: newPassword,
-    });
-
-    if (error) {
+  const updatePassword = useCallback(async (currentPassword: string, newPassword: string) => {
+    try {
+      await apiUpdatePassword(currentPassword, newPassword);
+      // After password change, user is logged out
+      setState({
+        user: null,
+        isLoading: false,
+        isAuthenticated: false,
+      });
+      disconnectSocket();
+    } catch (error) {
       throw handleError(error, {
         context: 'AuthContext.updatePassword',
         strategy: 'throw',

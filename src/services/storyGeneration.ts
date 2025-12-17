@@ -2,9 +2,10 @@
  * Story Generation Service
  *
  * Client-side service for AI story generation.
+ * Uses Railway API instead of Supabase.
  */
 
-import { supabase } from '@/integrations/supabase/client';
+import { apiClient } from '@/integrations/api';
 import { handleError } from '@/lib/errors';
 
 export interface StoryGenerationRequest {
@@ -37,35 +38,40 @@ export interface StoryGenerationResponse {
 export async function generateStory(
   request: StoryGenerationRequest
 ): Promise<GeneratedStory & { warning?: string }> {
-  const { data, error } = await supabase.functions.invoke('generate-story', {
-    body: request,
-  });
+  try {
+    const { data } = await apiClient.post<StoryGenerationResponse>('/generate-story', {
+      child_profile_id: request.childProfileId,
+      theme: request.theme,
+      characters: request.characters,
+      mood: request.mood,
+      values: request.values,
+      storyLength: request.storyLength,
+      includeFamily: request.includeFamily,
+    });
 
-  if (error) {
-    console.error('Story generation error:', error, data);
+    // Check for error in response data
+    if ((data as unknown as { error?: string })?.error) {
+      const errorData = data as unknown as { error: string; details?: string };
+      console.error('Story generation API error:', errorData.error, errorData.details);
+      throw new Error(errorData.details || errorData.error);
+    }
+
+    // Log warning if story wasn't saved
+    if (data.warning) {
+      console.warn('Story generation warning:', data.warning, data.saveError);
+    }
+
+    return {
+      ...data.story,
+      warning: data.warning,
+    };
+  } catch (error) {
+    console.error('Story generation error:', error);
     throw handleError(error, {
       context: 'storyGeneration.generateStory',
       strategy: 'throw',
     });
   }
-
-  // Check for error in response data
-  if (data?.error) {
-    console.error('Story generation API error:', data.error, data.details);
-    throw new Error(data.details || data.error);
-  }
-
-  const response = data as StoryGenerationResponse;
-
-  // Log warning if story wasn't saved
-  if (response.warning) {
-    console.warn('Story generation warning:', response.warning, response.saveError);
-  }
-
-  return {
-    ...response.story,
-    warning: response.warning,
-  };
 }
 
 // Theme suggestions by age group

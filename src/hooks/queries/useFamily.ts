@@ -161,3 +161,74 @@ export function useDeleteRelationship() {
     },
   });
 }
+
+export function useUploadFamilyPhoto() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      userId,
+      memberId,
+      file,
+    }: {
+      userId: string;
+      memberId: string;
+      file: File;
+    }) => familyService.uploadPhoto(userId, memberId, file),
+    onSuccess: (photoUrl, { userId }) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.family.members(userId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.family.tree(userId),
+      });
+      return photoUrl;
+    },
+    onError: (error) => {
+      handleError(error, {
+        context: 'useUploadFamilyPhoto',
+        userMessage: 'Failed to upload photo',
+      });
+    },
+  });
+}
+
+export function useDeleteFamilyPhoto() {
+  return useMutation({
+    mutationFn: (photoUrl: string) => familyService.deletePhoto(photoUrl),
+    onError: (error) => {
+      handleError(error, {
+        context: 'useDeleteFamilyPhoto',
+        userMessage: 'Failed to delete photo',
+      });
+    },
+  });
+}
+
+export function useUpdateTreePositions() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      userId,
+      positions,
+    }: {
+      userId: string;
+      positions: Array<{ memberId: string; positionX: number; positionY: number }>;
+    }) => familyService.updateTreePositions(userId, positions),
+    onSuccess: (_, { userId }) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.family.members(userId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.family.tree(userId),
+      });
+    },
+    onError: (error) => {
+      handleError(error, {
+        context: 'useUpdateTreePositions',
+        userMessage: 'Failed to save tree positions',
+      });
+    },
+  });
+}

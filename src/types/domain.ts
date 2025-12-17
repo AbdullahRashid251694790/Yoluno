@@ -184,6 +184,13 @@ export interface FamilyMember {
   bio?: string;
   photoUrl?: string;
   isLiving: boolean;
+  hobbies?: string[];
+  funFacts?: string;
+  connectionDescription?: string;
+  photoDescription?: string;
+  generationLevel?: number;
+  positionX?: number;
+  positionY?: number;
 }
 
 export interface FamilyRelationship {

@@ -2,9 +2,10 @@
  * Child Profiles Service
  *
  * Data access layer for child profile operations.
+ * Uses Railway API instead of Supabase.
  */
 
-import { supabase } from '@/integrations/supabase/client';
+import { apiClient, getErrorMessage } from '@/integrations/api';
 import type {
   ChildProfileRow,
   ChildProfileInsert,
@@ -17,31 +18,26 @@ export interface ChildProfileWithAvatar extends ChildProfileRow {
 }
 
 export async function getChildProfiles(userId: string): Promise<ChildProfileWithAvatar[]> {
-  const { data, error } = await supabase
-    .from('child_profiles')
-    .select('*')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false });
-
-  if (error) {
+  try {
+    const { data } = await apiClient.get<ChildProfileWithAvatar[]>('/child-profiles', {
+      params: { userId },
+    });
+    return data ?? [];
+  } catch (error) {
     throw handleError(error, {
       context: 'childProfiles.getChildProfiles',
       strategy: 'throw',
     });
   }
-
-  return data ?? [];
 }
 
 export async function getChildProfileById(id: string): Promise<ChildProfileWithAvatar | null> {
-  const { data, error } = await supabase
-    .from('child_profiles')
-    .select('*')
-    .eq('id', id)
-    .single();
-
-  if (error) {
-    if (error.code === 'PGRST116') {
+  try {
+    const { data } = await apiClient.get<ChildProfileWithAvatar>(`/child-profiles/${id}`);
+    return data;
+  } catch (error: unknown) {
+    // Handle 404 as null
+    if ((error as { response?: { status?: number } })?.response?.status === 404) {
       return null;
     }
     throw handleError(error, {
@@ -49,57 +45,41 @@ export async function getChildProfileById(id: string): Promise<ChildProfileWithA
       strategy: 'throw',
     });
   }
-
-  return data;
 }
 
 export async function createChildProfile(
   profile: ChildProfileInsert
 ): Promise<ChildProfileRow> {
-  const { data, error } = await supabase
-    .from('child_profiles')
-    .insert(profile)
-    .select()
-    .single();
-
-  if (error) {
+  try {
+    const { data } = await apiClient.post<ChildProfileRow>('/child-profiles', profile);
+    return data;
+  } catch (error) {
     throw handleError(error, {
       context: 'childProfiles.createChildProfile',
       strategy: 'throw',
     });
   }
-
-  return data;
 }
 
 export async function updateChildProfile(
   id: string,
   updates: ChildProfileUpdate
 ): Promise<ChildProfileRow> {
-  const { data, error } = await supabase
-    .from('child_profiles')
-    .update(updates)
-    .eq('id', id)
-    .select()
-    .single();
-
-  if (error) {
+  try {
+    const { data } = await apiClient.put<ChildProfileRow>(`/child-profiles/${id}`, updates);
+    return data;
+  } catch (error) {
     throw handleError(error, {
       context: 'childProfiles.updateChildProfile',
       strategy: 'throw',
     });
   }
-
-  return data;
 }
 
 export async function deleteChildProfile(id: string): Promise<void> {
-  const { error } = await supabase
-    .from('child_profiles')
-    .delete()
-    .eq('id', id);
-
-  if (error) {
+  try {
+    await apiClient.delete(`/child-profiles/${id}`);
+  } catch (error) {
     throw handleError(error, {
       context: 'childProfiles.deleteChildProfile',
       strategy: 'throw',
@@ -115,12 +95,9 @@ export async function updateChildAvatar(
 }
 
 export async function updateLastActive(id: string): Promise<void> {
-  const { error } = await supabase
-    .from('child_profiles')
-    .update({ last_active_at: new Date().toISOString() })
-    .eq('id', id);
-
-  if (error) {
+  try {
+    await apiClient.post(`/child-profiles/${id}/activity`);
+  } catch (error) {
     handleError(error, {
       context: 'childProfiles.updateLastActive',
       strategy: 'log',

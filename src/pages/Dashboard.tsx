@@ -9,6 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useChildProfiles } from '@/hooks/queries/useChildProfiles';
 import { useSafetyReports } from '@/hooks/queries/useBuddyChat';
 import { SafetyDashboardPage } from './SafetyDashboard';
+import { FamilyTreePage } from '@/components/dashboard/family';
 import { SafetyAlertNotification } from '@/components/dashboard/safety';
 import { ChildProfileCard } from '@/components/dashboard/children/ChildProfileCard';
 import { CreateChildDialog } from '@/components/dashboard/children/CreateChildDialog';
@@ -33,6 +34,7 @@ import {
   Plus,
   ChevronRight,
   Sparkles,
+  TreePine,
 } from 'lucide-react';
 import yolunoLogo from '@/assets/yoluno-logo.svg';
 
@@ -425,6 +427,7 @@ function SettingsPage() {
 const navItems = [
   { path: '/dashboard', label: 'Home', icon: Home },
   { path: '/dashboard/children', label: 'Children', icon: Users },
+  { path: '/dashboard/family', label: 'Family', icon: TreePine },
   { path: '/dashboard/stories', label: 'Stories', icon: BookOpen },
   { path: '/dashboard/journeys', label: 'Journeys', icon: Map },
   { path: '/dashboard/safety', label: 'Safety', icon: Shield },
@@ -505,6 +508,7 @@ export function DashboardPage() {
           <Routes>
             <Route path="/" element={<DashboardHome />} />
             <Route path="/children" element={<ChildrenPage />} />
+            <Route path="/family" element={<FamilyTreePage />} />
             <Route path="/stories" element={<StoriesPage />} />
             <Route path="/journeys" element={<JourneysPage />} />
             <Route path="/safety" element={<SafetyDashboardPage />} />

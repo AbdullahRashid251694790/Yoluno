@@ -10,7 +10,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSafetyReports } from '@/hooks/queries/useBuddyChat';
 import { queryKeys } from '@/hooks/queries/keys';
-import { supabase } from '@/integrations/supabase/client';
+import { getSocket, onSafetyAlert } from '@/integrations/api/socket';
 import { useToast } from '@/hooks/use-toast';
 import { AlertTriangle } from 'lucide-react';
 import type { SafetyReport } from '@/services/buddyChat';
@@ -28,73 +28,64 @@ export function SafetyAlertNotification() {
   // Get unread reports to check for initial state
   const { data: unreadReports = [] } = useSafetyReports(user?.id, true);
 
-  // Set up real-time subscription for new safety reports
+  // Set up real-time subscription for new safety reports via Socket.io
   useEffect(() => {
     if (!user?.id) return;
 
-    const channel = supabase
-      .channel(`safety-reports:${user.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'safety_reports',
-          filter: `user_id=eq.${user.id}`,
-        },
-        (payload) => {
-          const newReport = payload.new as SafetyReport;
+    const socket = getSocket();
+    if (!socket) return;
 
-          // Avoid duplicate notifications
-          if (lastReportId === newReport.id) return;
-          setLastReportId(newReport.id);
+    const unsubscribe = onSafetyAlert((payload: unknown) => {
+      const newReport = payload as SafetyReport;
 
-          // Only show notification for RED flags
-          if (newReport.severity === 'red') {
-            toast({
-              title: 'Safety Alert - Immediate Attention Required',
-              description: newReport.issue_summary,
-              variant: 'destructive',
-              duration: 10000, // 10 seconds
-              action: {
-                altText: 'View Report',
-                onClick: () => {
-                  window.location.href = '/dashboard/safety';
-                },
-              },
-            });
+      // Avoid duplicate notifications
+      if (lastReportId === newReport.id) return;
+      setLastReportId(newReport.id);
 
-            // Play notification sound (optional)
-            if ('Notification' in window && Notification.permission === 'granted') {
-              new Notification('Yoluno Safety Alert', {
-                body: newReport.issue_summary,
-                icon: '/logo.png',
-                badge: '/logo.png',
-                tag: `safety-${newReport.id}`,
-              });
-            }
-          } else if (newReport.severity === 'yellow') {
-            // Yellow flags get a less intrusive notification
-            toast({
-              title: 'Safety Notice',
-              description: newReport.issue_summary,
-              duration: 5000,
-            });
-          }
+      // Only show notification for RED flags
+      if (newReport.severity === 'red') {
+        toast({
+          title: 'Safety Alert - Immediate Attention Required',
+          description: newReport.issue_summary,
+          variant: 'destructive',
+          duration: 10000, // 10 seconds
+          action: {
+            altText: 'View Report',
+            onClick: () => {
+              window.location.href = '/dashboard/safety';
+            },
+          },
+        });
 
-          // Invalidate safety reports query to refetch
-          queryClient.invalidateQueries({
-            queryKey: queryKeys.buddyChat.safetyReports(user.id, false),
-          });
-          queryClient.invalidateQueries({
-            queryKey: queryKeys.buddyChat.safetyReports(user.id, true),
+        // Play notification sound (optional)
+        if ('Notification' in window && Notification.permission === 'granted') {
+          new Notification('Yoluno Safety Alert', {
+            body: newReport.issue_summary,
+            icon: '/logo.png',
+            badge: '/logo.png',
+            tag: `safety-${newReport.id}`,
           });
         }
-      )
-      .subscribe();
+      } else if (newReport.severity === 'yellow') {
+        // Yellow flags get a less intrusive notification
+        toast({
+          title: 'Safety Notice',
+          description: newReport.issue_summary,
+          duration: 5000,
+        });
+      }
+
+      // Invalidate safety reports query to refetch
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.buddyChat.safetyReports(user.id, false),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.buddyChat.safetyReports(user.id, true),
+      });
+    });
 
     return () => {
-      supabase.removeChannel(channel);
+      unsubscribe();
     };
   }, [user?.id, toast, queryClient, lastReportId]);
 

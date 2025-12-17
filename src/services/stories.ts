@@ -2,9 +2,10 @@
  * Stories Service
  *
  * Data access layer for story operations.
+ * Uses Railway API instead of Supabase.
  */
 
-import { supabase } from '@/integrations/supabase/client';
+import { apiClient } from '@/integrations/api';
 import type { StoryRow, StoryInsert, StoryUpdate } from '@/types/database';
 import { handleError } from '@/lib/errors';
 
@@ -24,33 +25,27 @@ export interface StoryScene {
 export async function getStoriesByChild(childId: string): Promise<StoryWithDetails[]> {
   console.log('getStoriesByChild: Fetching stories for child:', childId);
 
-  const { data, error } = await supabase
-    .from('stories')
-    .select('*')
-    .eq('child_profile_id', childId)
-    .order('created_at', { ascending: false });
+  try {
+    const { data } = await apiClient.get<StoryWithDetails[]>('/stories', {
+      params: { childId },
+    });
 
-  console.log('getStoriesByChild: Result:', { data, error, count: data?.length });
-
-  if (error) {
+    console.log('getStoriesByChild: Result:', { count: data?.length });
+    return data ?? [];
+  } catch (error) {
     throw handleError(error, {
       context: 'stories.getStoriesByChild',
       strategy: 'throw',
     });
   }
-
-  return data ?? [];
 }
 
 export async function getStoryById(id: string): Promise<StoryWithDetails | null> {
-  const { data, error } = await supabase
-    .from('stories')
-    .select('*')
-    .eq('id', id)
-    .single();
-
-  if (error) {
-    if (error.code === 'PGRST116') {
+  try {
+    const { data } = await apiClient.get<StoryWithDetails>(`/stories/${id}`);
+    return data;
+  } catch (error: unknown) {
+    if ((error as { response?: { status?: number } })?.response?.status === 404) {
       return null;
     }
     throw handleError(error, {
@@ -58,55 +53,39 @@ export async function getStoryById(id: string): Promise<StoryWithDetails | null>
       strategy: 'throw',
     });
   }
-
-  return data;
 }
 
 export async function createStory(story: StoryInsert): Promise<StoryRow> {
-  const { data, error } = await supabase
-    .from('stories')
-    .insert(story)
-    .select()
-    .single();
-
-  if (error) {
+  try {
+    const { data } = await apiClient.post<StoryRow>('/stories', story);
+    return data;
+  } catch (error) {
     throw handleError(error, {
       context: 'stories.createStory',
       strategy: 'throw',
     });
   }
-
-  return data;
 }
 
 export async function updateStory(
   id: string,
   updates: StoryUpdate
 ): Promise<StoryRow> {
-  const { data, error } = await supabase
-    .from('stories')
-    .update(updates)
-    .eq('id', id)
-    .select()
-    .single();
-
-  if (error) {
+  try {
+    const { data } = await apiClient.put<StoryRow>(`/stories/${id}`, updates);
+    return data;
+  } catch (error) {
     throw handleError(error, {
       context: 'stories.updateStory',
       strategy: 'throw',
     });
   }
-
-  return data;
 }
 
 export async function deleteStory(id: string): Promise<void> {
-  const { error } = await supabase
-    .from('stories')
-    .delete()
-    .eq('id', id);
-
-  if (error) {
+  try {
+    await apiClient.delete(`/stories/${id}`);
+  } catch (error) {
     throw handleError(error, {
       context: 'stories.deleteStory',
       strategy: 'throw',
@@ -115,52 +94,48 @@ export async function deleteStory(id: string): Promise<void> {
 }
 
 export async function toggleFavorite(id: string, isFavorite: boolean): Promise<StoryRow> {
-  return updateStory(id, { is_favorite: isFavorite });
+  try {
+    const { data } = await apiClient.put<StoryRow>(`/stories/${id}/favorite`, {
+      is_favorite: isFavorite,
+    });
+    return data;
+  } catch (error) {
+    throw handleError(error, {
+      context: 'stories.toggleFavorite',
+      strategy: 'throw',
+    });
+  }
 }
 
 export async function getFavoriteStories(childId: string): Promise<StoryWithDetails[]> {
-  const { data, error } = await supabase
-    .from('stories')
-    .select('*')
-    .eq('child_profile_id', childId)
-    .eq('is_favorite', true)
-    .order('created_at', { ascending: false });
-
-  if (error) {
+  try {
+    const { data } = await apiClient.get<StoryWithDetails[]>('/stories/favorites', {
+      params: { childId },
+    });
+    return data ?? [];
+  } catch (error) {
     throw handleError(error, {
       context: 'stories.getFavoriteStories',
       strategy: 'throw',
     });
   }
-
-  return data ?? [];
 }
 
 export async function getRecentStories(
   userId: string,
   limit = 10
 ): Promise<StoryWithDetails[]> {
-  const { data, error } = await supabase
-    .from('stories')
-    .select(`
-      *,
-      child_profiles!inner(user_id, name)
-    `)
-    .eq('child_profiles.user_id', userId)
-    .order('created_at', { ascending: false })
-    .limit(limit);
-
-  if (error) {
+  try {
+    const { data } = await apiClient.get<StoryWithDetails[]>('/stories/recent', {
+      params: { limit },
+    });
+    return data ?? [];
+  } catch (error) {
     throw handleError(error, {
       context: 'stories.getRecentStories',
       strategy: 'throw',
     });
   }
-
-  return (data ?? []).map((story) => ({
-    ...story,
-    childName: (story.child_profiles as { name: string })?.name,
-  }));
 }
 
 export const storiesService = {

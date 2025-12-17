@@ -2,9 +2,10 @@
  * Buddy Chat Service
  *
  * Data access layer for buddy chat operations.
+ * Uses Railway API instead of Supabase.
  */
 
-import { supabase } from '@/integrations/supabase/client';
+import { apiClient } from '@/integrations/api';
 import { handleError } from '@/lib/errors';
 
 export interface BuddyChatMessage {
@@ -43,8 +44,8 @@ export interface ChatBuddy {
     educational: number;
     empathetic: number;
   };
-  conversation_context: any[];
-  learned_preferences: Record<string, any>;
+  conversation_context: unknown[];
+  learned_preferences: Record<string, unknown>;
   total_messages: number;
   last_interaction_at: string | null;
   created_at: string;
@@ -73,19 +74,19 @@ export interface SafetyReport {
 export async function sendMessageToBuddy(
   params: BuddyChatMessage
 ): Promise<BuddyResponse> {
-  const { data, error } = await supabase.functions.invoke('buddy-chat', {
-    body: params,
-  });
-
-  if (error) {
+  try {
+    const { data } = await apiClient.post<BuddyResponse>(
+      `/buddy-chat/${params.childId}/send`,
+      { message: params.message }
+    );
+    return data;
+  } catch (error) {
     throw handleError(error, {
       context: 'buddyChat.sendMessage',
       userMessage: 'Failed to send message to buddy',
       strategy: 'throw',
     });
   }
-
-  return data;
 }
 
 /**
@@ -95,35 +96,29 @@ export async function getBuddyMessages(
   childId: string,
   limit = 50
 ): Promise<BuddyMessage[]> {
-  const { data, error } = await supabase
-    .from('buddy_messages')
-    .select('*')
-    .eq('child_profile_id', childId)
-    .order('created_at', { ascending: true })
-    .limit(limit);
-
-  if (error) {
+  try {
+    const { data } = await apiClient.get<BuddyMessage[]>(
+      `/buddy-chat/${childId}/messages`,
+      { params: { limit } }
+    );
+    return data ?? [];
+  } catch (error) {
     throw handleError(error, {
       context: 'buddyChat.getMessages',
       strategy: 'throw',
     });
   }
-
-  return data ?? [];
 }
 
 /**
  * Get chat buddy for a child
  */
 export async function getChatBuddy(childId: string): Promise<ChatBuddy | null> {
-  const { data, error } = await supabase
-    .from('chat_buddies')
-    .select('*')
-    .eq('child_profile_id', childId)
-    .single();
-
-  if (error) {
-    if (error.code === 'PGRST116') {
+  try {
+    const { data } = await apiClient.get<ChatBuddy>(`/buddy-chat/${childId}/buddy`);
+    return data;
+  } catch (error: unknown) {
+    if ((error as { response?: { status?: number } })?.response?.status === 404) {
       return null;
     }
     throw handleError(error, {
@@ -131,8 +126,6 @@ export async function getChatBuddy(childId: string): Promise<ChatBuddy | null> {
       strategy: 'throw',
     });
   }
-
-  return data;
 }
 
 /**
@@ -142,21 +135,18 @@ export async function updateBuddyPersonality(
   buddyId: string,
   traits: Partial<ChatBuddy['personality_traits']>
 ): Promise<ChatBuddy> {
-  const { data, error } = await supabase
-    .from('chat_buddies')
-    .update({ personality_traits: traits })
-    .eq('id', buddyId)
-    .select()
-    .single();
-
-  if (error) {
+  try {
+    const { data } = await apiClient.put<ChatBuddy>(
+      `/buddy-chat/buddies/${buddyId}`,
+      { personality_traits: traits }
+    );
+    return data;
+  } catch (error) {
     throw handleError(error, {
       context: 'buddyChat.updatePersonality',
       strategy: 'throw',
     });
   }
-
-  return data;
 }
 
 /**
@@ -166,21 +156,18 @@ export async function updateBuddyName(
   buddyId: string,
   name: string
 ): Promise<ChatBuddy> {
-  const { data, error } = await supabase
-    .from('chat_buddies')
-    .update({ buddy_name: name })
-    .eq('id', buddyId)
-    .select()
-    .single();
-
-  if (error) {
+  try {
+    const { data } = await apiClient.put<ChatBuddy>(
+      `/buddy-chat/buddies/${buddyId}`,
+      { buddy_name: name }
+    );
+    return data;
+  } catch (error) {
     throw handleError(error, {
       context: 'buddyChat.updateName',
       strategy: 'throw',
     });
   }
-
-  return data;
 }
 
 /**
@@ -190,26 +177,17 @@ export async function getSafetyReports(
   userId: string,
   unreadOnly = false
 ): Promise<SafetyReport[]> {
-  let query = supabase
-    .from('safety_reports')
-    .select('*')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false });
-
-  if (unreadOnly) {
-    query = query.eq('reviewed', false);
-  }
-
-  const { data, error } = await query;
-
-  if (error) {
+  try {
+    const { data } = await apiClient.get<SafetyReport[]>('/buddy-chat/safety-reports', {
+      params: { unreviewed: unreadOnly ? 'true' : undefined },
+    });
+    return data ?? [];
+  } catch (error) {
     throw handleError(error, {
       context: 'buddyChat.getSafetyReports',
       strategy: 'throw',
     });
   }
-
-  return data ?? [];
 }
 
 /**
@@ -219,37 +197,27 @@ export async function markSafetyReportReviewed(
   reportId: string,
   notes?: string
 ): Promise<SafetyReport> {
-  const { data, error } = await supabase
-    .from('safety_reports')
-    .update({
-      reviewed: true,
-      reviewed_at: new Date().toISOString(),
-      parent_notes: notes,
-    })
-    .eq('id', reportId)
-    .select()
-    .single();
-
-  if (error) {
+  try {
+    const { data } = await apiClient.put<SafetyReport>(
+      `/buddy-chat/safety-reports/${reportId}`,
+      { reviewed: true, parent_notes: notes }
+    );
+    return data;
+  } catch (error) {
     throw handleError(error, {
       context: 'buddyChat.markReviewed',
       strategy: 'throw',
     });
   }
-
-  return data;
 }
 
 /**
  * Clear chat history (only keeps buddy context)
  */
 export async function clearChatHistory(childId: string): Promise<void> {
-  const { error } = await supabase
-    .from('buddy_messages')
-    .delete()
-    .eq('child_profile_id', childId);
-
-  if (error) {
+  try {
+    await apiClient.delete(`/buddy-chat/${childId}/messages`);
+  } catch (error) {
     throw handleError(error, {
       context: 'buddyChat.clearHistory',
       strategy: 'throw',
