@@ -12,7 +12,6 @@ import { ChildProvider } from '@/contexts/ChildContext';
 import { ChatProvider } from '@/contexts/ChatContext';
 
 // Pages
-import { LandingPage } from '@/pages/Landing';
 import { LoginPage } from '@/pages/Login';
 import { SignupPage } from '@/pages/Signup';
 import { DashboardPage } from '@/pages/Dashboard';
@@ -70,7 +69,7 @@ export default function App() {
             <BrowserRouter>
               <Routes>
                 {/* Public routes */}
-                <Route path="/" element={<LandingPage />} />
+                <Route path="/" element={<Navigate to="/dashboard" replace />} />
                 <Route
                   path="/login"
                   element={
