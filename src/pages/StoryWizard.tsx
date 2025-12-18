@@ -9,6 +9,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useChildProfile, queryKeys } from '@/hooks/queries';
 import { generateStory, getThemeSuggestions, storyMoods, storyValues } from '@/services/storyGeneration';
+import { type TTSVoice, getRecommendedVoice } from '@/services/textToSpeech';
 import { LoadingState, ErrorState } from '@/components/shared';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -28,6 +29,7 @@ import {
   BookOpen,
   Loader2,
   Check,
+  Volume2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -81,6 +83,16 @@ const valueEmojis: Record<string, string> = {
   creativity: '🎨',
 };
 
+// Voice options for narration
+const voiceOptions: { value: TTSVoice; label: string; description: string }[] = [
+  { value: 'shimmer', label: 'Shimmer', description: 'Warm & friendly' },
+  { value: 'nova', label: 'Nova', description: 'Clear & engaging' },
+  { value: 'alloy', label: 'Alloy', description: 'Balanced & natural' },
+  { value: 'echo', label: 'Echo', description: 'Calm & soothing' },
+  { value: 'fable', label: 'Fable', description: 'Expressive & dramatic' },
+  { value: 'onyx', label: 'Onyx', description: 'Deep & resonant' },
+];
+
 interface StoryWizardState {
   theme: string;
   customTheme: string;
@@ -90,6 +102,7 @@ interface StoryWizardState {
   values: string[];
   includeFamily: boolean;
   storyLength: 'short' | 'medium' | 'long';
+  narratorVoice: TTSVoice;
 }
 
 export function StoryWizardPage() {
@@ -116,6 +129,7 @@ export function StoryWizardPage() {
     values: [],
     includeFamily: false,
     storyLength: 'medium',
+    narratorVoice: child ? getRecommendedVoice(child.age) : 'nova',
   });
 
   const themes = child ? getThemeSuggestions(child.age) : [];
@@ -173,7 +187,14 @@ export function StoryWizardPage() {
         illustrationUrl: story.illustrationUrl,
       });
 
-      console.log('Story generated:', { story, id: story.id, warning: story.warning, childId });
+      // Store voice preference for this story in localStorage
+      if (story.id) {
+        const voicePrefs = JSON.parse(localStorage.getItem('storyVoicePrefs') || '{}');
+        voicePrefs[story.id] = wizardState.narratorVoice;
+        localStorage.setItem('storyVoicePrefs', JSON.stringify(voicePrefs));
+      }
+
+      console.log('Story generated:', { story, id: story.id, warning: story.warning, childId, voice: wizardState.narratorVoice });
 
       if (story.warning) {
         toast.warning('Story created but not saved', {
@@ -379,6 +400,32 @@ export function StoryWizardPage() {
                 ))}
               </div>
             </div>
+            <div className="pt-4">
+              <Label className="flex items-center gap-2">
+                <Volume2 className="h-4 w-4" />
+                Narrator Voice
+              </Label>
+              <p className="text-muted-foreground text-xs mt-1 mb-2">
+                Choose a voice for reading the story aloud
+              </p>
+              <div className="grid grid-cols-3 gap-2">
+                {voiceOptions.map((voice) => (
+                  <button
+                    key={voice.value}
+                    onClick={() => setWizardState((prev) => ({ ...prev, narratorVoice: voice.value }))}
+                    className={cn(
+                      'flex flex-col items-center gap-1 rounded-lg border-2 p-3 transition-all hover:scale-105',
+                      wizardState.narratorVoice === voice.value
+                        ? 'border-primary bg-primary/10'
+                        : 'border-muted hover:border-primary/50'
+                    )}
+                  >
+                    <span className="text-sm font-medium">{voice.label}</span>
+                    <span className="text-xs text-muted-foreground">{voice.description}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         );
 
@@ -486,6 +533,12 @@ export function StoryWizardPage() {
                     <BookOpen className="h-4 w-4 text-primary" />
                     <span className="text-sm">
                       <strong>Length:</strong> {wizardState.storyLength}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Volume2 className="h-4 w-4 text-primary" />
+                    <span className="text-sm">
+                      <strong>Narrator:</strong> {voiceOptions.find(v => v.value === wizardState.narratorVoice)?.label || wizardState.narratorVoice}
                     </span>
                   </div>
                 </div>

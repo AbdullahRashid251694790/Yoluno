@@ -4,7 +4,7 @@
  * Display child's stories with option to create new ones.
  */
 
-import { useState } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useStoriesByChild } from '@/hooks/queries/useStories';
 import { QueryState } from '@/components/shared';
@@ -16,14 +16,101 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { ArrowLeft, Plus, BookOpen, X } from 'lucide-react';
+import { ArrowLeft, Plus, BookOpen, Volume2, VolumeX, Loader2, Pause, Play, Square } from 'lucide-react';
+import { toast } from 'sonner';
 import type { StoryWithDetails } from '@/services/stories';
+import { generateSpeech, playAudioFromBase64, type TTSVoice } from '@/services/textToSpeech';
 
 export function KidsStoriesPage() {
   const { childId } = useParams<{ childId: string }>();
   const navigate = useNavigate();
   const { data: stories, isLoading, isError, refetch } = useStoriesByChild(childId);
   const [selectedStory, setSelectedStory] = useState<StoryWithDetails | null>(null);
+
+  // Audio playback state
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isLoadingAudio, setIsLoadingAudio] = useState(false);
+  const [hasAudio, setHasAudio] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Get stored voice preference for this story
+  const getStoredVoice = useCallback((storyId: string): TTSVoice => {
+    try {
+      const voicePrefs = JSON.parse(localStorage.getItem('storyVoicePrefs') || '{}');
+      return voicePrefs[storyId] || 'nova';
+    } catch {
+      return 'nova';
+    }
+  }, []);
+
+  const stopAudio = useCallback(() => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+      audioRef.current = null;
+    }
+    setIsPlaying(false);
+    setHasAudio(false);
+  }, []);
+
+  // Stop audio when dialog closes or story changes
+  useEffect(() => {
+    if (!selectedStory) {
+      stopAudio();
+    }
+  }, [selectedStory, stopAudio]);
+
+  const handlePlayAudio = useCallback(async () => {
+    if (!selectedStory) return;
+
+    if (isPlaying) {
+      // Pause
+      if (audioRef.current) {
+        audioRef.current.pause();
+        setIsPlaying(false);
+      }
+      return;
+    }
+
+    // If we have a paused audio, resume it
+    if (audioRef.current && audioRef.current.paused && audioRef.current.currentTime > 0) {
+      audioRef.current.play();
+      setIsPlaying(true);
+      return;
+    }
+
+    // Generate new audio
+    setIsLoadingAudio(true);
+    try {
+      const voice = getStoredVoice(selectedStory.id);
+      const response = await generateSpeech(selectedStory.content, { voice });
+
+      stopAudio(); // Stop any existing audio first
+
+      const audio = playAudioFromBase64(response.audio);
+      audioRef.current = audio;
+      setIsPlaying(true);
+      setHasAudio(true);
+
+      audio.addEventListener('ended', () => {
+        setIsPlaying(false);
+        setHasAudio(false);
+        audioRef.current = null;
+      });
+
+      audio.addEventListener('error', () => {
+        toast.error('Failed to play audio');
+        setIsPlaying(false);
+        setHasAudio(false);
+        audioRef.current = null;
+      });
+    } catch (error) {
+      console.error('TTS error:', error);
+      toast.error('Failed to generate audio');
+    } finally {
+      setIsLoadingAudio(false);
+    }
+  }, [selectedStory, isPlaying, getStoredVoice, stopAudio]);
 
   const handleBack = () => {
     navigate(`/kids/${childId}`);
@@ -141,14 +228,57 @@ export function KidsStoriesPage() {
             </div>
           </div>
 
-          {selectedStory?.mood && (
-            <div className="flex-shrink-0 pt-4 border-t">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <span className="font-medium">Mood:</span>
-                <span className="capitalize">{selectedStory.mood}</span>
+          {/* Audio Controls & Mood */}
+          <div className="flex-shrink-0 pt-4 border-t">
+            <div className="flex items-center justify-between">
+              {/* Audio Controls */}
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handlePlayAudio}
+                  disabled={isLoadingAudio}
+                  className="gap-2"
+                >
+                  {isLoadingAudio ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Loading...
+                    </>
+                  ) : isPlaying ? (
+                    <>
+                      <Pause className="h-4 w-4" />
+                      Pause
+                    </>
+                  ) : (
+                    <>
+                      <Volume2 className="h-4 w-4" />
+                      Read Aloud
+                    </>
+                  )}
+                </Button>
+                {(isPlaying || hasAudio) && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={stopAudio}
+                    className="gap-2"
+                  >
+                    <Square className="h-4 w-4" />
+                    Stop
+                  </Button>
+                )}
               </div>
+
+              {/* Mood */}
+              {selectedStory?.mood && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <span className="font-medium">Mood:</span>
+                  <span className="capitalize">{selectedStory.mood}</span>
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </DialogContent>
       </Dialog>
     </div>
