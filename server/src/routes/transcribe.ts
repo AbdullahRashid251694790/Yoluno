@@ -15,8 +15,14 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
       throw new AppError(400, 'Audio data is required');
     }
 
+    if (!process.env.OPENAI_API_KEY) {
+      console.error('OPENAI_API_KEY is not set');
+      throw new AppError(500, 'Transcription service not configured');
+    }
+
     // Decode base64 audio
     const audioBuffer = Buffer.from(audio, 'base64');
+    console.log('Audio buffer size:', audioBuffer.length, 'bytes, mimeType:', mimeType);
 
     // Determine file extension from mime type
     const extensionMap: Record<string, string> = {
@@ -29,11 +35,13 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
     };
     const extension = extensionMap[mimeType] || 'webm';
 
-    // Create form data for OpenAI
+    // Create form data for OpenAI using File API (Node 20+)
+    const file = new File([audioBuffer], `audio.${extension}`, { type: mimeType });
     const formData = new FormData();
-    const blob = new Blob([audioBuffer], { type: mimeType });
-    formData.append('file', blob, `audio.${extension}`);
+    formData.append('file', file);
     formData.append('model', 'whisper-1');
+
+    console.log('Sending to OpenAI Whisper API...');
 
     const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
       method: 'POST',
@@ -45,17 +53,19 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('OpenAI Whisper error:', errorText);
+      console.error('OpenAI Whisper error:', response.status, errorText);
       throw new AppError(500, 'Failed to transcribe audio');
     }
 
     const data = (await response.json()) as { text: string; duration?: number };
+    console.log('Transcription successful, length:', data.text.length);
 
     res.json({
       text: data.text,
       duration: data.duration,
     });
   } catch (error) {
+    console.error('Transcription error:', error);
     next(error);
   }
 });
