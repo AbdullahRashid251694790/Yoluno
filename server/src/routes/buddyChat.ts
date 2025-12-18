@@ -1,7 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { Server } from 'socket.io';
-import { query, queryOne, withTransaction } from '../config/database.js';
+import { query, queryOne } from '../config/database.js';
 import { requireAuth } from '../middleware/auth.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { emitToUser, emitToChild } from '../socket/index.js';
@@ -178,6 +178,18 @@ router.post('/:childId/send', async (req: Request, res: Response, next: NextFunc
   }
 });
 
+// Family member type for context loading
+interface FamilyMember {
+  name: string;
+  relationship: string;
+  occupation: string | null;
+  hobbies: string[] | null;
+  fun_facts: string | null;
+  connection_description: string | null;
+  photo_description: string | null;
+  is_alive: boolean;
+}
+
 // Helper function to generate buddy response
 async function generateBuddyResponse(
   childId: string,
@@ -190,6 +202,15 @@ async function generateBuddyResponse(
     'SELECT * FROM guardrail_settings WHERE child_profile_id = $1',
     [childId]
   );
+
+  // Get family members for context
+  const familyResult = await query<FamilyMember>(
+    `SELECT name, relationship, occupation, hobbies, fun_facts,
+            connection_description, photo_description, is_alive
+     FROM family_members WHERE user_id = $1`,
+    [child.user_id]
+  );
+  const familyMembers = familyResult.rows;
 
   // Get recent messages for context
   const recentMessages = await query<BuddyMessage>(
@@ -207,7 +228,7 @@ async function generateBuddyResponse(
   }));
 
   // Build system prompt
-  const systemPrompt = buildSystemPrompt(child, guardrails, safety);
+  const systemPrompt = buildSystemPrompt(child, guardrails, safety, familyMembers);
 
   try {
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
@@ -245,9 +266,10 @@ async function generateBuddyResponse(
 function buildSystemPrompt(
   child: ChildProfile,
   guardrails: GuardrailSettings | null,
-  safety: { level: string; flags: string[] }
+  safety: { level: string; flags: string[] },
+  familyMembers: FamilyMember[]
 ): string {
-  let prompt = `You are a friendly, supportive AI companion for a ${child.age}-year-old child named ${child.name}.
+  let prompt = `You are Luno, a friendly, supportive AI companion for a ${child.age}-year-old child named ${child.name}.
 Your personality is warm, encouraging, and age-appropriate.
 Keep responses short (2-3 sentences max) and easy to understand.
 Never discuss inappropriate topics, violence, or anything harmful.
@@ -255,6 +277,22 @@ Be positive and redirect negative conversations gently.`;
 
   if (child.interests && child.interests.length > 0) {
     prompt += `\nThe child is interested in: ${child.interests.join(', ')}.`;
+  }
+
+  // Add family context
+  if (familyMembers.length > 0) {
+    prompt += `\n\nFAMILY CONTEXT (use this when the child asks about family members):`;
+    for (const member of familyMembers) {
+      const details: string[] = [];
+      details.push(`\n${member.name} (${member.relationship})`);
+      if (member.connection_description) details.push(`  - Relation: ${member.connection_description}`);
+      if (member.occupation) details.push(`  - Job: ${member.occupation}`);
+      if (member.hobbies && member.hobbies.length > 0) details.push(`  - Hobbies: ${member.hobbies.join(', ')}`);
+      if (member.fun_facts) details.push(`  - Fun fact: ${member.fun_facts}`);
+      if (!member.is_alive) details.push(`  - Note: No longer with us, remembered with love`);
+      prompt += details.join('\n');
+    }
+    prompt += `\n\nWhen the child asks about family (like "Who is dad?", "What does grandma do?"), use the above information to give accurate, loving answers.`;
   }
 
   if (guardrails?.blocked_topics && guardrails.blocked_topics.length > 0) {
