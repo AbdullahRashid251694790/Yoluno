@@ -196,16 +196,18 @@ export function StoryWizardPage() {
 
       console.log('Story generated:', { story, id: story.id, warning: story.warning, childId, voice: wizardState.narratorVoice });
 
+      // Invalidate stories cache so the list updates
+      console.log('Invalidating stories cache for childId:', childId);
+      await queryClient.invalidateQueries({
+        queryKey: queryKeys.stories.listByChild(childId),
+      });
+
       if (story.warning) {
-        toast.warning('Story created but not saved', {
-          description: 'The story was generated but could not be saved to your library.',
+        // Story was saved but illustration failed
+        toast.success('Story created!', {
+          description: `"${story.title}" saved (illustration unavailable).`,
         });
       } else {
-        // Invalidate stories cache so the list updates
-        console.log('Invalidating stories cache for childId:', childId);
-        await queryClient.invalidateQueries({
-          queryKey: queryKeys.stories.listByChild(childId),
-        });
         toast.success('Story created!', {
           description: `"${story.title}" has been saved to your library!`,
         });
