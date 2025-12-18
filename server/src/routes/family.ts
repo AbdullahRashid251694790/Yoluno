@@ -212,4 +212,80 @@ router.delete('/relationships/:id', async (req: Request, res: Response, next: Ne
   }
 });
 
+// POST /api/family/extract-from-description
+// Extracts structured family member data from a voice transcription using AI
+router.post('/extract-from-description', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { transcription } = req.body;
+
+    if (!transcription || typeof transcription !== 'string') {
+      throw new AppError(400, 'Transcription text is required');
+    }
+
+    const systemPrompt = `You are a helpful assistant that extracts structured family member information from natural language descriptions. Extract the information and return ONLY valid JSON (no markdown, no explanation).
+
+The JSON should have these fields:
+- name: string (the person's full name)
+- relationship: string (one of: parent, grandparent, sibling, aunt_uncle, cousin, other)
+- occupation: string or null (their job/profession)
+- hobbies: array of strings (their hobbies/interests)
+- funFacts: string or null (interesting facts about them)
+- connectionDescription: string or null (how they relate to the child, e.g., "Dad's sister", "Mom's father")
+- isLiving: boolean (true if alive, false if deceased - default to true if not mentioned)
+
+If a field is not mentioned, use null for strings or empty array for hobbies.`;
+
+    const userPrompt = `Extract family member information from this description:\n\n"${transcription}"`;
+
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': process.env.FRONTEND_URL || 'http://localhost:5173',
+      },
+      body: JSON.stringify({
+        model: 'google/gemini-2.0-flash-001',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt },
+        ],
+        max_tokens: 500,
+        temperature: 0.3,
+      }),
+    });
+
+    if (!response.ok) {
+      console.error('OpenRouter API error:', await response.text());
+      throw new AppError(500, 'Failed to extract family member data');
+    }
+
+    const data = (await response.json()) as { choices: { message: { content: string } }[] };
+    const content = data.choices[0]?.message?.content || '{}';
+
+    // Parse the JSON response
+    let extracted;
+    try {
+      // Remove markdown code blocks if present
+      const cleanContent = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      extracted = JSON.parse(cleanContent);
+    } catch {
+      console.error('Failed to parse AI response:', content);
+      throw new AppError(500, 'Failed to parse extracted data');
+    }
+
+    res.json({
+      name: extracted.name || '',
+      relationship: extracted.relationship || 'other',
+      occupation: extracted.occupation || null,
+      hobbies: Array.isArray(extracted.hobbies) ? extracted.hobbies : [],
+      funFacts: extracted.funFacts || null,
+      connectionDescription: extracted.connectionDescription || null,
+      isLiving: extracted.isLiving !== false,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 export default router;

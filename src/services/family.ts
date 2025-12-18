@@ -130,6 +130,24 @@ export async function deleteFamilyPhoto(photoUrl: string): Promise<void> {
   return apiDelete(`/upload/family-photos/${filename}`, `${CONTEXT}.deleteFamilyPhoto`);
 }
 
+export interface ExtractedFamilyData {
+  name: string;
+  relationship: string;
+  occupation: string | null;
+  hobbies: string[];
+  funFacts: string | null;
+  connectionDescription: string | null;
+  isLiving: boolean;
+}
+
+export async function extractFromDescription(transcription: string): Promise<ExtractedFamilyData> {
+  return apiPost<ExtractedFamilyData>(
+    '/family/extract-from-description',
+    `${CONTEXT}.extractFromDescription`,
+    { transcription }
+  );
+}
+
 export const familyService = {
   getMembers: getFamilyMembers,
   getMemberById: getFamilyMemberById,
@@ -143,4 +161,5 @@ export const familyService = {
   uploadPhoto: uploadFamilyPhoto,
   deletePhoto: deleteFamilyPhoto,
   updateTreePositions,
+  extractFromDescription,
 };

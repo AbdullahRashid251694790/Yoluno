@@ -12,3 +12,5 @@ export { FamilyMemberDialog } from './FamilyMemberDialog';
 export { FamilyMemberForm } from './FamilyMemberForm';
 export { PhotoUpload } from './PhotoUpload';
 export { VoiceRecorder } from './VoiceRecorder';
+export { AddMethodSelector } from './AddMethodSelector';
+export { VoiceDescriptionWizard } from './VoiceDescriptionWizard';
