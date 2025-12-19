@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { Request, Response, NextFunction } from 'express';
 
 // Auth schemas
 export const registerSchema = z.object({
@@ -44,7 +45,36 @@ export const updateChildProfileSchema = createChildProfileSchema.partial();
 // UUID validation
 export const uuidSchema = z.string().uuid('Invalid ID format');
 
-// Helper to validate request body
-export function validateBody<T>(schema: z.ZodType<T>, data: unknown): T {
-  return schema.parse(data);
+/**
+ * Validate request body - supports two usage patterns:
+ * 1. Direct call: validateBody(schema, data) - returns validated data
+ * 2. Middleware factory: validateBody(schema) - returns Express middleware
+ */
+export function validateBody<T>(schema: z.ZodType<T>, data: unknown): T;
+export function validateBody<T>(schema: z.ZodType<T>): (req: Request, res: Response, next: NextFunction) => void;
+export function validateBody<T>(schema: z.ZodType<T>, data?: unknown): T | ((req: Request, res: Response, next: NextFunction) => void) {
+  // If data is provided, validate directly
+  if (data !== undefined) {
+    return schema.parse(data);
+  }
+
+  // Otherwise, return middleware function
+  return (req: Request, res: Response, next: NextFunction) => {
+    try {
+      req.body = schema.parse(req.body);
+      next();
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({
+          error: 'Validation failed',
+          details: error.errors.map(e => ({
+            field: e.path.join('.'),
+            message: e.message,
+          })),
+        });
+      } else {
+        next(error);
+      }
+    }
+  };
 }

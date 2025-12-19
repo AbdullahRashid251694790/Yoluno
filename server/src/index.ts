@@ -25,6 +25,15 @@ import ttsRoutes from './routes/tts.js';
 import transcribeRoutes from './routes/transcribe.js';
 import storyGenerationRoutes from './routes/storyGeneration.js';
 import uploadRoutes from './routes/upload.js';
+import gamificationRoutes from './routes/gamification.js';
+import journeyTemplatesRoutes from './routes/journeyTemplates.js';
+import analyticsRoutes from './routes/analytics.js';
+import topicsRoutes from './routes/topics.js';
+import contentLibraryRoutes from './routes/contentLibrary.js';
+import voiceVaultRoutes from './routes/voiceVault.js';
+import familyEventsRoutes from './routes/familyEvents.js';
+import kidsModeRoutes from './routes/kidsMode.js';
+import onboardingRoutes from './routes/onboarding.js';
 
 const app = express();
 const httpServer = createServer(app);
@@ -89,6 +98,15 @@ app.use('/api/tts', ttsRoutes);
 app.use('/api/transcribe', transcribeRoutes);
 app.use('/api/generate-story', storyGenerationRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/gamification', gamificationRoutes);
+app.use('/api/journey-templates', journeyTemplatesRoutes);
+app.use('/api/analytics', analyticsRoutes);
+app.use('/api/topics', topicsRoutes);
+app.use('/api/content-library', contentLibraryRoutes);
+app.use('/api/voice-vault', voiceVaultRoutes);
+app.use('/api/family-events', familyEventsRoutes);
+app.use('/api/kids-mode', kidsModeRoutes);
+app.use('/api/onboarding', onboardingRoutes);
 
 // Error handler
 app.use(errorHandler);

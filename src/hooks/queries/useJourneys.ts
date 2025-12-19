@@ -10,6 +10,19 @@ import { journeysService } from '@/services/journeys';
 import type { JourneyInsert, JourneyUpdate } from '@/types/database';
 import { handleError } from '@/lib/errors';
 
+/**
+ * Get all journeys, optionally filtered by child
+ */
+export function useJourneys(childId?: string) {
+  return useQuery({
+    queryKey: childId
+      ? queryKeys.journeys.forChild(childId)
+      : queryKeys.journeys.lists(),
+    queryFn: () => journeysService.getAll(childId),
+    staleTime: 2 * 60 * 1000,
+  });
+}
+
 export function useActiveJourneys(childId: string | undefined) {
   return useQuery({
     queryKey: queryKeys.journeys.active(childId ?? ''),
@@ -97,7 +110,8 @@ export function useCompleteStep() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (stepId: string) => journeysService.completeStep(stepId),
+    mutationFn: ({ stepId, journeyId }: { stepId: string; journeyId: string }) =>
+      journeysService.completeStep(stepId, journeyId),
     onSuccess: (data) => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.journeys.detail(data.journey_id),
@@ -122,8 +136,8 @@ export function useUpdateStepProgress() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ stepId, progress }: { stepId: string; progress: number }) =>
-      journeysService.updateStepProgress(stepId, progress),
+    mutationFn: ({ stepId, journeyId, progress }: { stepId: string; journeyId: string; progress: number }) =>
+      journeysService.updateStepProgress(stepId, journeyId, progress),
     onSuccess: (data) => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.journeys.detail(data.journey_id),

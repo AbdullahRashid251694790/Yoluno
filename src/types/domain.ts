@@ -121,12 +121,16 @@ export interface JourneyWithSteps {
   title: string;
   description: string | null;
   status: JourneyStatus;
-  category: JourneyCategory;
+  category?: JourneyCategory;
   currentStep: number;
   totalSteps: number;
-  startedAt: string;
+  startedAt?: string;
   completedAt: string | null;
   steps: JourneyStep[];
+  progress?: number;
+  childProfileId?: string;
+  templateId?: string;
+  createdAt?: Date;
 }
 
 export interface JourneyStep {

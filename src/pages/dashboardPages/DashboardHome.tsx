@@ -2,12 +2,14 @@
  * Dashboard Home Page
  *
  * Main overview page for the parent dashboard.
+ * All data from database - no hardcoding.
  */
 
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useChildProfiles } from '@/hooks/queries/useChildProfiles';
 import { useSafetyReports } from '@/hooks/queries/useBuddyChat';
+import { useAnalyticsOverview } from '@/hooks/queries/useAnalytics';
 import { ChildProfileCard } from '@/components/dashboard/children/ChildProfileCard';
 import { CreateChildDialog } from '@/components/dashboard/children/CreateChildDialog';
 import { LoadingState, EmptyState } from '@/components/shared';
@@ -24,35 +26,34 @@ import {
   Shield,
   Plus,
   ChevronRight,
-  Sparkles,
+  Flame,
+  Map,
+  BarChart3,
 } from 'lucide-react';
-
-// Mock activity data (would come from API)
-const recentActivity = [
-  { id: '1', childName: 'Max', action: 'asked about dinosaurs', time: '2 hours ago', icon: MessageCircle },
-  { id: '2', childName: 'Luna', action: 'completed reading journey step', time: '3 hours ago', icon: Trophy },
-  { id: '3', childName: 'Max', action: 'started new story "Space Adventure"', time: '5 hours ago', icon: BookOpen },
-  { id: '4', childName: 'Luna', action: 'earned "Curious Mind" badge', time: 'Yesterday', icon: Trophy },
-];
-
-// Mock insights (would come from analytics service)
-const weeklyInsights = {
-  totalMessages: 127,
-  messageChange: 12,
-  topicsExplored: 8,
-  avgSessionTime: '15 min',
-};
 
 export function DashboardHome() {
   const { user } = useAuth();
   const { data: children = [], isLoading: childrenLoading } = useChildProfiles(user?.id);
   const { data: safetyReports = [] } = useSafetyReports(user?.id, true);
+  const { data: analyticsOverview, isLoading: analyticsLoading } = useAnalyticsOverview();
 
   const unreadAlerts = safetyReports.length;
 
   if (childrenLoading) {
     return <LoadingState message="Loading dashboard..." />;
   }
+
+  // Aggregate analytics across all children
+  const totalStats = analyticsOverview?.children.reduce(
+    (acc, child) => ({
+      messages: acc.messages + child.weekly_activity.messages,
+      stories: acc.stories + child.weekly_activity.stories,
+      points: acc.points + child.stats.total_points,
+      streak: Math.max(acc.streak, child.stats.current_streak),
+      journeysCompleted: acc.journeysCompleted + child.stats.total_journeys_completed,
+    }),
+    { messages: 0, stories: 0, points: 0, streak: 0, journeysCompleted: 0 }
+  ) || { messages: 0, stories: 0, points: 0, streak: 0, journeysCompleted: 0 };
 
   return (
     <div className="space-y-6">
@@ -133,101 +134,168 @@ export function DashboardHome() {
         )}
       </div>
 
-      {/* Recent Activity & Insights */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* Recent Activity */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Recent Activity</CardTitle>
-            <CardDescription>What your children have been up to</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {children.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-8">
-                Add a child to start tracking activity.
+      {/* Quick Stats */}
+      {children.length > 0 && (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                <MessageCircle className="h-4 w-4" />
+                Weekly Messages
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {analyticsLoading ? '...' : totalStats.messages}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                across all children
               </p>
-            ) : (
-              <div className="space-y-4">
-                {recentActivity.slice(0, 4).map((activity) => {
-                  const Icon = activity.icon;
-                  return (
-                    <div key={activity.id} className="flex items-start gap-3">
-                      <div className="rounded-full bg-primary/10 p-2 mt-0.5">
-                        <Icon className="h-4 w-4 text-primary" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm">
-                          <span className="font-medium">{activity.childName}</span>{' '}
-                          <span className="text-muted-foreground">{activity.action}</span>
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          {activity.time}
-                        </p>
-                      </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                <BookOpen className="h-4 w-4" />
+                Stories This Week
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {analyticsLoading ? '...' : totalStats.stories}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                created together
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                <Flame className="h-4 w-4" />
+                Best Streak
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {analyticsLoading ? '...' : `${totalStats.streak} days`}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                current streak
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                <Trophy className="h-4 w-4" />
+                Total Points
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {analyticsLoading ? '...' : totalStats.points.toLocaleString()}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                earned by all children
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Child Stats Cards */}
+      {children.length > 0 && analyticsOverview && (
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold">This Week's Progress</h2>
+            <Link to="/dashboard/insights">
+              <Button variant="ghost" size="sm" className="gap-2">
+                <BarChart3 className="h-4 w-4" />
+                View Details
+              </Button>
+            </Link>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {analyticsOverview.children.map((childData) => (
+              <Card key={childData.child.id}>
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    {childData.child.avatar_url && (
+                      <img
+                        src={childData.child.avatar_url}
+                        alt=""
+                        className="w-8 h-8 rounded-full"
+                      />
+                    )}
+                    {childData.child.name}
+                  </CardTitle>
+                  <CardDescription>Age {childData.child.age}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div className="flex items-center gap-2">
+                      <MessageCircle className="h-4 w-4 text-blue-500" />
+                      <span>{childData.weekly_activity.messages} messages</span>
                     </div>
-                  );
-                })}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                    <div className="flex items-center gap-2">
+                      <BookOpen className="h-4 w-4 text-purple-500" />
+                      <span>{childData.weekly_activity.stories} stories</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Flame className="h-4 w-4 text-orange-500" />
+                      <span>{childData.stats.current_streak} day streak</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Map className="h-4 w-4 text-green-500" />
+                      <span>{childData.stats.total_journeys_completed} journeys</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
 
-        {/* Weekly Insights */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Weekly Insights</CardTitle>
-            <CardDescription>Learning summary for this week</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="rounded-lg bg-muted/50 p-4">
-                <div className="flex items-center gap-2">
-                  <MessageCircle className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm text-muted-foreground">Messages</span>
-                </div>
-                <p className="text-2xl font-bold mt-1">{weeklyInsights.totalMessages}</p>
-                <p className="text-xs text-green-600 flex items-center gap-1 mt-1">
-                  <TrendingUp className="h-3 w-3" />
-                  +{weeklyInsights.messageChange}% from last week
-                </p>
-              </div>
-
-              <div className="rounded-lg bg-muted/50 p-4">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm text-muted-foreground">Topics</span>
-                </div>
-                <p className="text-2xl font-bold mt-1">{weeklyInsights.topicsExplored}</p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Unique topics explored
-                </p>
-              </div>
-
-              <div className="rounded-lg bg-muted/50 p-4">
-                <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm text-muted-foreground">Avg Session</span>
-                </div>
-                <p className="text-2xl font-bold mt-1">{weeklyInsights.avgSessionTime}</p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Per interaction
-                </p>
-              </div>
-
-              <div className="rounded-lg bg-muted/50 p-4">
-                <div className="flex items-center gap-2">
-                  <Shield className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm text-muted-foreground">Safety</span>
-                </div>
-                <p className="text-2xl font-bold mt-1 text-green-600">100%</p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Content appropriate
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Quick Actions */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Quick Actions</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap gap-2">
+            <Link to="/dashboard/stories">
+              <Button variant="outline" className="gap-2">
+                <BookOpen className="h-4 w-4" />
+                View Stories
+              </Button>
+            </Link>
+            <Link to="/dashboard/journeys">
+              <Button variant="outline" className="gap-2">
+                <Map className="h-4 w-4" />
+                Manage Journeys
+              </Button>
+            </Link>
+            <Link to="/dashboard/insights">
+              <Button variant="outline" className="gap-2">
+                <BarChart3 className="h-4 w-4" />
+                View Insights
+              </Button>
+            </Link>
+            <Link to="/dashboard/safety">
+              <Button variant="outline" className="gap-2">
+                <Shield className="h-4 w-4" />
+                Safety Settings
+              </Button>
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

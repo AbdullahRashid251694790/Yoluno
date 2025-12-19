@@ -3,24 +3,57 @@
  *
  * Entry point where children select their profile.
  * Features floating animated avatar cards and child-friendly design.
+ * Supports PIN protection for child profiles.
  */
 
-import { Link, useNavigate } from 'react-router-dom';
+import { useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useChildProfiles } from '@/hooks/queries/useChildProfiles';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn, getInitials } from '@/lib/utils';
-import { Sparkles, Lock, Star } from 'lucide-react';
+import { Sparkles, Lock, Star, ShieldCheck } from 'lucide-react';
+import { KidsPINDialog } from '@/components/kids/auth';
+import type { ChildProfileWithAvatar } from '@/services/childProfiles';
 
 export function ChildSelectPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { data: children = [], isLoading } = useChildProfiles(user?.id);
 
+  // State for PIN dialog
+  const [selectedChild, setSelectedChild] = useState<ChildProfileWithAvatar | null>(null);
+  const [showPinDialog, setShowPinDialog] = useState(false);
+
   const handleParentLogin = () => {
     navigate('/dashboard');
   };
+
+  // Handle child profile selection
+  const handleChildSelect = useCallback(
+    (child: ChildProfileWithAvatar) => {
+      // Check if child has a PIN set
+      if (child.pin_hash) {
+        // Show PIN dialog
+        setSelectedChild(child);
+        setShowPinDialog(true);
+      } else {
+        // No PIN, navigate directly
+        navigate(`/kids/${child.id}`);
+      }
+    },
+    [navigate]
+  );
+
+  // Handle successful PIN verification
+  const handlePinSuccess = useCallback(() => {
+    if (selectedChild) {
+      navigate(`/kids/${selectedChild.id}`);
+    }
+    setShowPinDialog(false);
+    setSelectedChild(null);
+  }, [selectedChild, navigate]);
 
   if (isLoading) {
     return (
@@ -83,10 +116,17 @@ export function ChildSelectPage() {
         ) : (
           <div className="flex flex-wrap justify-center gap-8 max-w-4xl">
             {children.map((child, index) => (
-              <Link
+              <div
                 key={child.id}
-                to={`/kids/${child.id}`}
-                className="group"
+                onClick={() => handleChildSelect(child)}
+                className="group cursor-pointer"
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    handleChildSelect(child);
+                  }
+                }}
               >
                 <div
                   className={cn(
@@ -108,6 +148,13 @@ export function ChildSelectPage() {
                         {getInitials(child.name)}
                       </AvatarFallback>
                     </Avatar>
+
+                    {/* PIN indicator */}
+                    {child.pin_hash && (
+                      <div className="absolute -top-1 -right-1 h-7 w-7 rounded-full bg-primary flex items-center justify-center border-2 border-white shadow-sm">
+                        <ShieldCheck className="h-4 w-4 text-white" />
+                      </div>
+                    )}
 
                     {/* Online indicator */}
                     {child.last_active_at &&
@@ -131,7 +178,7 @@ export function ChildSelectPage() {
                     ))}
                   </div>
                 </div>
-              </Link>
+              </div>
             ))}
 
             {/* Add more hint (for parents) */}
@@ -159,6 +206,17 @@ export function ChildSelectPage() {
           Made with ❤️ for curious minds
         </p>
       </footer>
+
+      {/* PIN Dialog */}
+      {selectedChild && (
+        <KidsPINDialog
+          open={showPinDialog}
+          onOpenChange={setShowPinDialog}
+          childId={selectedChild.id}
+          childName={selectedChild.name}
+          onSuccess={handlePinSuccess}
+        />
+      )}
     </div>
   );
 }

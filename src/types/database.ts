@@ -15,6 +15,8 @@ export interface ChildProfileRow {
   interests: string[];
   personality_traits: string[];
   learning_style: string | null;
+  pin_hash: string | null;
+  last_active_at: string | null;
   created_at: string;
   updated_at: string;
 }

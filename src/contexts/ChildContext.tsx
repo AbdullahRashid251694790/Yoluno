@@ -2,6 +2,7 @@
  * Child Context
  *
  * Provides active child profile state for kids mode.
+ * Includes mode switching and real PIN verification.
  */
 
 import {
@@ -14,13 +15,19 @@ import {
 } from 'react';
 import type { ChildProfileRow } from '@/types/database';
 import { childProfilesService } from '@/services/childProfiles';
+import { pinService } from '@/services/pin';
+
+// Kids mode activity modes
+export type KidsMode = 'home' | 'chat' | 'stories' | 'journeys' | 'learning';
 
 interface ChildContextValue {
   activeChild: ChildProfileRow | null;
   isKidsMode: boolean;
+  activeMode: KidsMode;
   setActiveChild: (child: ChildProfileRow | null) => void;
   enterKidsMode: (child: ChildProfileRow) => void;
   exitKidsMode: () => void;
+  setActiveMode: (mode: KidsMode) => void;
   verifyPin: (childId: string, pin: string) => Promise<boolean>;
 }
 
@@ -35,6 +42,7 @@ interface ChildProviderProps {
 export function ChildProvider({ children }: ChildProviderProps) {
   const [activeChild, setActiveChildState] = useState<ChildProfileRow | null>(null);
   const [isKidsMode, setIsKidsMode] = useState(false);
+  const [activeMode, setActiveModeState] = useState<KidsMode>('home');
 
   // Restore active child from storage on mount
   useEffect(() => {
@@ -82,26 +90,33 @@ export function ChildProvider({ children }: ChildProviderProps) {
   const exitKidsMode = useCallback(() => {
     setActiveChildState(null);
     setIsKidsMode(false);
+    setActiveModeState('home');
     localStorage.removeItem(STORAGE_KEY);
   }, []);
 
+  const setActiveMode = useCallback((mode: KidsMode) => {
+    setActiveModeState(mode);
+  }, []);
+
   const verifyPin = useCallback(async (childId: string, pin: string): Promise<boolean> => {
-    // In a real implementation, this would verify against a hashed PIN in the database
-    // For now, return true if PIN is provided (placeholder implementation)
-    const child = await childProfilesService.getById(childId);
-    if (!child?.pin_hash) {
-      return true; // No PIN set
+    try {
+      // Use the real PIN verification service - no fallback
+      const result = await pinService.verify(childId, pin);
+      return result.verified;
+    } catch {
+      // PIN verification failed - return false, no fallback
+      return false;
     }
-    // TODO: Implement proper PIN verification with hashing
-    return pin.length === 4;
   }, []);
 
   const value: ChildContextValue = {
     activeChild,
     isKidsMode,
+    activeMode,
     setActiveChild,
     enterKidsMode,
     exitKidsMode,
+    setActiveMode,
     verifyPin,
   };
 
@@ -126,4 +141,9 @@ export function useActiveChild(): ChildProfileRow | null {
 export function useIsKidsMode(): boolean {
   const { isKidsMode } = useChild();
   return isKidsMode;
+}
+
+export function useActiveMode(): KidsMode {
+  const { activeMode } = useChild();
+  return activeMode;
 }

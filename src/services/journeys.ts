@@ -16,6 +16,33 @@ import type { JourneyWithSteps, JourneyStep } from '@/types/domain';
 
 const CONTEXT = 'journeys';
 
+/**
+ * Get all journeys, optionally filtered by child
+ */
+export async function getAllJourneys(childId?: string): Promise<JourneyWithSteps[]> {
+  const params: Record<string, string> = {};
+  if (childId) params.childId = childId;
+
+  const journeys = await apiGet<JourneyRow[]>(
+    '/journeys',
+    `${CONTEXT}.getAllJourneys`,
+    { params, defaultValue: [] }
+  );
+
+  const journeysWithSteps = await Promise.all(
+    journeys.map(async (journey) => {
+      const steps = await apiGet<JourneyStepRow[]>(
+        `/journeys/${journey.id}/steps`,
+        `${CONTEXT}.getAllJourneys.steps`,
+        { defaultValue: [] }
+      );
+      return mapJourneyWithSteps({ ...journey, journey_steps: steps });
+    })
+  );
+
+  return journeysWithSteps;
+}
+
 export async function getActiveJourneys(childId: string): Promise<JourneyWithSteps[]> {
   const journeys = await apiGet<JourneyRow[]>(
     '/journeys',
@@ -120,40 +147,45 @@ export async function getJourneyProgress(journeyId: string): Promise<{
 function mapJourneyWithSteps(
   data: JourneyRow & { journey_steps?: JourneyStepRow[] }
 ): JourneyWithSteps {
-  const steps: JourneyStep[] = (data.journey_steps ?? [])
-    .sort((a, b) => (a.step_order ?? 0) - (b.step_order ?? 0))
-    .map((step) => ({
-      id: step.id,
-      title: step.type,
-      description: '',
-      type: step.type as JourneyStep['type'],
-      status: step.progress === 100 ? 'completed' : 'pending' as JourneyStep['status'],
-      order: step.step_order ?? 0,
-      progress: step.progress ?? 0,
-      completedAt: step.completed_at ? new Date(step.completed_at) : undefined,
-    }));
+  const sortedSteps = (data.journey_steps ?? [])
+    .sort((a, b) => (a.step_order ?? 0) - (b.step_order ?? 0));
+
+  const steps: JourneyStep[] = sortedSteps.map((step, index) => ({
+    id: step.id,
+    journeyId: step.journey_id,
+    stepNumber: step.step_order ?? index + 1,
+    title: step.type ?? `Step ${index + 1}`,
+    description: null,
+    isCompleted: step.progress === 100,
+    completedAt: step.completed_at,
+  }));
+
+  const completedSteps = steps.filter((s) => s.isCompleted).length;
 
   return {
     id: data.id,
     title: data.title,
-    description: '',
+    description: null,
     status: data.status as JourneyWithSteps['status'],
     templateId: data.template_id ?? undefined,
     childProfileId: data.child_profile_id,
+    currentStep: completedSteps + 1,
+    totalSteps: steps.length,
     steps,
     progress: calculateProgress(steps),
     createdAt: new Date(data.created_at),
-    completedAt: undefined,
+    completedAt: data.completed_at,
   };
 }
 
 function calculateProgress(steps: JourneyStep[]): number {
   if (steps.length === 0) return 0;
-  const completed = steps.filter((s) => s.status === 'completed').length;
+  const completed = steps.filter((s) => s.isCompleted).length;
   return Math.round((completed / steps.length) * 100);
 }
 
 export const journeysService = {
+  getAll: getAllJourneys,
   getActive: getActiveJourneys,
   getById: getJourneyById,
   create: createJourney,

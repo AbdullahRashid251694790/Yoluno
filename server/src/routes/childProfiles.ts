@@ -1,9 +1,23 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { v4 as uuidv4 } from 'uuid';
+import bcrypt from 'bcrypt';
 import { query, queryOne } from '../config/database.js';
 import { requireAuth } from '../middleware/auth.js';
 import { AppError } from '../middleware/errorHandler.js';
+import { validateBody } from '../utils/validation.js';
+import { z } from 'zod';
 import type { ChildProfile } from '../types/index.js';
+
+// PIN validation schemas
+const setPinSchema = z.object({
+  pin: z.string().length(4).regex(/^\d{4}$/, 'PIN must be exactly 4 digits'),
+});
+
+const verifyPinSchema = z.object({
+  pin: z.string().length(4).regex(/^\d{4}$/, 'PIN must be exactly 4 digits'),
+});
+
+const SALT_ROUNDS = 10;
 
 const router = Router();
 
@@ -131,6 +145,123 @@ router.post('/:id/activity', async (req: Request, res: Response, next: NextFunct
     }
 
     res.json({ message: 'Activity recorded' });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// ============================================================
+// PIN Authentication Routes
+// ============================================================
+
+// GET /api/child-profiles/:id/pin/status - Check if PIN is set
+router.get('/:id/pin/status', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const profile = await queryOne<ChildProfile>(
+      'SELECT id, pin_hash FROM child_profiles WHERE id = $1 AND user_id = $2',
+      [req.params.id, req.user!.id]
+    );
+
+    if (!profile) {
+      throw new AppError(404, 'Child profile not found');
+    }
+
+    res.json({
+      hasPin: !!profile.pin_hash,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// POST /api/child-profiles/:id/pin - Set or update PIN
+router.post('/:id/pin', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { pin } = validateBody(setPinSchema, req.body);
+
+    // Verify ownership
+    const existing = await queryOne<ChildProfile>(
+      'SELECT id FROM child_profiles WHERE id = $1 AND user_id = $2',
+      [req.params.id, req.user!.id]
+    );
+
+    if (!existing) {
+      throw new AppError(404, 'Child profile not found');
+    }
+
+    // Hash the PIN
+    const pinHash = await bcrypt.hash(pin, SALT_ROUNDS);
+
+    await query(
+      `UPDATE child_profiles
+       SET pin_hash = $1, updated_at = NOW()
+       WHERE id = $2`,
+      [pinHash, req.params.id]
+    );
+
+    res.json({ message: 'PIN set successfully' });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// POST /api/child-profiles/:id/pin/verify - Verify PIN
+router.post('/:id/pin/verify', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { pin } = validateBody(verifyPinSchema, req.body);
+
+    const profile = await queryOne<ChildProfile>(
+      'SELECT id, pin_hash FROM child_profiles WHERE id = $1 AND user_id = $2',
+      [req.params.id, req.user!.id]
+    );
+
+    if (!profile) {
+      throw new AppError(404, 'Child profile not found');
+    }
+
+    // No PIN set - this is an error, not a fallback
+    if (!profile.pin_hash) {
+      throw new AppError(400, 'No PIN is set for this profile');
+    }
+
+    // Verify the PIN
+    const isValid = await bcrypt.compare(pin, profile.pin_hash);
+
+    if (!isValid) {
+      throw new AppError(401, 'Invalid PIN');
+    }
+
+    res.json({ verified: true });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// DELETE /api/child-profiles/:id/pin - Remove PIN
+router.delete('/:id/pin', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    // Verify ownership
+    const existing = await queryOne<ChildProfile>(
+      'SELECT id, pin_hash FROM child_profiles WHERE id = $1 AND user_id = $2',
+      [req.params.id, req.user!.id]
+    );
+
+    if (!existing) {
+      throw new AppError(404, 'Child profile not found');
+    }
+
+    if (!existing.pin_hash) {
+      throw new AppError(400, 'No PIN is set for this profile');
+    }
+
+    await query(
+      `UPDATE child_profiles
+       SET pin_hash = NULL, updated_at = NOW()
+       WHERE id = $1`,
+      [req.params.id]
+    );
+
+    res.json({ message: 'PIN removed successfully' });
   } catch (error) {
     next(error);
   }

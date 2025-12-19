@@ -16,6 +16,10 @@ import {
   ChildrenPage,
   StoriesPage,
   JourneysPage,
+  InsightsPage,
+  TopicsPage,
+  ContentLibraryPage,
+  VoiceVaultPage,
   SettingsPage,
 } from './dashboardPages';
 import { Button } from '@/components/ui/button';
@@ -30,6 +34,10 @@ import {
   Shield,
   Map,
   TreePine,
+  BarChart3,
+  Tag,
+  Library,
+  Mic,
 } from 'lucide-react';
 import yolunoLogo from '@/assets/yoluno-logo.svg';
 
@@ -39,6 +47,10 @@ const navItems = [
   { path: '/dashboard/family', label: 'Family', icon: TreePine },
   { path: '/dashboard/stories', label: 'Stories', icon: BookOpen },
   { path: '/dashboard/journeys', label: 'Journeys', icon: Map },
+  { path: '/dashboard/insights', label: 'Insights', icon: BarChart3 },
+  { path: '/dashboard/topics', label: 'Topics', icon: Tag },
+  { path: '/dashboard/library', label: 'Library', icon: Library },
+  { path: '/dashboard/voice-vault', label: 'Voice Vault', icon: Mic },
   { path: '/dashboard/safety', label: 'Safety', icon: Shield },
   { path: '/dashboard/settings', label: 'Settings', icon: Settings },
 ];
@@ -120,6 +132,10 @@ export function DashboardPage() {
             <Route path="/family" element={<FamilyTreePage />} />
             <Route path="/stories" element={<StoriesPage />} />
             <Route path="/journeys" element={<JourneysPage />} />
+            <Route path="/insights" element={<InsightsPage />} />
+            <Route path="/topics" element={<TopicsPage />} />
+            <Route path="/library" element={<ContentLibraryPage />} />
+            <Route path="/voice-vault" element={<VoiceVaultPage />} />
             <Route path="/safety" element={<SafetyDashboardPage />} />
             <Route path="/settings" element={<SettingsPage />} />
           </Routes>

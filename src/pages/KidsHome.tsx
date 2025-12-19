@@ -9,6 +9,7 @@ import { useEffect, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useChild } from '@/contexts/ChildContext';
 import { useChildProfile } from '@/hooks/queries';
+import { useGamificationStats, useChildBadges } from '@/hooks/queries/useGamification';
 import { ErrorState } from '@/components/shared';
 import { ChatAvatar } from '@/components/chat/ChatAvatar';
 import { Button } from '@/components/ui/button';
@@ -107,9 +108,20 @@ export function KidsHomePage() {
   const { enterKidsMode, exitKidsMode } = useChild();
   const { data: child, isLoading, isError } = useChildProfile(childId);
 
+  // Fetch real gamification data from database
+  const { data: gamificationData } = useGamificationStats(childId);
+  const { data: badgesData } = useChildBadges(childId);
+
   const greeting = useMemo(() => getGreeting(), []);
   const buddyExpression = useMemo(() => getBuddyExpression(), []);
   const dailyChallenge = useMemo(() => getDailyChallenge(), []);
+
+  // Extract real stats from API response
+  const streakCount = gamificationData?.stats?.current_streak ?? 0;
+  const starCount = gamificationData?.stats?.total_points ?? 0;
+  const unnotifiedBadgeCount = gamificationData?.unnotifiedBadges?.length ?? 0;
+  const earnedBadges = badgesData?.earned ?? [];
+  const recentBadges = earnedBadges.slice(0, 3);
 
   useEffect(() => {
     if (child) {
@@ -146,10 +158,6 @@ export function KidsHomePage() {
       />
     );
   }
-
-  // Mock data for gamification (would come from API)
-  const streakCount = 5; // Would come from gamification service
-  const starCount = 127; // Would come from gamification service
 
   return (
     <div className="min-h-screen bg-kids-gradient safe-area-inset">
@@ -306,20 +314,52 @@ export function KidsHomePage() {
                   <Trophy className="h-6 w-6 text-yellow-500" />
                   <div>
                     <h3 className="font-display font-bold text-foreground">My Badges</h3>
-                    <p className="text-xs text-muted-foreground">3 new to collect!</p>
+                    <p className="text-xs text-muted-foreground">
+                      {unnotifiedBadgeCount > 0
+                        ? `${unnotifiedBadgeCount} new to collect!`
+                        : earnedBadges.length > 0
+                        ? `${earnedBadges.length} earned`
+                        : 'Start collecting!'}
+                    </p>
                   </div>
                 </div>
                 <div className="flex -space-x-2">
-                  {['🌟', '🚀', '📚', '❓'].map((emoji, i) => (
-                    <div
-                      key={i}
-                      className={`h-8 w-8 rounded-full flex items-center justify-center text-lg ${
-                        i === 3 ? 'bg-gray-200' : 'bg-yellow-100'
-                      }`}
-                    >
-                      {emoji}
-                    </div>
-                  ))}
+                  {recentBadges.length > 0 ? (
+                    <>
+                      {recentBadges.map((badge, i) => (
+                        <div
+                          key={badge.id}
+                          className="h-8 w-8 rounded-full flex items-center justify-center bg-yellow-100 border-2 border-white"
+                        >
+                          {badge.badge?.icon_url ? (
+                            <img
+                              src={badge.badge.icon_url}
+                              alt={badge.badge.display_name}
+                              className="h-5 w-5"
+                            />
+                          ) : (
+                            <span className="text-lg">🏆</span>
+                          )}
+                        </div>
+                      ))}
+                      <div className="h-8 w-8 rounded-full flex items-center justify-center bg-gray-200 border-2 border-white">
+                        <span className="text-sm font-medium text-gray-500">+</span>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      {['🎯', '⭐', '🏅', '?'].map((emoji, i) => (
+                        <div
+                          key={i}
+                          className={`h-8 w-8 rounded-full flex items-center justify-center text-lg border-2 border-white ${
+                            i === 3 ? 'bg-gray-200' : 'bg-yellow-100'
+                          }`}
+                        >
+                          {emoji}
+                        </div>
+                      ))}
+                    </>
+                  )}
                 </div>
               </div>
             </CardContent>
