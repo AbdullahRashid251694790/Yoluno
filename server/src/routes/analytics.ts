@@ -309,9 +309,9 @@ router.get(
         id: string;
         name: string;
         age: number;
-        avatar_url: string | null;
+        avatar_id: string | null;
       }>(
-        'SELECT id, name, age, avatar_url FROM child_profiles WHERE user_id = $1',
+        'SELECT id, name, age, avatar_id FROM child_profiles WHERE user_id = $1',
         [userId]
       );
 
@@ -353,7 +353,7 @@ router.get(
               id: child.id,
               name: child.name,
               age: child.age,
-              avatar_url: child.avatar_url,
+              avatar_id: child.avatar_id,
             },
             stats: {
               total_points: parseInt(stats?.total_points || '0', 10),
