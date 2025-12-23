@@ -62,18 +62,21 @@ router.post('/members', async (req: Request, res: Response, next: NextFunction) 
       position_y,
     } = req.body;
 
+    // Ensure hobbies is a proper array for PostgreSQL
+    const hobbiesArray = Array.isArray(hobbies) ? hobbies : (hobbies ? [hobbies] : []);
+
     const id = uuidv4();
     const result = await queryOne<FamilyMember>(
       `INSERT INTO family_members (
         id, user_id, name, relationship, birth_date, notes, is_alive,
         photo_url, occupation, hobbies, fun_facts, connection_description,
         photo_description, generation_level, position_x, position_y
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::text[], $11, $12, $13, $14, $15, $16)
       RETURNING *`,
       [
-        id, req.user!.id, name, relationship, birth_date, notes, is_alive,
-        photo_url, occupation, hobbies, fun_facts, connection_description,
-        photo_description, generation_level, position_x, position_y,
+        id, req.user!.id, name, relationship, birth_date || null, notes || null, is_alive,
+        photo_url || null, occupation || null, hobbiesArray, fun_facts || null, connection_description || null,
+        photo_description || null, generation_level || null, position_x || null, position_y || null,
       ]
     );
 
@@ -101,6 +104,11 @@ router.put('/members/:id', async (req: Request, res: Response, next: NextFunctio
       photo_description, generation_level, position_x, position_y,
     } = req.body;
 
+    // Ensure hobbies is a proper array for PostgreSQL if provided
+    const hobbiesArray = hobbies !== undefined
+      ? (Array.isArray(hobbies) ? hobbies : (hobbies ? [hobbies] : []))
+      : undefined;
+
     const result = await queryOne<FamilyMember>(
       `UPDATE family_members SET
         name = COALESCE($1, name),
@@ -110,7 +118,7 @@ router.put('/members/:id', async (req: Request, res: Response, next: NextFunctio
         is_alive = COALESCE($5, is_alive),
         photo_url = COALESCE($6, photo_url),
         occupation = COALESCE($7, occupation),
-        hobbies = COALESCE($8, hobbies),
+        hobbies = COALESCE($8::text[], hobbies),
         fun_facts = COALESCE($9, fun_facts),
         connection_description = COALESCE($10, connection_description),
         photo_description = COALESCE($11, photo_description),
@@ -122,7 +130,7 @@ router.put('/members/:id', async (req: Request, res: Response, next: NextFunctio
        RETURNING *`,
       [
         name, relationship, birth_date, notes, is_alive, photo_url,
-        occupation, hobbies, fun_facts, connection_description,
+        occupation, hobbiesArray, fun_facts, connection_description,
         photo_description, generation_level, position_x, position_y,
         req.params.id,
       ]
