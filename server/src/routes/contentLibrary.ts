@@ -49,7 +49,7 @@ const updateContentSchema = z.object({
 
 /**
  * GET /api/content-library
- * List all saved content for the user
+ * List all saved content for the user (includes stories from stories table)
  */
 router.get(
   '/',
@@ -58,63 +58,133 @@ router.get(
       const userId = req.user!.id;
       const { childId, type, favorite, limit = '50', offset = '0' } = req.query;
 
-      let sql = `
-        SELECT c.id, c.user_id, c.child_profile_id, c.content_type,
-               c.title, c.content, c.metadata, c.is_favorite, c.created_at::text,
-               cp.name as child_name
-        FROM content_items c
-        LEFT JOIN child_profiles cp ON c.child_profile_id = cp.id
-        WHERE c.user_id = $1
-      `;
+      // Build unified query that includes both content_items and stories
       const params: (string | boolean | number)[] = [userId];
       let paramIndex = 2;
 
+      // Base conditions for filtering
+      let childCondition = '';
+      let favoriteCondition = '';
+
       if (childId) {
-        sql += ` AND c.child_profile_id = $${paramIndex}`;
+        childCondition = ` AND child_profile_id = $${paramIndex}`;
         params.push(childId as string);
         paramIndex++;
       }
 
-      if (type) {
-        sql += ` AND c.content_type = $${paramIndex}`;
-        params.push(type as string);
-        paramIndex++;
-      }
-
       if (favorite === 'true') {
-        sql += ` AND c.is_favorite = true`;
+        favoriteCondition = ` AND is_favorite = true`;
       }
 
-      sql += ` ORDER BY c.created_at DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
+      let sql: string;
+
+      if (type === 'story') {
+        // Only stories
+        sql = `
+          SELECT s.id, cp.user_id, s.child_profile_id, 'story'::text as content_type,
+                 s.title, s.content,
+                 jsonb_build_object('theme', s.theme, 'mood', s.mood, 'values', s.values,
+                   'word_count', s.word_count, 'illustration_url', s.illustration_url) as metadata,
+                 s.is_favorite, s.created_at::text,
+                 cp.name as child_name
+          FROM stories s
+          JOIN child_profiles cp ON s.child_profile_id = cp.id
+          WHERE cp.user_id = $1${childCondition}${favoriteCondition}
+          ORDER BY s.created_at DESC
+          LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
+        `;
+      } else if (type && type !== 'story') {
+        // Only content_items of specific type (chat_snippet, journey, note)
+        sql = `
+          SELECT c.id, c.user_id, c.child_profile_id, c.content_type,
+                 c.title, c.content, c.metadata, c.is_favorite, c.created_at::text,
+                 cp.name as child_name
+          FROM content_items c
+          LEFT JOIN child_profiles cp ON c.child_profile_id = cp.id
+          WHERE c.user_id = $1 AND c.content_type = $${paramIndex}${childCondition ? ` AND c.child_profile_id = $${paramIndex - 1}` : ''}${favoriteCondition}
+          ORDER BY c.created_at DESC
+          LIMIT $${paramIndex + (childCondition ? 0 : 1)} OFFSET $${paramIndex + (childCondition ? 1 : 2)}
+        `;
+        // Adjust params for type filter
+        if (!childCondition) {
+          params.push(type as string);
+          paramIndex++;
+        } else {
+          // Insert type after childId
+          params.splice(2, 0, type as string);
+          paramIndex++;
+        }
+      } else {
+        // All content: UNION stories and content_items
+        sql = `
+          SELECT * FROM (
+            SELECT s.id, cp.user_id, s.child_profile_id, 'story'::text as content_type,
+                   s.title, s.content,
+                   jsonb_build_object('theme', s.theme, 'mood', s.mood, 'values', s.values,
+                     'word_count', s.word_count, 'illustration_url', s.illustration_url) as metadata,
+                   s.is_favorite, s.created_at::text,
+                   cp.name as child_name
+            FROM stories s
+            JOIN child_profiles cp ON s.child_profile_id = cp.id
+            WHERE cp.user_id = $1${childCondition}${favoriteCondition}
+
+            UNION ALL
+
+            SELECT c.id, c.user_id, c.child_profile_id, c.content_type,
+                   c.title, c.content, c.metadata, c.is_favorite, c.created_at::text,
+                   cp.name as child_name
+            FROM content_items c
+            LEFT JOIN child_profiles cp ON c.child_profile_id = cp.id
+            WHERE c.user_id = $1${childCondition}${favoriteCondition}
+          ) combined
+          ORDER BY created_at DESC
+          LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
+        `;
+      }
+
       params.push(parseInt(limit as string, 10), parseInt(offset as string, 10));
 
       const items = await query<ContentItem & { child_name: string | null }>(sql, params);
 
       // Get total count for pagination
-      let countSql = `SELECT COUNT(*) as count FROM content_items WHERE user_id = $1`;
       const countParams: (string | boolean)[] = [userId];
       let countParamIndex = 2;
+      let countChildCondition = '';
 
       if (childId) {
-        countSql += ` AND child_profile_id = $${countParamIndex}`;
+        countChildCondition = ` AND child_profile_id = $${countParamIndex}`;
         countParams.push(childId as string);
         countParamIndex++;
       }
 
-      if (type) {
-        countSql += ` AND content_type = $${countParamIndex}`;
-        countParams.push(type as string);
-      }
+      let countSql: string;
 
-      if (favorite === 'true') {
-        countSql += ` AND is_favorite = true`;
+      if (type === 'story') {
+        countSql = `
+          SELECT COUNT(*) as count FROM stories s
+          JOIN child_profiles cp ON s.child_profile_id = cp.id
+          WHERE cp.user_id = $1${countChildCondition}${favoriteCondition}
+        `;
+      } else if (type && type !== 'story') {
+        countSql = `SELECT COUNT(*) as count FROM content_items WHERE user_id = $1 AND content_type = $${countParamIndex}${countChildCondition}${favoriteCondition}`;
+        countParams.push(type as string);
+      } else {
+        countSql = `
+          SELECT (
+            (SELECT COUNT(*) FROM stories s
+             JOIN child_profiles cp ON s.child_profile_id = cp.id
+             WHERE cp.user_id = $1${countChildCondition}${favoriteCondition})
+            +
+            (SELECT COUNT(*) FROM content_items WHERE user_id = $1${countChildCondition}${favoriteCondition})
+          ) as count
+        `;
       }
 
       const countResult = await queryOne<{ count: string }>(countSql, countParams);
       const total = parseInt(countResult?.count || '0', 10);
 
       res.json({
-        items,
+        items: items.rows,
         total,
         limit: parseInt(limit as string, 10),
         offset: parseInt(offset as string, 10),
