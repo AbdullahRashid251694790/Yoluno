@@ -88,7 +88,7 @@ router.get(
         [childId]
       );
 
-      res.json(activities);
+      res.json(activities.rows);
     } catch (error) {
       next(error);
     }
@@ -211,7 +211,7 @@ router.get(
         [childId, limitNum]
       );
 
-      res.json(topics);
+      res.json(topics.rows);
     } catch (error) {
       next(error);
     }
