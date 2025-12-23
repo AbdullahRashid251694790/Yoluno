@@ -48,6 +48,7 @@ router.post('/members', async (req: Request, res: Response, next: NextFunction) 
     const {
       name,
       relationship,
+      relationship_type, // Accept both names for compatibility
       birth_date,
       notes,
       is_alive = true,
@@ -62,6 +63,9 @@ router.post('/members', async (req: Request, res: Response, next: NextFunction) 
       position_y,
     } = req.body;
 
+    // Use relationship_type if relationship is not provided
+    const relationshipValue = relationship || relationship_type;
+
     // Ensure hobbies is a proper array for PostgreSQL
     const hobbiesArray = Array.isArray(hobbies) ? hobbies : (hobbies ? [hobbies] : []);
 
@@ -74,7 +78,7 @@ router.post('/members', async (req: Request, res: Response, next: NextFunction) 
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::text[], $11, $12, $13, $14, $15, $16)
       RETURNING *`,
       [
-        id, req.user!.id, name, relationship, birth_date || null, notes || null, is_alive,
+        id, req.user!.id, name, relationshipValue, birth_date || null, notes || null, is_alive,
         photo_url || null, occupation || null, hobbiesArray, fun_facts || null, connection_description || null,
         photo_description || null, generation_level || null, position_x || null, position_y || null,
       ]
@@ -99,10 +103,13 @@ router.put('/members/:id', async (req: Request, res: Response, next: NextFunctio
     }
 
     const {
-      name, relationship, birth_date, notes, is_alive, photo_url,
+      name, relationship, relationship_type, birth_date, notes, is_alive, photo_url,
       occupation, hobbies, fun_facts, connection_description,
       photo_description, generation_level, position_x, position_y,
     } = req.body;
+
+    // Use relationship_type if relationship is not provided
+    const relationshipValue = relationship || relationship_type;
 
     // Ensure hobbies is a proper array for PostgreSQL if provided
     const hobbiesArray = hobbies !== undefined
@@ -129,7 +136,7 @@ router.put('/members/:id', async (req: Request, res: Response, next: NextFunctio
        WHERE id = $15
        RETURNING *`,
       [
-        name, relationship, birth_date, notes, is_alive, photo_url,
+        name, relationshipValue, birth_date, notes, is_alive, photo_url,
         occupation, hobbiesArray, fun_facts, connection_description,
         photo_description, generation_level, position_x, position_y,
         req.params.id,
