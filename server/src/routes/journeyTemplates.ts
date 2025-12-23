@@ -53,7 +53,6 @@ interface Journey {
   child_profile_id: string;
   template_id: string | null;
   title: string;
-  description: string | null;
   status: string;
   progress: number;
   created_at: string;
@@ -250,10 +249,10 @@ router.post('/:id/start', async (req: Request, res: Response, next: NextFunction
 
       // Create the journey
       const journeyResult = await client.query<Journey>(
-        `INSERT INTO journeys (id, child_profile_id, template_id, title, description, status, progress)
-         VALUES ($1, $2, $3, $4, $5, 'active', 0)
+        `INSERT INTO journeys (id, child_profile_id, template_id, title, status, progress)
+         VALUES ($1, $2, $3, $4, 'active', 0)
          RETURNING *`,
-        [journeyId, childId, template.id, template.title, template.description]
+        [journeyId, childId, template.id, template.title]
       );
 
       const journey = journeyResult.rows[0];
