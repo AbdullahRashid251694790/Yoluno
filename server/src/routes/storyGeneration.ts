@@ -413,7 +413,7 @@ async function generateIllustration(
   childProfileId: string,
   type: 'cover' | 'page' = 'page'
 ): Promise<string | null> {
-  const fullPrompt = `A children's book illustration: ${prompt}
+  const fullPrompt = `Generate a children's book illustration: ${prompt}
 Style: Colorful, friendly, whimsical, suitable for children, picture book style, digital art.
 ${theme ? `Theme: ${theme}.` : ''}
 ${mood ? `Mood: ${mood}.` : ''}
@@ -421,8 +421,8 @@ No text or words in the image. Warm and inviting atmosphere.
 ${type === 'cover' ? 'This is a cover illustration, make it eye-catching and magical.' : ''}`;
 
   try {
-    // Use Flux via OpenRouter for image generation
-    const response = await fetch('https://openrouter.ai/api/v1/images/generations', {
+    // Use Gemini Flash Image via OpenRouter for image generation
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
@@ -430,42 +430,71 @@ ${type === 'cover' ? 'This is a cover illustration, make it eye-catching and mag
         'HTTP-Referer': process.env.FRONTEND_URL || 'http://localhost:5173',
       },
       body: JSON.stringify({
-        model: 'black-forest-labs/flux-schnell',
-        prompt: fullPrompt,
-        n: 1,
-        size: '1024x1024',
+        model: 'google/gemini-2.5-flash-image',
+        messages: [
+          {
+            role: 'user',
+            content: fullPrompt,
+          },
+        ],
       }),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(`Flux image generation failed: ${errorText}`);
+      throw new Error(`Gemini image generation failed: ${errorText}`);
     }
 
-    const data = (await response.json()) as { data: { url?: string; b64_json?: string }[] };
+    const data = (await response.json()) as {
+      choices: {
+        message: {
+          content: string | Array<{ type: string; image_url?: { url: string }; text?: string }>;
+        };
+      }[];
+    };
 
-    const imageData = data.data?.[0];
-    if (!imageData) return null;
+    const messageContent = data.choices?.[0]?.message?.content;
+    if (!messageContent) return null;
+
+    // Extract base64 image from response
+    let base64Data: string | null = null;
+    let imageFormat = 'png';
+
+    if (typeof messageContent === 'string') {
+      // Check for base64 data URI in the string
+      const base64Match = messageContent.match(/data:image\/([\w+]+);base64,([A-Za-z0-9+/=]+)/);
+      if (base64Match) {
+        imageFormat = base64Match[1].replace('+', '');
+        base64Data = base64Match[2];
+      }
+    } else if (Array.isArray(messageContent)) {
+      // Check for image in multipart response
+      for (const part of messageContent) {
+        if (part.type === 'image_url' && part.image_url?.url) {
+          const match = part.image_url.url.match(/data:image\/([\w+]+);base64,([A-Za-z0-9+/=]+)/);
+          if (match) {
+            imageFormat = match[1].replace('+', '');
+            base64Data = match[2];
+            break;
+          }
+        }
+      }
+    }
+
+    if (!base64Data) {
+      console.log('No image data found in response:', JSON.stringify(messageContent).substring(0, 500));
+      return null;
+    }
 
     // Save the image
     const uploadDir = process.env.UPLOAD_DIR || './uploads';
     const storyDir = path.join(uploadDir, 'story-illustrations', childProfileId);
     await fs.mkdir(storyDir, { recursive: true });
 
-    const filename = `${Date.now()}-${type}.png`;
+    const filename = `${Date.now()}-${type}.${imageFormat === 'jpeg' ? 'jpg' : imageFormat}`;
     const filepath = path.join(storyDir, filename);
 
-    if (imageData.b64_json) {
-      // Base64 response
-      await fs.writeFile(filepath, Buffer.from(imageData.b64_json, 'base64'));
-    } else if (imageData.url) {
-      // URL response - download the image
-      const imageResponse = await fetch(imageData.url);
-      const arrayBuffer = await imageResponse.arrayBuffer();
-      await fs.writeFile(filepath, Buffer.from(arrayBuffer));
-    } else {
-      return null;
-    }
+    await fs.writeFile(filepath, Buffer.from(base64Data, 'base64'));
 
     return `/uploads/story-illustrations/${childProfileId}/${filename}`;
   } catch (error) {

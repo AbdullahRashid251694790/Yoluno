@@ -42,30 +42,30 @@ export function StorybookCover({
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 
       {/* Content */}
-      <div className="relative h-full flex flex-col justify-end p-6 md:p-10">
+      <div className="relative h-full flex flex-col justify-end p-4 md:p-8 pb-6 md:pb-10">
         {/* Theme/Mood badges */}
-        <div className="flex gap-2 mb-4">
+        <div className="flex flex-wrap gap-2 mb-3">
           {theme && (
-            <span className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-white text-sm capitalize">
+            <span className="px-2 py-0.5 bg-white/20 backdrop-blur-sm rounded-full text-white text-xs capitalize">
               {theme}
             </span>
           )}
           {mood && (
-            <span className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-white text-sm capitalize">
+            <span className="px-2 py-0.5 bg-white/20 backdrop-blur-sm rounded-full text-white text-xs capitalize">
               {mood}
             </span>
           )}
         </div>
 
         {/* Title */}
-        <h1 className="text-3xl md:text-5xl font-display font-bold text-white leading-tight mb-6 drop-shadow-lg">
+        <h1 className="text-2xl md:text-4xl font-display font-bold text-white leading-tight mb-4 drop-shadow-lg line-clamp-3">
           {title}
         </h1>
 
         {/* Tap to start prompt */}
         <div className="flex items-center gap-2 text-white/80 group-hover:text-white transition-colors">
-          <Sparkles className="h-5 w-5 animate-pulse" />
-          <span className="text-lg">Tap to begin reading</span>
+          <Sparkles className="h-4 w-4 animate-pulse" />
+          <span className="text-sm md:text-base">Tap to begin reading</span>
         </div>
       </div>
 
