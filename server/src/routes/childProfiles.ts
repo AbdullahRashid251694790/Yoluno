@@ -1,6 +1,6 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import { query, queryOne } from '../config/database.js';
 import { requireAuth } from '../middleware/auth.js';
 import { AppError } from '../middleware/errorHandler.js';
