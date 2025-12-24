@@ -114,10 +114,14 @@ export function StoryWizardPage() {
   const [currentStep, setCurrentStep] = useState(0);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedStory, setGeneratedStory] = useState<{
+    id?: string;
     title: string;
     content: string;
     moral: string;
     illustrationUrl?: string | null;
+    coverImageUrl?: string | null;
+    hasPages?: boolean;
+    pageCount?: number;
   } | null>(null);
 
   const [wizardState, setWizardState] = useState<StoryWizardState>({
@@ -178,13 +182,18 @@ export function StoryWizardPage() {
         values: wizardState.values.length > 0 ? wizardState.values : undefined,
         storyLength: wizardState.storyLength,
         includeFamily: wizardState.includeFamily,
+        narratorVoice: wizardState.narratorVoice,
       });
 
       setGeneratedStory({
+        id: story.id,
         title: story.title,
         content: story.content,
         moral: story.moral,
         illustrationUrl: story.illustrationUrl,
+        coverImageUrl: story.cover_image_url,
+        hasPages: story.has_pages,
+        pageCount: story.pages?.length,
       });
 
       // Store voice preference for this story in localStorage
@@ -473,28 +482,31 @@ export function StoryWizardPage() {
               <div className="space-y-4">
                 <div className="rounded-xl bg-gradient-to-r from-pink-500/10 to-purple-500/10 p-4">
                   <h3 className="text-lg font-bold">{generatedStory.title}</h3>
+                  {generatedStory.hasPages && generatedStory.pageCount && (
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {generatedStory.pageCount} pages with illustrations generating...
+                    </p>
+                  )}
                 </div>
-                {generatedStory.illustrationUrl && (
+                {(generatedStory.coverImageUrl || generatedStory.illustrationUrl) && (
                   <div className="rounded-xl overflow-hidden border-2 border-primary/20">
                     <img
-                      src={generatedStory.illustrationUrl}
-                      alt={`Illustration for ${generatedStory.title}`}
+                      src={generatedStory.coverImageUrl || generatedStory.illustrationUrl!}
+                      alt={`Cover for ${generatedStory.title}`}
                       className="w-full h-auto max-h-[250px] object-cover"
                     />
                   </div>
                 )}
-                <div className="max-h-[300px] overflow-y-auto rounded-lg bg-muted/50 p-4">
+                <div className="max-h-[200px] overflow-y-auto rounded-lg bg-muted/50 p-4">
                   <p className="whitespace-pre-wrap text-sm leading-relaxed">
                     {generatedStory.content}
                   </p>
                 </div>
-                {generatedStory.moral && (
-                  <div className="rounded-lg bg-yellow-100 p-3">
-                    <p className="text-sm">
-                      <strong>Moral:</strong> {generatedStory.moral}
-                    </p>
-                  </div>
-                )}
+                <div className="rounded-lg bg-purple-100 p-3 text-center">
+                  <p className="text-sm text-purple-800">
+                    Your storybook is ready! Illustrations are being created in the background.
+                  </p>
+                </div>
               </div>
             ) : (
               <div className="space-y-4">

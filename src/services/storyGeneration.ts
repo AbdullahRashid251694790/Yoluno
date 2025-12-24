@@ -16,6 +16,13 @@ export interface StoryGenerationRequest {
   values?: string[];
   storyLength?: 'short' | 'medium' | 'long';
   includeFamily?: boolean;
+  narratorVoice?: string;
+}
+
+export interface StoryPagePreview {
+  page_number: number;
+  content: string;
+  illustration_status: 'pending' | 'generating' | 'completed' | 'failed';
 }
 
 export interface GeneratedStory {
@@ -27,6 +34,10 @@ export interface GeneratedStory {
   theme: string;
   mood: string;
   illustrationUrl?: string | null;
+  cover_image_url?: string | null;
+  has_pages?: boolean;
+  narrator_voice?: string;
+  pages?: StoryPagePreview[];
 }
 
 export interface StoryGenerationResponse {
@@ -47,6 +58,7 @@ export async function generateStory(
       values: request.values,
       storyLength: request.storyLength,
       includeFamily: request.includeFamily,
+      narratorVoice: request.narratorVoice,
     });
 
     // Check for error in response data

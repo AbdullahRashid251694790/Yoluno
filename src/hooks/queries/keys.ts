@@ -25,6 +25,14 @@ export const queryKeys = {
     detail: (id: string) => [...queryKeys.stories.details(), id] as const,
   },
 
+  // Story Pages (for storybook experience)
+  storyPages: {
+    all: ['story-pages'] as const,
+    forStory: (storyId: string) => [...queryKeys.storyPages.all, storyId] as const,
+    illustrationStatus: (storyId: string) =>
+      [...queryKeys.storyPages.all, 'illustration-status', storyId] as const,
+  },
+
   // Family
   family: {
     all: ['family'] as const,

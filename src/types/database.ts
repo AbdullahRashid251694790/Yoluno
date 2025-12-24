@@ -30,14 +30,39 @@ export interface StoryRow {
   title: string;
   content: string;
   theme: string | null;
+  mood: string | null;
+  values: string[];
   characters: string[];
   word_count: number;
   illustration_url: string | null;
+  cover_image_url: string | null;
+  has_pages: boolean;
+  narrator_voice: string | null;
   is_favorite: boolean;
   created_at: string;
+  updated_at: string;
 }
-export type StoryInsert = Omit<StoryRow, 'id' | 'created_at'>;
+export type StoryInsert = Omit<StoryRow, 'id' | 'created_at' | 'updated_at'>;
 export type StoryUpdate = Partial<Omit<StoryRow, 'id' | 'child_profile_id' | 'created_at'>>;
+
+// Story Pages (for storybook experience)
+export type IllustrationStatus = 'pending' | 'generating' | 'completed' | 'failed';
+
+export interface StoryPageRow {
+  id: string;
+  story_id: string;
+  page_number: number;
+  content: string;
+  illustration_prompt: string | null;
+  illustration_url: string | null;
+  illustration_status: IllustrationStatus;
+  audio_url: string | null;
+  audio_duration_ms: number | null;
+  created_at: string;
+  updated_at: string;
+}
+export type StoryPageInsert = Omit<StoryPageRow, 'id' | 'created_at' | 'updated_at'>;
+export type StoryPageUpdate = Partial<Omit<StoryPageRow, 'id' | 'story_id' | 'created_at'>>;
 
 // Chat Sessions
 export interface ChatSessionRow {

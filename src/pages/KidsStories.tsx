@@ -2,24 +2,19 @@
  * Kids Stories Page
  *
  * Display child's stories with option to create new ones.
+ * Uses StorybookReader for immersive reading experience.
  */
 
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useStoriesByChild } from '@/hooks/queries/useStories';
 import { QueryState } from '@/components/shared';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { ArrowLeft, Plus, BookOpen, Volume2, VolumeX, Loader2, Pause, Play, Square } from 'lucide-react';
-import { toast } from 'sonner';
+import { ArrowLeft, Plus, BookOpen, Star } from 'lucide-react';
 import type { StoryWithDetails } from '@/services/stories';
-import { generateSpeech, playAudioFromBase64, type TTSVoice } from '@/services/textToSpeech';
+import { StorybookReader } from '@/components/storybook';
+import { getUploadUrl } from '@/integrations/api/client';
 
 export function KidsStoriesPage() {
   const { childId } = useParams<{ childId: string }>();
@@ -27,93 +22,12 @@ export function KidsStoriesPage() {
   const { data: stories, isLoading, isError, refetch } = useStoriesByChild(childId);
   const [selectedStory, setSelectedStory] = useState<StoryWithDetails | null>(null);
 
-  // Audio playback state
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [isLoadingAudio, setIsLoadingAudio] = useState(false);
-  const [hasAudio, setHasAudio] = useState(false);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-
-  // Get stored voice preference for this story
-  const getStoredVoice = useCallback((storyId: string): TTSVoice => {
-    try {
-      const voicePrefs = JSON.parse(localStorage.getItem('storyVoicePrefs') || '{}');
-      return voicePrefs[storyId] || 'nova';
-    } catch {
-      return 'nova';
-    }
-  }, []);
-
-  const stopAudio = useCallback(() => {
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
-      audioRef.current = null;
-    }
-    setIsPlaying(false);
-    setHasAudio(false);
-  }, []);
-
-  // Stop audio when dialog closes or story changes
-  useEffect(() => {
-    if (!selectedStory) {
-      stopAudio();
-    }
-  }, [selectedStory, stopAudio]);
-
-  const handlePlayAudio = useCallback(async () => {
-    if (!selectedStory) return;
-
-    if (isPlaying) {
-      // Pause
-      if (audioRef.current) {
-        audioRef.current.pause();
-        setIsPlaying(false);
-      }
-      return;
-    }
-
-    // If we have a paused audio, resume it
-    if (audioRef.current && audioRef.current.paused && audioRef.current.currentTime > 0) {
-      audioRef.current.play();
-      setIsPlaying(true);
-      return;
-    }
-
-    // Generate new audio
-    setIsLoadingAudio(true);
-    try {
-      const voice = getStoredVoice(selectedStory.id);
-      const response = await generateSpeech(selectedStory.content, { voice });
-
-      stopAudio(); // Stop any existing audio first
-
-      const audio = playAudioFromBase64(response.audio);
-      audioRef.current = audio;
-      setIsPlaying(true);
-      setHasAudio(true);
-
-      audio.addEventListener('ended', () => {
-        setIsPlaying(false);
-        setHasAudio(false);
-        audioRef.current = null;
-      });
-
-      audio.addEventListener('error', () => {
-        toast.error('Failed to play audio');
-        setIsPlaying(false);
-        setHasAudio(false);
-        audioRef.current = null;
-      });
-    } catch (error) {
-      console.error('TTS error:', error);
-      toast.error('Failed to generate audio');
-    } finally {
-      setIsLoadingAudio(false);
-    }
-  }, [selectedStory, isPlaying, getStoredVoice, stopAudio]);
-
   const handleBack = () => {
     navigate(`/kids/${childId}`);
+  };
+
+  const handleCloseReader = () => {
+    setSelectedStory(null);
   };
 
   return (
@@ -158,129 +72,84 @@ export function KidsStoriesPage() {
         >
           {(storyList) => (
             <div className="grid gap-4">
-              {storyList.map((story) => (
-                <Card
-                  key={story.id}
-                  onClick={() => setSelectedStory(story)}
-                  className="overflow-hidden border-0 bg-white/70 backdrop-blur-sm shadow-md hover:shadow-lg transition-shadow cursor-pointer active:scale-[0.98]"
-                >
-                  <CardContent className="p-4">
-                    <div className="flex items-start gap-3">
-                      <div className="rounded-xl bg-pink-100 p-3">
-                        <BookOpen className="h-6 w-6 text-pink-500" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-display font-bold text-foreground truncate">
-                          {story.title}
-                        </h3>
-                        {story.theme && (
-                          <p className="text-sm text-muted-foreground mt-0.5">
-                            {story.theme}
+              {storyList.map((story) => {
+                // Get cover image URL - prefer cover_image_url, fallback to illustration_url
+                const coverUrl = (story as { cover_image_url?: string }).cover_image_url
+                  || (story as { illustration_url?: string }).illustration_url;
+
+                return (
+                  <Card
+                    key={story.id}
+                    onClick={() => setSelectedStory(story)}
+                    className="overflow-hidden border-0 bg-white/70 backdrop-blur-sm shadow-md hover:shadow-lg transition-shadow cursor-pointer active:scale-[0.98]"
+                  >
+                    <CardContent className="p-0">
+                      <div className="flex">
+                        {/* Cover thumbnail */}
+                        <div className="w-24 h-24 flex-shrink-0 bg-gradient-to-br from-purple-200 to-pink-200">
+                          {coverUrl ? (
+                            <img
+                              src={getUploadUrl(coverUrl)}
+                              alt={story.title}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <BookOpen className="h-8 w-8 text-purple-400" />
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Story info */}
+                        <div className="flex-1 p-4 min-w-0">
+                          <div className="flex items-start gap-2">
+                            <h3 className="font-display font-bold text-foreground truncate flex-1">
+                              {story.title}
+                            </h3>
+                            {story.is_favorite && (
+                              <Star className="h-4 w-4 text-yellow-500 fill-yellow-500 flex-shrink-0" />
+                            )}
+                          </div>
+                          {story.theme && (
+                            <p className="text-sm text-muted-foreground mt-0.5 capitalize">
+                              {story.theme}
+                            </p>
+                          )}
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {new Date(story.created_at).toLocaleDateString()}
                           </p>
-                        )}
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {new Date(story.created_at).toLocaleDateString()}
-                        </p>
+                          {/* Show badge if it's a storybook */}
+                          {(story as { has_pages?: boolean }).has_pages && (
+                            <span className="inline-block mt-2 px-2 py-0.5 bg-purple-100 text-purple-700 text-xs rounded-full">
+                              Storybook
+                            </span>
+                          )}
+                        </div>
                       </div>
-                      {story.is_favorite && (
-                        <span className="text-xl">⭐</span>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           )}
         </QueryState>
       </main>
 
-      {/* Story Reader Dialog */}
-      <Dialog open={!!selectedStory} onOpenChange={(open) => !open && setSelectedStory(null)}>
-        <DialogContent className="max-w-lg max-h-[85vh] overflow-hidden flex flex-col bg-gradient-to-b from-pink-50 to-purple-50">
-          <DialogHeader className="flex-shrink-0">
-            <DialogTitle className="text-xl font-display pr-8">
-              {selectedStory?.title}
-            </DialogTitle>
-            {selectedStory?.theme && (
-              <p className="text-sm text-muted-foreground">
-                Theme: {selectedStory.theme}
-              </p>
-            )}
-          </DialogHeader>
-
-          <div className="flex-1 overflow-y-auto py-4 space-y-4">
-            {/* Illustration */}
-            {(selectedStory as { illustration_url?: string })?.illustration_url && (
-              <div className="rounded-xl overflow-hidden border-2 border-pink-200">
-                <img
-                  src={(selectedStory as { illustration_url?: string }).illustration_url!}
-                  alt={`Illustration for ${selectedStory?.title}`}
-                  className="w-full h-auto max-h-[200px] object-cover"
-                />
-              </div>
-            )}
-
-            {/* Story Content */}
-            <div className="prose prose-sm max-w-none">
-              <p className="whitespace-pre-wrap text-foreground leading-relaxed">
-                {selectedStory?.content}
-              </p>
-            </div>
-          </div>
-
-          {/* Audio Controls & Mood */}
-          <div className="flex-shrink-0 pt-4 border-t">
-            <div className="flex items-center justify-between">
-              {/* Audio Controls */}
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handlePlayAudio}
-                  disabled={isLoadingAudio}
-                  className="gap-2"
-                >
-                  {isLoadingAudio ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Loading...
-                    </>
-                  ) : isPlaying ? (
-                    <>
-                      <Pause className="h-4 w-4" />
-                      Pause
-                    </>
-                  ) : (
-                    <>
-                      <Volume2 className="h-4 w-4" />
-                      Read Aloud
-                    </>
-                  )}
-                </Button>
-                {(isPlaying || hasAudio) && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={stopAudio}
-                    className="gap-2"
-                  >
-                    <Square className="h-4 w-4" />
-                    Stop
-                  </Button>
-                )}
-              </div>
-
-              {/* Mood */}
-              {selectedStory?.mood && (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <span className="font-medium">Mood:</span>
-                  <span className="capitalize">{selectedStory.mood}</span>
-                </div>
-              )}
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Storybook Reader */}
+      {selectedStory && (
+        <StorybookReader
+          storyId={selectedStory.id}
+          storyTitle={selectedStory.title}
+          coverImageUrl={
+            (selectedStory as { cover_image_url?: string }).cover_image_url ||
+            (selectedStory as { illustration_url?: string }).illustration_url
+          }
+          theme={selectedStory.theme}
+          mood={(selectedStory as { mood?: string }).mood}
+          narratorVoice={(selectedStory as { narrator_voice?: string }).narrator_voice || 'nova'}
+          onClose={handleCloseReader}
+        />
+      )}
     </div>
   );
 }

@@ -46,7 +46,27 @@ export interface Story {
   word_count?: number;
   illustration_style?: string;
   illustration_url?: string;
+  cover_image_url?: string;
+  has_pages: boolean;
+  narrator_voice?: string;
   is_favorite: boolean;
+  created_at: Date;
+  updated_at: Date;
+}
+
+// Story Page types (for storybook experience)
+export type IllustrationStatus = 'pending' | 'generating' | 'completed' | 'failed';
+
+export interface StoryPage {
+  id: string;
+  story_id: string;
+  page_number: number;
+  content: string;
+  illustration_prompt?: string;
+  illustration_url?: string;
+  illustration_status: IllustrationStatus;
+  audio_url?: string;
+  audio_duration_ms?: number;
   created_at: Date;
   updated_at: Date;
 }
