@@ -65,10 +65,12 @@ export function StorybookPage({
       </div>
 
       {/* Text area (bottom 40%) */}
-      <div className="flex-[2] min-h-0 p-4 md:p-6 flex items-center justify-center bg-gradient-to-b from-amber-50/50 to-amber-100/50 overflow-hidden">
-        <p className="text-base md:text-lg lg:text-xl leading-relaxed text-gray-800 font-serif text-center max-w-prose overflow-y-auto max-h-full scrollbar-hide">
-          {page.content}
-        </p>
+      <div className="flex-[2] min-h-0 p-4 md:p-6 flex flex-col bg-gradient-to-b from-amber-50/50 to-amber-100/50 overflow-hidden">
+        <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide flex items-center justify-center">
+          <p className="text-base md:text-lg lg:text-xl leading-relaxed text-gray-800 font-serif text-center max-w-prose px-2">
+            {page.content}
+          </p>
+        </div>
       </div>
 
       {/* Decorative book spine effect */}

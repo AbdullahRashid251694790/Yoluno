@@ -449,41 +449,58 @@ ${type === 'cover' ? 'This is a cover illustration, make it eye-catching and mag
     const data = (await response.json()) as {
       choices: {
         message: {
-          content: string | Array<{ type: string; image_url?: { url: string }; text?: string }>;
+          content?: string | Array<{ type: string; image_url?: { url: string }; text?: string }>;
+          images?: Array<{ image_url: { url: string } }>;
         };
       }[];
     };
-
-    const messageContent = data.choices?.[0]?.message?.content;
-    if (!messageContent) return null;
 
     // Extract base64 image from response
     let base64Data: string | null = null;
     let imageFormat = 'png';
 
-    if (typeof messageContent === 'string') {
-      // Check for base64 data URI in the string
-      const base64Match = messageContent.match(/data:image\/([\w+]+);base64,([A-Za-z0-9+/=]+)/);
-      if (base64Match) {
-        imageFormat = base64Match[1].replace('+', '');
-        base64Data = base64Match[2];
+    // First check the images array (OpenRouter's documented format for image generation)
+    const messageImages = data.choices?.[0]?.message?.images;
+    if (messageImages && messageImages.length > 0) {
+      const imageUrl = messageImages[0].image_url?.url;
+      if (imageUrl) {
+        const match = imageUrl.match(/data:image\/([\w+]+);base64,([A-Za-z0-9+/=]+)/);
+        if (match) {
+          imageFormat = match[1].replace('+', '');
+          base64Data = match[2];
+        }
       }
-    } else if (Array.isArray(messageContent)) {
-      // Check for image in multipart response
-      for (const part of messageContent) {
-        if (part.type === 'image_url' && part.image_url?.url) {
-          const match = part.image_url.url.match(/data:image\/([\w+]+);base64,([A-Za-z0-9+/=]+)/);
-          if (match) {
-            imageFormat = match[1].replace('+', '');
-            base64Data = match[2];
-            break;
+    }
+
+    // Fallback: check message.content (alternative response formats)
+    if (!base64Data) {
+      const messageContent = data.choices?.[0]?.message?.content;
+      if (messageContent) {
+        if (typeof messageContent === 'string') {
+          // Check for base64 data URI in the string
+          const base64Match = messageContent.match(/data:image\/([\w+]+);base64,([A-Za-z0-9+/=]+)/);
+          if (base64Match) {
+            imageFormat = base64Match[1].replace('+', '');
+            base64Data = base64Match[2];
+          }
+        } else if (Array.isArray(messageContent)) {
+          // Check for image in multipart response
+          for (const part of messageContent) {
+            if (part.type === 'image_url' && part.image_url?.url) {
+              const match = part.image_url.url.match(/data:image\/([\w+]+);base64,([A-Za-z0-9+/=]+)/);
+              if (match) {
+                imageFormat = match[1].replace('+', '');
+                base64Data = match[2];
+                break;
+              }
+            }
           }
         }
       }
     }
 
     if (!base64Data) {
-      console.log('No image data found in response:', JSON.stringify(messageContent).substring(0, 500));
+      console.log('No image data found in response:', JSON.stringify(data.choices?.[0]?.message).substring(0, 500));
       return null;
     }
 
