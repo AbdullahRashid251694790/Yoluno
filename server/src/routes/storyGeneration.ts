@@ -430,7 +430,7 @@ ${type === 'cover' ? 'This is a cover illustration, make it eye-catching and mag
         'HTTP-Referer': process.env.FRONTEND_URL || 'http://localhost:5173',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash-image',
+        model: 'google/gemini-2.5-flash-image-preview',
         modalities: ['text', 'image'],
         messages: [
           {

@@ -66,7 +66,7 @@ export function StorybookPage({
 
       {/* Text area (bottom 40%) */}
       <div className="flex-[2] min-h-0 p-4 md:p-6 flex items-center justify-center bg-gradient-to-b from-amber-50/50 to-amber-100/50 overflow-hidden">
-        <p className="text-base md:text-lg leading-relaxed text-gray-800 font-serif text-center max-w-prose line-clamp-6 overflow-hidden">
+        <p className="text-base md:text-lg lg:text-xl leading-relaxed text-gray-800 font-serif text-center max-w-prose overflow-y-auto max-h-full scrollbar-hide">
           {page.content}
         </p>
       </div>
