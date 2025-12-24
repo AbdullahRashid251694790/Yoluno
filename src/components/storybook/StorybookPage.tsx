@@ -35,7 +35,7 @@ export function StorybookPage({
       )}
     >
       {/* Illustration area (top 60%) */}
-      <div className="relative flex-[3] bg-gradient-to-b from-blue-100 to-purple-100 overflow-hidden">
+      <div className="relative flex-[3] min-h-0 bg-gradient-to-b from-blue-100 to-purple-100 overflow-hidden">
         {page.illustration_status === 'completed' && illustrationUrl ? (
           <img
             src={illustrationUrl}
@@ -65,7 +65,7 @@ export function StorybookPage({
       </div>
 
       {/* Text area (bottom 40%) */}
-      <div className="flex-[2] p-4 md:p-6 flex items-center justify-center bg-gradient-to-b from-amber-50/50 to-amber-100/50 overflow-hidden">
+      <div className="flex-[2] min-h-0 p-4 md:p-6 flex items-center justify-center bg-gradient-to-b from-amber-50/50 to-amber-100/50 overflow-hidden">
         <p className="text-base md:text-lg leading-relaxed text-gray-800 font-serif text-center max-w-prose line-clamp-6 overflow-hidden">
           {page.content}
         </p>
