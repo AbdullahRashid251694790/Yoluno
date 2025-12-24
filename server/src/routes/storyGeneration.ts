@@ -414,14 +414,15 @@ async function generateIllustration(
   type: 'cover' | 'page' = 'page'
 ): Promise<string | null> {
   const fullPrompt = `A children's book illustration: ${prompt}
-Style: Colorful, friendly, whimsical, suitable for children, picture book style.
+Style: Colorful, friendly, whimsical, suitable for children, picture book style, digital art.
 ${theme ? `Theme: ${theme}.` : ''}
 ${mood ? `Mood: ${mood}.` : ''}
-No text in the image. Warm and inviting atmosphere.
+No text or words in the image. Warm and inviting atmosphere.
 ${type === 'cover' ? 'This is a cover illustration, make it eye-catching and magical.' : ''}`;
 
   try {
-    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    // Use Flux via OpenRouter for image generation
+    const response = await fetch('https://openrouter.ai/api/v1/images/generations', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
@@ -429,45 +430,44 @@ ${type === 'cover' ? 'This is a cover illustration, make it eye-catching and mag
         'HTTP-Referer': process.env.FRONTEND_URL || 'http://localhost:5173',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash-image',
-        messages: [
-          {
-            role: 'user',
-            content: fullPrompt,
-          },
-        ],
-        max_tokens: 1024,
+        model: 'black-forest-labs/flux-schnell',
+        prompt: fullPrompt,
+        n: 1,
+        size: '1024x1024',
       }),
     });
 
     if (!response.ok) {
-      throw new Error(`Image generation failed: ${await response.text()}`);
+      const errorText = await response.text();
+      throw new Error(`Flux image generation failed: ${errorText}`);
     }
 
-    const data = (await response.json()) as { choices: { message: { content: string } }[] };
+    const data = (await response.json()) as { data: { url?: string; b64_json?: string }[] };
 
-    // Extract base64 image from response
-    const imageContent = data.choices[0]?.message?.content;
-    if (!imageContent) return null;
+    const imageData = data.data?.[0];
+    if (!imageData) return null;
 
-    // If it's a base64 image, save it
-    const base64Match = imageContent.match(/data:image\/(\w+);base64,(.+)/);
-    if (base64Match) {
-      const [, format, base64Data] = base64Match;
-      const uploadDir = process.env.UPLOAD_DIR || './uploads';
-      const storyDir = path.join(uploadDir, 'story-illustrations', childProfileId);
+    // Save the image
+    const uploadDir = process.env.UPLOAD_DIR || './uploads';
+    const storyDir = path.join(uploadDir, 'story-illustrations', childProfileId);
+    await fs.mkdir(storyDir, { recursive: true });
 
-      await fs.mkdir(storyDir, { recursive: true });
+    const filename = `${Date.now()}-${type}.png`;
+    const filepath = path.join(storyDir, filename);
 
-      const filename = `${Date.now()}-${type}.${format}`;
-      const filepath = path.join(storyDir, filename);
-
-      await fs.writeFile(filepath, Buffer.from(base64Data, 'base64'));
-
-      return `/uploads/story-illustrations/${childProfileId}/${filename}`;
+    if (imageData.b64_json) {
+      // Base64 response
+      await fs.writeFile(filepath, Buffer.from(imageData.b64_json, 'base64'));
+    } else if (imageData.url) {
+      // URL response - download the image
+      const imageResponse = await fetch(imageData.url);
+      const arrayBuffer = await imageResponse.arrayBuffer();
+      await fs.writeFile(filepath, Buffer.from(arrayBuffer));
+    } else {
+      return null;
     }
 
-    return null;
+    return `/uploads/story-illustrations/${childProfileId}/${filename}`;
   } catch (error) {
     console.error('Error generating illustration:', error);
     return null;
@@ -528,7 +528,7 @@ async function generatePageIllustrations(storyId: string, childProfileId: string
     }
 
     // Small delay between generations to avoid rate limits
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    await new Promise((resolve) => setTimeout(resolve, 2000));
   }
 }
 
