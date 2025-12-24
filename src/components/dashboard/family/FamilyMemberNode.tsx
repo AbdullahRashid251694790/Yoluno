@@ -23,6 +23,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import type { FamilyMemberRow } from '@/types/database';
 import { cn } from '@/lib/utils';
+import { getUploadUrl } from '@/integrations/api';
 
 const RELATIONSHIP_LABELS: Record<string, string> = {
   parent: 'Parent',
@@ -64,7 +65,7 @@ export function FamilyMemberNode({
     .slice(0, 2);
 
   const relationshipLabel =
-    RELATIONSHIP_LABELS[member.relationship_type || 'other'] || 'Family';
+    RELATIONSHIP_LABELS[member.relationship || 'other'] || 'Family';
 
   const handleDragStart = useCallback(
     (e: React.MouseEvent | React.TouchEvent) => {
@@ -172,7 +173,7 @@ export function FamilyMemberNode({
       {/* Content */}
       <div className="flex flex-col items-center text-center">
         <Avatar className="h-16 w-16 mb-2">
-          <AvatarImage src={member.photo_url || undefined} alt={member.name} />
+          <AvatarImage src={getUploadUrl(member.photo_url)} alt={member.name} />
           <AvatarFallback className="bg-primary/10 text-primary text-lg">
             {initials}
           </AvatarFallback>

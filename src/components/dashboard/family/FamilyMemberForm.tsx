@@ -45,7 +45,7 @@ export function FamilyMemberForm({
     resolver: zodResolver(createFamilyMemberSchema),
     defaultValues: {
       name: member?.name || '',
-      relationshipToChild: (member?.relationship_type as CreateFamilyMemberFormData['relationshipToChild']) || 'parent',
+      relationshipToChild: (member?.relationship as CreateFamilyMemberFormData['relationshipToChild']) || 'parent',
       birthYear: member?.birth_date ? new Date(member.birth_date).getFullYear() : undefined,
       occupation: member?.occupation || '',
       bio: member?.notes || '',

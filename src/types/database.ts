@@ -70,6 +70,14 @@ export interface FamilyMemberRow {
   notes: string | null;
   is_alive: boolean;
   generation: number;
+  occupation: string | null;
+  hobbies: string[];
+  fun_facts: string | null;
+  connection_description: string | null;
+  photo_description: string | null;
+  generation_level: number | null;
+  position_x: number | null;
+  position_y: number | null;
   created_at: string;
   updated_at: string;
 }

@@ -57,7 +57,7 @@ export function FamilyTreeCanvas({
       // Use stored generation level or derive from relationship type
       const generation =
         member.generation_level ??
-        RELATIONSHIP_TO_GENERATION[member.relationship_type || 'other'] ??
+        RELATIONSHIP_TO_GENERATION[member.relationship || 'other'] ??
         0;
 
       if (!groups[generation]) {

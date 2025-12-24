@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import type { FamilyMemberRow } from '@/types/database';
 import { cn } from '@/lib/utils';
+import { getUploadUrl } from '@/integrations/api';
 
 const RELATIONSHIP_LABELS: Record<string, string> = {
   parent: 'Parent',
@@ -43,7 +44,7 @@ export function FamilyMemberCard({
     .slice(0, 2);
 
   const relationshipLabel =
-    RELATIONSHIP_LABELS[member.relationship_type || 'other'] || 'Family';
+    RELATIONSHIP_LABELS[member.relationship || 'other'] || 'Family';
 
   return (
     <Card
@@ -58,7 +59,7 @@ export function FamilyMemberCard({
       <CardContent className="p-4">
         <div className="flex items-start gap-3">
           <Avatar className="h-12 w-12">
-            <AvatarImage src={member.photo_url || undefined} alt={member.name} />
+            <AvatarImage src={getUploadUrl(member.photo_url)} alt={member.name} />
             <AvatarFallback className="bg-primary/10 text-primary">
               {initials}
             </AvatarFallback>

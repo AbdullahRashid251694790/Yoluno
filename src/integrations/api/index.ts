@@ -7,6 +7,7 @@ export {
   clearTokens,
   isApiError,
   getErrorMessage,
+  getUploadUrl,
 } from './client';
 
 // Auth exports

@@ -140,3 +140,24 @@ export function getErrorMessage(error: unknown): string {
   }
   return 'An unexpected error occurred';
 }
+
+/**
+ * Get the full URL for an uploaded file.
+ * Converts relative URLs like /uploads/... to full URLs pointing to the backend.
+ */
+export function getUploadUrl(relativePath: string | null | undefined): string | undefined {
+  if (!relativePath) return undefined;
+
+  // If already a full URL, return as-is
+  if (relativePath.startsWith('http://') || relativePath.startsWith('https://')) {
+    return relativePath;
+  }
+
+  // Get the base URL (API_URL without /api suffix)
+  const baseUrl = API_URL.replace(/\/api\/?$/, '');
+
+  // Ensure path starts with /
+  const path = relativePath.startsWith('/') ? relativePath : `/${relativePath}`;
+
+  return `${baseUrl}${path}`;
+}
