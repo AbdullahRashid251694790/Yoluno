@@ -48,7 +48,9 @@ import {
   Heart,
   Clock,
   User,
+  Plus,
 } from 'lucide-react';
+import { RecordVoiceClipDialog } from '@/components/dashboard/voice-vault';
 
 type VoiceCategory = 'all' | 'encouragement' | 'praise' | 'celebration' | 'story' | 'memory' | 'greeting' | 'other';
 
@@ -69,6 +71,7 @@ export function VoiceVaultPage() {
   const [selectedCategory, setSelectedCategory] = useState<VoiceCategory>('all');
   const [showFavorites, setShowFavorites] = useState(false);
   const [playingClipId, setPlayingClipId] = useState<string | null>(null);
+  const [isRecordDialogOpen, setIsRecordDialogOpen] = useState(false);
 
   // Build filters
   const filters: VoiceClipFilters = {
@@ -143,6 +146,11 @@ export function VoiceVaultPage() {
             onClick={() => setShowFavorites(!showFavorites)}
           >
             <Heart className={showFavorites ? 'fill-current' : ''} />
+          </Button>
+
+          <Button onClick={() => setIsRecordDialogOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Record
           </Button>
         </div>
       </div>
@@ -319,6 +327,12 @@ export function VoiceVaultPage() {
           )}
         </TabsContent>
       </Tabs>
+
+      {/* Record Voice Clip Dialog */}
+      <RecordVoiceClipDialog
+        open={isRecordDialogOpen}
+        onOpenChange={setIsRecordDialogOpen}
+      />
     </div>
   );
 }
