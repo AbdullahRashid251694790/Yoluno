@@ -2,25 +2,119 @@
  * Kids Stories Page
  *
  * Display child's stories with option to create new ones.
- * Uses StorybookReader for immersive reading experience.
+ * Uses StorybookReader for new storybook-format stories.
+ * Uses legacy dialog for older stories without pages.
  */
 
-import { useState } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useStoriesByChild } from '@/hooks/queries/useStories';
 import { QueryState } from '@/components/shared';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Plus, BookOpen, Star } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { ArrowLeft, Plus, BookOpen, Star, Volume2, Pause, Square, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import type { StoryWithDetails } from '@/services/stories';
 import { StorybookReader } from '@/components/storybook';
 import { getUploadUrl } from '@/integrations/api/client';
+import { generateSpeech, playAudioFromBase64, type TTSVoice } from '@/services/textToSpeech';
 
 export function KidsStoriesPage() {
   const { childId } = useParams<{ childId: string }>();
   const navigate = useNavigate();
   const { data: stories, isLoading, isError, refetch } = useStoriesByChild(childId);
   const [selectedStory, setSelectedStory] = useState<StoryWithDetails | null>(null);
+
+  // Legacy audio playback state (for old stories without pages)
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isLoadingAudio, setIsLoadingAudio] = useState(false);
+  const [hasAudio, setHasAudio] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Check if selected story has storybook pages
+  const isStorybookFormat = selectedStory && (selectedStory as { has_pages?: boolean }).has_pages;
+
+  // Get stored voice preference for legacy stories
+  const getStoredVoice = useCallback((storyId: string): TTSVoice => {
+    try {
+      const voicePrefs = JSON.parse(localStorage.getItem('storyVoicePrefs') || '{}');
+      return voicePrefs[storyId] || 'nova';
+    } catch {
+      return 'nova';
+    }
+  }, []);
+
+  const stopAudio = useCallback(() => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+      audioRef.current = null;
+    }
+    setIsPlaying(false);
+    setHasAudio(false);
+  }, []);
+
+  // Stop audio when dialog closes or story changes
+  useEffect(() => {
+    if (!selectedStory) {
+      stopAudio();
+    }
+  }, [selectedStory, stopAudio]);
+
+  const handlePlayAudio = useCallback(async () => {
+    if (!selectedStory) return;
+
+    if (isPlaying) {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        setIsPlaying(false);
+      }
+      return;
+    }
+
+    if (audioRef.current && audioRef.current.paused && audioRef.current.currentTime > 0) {
+      audioRef.current.play();
+      setIsPlaying(true);
+      return;
+    }
+
+    setIsLoadingAudio(true);
+    try {
+      const voice = getStoredVoice(selectedStory.id);
+      const response = await generateSpeech(selectedStory.content, { voice });
+
+      stopAudio();
+
+      const audio = playAudioFromBase64(response.audio);
+      audioRef.current = audio;
+      setIsPlaying(true);
+      setHasAudio(true);
+
+      audio.addEventListener('ended', () => {
+        setIsPlaying(false);
+        setHasAudio(false);
+        audioRef.current = null;
+      });
+
+      audio.addEventListener('error', () => {
+        toast.error('Failed to play audio');
+        setIsPlaying(false);
+        setHasAudio(false);
+        audioRef.current = null;
+      });
+    } catch (error) {
+      console.error('TTS error:', error);
+      toast.error('Failed to generate audio');
+    } finally {
+      setIsLoadingAudio(false);
+    }
+  }, [selectedStory, isPlaying, getStoredVoice, stopAudio]);
 
   const handleBack = () => {
     navigate(`/kids/${childId}`);
@@ -73,7 +167,7 @@ export function KidsStoriesPage() {
           {(storyList) => (
             <div className="grid gap-4">
               {storyList.map((story) => {
-                // Get cover image URL - prefer cover_image_url, fallback to illustration_url
+                const hasPages = (story as { has_pages?: boolean }).has_pages;
                 const coverUrl = (story as { cover_image_url?: string }).cover_image_url
                   || (story as { illustration_url?: string }).illustration_url;
 
@@ -118,8 +212,7 @@ export function KidsStoriesPage() {
                           <p className="text-xs text-muted-foreground mt-1">
                             {new Date(story.created_at).toLocaleDateString()}
                           </p>
-                          {/* Show badge if it's a storybook */}
-                          {(story as { has_pages?: boolean }).has_pages && (
+                          {hasPages && (
                             <span className="inline-block mt-2 px-2 py-0.5 bg-purple-100 text-purple-700 text-xs rounded-full">
                               Storybook
                             </span>
@@ -135,8 +228,8 @@ export function KidsStoriesPage() {
         </QueryState>
       </main>
 
-      {/* Storybook Reader */}
-      {selectedStory && (
+      {/* Storybook Reader - for new storybook format stories */}
+      {selectedStory && isStorybookFormat && (
         <StorybookReader
           storyId={selectedStory.id}
           storyTitle={selectedStory.title}
@@ -150,6 +243,94 @@ export function KidsStoriesPage() {
           onClose={handleCloseReader}
         />
       )}
+
+      {/* Legacy Story Dialog - for old stories without pages */}
+      <Dialog open={!!selectedStory && !isStorybookFormat} onOpenChange={(open) => !open && setSelectedStory(null)}>
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-hidden flex flex-col bg-gradient-to-b from-pink-50 to-purple-50">
+          <DialogHeader className="flex-shrink-0">
+            <DialogTitle className="text-xl font-display pr-8">
+              {selectedStory?.title}
+            </DialogTitle>
+            {selectedStory?.theme && (
+              <p className="text-sm text-muted-foreground">
+                Theme: {selectedStory.theme}
+              </p>
+            )}
+          </DialogHeader>
+
+          <div className="flex-1 overflow-y-auto py-4 space-y-4">
+            {/* Illustration */}
+            {(selectedStory as { illustration_url?: string })?.illustration_url && (
+              <div className="rounded-xl overflow-hidden border-2 border-pink-200">
+                <img
+                  src={getUploadUrl((selectedStory as { illustration_url?: string }).illustration_url!)}
+                  alt={`Illustration for ${selectedStory?.title}`}
+                  className="w-full h-auto max-h-[200px] object-cover"
+                />
+              </div>
+            )}
+
+            {/* Story Content */}
+            <div className="prose prose-sm max-w-none">
+              <p className="whitespace-pre-wrap text-foreground leading-relaxed">
+                {selectedStory?.content}
+              </p>
+            </div>
+          </div>
+
+          {/* Audio Controls & Mood */}
+          <div className="flex-shrink-0 pt-4 border-t">
+            <div className="flex items-center justify-between">
+              {/* Audio Controls */}
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handlePlayAudio}
+                  disabled={isLoadingAudio}
+                  className="gap-2"
+                >
+                  {isLoadingAudio ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Loading...
+                    </>
+                  ) : isPlaying ? (
+                    <>
+                      <Pause className="h-4 w-4" />
+                      Pause
+                    </>
+                  ) : (
+                    <>
+                      <Volume2 className="h-4 w-4" />
+                      Read Aloud
+                    </>
+                  )}
+                </Button>
+                {(isPlaying || hasAudio) && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={stopAudio}
+                    className="gap-2"
+                  >
+                    <Square className="h-4 w-4" />
+                    Stop
+                  </Button>
+                )}
+              </div>
+
+              {/* Mood */}
+              {(selectedStory as { mood?: string })?.mood && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <span className="font-medium">Mood:</span>
+                  <span className="capitalize">{(selectedStory as { mood?: string }).mood}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
