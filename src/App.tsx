@@ -20,6 +20,7 @@ import { KidsHomePage } from '@/pages/KidsHome';
 import { KidsChatPage } from '@/pages/KidsChat';
 import { KidsStoriesPage } from '@/pages/KidsStories';
 import { StoryWizardPage } from '@/pages/StoryWizard';
+import { KidsJourneyDetailPage } from '@/pages/KidsJourneyDetail';
 import { NotFoundPage } from '@/pages/NotFound';
 
 const queryClient = new QueryClient({
@@ -133,6 +134,14 @@ export default function App() {
                   element={
                     <ProtectedRoute>
                       <StoryWizardPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/kids/:childId/journeys/:journeyId"
+                  element={
+                    <ProtectedRoute>
+                      <KidsJourneyDetailPage />
                     </ProtectedRoute>
                   }
                 />
