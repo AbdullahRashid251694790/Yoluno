@@ -218,7 +218,7 @@ export function KidsHomePage() {
                 expression={buddyExpression}
                 size="xl"
                 showName
-                buddyName="Cosmo"
+                buddyName="Luno"
               />
 
               <p className="mt-4 text-lg text-muted-foreground">

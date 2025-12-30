@@ -136,7 +136,7 @@ export function BuddyChat({ childId, childName }: BuddyChatProps) {
     );
   }
 
-  const buddyName = buddy?.buddy_name || 'Cosmo';
+  const buddyName = buddy?.buddy_name || 'Luno';
 
   return (
     <div className="flex h-full flex-col bg-kids-gradient">
