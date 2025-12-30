@@ -81,7 +81,10 @@ router.get('/:childId/buddy', async (req: Request, res: Response, next: NextFunc
     await verifyChildAccess(req.params.childId, req.user!.id);
 
     let buddy = await queryOne<ChatBuddy>(
-      'SELECT * FROM chat_buddies WHERE child_profile_id = $1',
+      `SELECT id, child_profile_id, name as buddy_name, personality_traits,
+              conversation_context, learned_preferences, message_count as total_messages,
+              last_interaction_at, created_at, updated_at, NULL as buddy_avatar_url
+       FROM chat_buddies WHERE child_profile_id = $1`,
       [req.params.childId]
     );
 
@@ -90,8 +93,10 @@ router.get('/:childId/buddy', async (req: Request, res: Response, next: NextFunc
       const id = uuidv4();
       buddy = await queryOne<ChatBuddy>(
         `INSERT INTO chat_buddies (id, child_profile_id, name, message_count)
-         VALUES ($1, $2, 'Buddy', 0)
-         RETURNING *`,
+         VALUES ($1, $2, 'Luno', 0)
+         RETURNING id, child_profile_id, name as buddy_name, personality_traits,
+                   conversation_context, learned_preferences, message_count as total_messages,
+                   last_interaction_at, created_at, updated_at, NULL as buddy_avatar_url`,
         [id, req.params.childId]
       );
     }
