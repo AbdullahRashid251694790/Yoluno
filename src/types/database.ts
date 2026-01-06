@@ -11,6 +11,7 @@ export interface ChildProfileRow {
   user_id: string;
   name: string;
   age: number;
+  gender: 'boy' | 'girl' | 'prefer_not_to_say' | null;
   avatar_id: string | null;
   interests: string[];
   personality_traits: string[];

@@ -25,6 +25,7 @@ export interface ChildProfile {
   user_id: string;
   name: string;
   age: number;
+  gender?: 'boy' | 'girl' | 'prefer_not_to_say';
   avatar_id?: string;
   interests?: string[];
   learning_style?: string;

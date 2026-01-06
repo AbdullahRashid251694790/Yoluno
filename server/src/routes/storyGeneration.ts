@@ -57,6 +57,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
     const storyContent = await generateStoryWithPages({
       childName: child.name,
       childAge: child.age,
+      childGender: child.gender,
       theme,
       characters,
       mood,
@@ -246,11 +247,17 @@ router.post('/:storyId/regenerate-illustrations', async (req: Request, res: Resp
   }
 });
 
+interface StoryCharacter {
+  name: string;
+  gender?: 'boy' | 'girl';
+}
+
 interface StoryGenerationParams {
   childName: string;
   childAge: number;
+  childGender?: 'boy' | 'girl' | 'prefer_not_to_say';
   theme?: string;
-  characters?: string[];
+  characters?: StoryCharacter[];
   mood?: string;
   values?: string[];
   pageCount: number;
@@ -273,6 +280,7 @@ async function generateStoryWithPages(params: StoryGenerationParams): Promise<{
   const {
     childName,
     childAge,
+    childGender,
     theme,
     characters,
     mood,
@@ -285,11 +293,20 @@ async function generateStoryWithPages(params: StoryGenerationParams): Promise<{
 
   const totalWords = pageCount * wordsPerPage;
 
+  // Build pronoun guidance for the main character (the child)
+  let pronounGuidance = '';
+  if (childGender === 'boy') {
+    pronounGuidance = `Use he/him pronouns for ${childName}.`;
+  } else if (childGender === 'girl') {
+    pronounGuidance = `Use she/her pronouns for ${childName}.`;
+  }
+
   const systemPrompt = `You are a children's story writer creating personalized, age-appropriate stories formatted as picture book pages.
 Write engaging stories with clear narratives, positive messages, and vivid descriptions.
 Each page should have a natural pause point, like a picture book would.
 Use age-appropriate vocabulary for a ${childAge}-year-old.
-Never include scary, violent, or inappropriate content.`;
+Never include scary, violent, or inappropriate content.
+${pronounGuidance}`;
 
   let userPrompt = `Write a children's story for a ${childAge}-year-old child named ${childName}.
 The story should have exactly ${pageCount} pages, with about ${wordsPerPage} words per page (total ~${totalWords} words).
@@ -301,7 +318,14 @@ Each page should:
 
   if (theme) userPrompt += `\nTheme: ${theme}`;
   if (mood) userPrompt += `\nMood: ${mood}`;
-  if (characters && characters.length > 0) userPrompt += `\nCharacters: ${characters.join(', ')}`;
+  if (characters && characters.length > 0) {
+    const characterDescriptions = characters.map(char => {
+      if (char.gender === 'boy') return `${char.name} (he/him)`;
+      if (char.gender === 'girl') return `${char.name} (she/her)`;
+      return char.name;
+    });
+    userPrompt += `\nCharacters: ${characterDescriptions.join(', ')}`;
+  }
   if (values && values.length > 0) userPrompt += `\nValues to incorporate: ${values.join(', ')}`;
   if (interests.length > 0) userPrompt += `\nThe child is interested in: ${interests.join(', ')}`;
   if (familyMembers.length > 0) {

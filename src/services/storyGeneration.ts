@@ -8,10 +8,15 @@
 import { apiClient } from '@/integrations/api';
 import { handleError } from '@/lib/errors';
 
+export interface StoryCharacter {
+  name: string;
+  gender?: 'boy' | 'girl';
+}
+
 export interface StoryGenerationRequest {
   childProfileId: string;
   theme: string;
-  characters?: string[];
+  characters?: StoryCharacter[];
   mood?: string;
   values?: string[];
   storyLength?: 'short' | 'medium' | 'long';

@@ -18,6 +18,7 @@ export const createChildSchema = z.object({
     .int('Age must be a whole number')
     .min(3, 'Minimum age is 3')
     .max(18, 'Maximum age is 18'),
+  gender: z.enum(['boy', 'girl', 'prefer_not_to_say']).optional(),
   avatarLibraryId: z.string().uuid().optional(),
   personalityMode: z
     .enum(['curious_explorer', 'patient_teacher', 'playful_friend', 'storyteller'])

@@ -8,7 +8,7 @@ import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useChildProfile, queryKeys } from '@/hooks/queries';
-import { generateStory, getThemeSuggestions, storyMoods, storyValues } from '@/services/storyGeneration';
+import { generateStory, getThemeSuggestions, storyMoods, storyValues, type StoryCharacter } from '@/services/storyGeneration';
 import { type TTSVoice, getRecommendedVoice } from '@/services/textToSpeech';
 import { LoadingState, ErrorState } from '@/components/shared';
 import { Button } from '@/components/ui/button';
@@ -96,8 +96,9 @@ const voiceOptions: { value: TTSVoice; label: string; description: string }[] = 
 interface StoryWizardState {
   theme: string;
   customTheme: string;
-  characters: string[];
+  characters: StoryCharacter[];
   customCharacter: string;
+  customCharacterGender?: 'boy' | 'girl';
   mood: string;
   values: string[];
   includeFamily: boolean;
@@ -129,6 +130,7 @@ export function StoryWizardPage() {
     customTheme: '',
     characters: [],
     customCharacter: '',
+    customCharacterGender: undefined,
     mood: 'adventurous',
     values: [],
     includeFamily: false,
@@ -248,8 +250,15 @@ export function StoryWizardPage() {
     if (wizardState.customCharacter.trim()) {
       setWizardState((prev) => ({
         ...prev,
-        characters: [...prev.characters, prev.customCharacter.trim()].slice(0, 5),
+        characters: [
+          ...prev.characters,
+          {
+            name: prev.customCharacter.trim(),
+            gender: prev.customCharacterGender,
+          },
+        ].slice(0, 5),
         customCharacter: '',
+        customCharacterGender: undefined,
       }));
     }
   };
@@ -336,18 +345,64 @@ export function StoryWizardPage() {
                 }
                 onKeyDown={(e) => e.key === 'Enter' && addCharacter()}
               />
-              <Button onClick={addCharacter} disabled={!wizardState.customCharacter.trim()}>
-                Add
-              </Button>
             </div>
+            {wizardState.customCharacter.trim() && (
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">Gender:</span>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setWizardState((prev) => ({
+                      ...prev,
+                      customCharacterGender: prev.customCharacterGender === 'boy' ? undefined : 'boy',
+                    }))
+                  }
+                  className={cn(
+                    'px-3 py-1 rounded-full text-sm border-2 transition-all',
+                    wizardState.customCharacterGender === 'boy'
+                      ? 'border-blue-500 bg-blue-50 text-blue-700'
+                      : 'border-muted hover:border-blue-300'
+                  )}
+                >
+                  👦 Boy
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setWizardState((prev) => ({
+                      ...prev,
+                      customCharacterGender: prev.customCharacterGender === 'girl' ? undefined : 'girl',
+                    }))
+                  }
+                  className={cn(
+                    'px-3 py-1 rounded-full text-sm border-2 transition-all',
+                    wizardState.customCharacterGender === 'girl'
+                      ? 'border-pink-500 bg-pink-50 text-pink-700'
+                      : 'border-muted hover:border-pink-300'
+                  )}
+                >
+                  👧 Girl
+                </button>
+                <Button onClick={addCharacter} size="sm" disabled={!wizardState.customCharacter.trim()}>
+                  Add
+                </Button>
+              </div>
+            )}
             {wizardState.characters.length > 0 && (
               <div className="flex flex-wrap gap-2">
                 {wizardState.characters.map((char, index) => (
                   <span
                     key={index}
-                    className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-sm"
+                    className={cn(
+                      'inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm',
+                      char.gender === 'boy' && 'bg-blue-100 text-blue-800',
+                      char.gender === 'girl' && 'bg-pink-100 text-pink-800',
+                      !char.gender && 'bg-primary/10'
+                    )}
                   >
-                    {char}
+                    {char.gender === 'boy' && '👦 '}
+                    {char.gender === 'girl' && '👧 '}
+                    {char.name}
                     <button
                       onClick={() => removeCharacter(index)}
                       className="ml-1 text-muted-foreground hover:text-foreground"

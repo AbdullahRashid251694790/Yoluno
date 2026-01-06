@@ -10,7 +10,7 @@ import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { formatRelativeTime, getInitials } from '@/lib/utils';
+import { cn, formatRelativeTime, getInitials } from '@/lib/utils';
 import { Play, BookOpen, Settings } from 'lucide-react';
 
 interface ChildProfileCardProps {
@@ -33,8 +33,19 @@ export function ChildProfileCard({ child, avatarUrl, onEdit }: ChildProfileCardP
 
           <h3 className="mt-4 text-xl font-semibold">{child.name}</h3>
 
-          <div className="mt-2 flex items-center gap-2">
+          <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
             <Badge variant="secondary">{child.age} years old</Badge>
+            {child.gender && child.gender !== 'prefer_not_to_say' && (
+              <Badge
+                variant="outline"
+                className={cn(
+                  child.gender === 'boy' && 'border-blue-300 bg-blue-50 text-blue-700',
+                  child.gender === 'girl' && 'border-pink-300 bg-pink-50 text-pink-700'
+                )}
+              >
+                {child.gender === 'boy' ? '👦 Boy' : '👧 Girl'}
+              </Badge>
+            )}
             {child.personality_mode && (
               <Badge variant="outline">{child.personality_mode}</Badge>
             )}

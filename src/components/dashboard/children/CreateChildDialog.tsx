@@ -15,6 +15,7 @@ import { createChildSchema, type CreateChildFormData } from '@/types/forms';
 import { useCreateChildProfile } from '@/hooks/queries';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 interface CreateChildDialogProps {
   // Controlled mode
@@ -39,14 +40,19 @@ export function CreateChildDialog({ open: controlledOpen, onOpenChange, trigger 
     register,
     handleSubmit,
     reset,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm<CreateChildFormData>({
     resolver: zodResolver(createChildSchema),
     defaultValues: {
       name: '',
       age: 7,
+      gender: undefined,
     },
   });
+
+  const selectedGender = watch('gender');
 
   const onSubmit = async (data: CreateChildFormData) => {
     if (!user) return;
@@ -57,6 +63,7 @@ export function CreateChildDialog({ open: controlledOpen, onOpenChange, trigger 
         user_id: user.id,
         name: data.name,
         age: data.age,
+        gender: data.gender,
         personality_mode: data.personalityMode,
         interests: data.interests,
       });
@@ -125,6 +132,48 @@ export function CreateChildDialog({ open: controlledOpen, onOpenChange, trigger 
             {errors.age && (
               <p className="text-sm text-destructive">{errors.age.message}</p>
             )}
+          </div>
+
+          <div className="space-y-2">
+            <Label>Gender (optional)</Label>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setValue('gender', selectedGender === 'boy' ? undefined : 'boy')}
+                className={cn(
+                  'flex-1 flex items-center justify-center gap-2 rounded-lg border-2 p-3 transition-all',
+                  selectedGender === 'boy'
+                    ? 'border-blue-500 bg-blue-50 text-blue-700'
+                    : 'border-muted hover:border-blue-300'
+                )}
+              >
+                <span className="text-xl">👦</span>
+                <span className="font-medium">Boy</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setValue('gender', selectedGender === 'girl' ? undefined : 'girl')}
+                className={cn(
+                  'flex-1 flex items-center justify-center gap-2 rounded-lg border-2 p-3 transition-all',
+                  selectedGender === 'girl'
+                    ? 'border-pink-500 bg-pink-50 text-pink-700'
+                    : 'border-muted hover:border-pink-300'
+                )}
+              >
+                <span className="text-xl">👧</span>
+                <span className="font-medium">Girl</span>
+              </button>
+            </div>
+            <button
+              type="button"
+              onClick={() => setValue('gender', 'prefer_not_to_say')}
+              className={cn(
+                'w-full text-sm text-muted-foreground hover:text-foreground transition-colors',
+                selectedGender === 'prefer_not_to_say' && 'text-foreground font-medium'
+              )}
+            >
+              Prefer not to say
+            </button>
           </div>
         </div>
       </FormDialog>

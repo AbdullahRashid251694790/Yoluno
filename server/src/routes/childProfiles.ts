@@ -60,14 +60,14 @@ router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
 // POST /api/child-profiles
 router.post('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { name, age, avatar_id, interests, learning_style, pin_hash } = req.body;
+    const { name, age, gender, avatar_id, interests, learning_style, pin_hash } = req.body;
     const id = uuidv4();
 
     const result = await queryOne<ChildProfile>(
-      `INSERT INTO child_profiles (id, user_id, name, age, avatar_id, interests, learning_style, pin_hash)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      `INSERT INTO child_profiles (id, user_id, name, age, gender, avatar_id, interests, learning_style, pin_hash)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
        RETURNING *`,
-      [id, req.user!.id, name, age, avatar_id, interests, learning_style, pin_hash]
+      [id, req.user!.id, name, age, gender, avatar_id, interests, learning_style, pin_hash]
     );
 
     res.status(201).json(result);
@@ -79,7 +79,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
 // PUT /api/child-profiles/:id
 router.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { name, age, avatar_id, interests, learning_style, pin_hash } = req.body;
+    const { name, age, gender, avatar_id, interests, learning_style, pin_hash } = req.body;
 
     // Verify ownership
     const existing = await queryOne<ChildProfile>(
@@ -95,14 +95,15 @@ router.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
       `UPDATE child_profiles
        SET name = COALESCE($1, name),
            age = COALESCE($2, age),
-           avatar_id = COALESCE($3, avatar_id),
-           interests = COALESCE($4, interests),
-           learning_style = COALESCE($5, learning_style),
-           pin_hash = COALESCE($6, pin_hash),
+           gender = COALESCE($3, gender),
+           avatar_id = COALESCE($4, avatar_id),
+           interests = COALESCE($5, interests),
+           learning_style = COALESCE($6, learning_style),
+           pin_hash = COALESCE($7, pin_hash),
            updated_at = NOW()
-       WHERE id = $7
+       WHERE id = $8
        RETURNING *`,
-      [name, age, avatar_id, interests, learning_style, pin_hash, req.params.id]
+      [name, age, gender, avatar_id, interests, learning_style, pin_hash, req.params.id]
     );
 
     res.json(result);
