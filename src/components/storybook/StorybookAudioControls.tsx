@@ -34,24 +34,13 @@ export function StorybookAudioControls({
   const [isLoading, setIsLoading] = useState(false);
   const [autoAdvance, setAutoAdvance] = useState(true);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const shouldAutoPlayRef = useRef(false);
+  const previousPageRef = useRef(currentPage);
 
   // Get current page data (currentPage is 1-indexed for story pages)
   const pageData = pages[currentPage - 1];
 
-  // Stop audio when page changes or component unmounts
-  useEffect(() => {
-    return () => {
-      stopAudio();
-    };
-  }, []);
-
-  // Stop audio when switching pages in page mode
-  useEffect(() => {
-    if (mode === 'page') {
-      stopAudio();
-    }
-  }, [currentPage, mode]);
-
+  // Define stopAudio first (no dependencies)
   const stopAudio = useCallback(() => {
     if (audioRef.current) {
       audioRef.current.pause();
@@ -60,6 +49,85 @@ export function StorybookAudioControls({
     }
     setIsPlaying(false);
   }, []);
+
+  // Generate and play audio for a specific page
+  const generateAndPlayAudio = useCallback(async (text: string, isAutoAdvanceEnabled: boolean, currentPageNum: number, totalPages: number) => {
+    if (!text) {
+      toast.error('No content to read');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await generateSpeech(text, {
+        voice: narratorVoice as 'shimmer' | 'nova' | 'alloy' | 'echo' | 'fable' | 'onyx',
+      });
+
+      stopAudio();
+
+      const audio = playAudioFromBase64(response.audio);
+      audioRef.current = audio;
+      setIsPlaying(true);
+
+      audio.addEventListener('ended', () => {
+        setIsPlaying(false);
+        audioRef.current = null;
+
+        // Auto-advance to next page in page mode
+        if (isAutoAdvanceEnabled && currentPageNum < totalPages) {
+          // Set flag so the useEffect knows to auto-play after page change
+          shouldAutoPlayRef.current = true;
+          onPageChange(currentPageNum + 1);
+        }
+      });
+
+      audio.addEventListener('error', () => {
+        toast.error('Failed to play audio');
+        setIsPlaying(false);
+        audioRef.current = null;
+      });
+    } catch (error) {
+      console.error('TTS error:', error);
+      toast.error('Failed to generate audio');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [narratorVoice, stopAudio, onPageChange]);
+
+  // Stop audio when component unmounts
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    };
+  }, []);
+
+  // Handle page changes - stop current audio and auto-play if needed
+  useEffect(() => {
+    // Only act when page actually changed
+    if (previousPageRef.current !== currentPage) {
+      const wasAutoPlay = shouldAutoPlayRef.current;
+      previousPageRef.current = currentPage;
+
+      if (mode === 'page') {
+        stopAudio();
+
+        // If this was an auto-advance, trigger playback for the new page
+        if (wasAutoPlay) {
+          shouldAutoPlayRef.current = false;
+          // Small delay to ensure state is updated, then generate audio for new page
+          const newPageData = pages[currentPage - 1];
+          if (newPageData?.content) {
+            setTimeout(() => {
+              generateAndPlayAudio(newPageData.content, autoAdvance, currentPage, pages.length);
+            }, 100);
+          }
+        }
+      }
+    }
+  }, [currentPage, mode, stopAudio, pages, autoAdvance, generateAndPlayAudio]);
 
   const handlePlayPause = useCallback(async () => {
     // If playing, pause
@@ -77,59 +145,18 @@ export function StorybookAudioControls({
     }
 
     // Generate new audio
-    setIsLoading(true);
-    try {
-      let textToRead: string;
+    let textToRead: string;
 
-      if (mode === 'page') {
-        // Read current page only
-        textToRead = pageData?.content || '';
-      } else {
-        // Read full story (all pages combined)
-        textToRead = pages.map((p) => p.content).join('\n\n');
-      }
-
-      if (!textToRead) {
-        toast.error('No content to read');
-        return;
-      }
-
-      const response = await generateSpeech(textToRead, {
-        voice: narratorVoice as 'shimmer' | 'nova' | 'alloy' | 'echo' | 'fable' | 'onyx',
-      });
-
-      stopAudio();
-
-      const audio = playAudioFromBase64(response.audio);
-      audioRef.current = audio;
-      setIsPlaying(true);
-
-      audio.addEventListener('ended', () => {
-        setIsPlaying(false);
-        audioRef.current = null;
-
-        // Auto-advance to next page in page mode
-        if (mode === 'page' && autoAdvance && currentPage < pages.length) {
-          onPageChange(currentPage + 1); // +1 because onPageChange expects 0-indexed where 0=cover
-          // Small delay before starting next page audio
-          setTimeout(() => {
-            handlePlayPause();
-          }, 500);
-        }
-      });
-
-      audio.addEventListener('error', () => {
-        toast.error('Failed to play audio');
-        setIsPlaying(false);
-        audioRef.current = null;
-      });
-    } catch (error) {
-      console.error('TTS error:', error);
-      toast.error('Failed to generate audio');
-    } finally {
-      setIsLoading(false);
+    if (mode === 'page') {
+      // Read current page only
+      textToRead = pageData?.content || '';
+      await generateAndPlayAudio(textToRead, autoAdvance, currentPage, pages.length);
+    } else {
+      // Read full story (all pages combined)
+      textToRead = pages.map((p) => p.content).join('\n\n');
+      await generateAndPlayAudio(textToRead, false, currentPage, pages.length);
     }
-  }, [isPlaying, mode, pageData, pages, narratorVoice, autoAdvance, currentPage, onPageChange, stopAudio]);
+  }, [isPlaying, mode, pageData, pages, autoAdvance, currentPage, generateAndPlayAudio]);
 
   const toggleMode = useCallback(() => {
     stopAudio();
