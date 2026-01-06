@@ -7,7 +7,7 @@
  */
 
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useStoriesByChild } from '@/hooks/queries/useStories';
 import { QueryState } from '@/components/shared';
 import { Card, CardContent } from '@/components/ui/card';
@@ -18,7 +18,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { ArrowLeft, Plus, BookOpen, Star, Volume2, Pause, Square, Loader2 } from 'lucide-react';
+import { ArrowLeft, BookOpen, Star, Volume2, Pause, Square, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { StoryWithDetails } from '@/services/stories';
 import { StorybookReader } from '@/components/storybook';
@@ -139,14 +139,8 @@ export function KidsStoriesPage() {
 
         <h1 className="text-xl font-display font-bold">My Stories</h1>
 
-        <Link to={`/story-wizard/${childId}`}>
-          <Button
-            size="icon"
-            className="rounded-full bg-gradient-to-r from-pink-500 to-rose-500 hover:opacity-90"
-          >
-            <Plus className="h-5 w-5" />
-          </Button>
-        </Link>
+        {/* Spacer to balance header layout */}
+        <div className="w-10" />
       </header>
 
       {/* Main content */}
@@ -157,12 +151,8 @@ export function KidsStoriesPage() {
           data={stories}
           onRetry={refetch}
           emptyTitle="No stories yet!"
-          emptyDescription="Create your first magical story"
+          emptyDescription="Ask a parent to create a story for you!"
           emptyIcon={BookOpen}
-          emptyAction={{
-            label: 'Create Story',
-            onClick: () => navigate(`/story-wizard/${childId}`),
-          }}
         >
           {(storyList) => (
             <div className="grid gap-4">
