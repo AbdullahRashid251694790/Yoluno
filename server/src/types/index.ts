@@ -50,6 +50,7 @@ export interface Story {
   cover_image_url?: string;
   has_pages: boolean;
   narrator_voice?: string;
+  protagonist_avatar?: string;
   is_favorite: boolean;
   created_at: Date;
   updated_at: Date;

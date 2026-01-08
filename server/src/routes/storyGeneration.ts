@@ -23,6 +23,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
       storyLength = 'medium',
       includeFamily = false,
       narratorVoice = 'nova',
+      avatar,
     } = req.body;
 
     // Verify child access
@@ -66,6 +67,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
       wordsPerPage: config.wordsPerPage,
       familyMembers,
       interests: child.interests || [],
+      avatar,
     });
 
     // Generate cover illustration
@@ -76,7 +78,8 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
         theme,
         mood,
         child_profile_id,
-        'cover'
+        'cover',
+        avatar
       );
     } catch (error) {
       console.error('Failed to generate cover illustration:', error);
@@ -87,8 +90,8 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
     const story = await queryOne<Story>(
       `INSERT INTO stories (
         id, child_profile_id, title, content, theme, mood,
-        values, word_count, cover_image_url, has_pages, narrator_voice
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        values, word_count, cover_image_url, has_pages, narrator_voice, protagonist_avatar
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
       RETURNING *`,
       [
         storyId,
@@ -102,6 +105,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
         coverImageUrl,
         true,
         narratorVoice,
+        avatar,
       ]
     );
 
@@ -264,6 +268,7 @@ interface StoryGenerationParams {
   wordsPerPage: number;
   familyMembers: FamilyMember[];
   interests: string[];
+  avatar?: string;
 }
 
 interface PageContent {
@@ -289,6 +294,7 @@ async function generateStoryWithPages(params: StoryGenerationParams): Promise<{
     wordsPerPage,
     familyMembers,
     interests,
+    avatar,
   } = params;
 
   const totalWords = pageCount * wordsPerPage;
@@ -301,12 +307,18 @@ async function generateStoryWithPages(params: StoryGenerationParams): Promise<{
     pronounGuidance = `Use she/her pronouns for ${childName}.`;
   }
 
+  // Build avatar guidance for the story protagonist
+  const avatarGuidance = avatar
+    ? `The main protagonist of this story is ${avatar}, a friendly and lovable character. ${avatar} should be featured prominently throughout the story as the hero who goes on adventures and learns important lessons.`
+    : '';
+
   const systemPrompt = `You are a children's story writer creating personalized, age-appropriate stories formatted as picture book pages.
 Write engaging stories with clear narratives, positive messages, and vivid descriptions.
 Each page should have a natural pause point, like a picture book would.
 Use age-appropriate vocabulary for a ${childAge}-year-old.
 Never include scary, violent, or inappropriate content.
-${pronounGuidance}`;
+${pronounGuidance}
+${avatarGuidance}`;
 
   let userPrompt = `Write a children's story for a ${childAge}-year-old child named ${childName}.
 The story should have exactly ${pageCount} pages, with about ${wordsPerPage} words per page (total ~${totalWords} words).
@@ -435,12 +447,19 @@ async function generateIllustration(
   theme: string | undefined,
   mood: string | undefined,
   childProfileId: string,
-  type: 'cover' | 'page' = 'page'
+  type: 'cover' | 'page' = 'page',
+  avatar?: string
 ): Promise<string | null> {
+  // Build avatar instruction for illustrations
+  const avatarInstruction = avatar
+    ? `IMPORTANT: Include the character "${avatar}" prominently in this illustration. ${avatar} is the main protagonist and should be clearly visible as a friendly, lovable character.`
+    : '';
+
   const fullPrompt = `Generate a children's book illustration: ${prompt}
 Style: Colorful, friendly, whimsical, suitable for children, picture book style, digital art.
 ${theme ? `Theme: ${theme}.` : ''}
 ${mood ? `Mood: ${mood}.` : ''}
+${avatarInstruction}
 No text or words in the image. Warm and inviting atmosphere.
 ${type === 'cover' ? 'This is a cover illustration, make it eye-catching and magical.' : ''}`;
 
@@ -546,9 +565,9 @@ ${type === 'cover' ? 'This is a cover illustration, make it eye-catching and mag
 }
 
 async function generatePageIllustrations(storyId: string, childProfileId: string): Promise<void> {
-  // Get story info
+  // Get story info including protagonist avatar
   const story = await queryOne<Story>(
-    'SELECT theme, mood FROM stories WHERE id = $1',
+    'SELECT theme, mood, protagonist_avatar FROM stories WHERE id = $1',
     [storyId]
   );
 
@@ -576,7 +595,8 @@ async function generatePageIllustrations(storyId: string, childProfileId: string
         story.theme ?? undefined,
         story.mood ?? undefined,
         childProfileId,
-        'page'
+        'page',
+        story.protagonist_avatar ?? undefined
       );
 
       if (illustrationUrl) {

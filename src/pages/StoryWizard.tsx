@@ -30,10 +30,20 @@ import {
   Loader2,
   Check,
   Volume2,
+  UserCircle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-const STEPS = ['Theme', 'Characters', 'Mood', 'Values', 'Generate'];
+const STEPS = ['Theme', 'Characters', 'Avatar', 'Mood', 'Values', 'Generate'];
+
+// Avatar options for story protagonist
+type AvatarName = 'Lolo' | 'Lumi' | 'Luno';
+
+const AVATARS: { name: AvatarName; imagePath: string }[] = [
+  { name: 'Lolo', imagePath: '/avatars/Lolo.png' },
+  { name: 'Lumi', imagePath: '/avatars/Lumi.png' },
+  { name: 'Luno', imagePath: '/avatars/Luno.png' },
+];
 
 // Theme emojis for visual appeal
 const themeEmojis: Record<string, string> = {
@@ -104,6 +114,7 @@ interface StoryWizardState {
   includeFamily: boolean;
   storyLength: 'short' | 'medium' | 'long';
   narratorVoice: TTSVoice;
+  selectedAvatar: AvatarName | null;
 }
 
 export function StoryWizardPage() {
@@ -136,6 +147,7 @@ export function StoryWizardPage() {
     includeFamily: false,
     storyLength: 'medium',
     narratorVoice: child ? getRecommendedVoice(child.age) : 'nova',
+    selectedAvatar: null,
   });
 
   const themes = child ? getThemeSuggestions(child.age) : [];
@@ -160,11 +172,13 @@ export function StoryWizardPage() {
         return wizardState.theme !== '' || wizardState.customTheme !== '';
       case 1: // Characters
         return true; // Optional
-      case 2: // Mood
+      case 2: // Avatar
+        return wizardState.selectedAvatar !== null;
+      case 3: // Mood
         return wizardState.mood !== '';
-      case 3: // Values
+      case 4: // Values
         return true; // Optional
-      case 4: // Generate
+      case 5: // Generate
         return true;
       default:
         return true;
@@ -185,6 +199,7 @@ export function StoryWizardPage() {
         storyLength: wizardState.storyLength,
         includeFamily: wizardState.includeFamily,
         narratorVoice: wizardState.narratorVoice,
+        avatar: wizardState.selectedAvatar,
       });
 
       setGeneratedStory({
@@ -428,7 +443,37 @@ export function StoryWizardPage() {
           </div>
         );
 
-      case 2: // Mood
+      case 2: // Avatar Selection
+        return (
+          <div className="space-y-4">
+            <p className="text-muted-foreground text-sm">
+              Choose your story's main character:
+            </p>
+            <div className="grid grid-cols-3 gap-4">
+              {AVATARS.map((avatar) => (
+                <button
+                  key={avatar.name}
+                  onClick={() => setWizardState((prev) => ({ ...prev, selectedAvatar: avatar.name }))}
+                  className={cn(
+                    'flex flex-col items-center gap-3 rounded-xl border-2 p-4 transition-all hover:scale-105',
+                    wizardState.selectedAvatar === avatar.name
+                      ? 'border-primary bg-primary/10 ring-2 ring-primary/30'
+                      : 'border-muted hover:border-primary/50'
+                  )}
+                >
+                  <img
+                    src={avatar.imagePath}
+                    alt={avatar.name}
+                    className="w-24 h-24 object-contain rounded-lg"
+                  />
+                  <span className="text-lg font-semibold">{avatar.name}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        );
+
+      case 3: // Mood
         return (
           <div className="space-y-4">
             <p className="text-muted-foreground text-sm">
@@ -495,7 +540,7 @@ export function StoryWizardPage() {
           </div>
         );
 
-      case 3: // Values
+      case 4: // Values
         return (
           <div className="space-y-4">
             <p className="text-muted-foreground text-sm">
@@ -530,7 +575,7 @@ export function StoryWizardPage() {
           </div>
         );
 
-      case 4: // Generate
+      case 5: // Generate
         return (
           <div className="space-y-6">
             {generatedStory ? (
@@ -580,7 +625,15 @@ export function StoryWizardPage() {
                     <div className="flex items-center gap-2">
                       <Users className="h-4 w-4 text-primary" />
                       <span className="text-sm">
-                        <strong>Characters:</strong> {wizardState.characters.join(', ')}
+                        <strong>Characters:</strong> {wizardState.characters.map(c => c.name).join(', ')}
+                      </span>
+                    </div>
+                  )}
+                  {wizardState.selectedAvatar && (
+                    <div className="flex items-center gap-2">
+                      <UserCircle className="h-4 w-4 text-primary" />
+                      <span className="text-sm">
+                        <strong>Protagonist:</strong> {wizardState.selectedAvatar}
                       </span>
                     </div>
                   )}
@@ -621,7 +674,7 @@ export function StoryWizardPage() {
     }
   };
 
-  const stepIcons = [Palette, Users, Wand2, Heart, BookOpen];
+  const stepIcons = [Palette, Users, UserCircle, Wand2, Heart, BookOpen];
   const StepIcon = stepIcons[currentStep];
 
   return (
