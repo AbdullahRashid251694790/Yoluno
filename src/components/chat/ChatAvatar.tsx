@@ -9,6 +9,13 @@ import { cn } from '@/lib/utils';
 import type { AvatarExpression } from '@/types/domain';
 import { BUDDY_EXPRESSIONS } from '@/types/domain';
 
+// Default buddy avatar images
+const BUDDY_AVATARS: Record<string, string> = {
+  Luno: '/avatars/Luno.png',
+  Lumi: '/avatars/Lumi.png',
+  Lolo: '/avatars/Lolo.png',
+};
+
 interface ChatAvatarProps {
   imageUrl?: string;
   buddyName?: string;
@@ -45,30 +52,26 @@ export function ChatAvatar({
   className,
 }: ChatAvatarProps) {
   const config = BUDDY_EXPRESSIONS[expression];
+  // Use provided imageUrl, or fall back to default buddy avatar
+  const avatarSrc = imageUrl ?? BUDDY_AVATARS[buddyName] ?? BUDDY_AVATARS.Luno;
 
   return (
     <div className={cn('flex flex-col items-center gap-2', className)}>
       {/* Avatar Container */}
       <div
         className={cn(
-          'relative rounded-full bg-gradient-to-br shadow-lg transition-all duration-300',
+          'relative rounded-full bg-gradient-to-br shadow-lg transition-all duration-300 overflow-hidden',
           config.color,
           sizeClasses[size],
           config.animation,
           'flex items-center justify-center'
         )}
       >
-        {imageUrl ? (
-          <img
-            src={imageUrl}
-            alt={`${buddyName} avatar`}
-            className="h-full w-full rounded-full object-cover"
-          />
-        ) : (
-          <span className="select-none" role="img" aria-label={config.label}>
-            {config.emoji}
-          </span>
-        )}
+        <img
+          src={avatarSrc}
+          alt={`${buddyName} avatar`}
+          className="h-full w-full rounded-full object-cover"
+        />
 
         {/* Thinking indicator dots */}
         {expression === 'thinking' && (
@@ -172,24 +175,31 @@ export function TypingIndicator({ className }: { className?: string }) {
  */
 export function MiniAvatar({
   expression = 'neutral',
+  buddyName = 'Luno',
+  imageUrl,
   className,
 }: {
   expression?: AvatarExpression;
+  buddyName?: string;
+  imageUrl?: string;
   className?: string;
 }) {
   const config = BUDDY_EXPRESSIONS[expression];
+  const avatarSrc = imageUrl ?? BUDDY_AVATARS[buddyName] ?? BUDDY_AVATARS.Luno;
 
   return (
     <div
       className={cn(
-        'h-8 w-8 rounded-full bg-gradient-to-br flex items-center justify-center text-lg',
+        'h-8 w-8 rounded-full bg-gradient-to-br flex items-center justify-center overflow-hidden',
         config.color,
         className
       )}
     >
-      <span role="img" aria-label={config.label}>
-        {config.emoji}
-      </span>
+      <img
+        src={avatarSrc}
+        alt={`${buddyName} avatar`}
+        className="h-full w-full rounded-full object-cover"
+      />
     </div>
   );
 }
