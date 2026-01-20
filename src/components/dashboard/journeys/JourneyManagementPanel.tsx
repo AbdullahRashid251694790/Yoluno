@@ -35,7 +35,7 @@ import {
   useDeleteJourney,
 } from '@/hooks/queries/useJourneys';
 import { useChildProfiles } from '@/hooks/queries/useChildProfiles';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/contexts/AuthContext';
 import { CreateJourneyDialog } from './CreateJourneyDialog';
 import {
   Plus,

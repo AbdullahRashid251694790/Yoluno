@@ -31,7 +31,7 @@ import {
 import { useJourneyTemplates } from '@/hooks/queries/useJourneyTemplates';
 import { useChildProfiles } from '@/hooks/queries/useChildProfiles';
 import { useCreateCustomJourney } from '@/hooks/queries/useJourneys';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/contexts/AuthContext';
 import { Loader2, CheckCircle2, ImageIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
