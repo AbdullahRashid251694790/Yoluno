@@ -1,36 +1,17 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import multer from 'multer';
-import path from 'path';
-import fs from 'fs/promises';
 import { v4 as uuidv4 } from 'uuid';
+import path from 'path';
 import { requireAuth } from '../middleware/auth.js';
 import { AppError } from '../middleware/errorHandler.js';
+import { uploadToS3, deleteFromS3 } from '../utils/s3.js';
 
 const router = Router();
 
 router.use(requireAuth);
 
-const uploadDir = process.env.UPLOAD_DIR || './uploads';
-
-// Configure multer storage
-const storage = multer.diskStorage({
-  destination: async (req, file, cb) => {
-    const bucket = req.params.bucket || 'misc';
-    const userId = req.user?.id || 'anonymous';
-    const destPath = path.join(uploadDir, bucket, userId);
-
-    try {
-      await fs.mkdir(destPath, { recursive: true });
-      cb(null, destPath);
-    } catch (error) {
-      cb(error as Error, destPath);
-    }
-  },
-  filename: (req, file, cb) => {
-    const uniqueName = `${Date.now()}-${uuidv4()}${path.extname(file.originalname)}`;
-    cb(null, uniqueName);
-  },
-});
+// Use memory storage for S3 uploads
+const storage = multer.memoryStorage();
 
 const fileFilter = (
   req: Request,
@@ -75,9 +56,11 @@ router.post('/:bucket', upload.single('file'), async (req: Request, res: Respons
 
     const bucket = req.params.bucket;
     const userId = req.user!.id;
-    const filename = req.file.filename;
+    const ext = path.extname(req.file.originalname);
+    const filename = `${Date.now()}-${uuidv4()}${ext}`;
+    const key = `${bucket}/${userId}/${filename}`;
 
-    const url = `/uploads/${bucket}/${userId}/${filename}`;
+    const url = await uploadToS3(key, req.file.buffer, req.file.mimetype);
 
     res.json({
       url,
@@ -95,17 +78,9 @@ router.delete('/:bucket/:filename', async (req: Request, res: Response, next: Ne
   try {
     const { bucket, filename } = req.params;
     const userId = req.user!.id;
+    const key = `${bucket}/${userId}/${filename}`;
 
-    const filepath = path.join(uploadDir, bucket, userId, filename);
-
-    // Verify the file exists and belongs to user
-    try {
-      await fs.access(filepath);
-    } catch {
-      throw new AppError(404, 'File not found');
-    }
-
-    await fs.unlink(filepath);
+    await deleteFromS3(key);
 
     res.json({ message: 'File deleted' });
   } catch (error) {
