@@ -7,13 +7,14 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useChildProfiles } from '@/hooks/queries';
-import { SafetyReportsPanel, BuddySettingsPanel } from '@/components/dashboard/safety';
+import { SafetyReportsPanel, BuddySettingsPanel, JourneyReminderSettingsPanel } from '@/components/dashboard/safety';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { EmptyState } from '@/components/shared/feedback/EmptyState';
-import { Shield, Users, Loader2 } from 'lucide-react';
+import { LoadingState } from '@/components/shared/feedback/LoadingState';
+import { Shield, Users, Bell } from 'lucide-react';
 
 export function SafetyDashboardPage() {
   const { user } = useAuth();
@@ -32,10 +33,7 @@ export function SafetyDashboardPage() {
   if (isLoading) {
     return (
       <div className="flex h-full items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">Loading safety dashboard...</p>
-        </div>
+        <LoadingState message="Loading safety dashboard..." />
       </div>
     );
   }
@@ -103,6 +101,10 @@ export function SafetyDashboardPage() {
           <TabsList>
             <TabsTrigger value="reports">Safety Reports</TabsTrigger>
             <TabsTrigger value="buddy">Luno Settings</TabsTrigger>
+            <TabsTrigger value="reminders">
+              <Bell className="h-4 w-4 mr-1" />
+              Journey Reminders
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="reports" className="space-y-4">
@@ -128,6 +130,21 @@ export function SafetyDashboardPage() {
             </Alert>
 
             <BuddySettingsPanel
+              childId={selectedChild.id}
+              childName={selectedChild.name}
+            />
+          </TabsContent>
+
+          <TabsContent value="reminders" className="space-y-4">
+            <Alert>
+              <Bell className="h-4 w-4" />
+              <AlertDescription>
+                Configure how Luno reminds {selectedChild.name} about their journey tasks.
+                Reminders are sent via push notification and as buddy messages.
+              </AlertDescription>
+            </Alert>
+
+            <JourneyReminderSettingsPanel
               childId={selectedChild.id}
               childName={selectedChild.name}
             />

@@ -102,11 +102,12 @@ export function BuddyChat({ childId, childName }: BuddyChatProps) {
     }
   }, [messages]);
 
-  const handleSend = (content: string) => {
+  const handleSend = (content: string, image?: File) => {
     setIsTyping(false);
     sendMessage({
       message: content,
       childId,
+      image,
     });
   };
 
@@ -201,7 +202,9 @@ export function BuddyChat({ childId, childName }: BuddyChatProps) {
                     role: message.role === 'child' ? 'user' : 'assistant',
                     content: message.content,
                     timestamp: message.created_at,
+                    imageKey: message.image_key,
                   }}
+                  childId={childId}
                   avatarUrl={buddy?.buddy_avatar_url || undefined}
                   childName={childName}
                 />

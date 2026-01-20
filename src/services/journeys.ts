@@ -5,7 +5,7 @@
  * Refactored to use generic API wrapper for DRY compliance.
  */
 
-import { apiGet, apiGetOrNull, apiPost, apiPut } from '@/lib/api';
+import { apiGet, apiGetOrNull, apiPost, apiPut, apiDelete } from '@/lib/api';
 import type {
   JourneyRow,
   JourneyInsert,
@@ -13,6 +13,20 @@ import type {
   JourneyStepRow,
 } from '@/types/database';
 import type { JourneyWithSteps, JourneyStep } from '@/types/domain';
+
+export interface CreateCustomJourneyData {
+  child_profile_id: string;
+  title: string;
+  template_id?: string;
+  requires_image_proof?: boolean;
+  steps?: Array<{ title: string; description?: string }>;
+}
+
+export interface AddStepData {
+  title: string;
+  description?: string;
+  step_order?: number;
+}
 
 const CONTEXT = 'journeys';
 
@@ -184,14 +198,70 @@ function calculateProgress(steps: JourneyStep[]): number {
   return Math.round((completed / steps.length) * 100);
 }
 
+/**
+ * Delete a journey
+ */
+export async function deleteJourney(id: string): Promise<void> {
+  return apiDelete(`/journeys/${id}`, `${CONTEXT}.deleteJourney`);
+}
+
+/**
+ * Create a custom journey with steps
+ */
+export async function createCustomJourney(data: CreateCustomJourneyData): Promise<JourneyWithSteps> {
+  const response = await apiPost<JourneyRow & { steps: JourneyStepRow[] }>(
+    '/journeys/custom',
+    `${CONTEXT}.createCustomJourney`,
+    data
+  );
+  return mapJourneyWithSteps({ ...response, journey_steps: response.steps });
+}
+
+/**
+ * Add a step to a journey
+ */
+export async function addJourneyStep(journeyId: string, step: AddStepData): Promise<JourneyStepRow> {
+  return apiPost<JourneyStepRow>(
+    `/journeys/${journeyId}/steps`,
+    `${CONTEXT}.addJourneyStep`,
+    step
+  );
+}
+
+/**
+ * Remove a step from a journey
+ */
+export async function removeJourneyStep(journeyId: string, stepId: string): Promise<void> {
+  return apiDelete(
+    `/journeys/${journeyId}/steps/${stepId}`,
+    `${CONTEXT}.removeJourneyStep`
+  );
+}
+
+/**
+ * Reorder steps in a journey
+ */
+export async function reorderJourneySteps(journeyId: string, stepIds: string[]): Promise<JourneyStepRow[]> {
+  return apiPut<JourneyStepRow[]>(
+    `/journeys/${journeyId}/steps/reorder`,
+    `${CONTEXT}.reorderJourneySteps`,
+    { stepIds }
+  );
+}
+
 export const journeysService = {
   getAll: getAllJourneys,
   getActive: getActiveJourneys,
   getById: getJourneyById,
   create: createJourney,
   update: updateJourney,
+  delete: deleteJourney,
   completeStep,
   updateStepProgress,
   getCompleted: getCompletedJourneys,
   getProgress: getJourneyProgress,
+  createCustom: createCustomJourney,
+  addStep: addJourneyStep,
+  removeStep: removeJourneyStep,
+  reorderSteps: reorderJourneySteps,
 };

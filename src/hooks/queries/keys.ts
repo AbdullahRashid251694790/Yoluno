@@ -191,4 +191,22 @@ export const queryKeys = {
     progress: (childId: string) => [...queryKeys.onboarding.all, 'progress', childId] as const,
     status: (childId: string) => [...queryKeys.onboarding.all, 'status', childId] as const,
   },
+
+  // Journey Reminders
+  journeyReminders: {
+    all: ['journeyReminders'] as const,
+    settings: (childId: string) => [...queryKeys.journeyReminders.all, 'settings', childId] as const,
+    list: (childId: string, status?: string) =>
+      [...queryKeys.journeyReminders.all, 'list', childId, status] as const,
+    due: (childId: string) => [...queryKeys.journeyReminders.all, 'due', childId] as const,
+  },
+
+  // Journey Rewards
+  journeyRewards: {
+    all: ['journeyRewards'] as const,
+    forChild: (childId: string) => [...queryKeys.journeyRewards.all, 'child', childId] as const,
+    unviewed: (childId: string) => [...queryKeys.journeyRewards.all, 'unviewed', childId] as const,
+    count: (childId: string) => [...queryKeys.journeyRewards.all, 'count', childId] as const,
+    allParent: () => [...queryKeys.journeyRewards.all, 'parent'] as const,
+  },
 } as const;

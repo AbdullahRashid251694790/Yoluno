@@ -1,17 +1,17 @@
 /**
  * Chat Input Component
  *
- * Message input area with send button.
+ * Message input area with send button and image attachment.
  */
 
 import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Send, Mic, MicOff } from 'lucide-react';
+import { Send, Mic, MicOff, ImageIcon, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface ChatInputProps {
-  onSend: (message: string) => void;
+  onSend: (message: string, image?: File) => void;
   isDisabled?: boolean;
   placeholder?: string;
   maxLength?: number;
@@ -25,7 +25,10 @@ export function ChatInput({
 }: ChatInputProps) {
   const [message, setMessage] = useState('');
   const [isRecording, setIsRecording] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -34,10 +37,45 @@ export function ChatInput({
     }
   }, [message]);
 
+  // Cleanup image preview URL on unmount
+  useEffect(() => {
+    return () => {
+      if (imagePreview) {
+        URL.revokeObjectURL(imagePreview);
+      }
+    };
+  }, [imagePreview]);
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validate size (5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        // TODO: Show error toast
+        console.error('Image must be smaller than 5MB');
+        return;
+      }
+      setSelectedImage(file);
+      setImagePreview(URL.createObjectURL(file));
+    }
+  };
+
+  const clearImage = () => {
+    if (imagePreview) {
+      URL.revokeObjectURL(imagePreview);
+    }
+    setSelectedImage(null);
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   const handleSend = () => {
-    if (message.trim() && !isDisabled) {
-      onSend(message.trim());
+    if ((message.trim() || selectedImage) && !isDisabled) {
+      onSend(message.trim(), selectedImage || undefined);
       setMessage('');
+      clearImage();
     }
   };
 
@@ -56,9 +94,50 @@ export function ChatInput({
   const remainingChars = maxLength - message.length;
   const isNearLimit = remainingChars < 50;
 
+  const canSend = (message.trim() || selectedImage) && !isDisabled;
+
   return (
     <div className="flex flex-col gap-2">
+      {/* Image preview */}
+      {imagePreview && (
+        <div className="relative inline-block w-20 h-20">
+          <img
+            src={imagePreview}
+            alt="Selected"
+            className="w-full h-full rounded-lg object-cover border"
+          />
+          <button
+            type="button"
+            onClick={clearImage}
+            className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 shadow-md hover:bg-destructive/90"
+          >
+            <X className="h-3 w-3" />
+          </button>
+        </div>
+      )}
+
       <div className="flex items-end gap-2 rounded-2xl border bg-card p-2">
+        {/* Hidden file input */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp,image/gif"
+          onChange={handleImageSelect}
+          className="hidden"
+        />
+
+        {/* Image attachment button */}
+        <Button
+          type="button"
+          size="icon"
+          variant="ghost"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={isDisabled}
+          className="shrink-0"
+        >
+          <ImageIcon className="h-5 w-5" />
+        </Button>
+
         <Textarea
           ref={textareaRef}
           value={message}
@@ -89,7 +168,7 @@ export function ChatInput({
             type="button"
             size="icon"
             onClick={handleSend}
-            disabled={isDisabled || !message.trim()}
+            disabled={!canSend}
             className="shrink-0"
           >
             <Send className="h-5 w-5" />

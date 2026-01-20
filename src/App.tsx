@@ -21,6 +21,7 @@ import { KidsChatPage } from '@/pages/KidsChat';
 import { KidsStoriesPage } from '@/pages/KidsStories';
 import { StoryWizardPage } from '@/pages/StoryWizard';
 import { KidsJourneyDetailPage } from '@/pages/KidsJourneyDetail';
+import { KidsRewardGalleryPage } from '@/pages/KidsRewardGallery';
 import { NotFoundPage } from '@/pages/NotFound';
 
 const queryClient = new QueryClient({
@@ -142,6 +143,14 @@ export default function App() {
                   element={
                     <ProtectedRoute>
                       <KidsJourneyDetailPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/kids/:childId/rewards"
+                  element={
+                    <ProtectedRoute>
+                      <KidsRewardGalleryPage />
                     </ProtectedRoute>
                   }
                 />

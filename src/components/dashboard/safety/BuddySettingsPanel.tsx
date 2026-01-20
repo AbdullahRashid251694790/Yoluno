@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { LoadingSpinner } from '@/components/shared/feedback/LoadingState';
 import { Loader2, Save, Sparkles } from 'lucide-react';
 import type { ChatBuddy } from '@/services/buddyChat';
 
@@ -89,7 +90,7 @@ export function BuddySettingsPanel({ childId, childName }: BuddySettingsPanelPro
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            <LoadingSpinner size="lg" className="text-muted-foreground" />
           </div>
         </CardContent>
       </Card>

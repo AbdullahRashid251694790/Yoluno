@@ -23,6 +23,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { EmptyState } from '@/components/shared/feedback/EmptyState';
+import { LoadingSpinner } from '@/components/shared/feedback/LoadingState';
 import { formatRelativeTime } from '@/lib/utils';
 import { AlertTriangle, CheckCircle, Clock, MessageSquare } from 'lucide-react';
 import type { SafetyReport } from '@/services/buddyChat';
@@ -81,7 +82,7 @@ export function SafetyReportsPanel() {
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-center py-8">
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+            <LoadingSpinner size="lg" className="text-muted-foreground" />
           </div>
         </CardContent>
       </Card>

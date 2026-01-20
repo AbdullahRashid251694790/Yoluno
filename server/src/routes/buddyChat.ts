@@ -1,13 +1,33 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { Server } from 'socket.io';
+import multer from 'multer';
 import { query, queryOne } from '../config/database.js';
 import { requireAuth } from '../middleware/auth.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { emitToUser, emitToChild } from '../socket/index.js';
-import type { BuddyMessage, ChatBuddy, SafetyReport, ChildProfile, GuardrailSettings } from '../types/index.js';
+import { uploadToS3, getSignedDownloadUrl } from '../utils/s3.js';
+import type { BuddyMessage, ChatBuddy, SafetyReport, ChildProfile, GuardrailSettings, Journey, JourneyStep } from '../types/index.js';
 
 const router = Router();
+
+// Configure multer for memory storage (images)
+const storage = multer.memoryStorage();
+const upload = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  fileFilter: (req, file, cb) => {
+    const allowedMimes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    if (allowedMimes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files (JPEG, PNG, WebP, GIF) are allowed'));
+    }
+  },
+});
+
+// Task completion keywords
+const COMPLETION_KEYWORDS = ['done', 'finished', 'completed', 'i did it', 'all done', 'look what i made', 'i finished'];
 
 router.use(requireAuth);
 
@@ -108,11 +128,12 @@ router.get('/:childId/buddy', async (req: Request, res: Response, next: NextFunc
 });
 
 // POST /api/buddy-chat/:childId/send
-router.post('/:childId/send', async (req: Request, res: Response, next: NextFunction) => {
+router.post('/:childId/send', upload.single('image'), async (req: Request, res: Response, next: NextFunction) => {
   try {
     const io: Server = req.app.get('io');
     const { message } = req.body;
     const childId = req.params.childId;
+    const imageFile = req.file;
 
     if (!message || typeof message !== 'string') {
       throw new AppError(400, 'Message is required');
@@ -123,13 +144,27 @@ router.post('/:childId/send', async (req: Request, res: Response, next: NextFunc
     // Analyze safety of input
     const inputSafety = analyzeSafety(message);
 
-    // Save child message
+    // Handle image upload if present
+    let imageKey: string | null = null;
+    let imageAnalysis: string | null = null;
+
+    if (imageFile) {
+      const ext = imageFile.mimetype.split('/')[1] || 'jpg';
+      const filename = `${Date.now()}-${uuidv4()}.${ext}`;
+      imageKey = `chat-images/${childId}/${filename}`;
+      await uploadToS3(imageKey, imageFile.buffer, imageFile.mimetype);
+
+      // Analyze image using vision model
+      imageAnalysis = await analyzeImage(imageFile.buffer, imageFile.mimetype);
+    }
+
+    // Save child message with image info
     const childMessageId = uuidv4();
     const childMessage = await queryOne<BuddyMessage>(
-      `INSERT INTO buddy_messages (id, child_profile_id, role, content, safety_level, safety_flags)
-       VALUES ($1, $2, 'child', $3, $4, $5)
+      `INSERT INTO buddy_messages (id, child_profile_id, role, content, safety_level, safety_flags, image_key, image_analysis)
+       VALUES ($1, $2, 'child', $3, $4, $5, $6, $7)
        RETURNING *`,
-      [childMessageId, childId, message, inputSafety.level, JSON.stringify({ flags: inputSafety.flags })]
+      [childMessageId, childId, message, inputSafety.level, JSON.stringify({ flags: inputSafety.flags }), imageKey, imageAnalysis]
     );
 
     // Emit to connected clients
@@ -150,8 +185,11 @@ router.post('/:childId/send', async (req: Request, res: Response, next: NextFunc
       emitToUser(io, req.user!.id, 'safety-alert', report);
     }
 
+    // Check for task completion
+    const taskCompletion = await checkTaskCompletion(childId, message, imageKey, imageAnalysis);
+
     // Generate buddy response using AI
-    const buddyResponse = await generateBuddyResponse(childId, message, child, inputSafety);
+    const buddyResponse = await generateBuddyResponse(childId, message, child, inputSafety, imageAnalysis, taskCompletion);
 
     // Save buddy response
     const buddyMessageId = uuidv4();
@@ -173,15 +211,218 @@ router.post('/:childId/send', async (req: Request, res: Response, next: NextFunc
       [childId]
     );
 
+    // If task was completed, emit event
+    if (taskCompletion?.completed) {
+      emitToUser(io, req.user!.id, 'task-completed', {
+        childId,
+        journeyId: taskCompletion.journeyId,
+        stepId: taskCompletion.stepId,
+        journeyCompleted: taskCompletion.journeyCompleted,
+        rewardEarned: taskCompletion.rewardEarned,
+      });
+    }
+
     res.json({
       childMessage,
       buddyMessage,
       safetyLevel: inputSafety.level,
+      taskCompleted: taskCompletion?.completed || false,
     });
   } catch (error) {
     next(error);
   }
 });
+
+// Helper function to analyze image using vision model
+async function analyzeImage(imageBuffer: Buffer, mimeType: string): Promise<string> {
+  const base64Image = imageBuffer.toString('base64');
+
+  try {
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': process.env.FRONTEND_URL || 'http://localhost:5173',
+      },
+      body: JSON.stringify({
+        model: 'google/gemini-2.5-flash',
+        messages: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'text',
+                text: 'Describe this image briefly in 1-2 sentences. Focus on what the child might be showing (a completed task, artwork, a toy, etc.). Keep it child-friendly and positive.',
+              },
+              {
+                type: 'image_url',
+                image_url: {
+                  url: `data:${mimeType};base64,${base64Image}`,
+                },
+              },
+            ],
+          },
+        ],
+        max_tokens: 150,
+      }),
+    });
+
+    if (!response.ok) {
+      console.error('Image analysis failed:', await response.text());
+      return 'An image was shared.';
+    }
+
+    const data = (await response.json()) as { choices: { message: { content: string } }[] };
+    return data.choices[0]?.message?.content || 'An image was shared.';
+  } catch (error) {
+    console.error('Image analysis error:', error);
+    return 'An image was shared.';
+  }
+}
+
+// Helper function to check task completion
+interface TaskCompletionResult {
+  completed: boolean;
+  journeyId?: string;
+  stepId?: string;
+  stepTitle?: string;
+  journeyCompleted?: boolean;
+  rewardEarned?: boolean;
+  requiresImage?: boolean;
+  hasImage?: boolean;
+}
+
+async function checkTaskCompletion(
+  childId: string,
+  message: string,
+  imageKey: string | null,
+  imageAnalysis: string | null
+): Promise<TaskCompletionResult | null> {
+  const lowerMessage = message.toLowerCase();
+
+  // Check for completion keywords
+  const hasCompletionKeyword = COMPLETION_KEYWORDS.some(kw => lowerMessage.includes(kw));
+  if (!hasCompletionKeyword) return null;
+
+  // Get active journey
+  const activeJourney = await queryOne<Journey & { requires_image_proof: boolean }>(
+    `SELECT id, title, requires_image_proof FROM journeys
+     WHERE child_profile_id = $1 AND status = 'active'
+     ORDER BY created_at DESC LIMIT 1`,
+    [childId]
+  );
+
+  if (!activeJourney) return null;
+
+  const hasImage = !!imageKey;
+  const requiresImage = activeJourney.requires_image_proof;
+
+  // If image is required but not provided
+  if (requiresImage && !hasImage) {
+    return {
+      completed: false,
+      journeyId: activeJourney.id,
+      requiresImage: true,
+      hasImage: false,
+    };
+  }
+
+  // Get next incomplete step
+  const incompleteStep = await queryOne<JourneyStep>(
+    `SELECT id, type, step_order FROM journey_steps
+     WHERE journey_id = $1 AND (progress IS NULL OR progress < 100)
+     ORDER BY step_order LIMIT 1`,
+    [activeJourney.id]
+  );
+
+  if (!incompleteStep) return null;
+
+  // Mark step as complete
+  await query(
+    `UPDATE journey_steps SET progress = 100, completed_at = NOW(), updated_at = NOW()
+     WHERE id = $1`,
+    [incompleteStep.id]
+  );
+
+  // Check if all steps are now complete
+  const remainingSteps = await queryOne<{ count: string }>(
+    `SELECT COUNT(*) as count FROM journey_steps
+     WHERE journey_id = $1 AND (progress IS NULL OR progress < 100)`,
+    [activeJourney.id]
+  );
+
+  const journeyCompleted = parseInt(remainingSteps?.count || '0', 10) === 0;
+  let rewardEarned = false;
+
+  if (journeyCompleted) {
+    // Mark journey as complete
+    await query(
+      `UPDATE journeys SET status = 'completed', completed_at = NOW(), progress = 100
+       WHERE id = $1`,
+      [activeJourney.id]
+    );
+
+    // Award reward
+    const reward = await awardJourneyReward(childId, activeJourney.id);
+    rewardEarned = !!reward;
+  }
+
+  return {
+    completed: true,
+    journeyId: activeJourney.id,
+    stepId: incompleteStep.id,
+    stepTitle: incompleteStep.type,
+    journeyCompleted,
+    rewardEarned,
+    requiresImage,
+    hasImage,
+  };
+}
+
+// Helper function to award journey reward
+async function awardJourneyReward(childId: string, journeyId: string): Promise<{ id: string } | null> {
+  try {
+    // Check if reward already exists
+    const existing = await queryOne<{ id: string }>(
+      'SELECT id FROM journey_rewards WHERE child_profile_id = $1 AND journey_id = $2',
+      [childId, journeyId]
+    );
+    if (existing) return existing;
+
+    // Get journey and template info
+    const journey = await queryOne<{ title: string; template_id: string | null }>(
+      'SELECT title, template_id FROM journeys WHERE id = $1',
+      [journeyId]
+    );
+    if (!journey) return null;
+
+    // Get reward image from template
+    let rewardImageUrl = '/images/default-reward.png';
+    if (journey.template_id) {
+      const template = await queryOne<{ reward_image_url: string | null }>(
+        'SELECT reward_image_url FROM journey_templates WHERE id = $1',
+        [journey.template_id]
+      );
+      if (template?.reward_image_url) {
+        rewardImageUrl = template.reward_image_url;
+      }
+    }
+
+    // Create reward
+    const reward = await queryOne<{ id: string }>(
+      `INSERT INTO journey_rewards (id, child_profile_id, journey_id, reward_image_url, reward_title, viewed)
+       VALUES ($1, $2, $3, $4, $5, false)
+       RETURNING id`,
+      [uuidv4(), childId, journeyId, rewardImageUrl, journey.title]
+    );
+
+    return reward;
+  } catch (error) {
+    console.error('Error awarding journey reward:', error);
+    return null;
+  }
+}
 
 // Family member type for context loading
 interface FamilyMember {
@@ -200,7 +441,9 @@ async function generateBuddyResponse(
   childId: string,
   message: string,
   child: ChildProfile,
-  safety: { level: string; flags: string[] }
+  safety: { level: string; flags: string[] },
+  imageAnalysis?: string | null,
+  taskCompletion?: TaskCompletionResult | null
 ): Promise<string> {
   // Get guardrails
   const guardrails = await queryOne<GuardrailSettings>(
@@ -233,7 +476,26 @@ async function generateBuddyResponse(
   }));
 
   // Build system prompt
-  const systemPrompt = buildSystemPrompt(child, guardrails, safety, familyMembers);
+  const systemPrompt = buildSystemPrompt(child, guardrails, safety, familyMembers, taskCompletion);
+
+  // Build user message with image context
+  let userContent = message;
+  if (imageAnalysis) {
+    userContent = `${message}\n\n[Child shared an image: ${imageAnalysis}]`;
+  }
+
+  // Add task completion context
+  if (taskCompletion) {
+    if (taskCompletion.completed) {
+      if (taskCompletion.journeyCompleted) {
+        userContent += '\n\n[SYSTEM: Child just completed their entire journey! Celebrate enthusiastically!]';
+      } else {
+        userContent += `\n\n[SYSTEM: Child completed a task "${taskCompletion.stepTitle || 'task'}". Acknowledge their accomplishment!]`;
+      }
+    } else if (taskCompletion.requiresImage && !taskCompletion.hasImage) {
+      userContent += '\n\n[SYSTEM: Child wants to mark a task done but needs to share a picture. Encourage them to share a photo of their work.]';
+    }
+  }
 
   try {
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
@@ -248,7 +510,7 @@ async function generateBuddyResponse(
         messages: [
           { role: 'system', content: systemPrompt },
           ...history,
-          { role: 'user', content: message },
+          { role: 'user', content: userContent },
         ],
         max_tokens: 500,
         temperature: 0.7,
@@ -272,7 +534,8 @@ function buildSystemPrompt(
   child: ChildProfile,
   guardrails: GuardrailSettings | null,
   safety: { level: string; flags: string[] },
-  familyMembers: FamilyMember[]
+  familyMembers: FamilyMember[],
+  taskCompletion?: TaskCompletionResult | null
 ): string {
   let prompt = `You are Luno, a friendly, supportive AI companion for a ${child.age}-year-old child named ${child.name}.
 Your personality is warm, encouraging, and age-appropriate.
@@ -310,6 +573,13 @@ Be positive and redirect negative conversations gently.`;
     prompt += `\nNote: The child seems to be expressing some negative emotions. Be extra supportive and encouraging.`;
   }
 
+  // Task completion instructions
+  prompt += `\n\nTASK COMPLETION RULES:
+- If child says "done", "finished", or "completed" with a shared image, celebrate their accomplishment enthusiastically!
+- Be specific about what you see in their image when complimenting their work.
+- If they completed their entire journey, make it extra special with lots of celebration!
+- If they need to share a picture but haven't, gently encourage them: "Great job! Can you share a picture of what you did?"`;
+
   return prompt;
 }
 
@@ -322,6 +592,27 @@ function getDefaultResponse(safetyLevel: string): string {
   }
   return "That's interesting! Tell me more about what you're thinking!";
 }
+
+// GET /api/buddy-chat/:childId/messages/:messageId/image - Get signed URL for message image
+router.get('/:childId/messages/:messageId/image', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    await verifyChildAccess(req.params.childId, req.user!.id);
+
+    const message = await queryOne<{ image_key: string | null }>(
+      'SELECT image_key FROM buddy_messages WHERE id = $1 AND child_profile_id = $2',
+      [req.params.messageId, req.params.childId]
+    );
+
+    if (!message?.image_key) {
+      throw new AppError(404, 'Image not found');
+    }
+
+    const signedUrl = await getSignedDownloadUrl(message.image_key, 3600);
+    res.json({ url: signedUrl });
+  } catch (error) {
+    next(error);
+  }
+});
 
 // GET /api/buddy-chat/safety-reports
 router.get('/safety-reports', async (req: Request, res: Response, next: NextFunction) => {

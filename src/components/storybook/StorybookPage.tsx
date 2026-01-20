@@ -30,12 +30,12 @@ export function StorybookPage({
     <div
       className={cn(
         'relative w-full h-full rounded-2xl overflow-hidden shadow-2xl bg-gradient-to-br from-amber-50 to-orange-50',
-        'flex flex-col transition-opacity duration-300',
+        'transition-opacity duration-300',
         isActive ? 'opacity-100' : 'opacity-0'
       )}
     >
-      {/* Illustration area (top 60%) */}
-      <div className="relative flex-[3] min-h-0 bg-gradient-to-b from-blue-100 to-purple-100 overflow-hidden">
+      {/* Full-page illustration background */}
+      <div className="absolute inset-0 bg-gradient-to-b from-blue-100 to-purple-100">
         {page.illustration_status === 'completed' && illustrationUrl ? (
           <img
             src={illustrationUrl}
@@ -57,27 +57,27 @@ export function StorybookPage({
             </div>
           </div>
         )}
-
-        {/* Page number badge */}
-        <div className="absolute top-4 right-4 bg-white/80 backdrop-blur-sm rounded-full px-3 py-1 text-sm font-medium text-gray-700">
-          {pageNumber} / {totalPages}
-        </div>
       </div>
 
-      {/* Text area (bottom 40%) */}
-      <div className="flex-[2] min-h-0 p-4 md:p-6 flex flex-col bg-gradient-to-b from-amber-50/50 to-amber-100/50 overflow-hidden">
-        <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide flex items-center justify-center">
-          <p className="text-base md:text-lg lg:text-xl leading-relaxed text-gray-800 font-serif text-center max-w-prose px-2">
+      {/* Page number badge */}
+      <div className="absolute top-4 right-4 bg-white/80 backdrop-blur-sm rounded-full px-3 py-1 text-sm font-medium text-gray-700 z-10">
+        {pageNumber} / {totalPages}
+      </div>
+
+      {/* Centered text overlay */}
+      <div className="absolute inset-0 flex items-center justify-center p-6 md:p-10">
+        <div className="bg-white/85 backdrop-blur-sm rounded-xl p-4 md:p-6 shadow-lg max-w-prose overflow-y-auto max-h-[60%]">
+          <p className="text-base md:text-lg lg:text-xl leading-relaxed text-gray-800 font-serif text-center">
             {page.content}
           </p>
         </div>
       </div>
 
       {/* Decorative book spine effect */}
-      <div className="absolute left-0 top-0 bottom-0 w-4 bg-gradient-to-r from-black/10 to-transparent" />
+      <div className="absolute left-0 top-0 bottom-0 w-4 bg-gradient-to-r from-black/10 to-transparent z-10" />
 
       {/* Page edge effect */}
-      <div className="absolute right-0 top-0 bottom-0 w-1 bg-gradient-to-l from-black/5 to-transparent" />
+      <div className="absolute right-0 top-0 bottom-0 w-1 bg-gradient-to-l from-black/5 to-transparent z-10" />
     </div>
   );
 }

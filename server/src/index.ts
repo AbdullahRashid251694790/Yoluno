@@ -34,6 +34,8 @@ import voiceVaultRoutes from './routes/voiceVault.js';
 import familyEventsRoutes from './routes/familyEvents.js';
 import kidsModeRoutes from './routes/kidsMode.js';
 import onboardingRoutes from './routes/onboarding.js';
+import journeyRemindersRoutes from './routes/journeyReminders.js';
+import journeyRewardsRoutes from './routes/journeyRewards.js';
 
 const app = express();
 const httpServer = createServer(app);
@@ -107,6 +109,8 @@ app.use('/api/voice-vault', voiceVaultRoutes);
 app.use('/api/family-events', familyEventsRoutes);
 app.use('/api/kids-mode', kidsModeRoutes);
 app.use('/api/onboarding', onboardingRoutes);
+app.use('/api/journey-reminders', journeyRemindersRoutes);
+app.use('/api/journey-rewards', journeyRewardsRoutes);
 
 // Error handler
 app.use(errorHandler);

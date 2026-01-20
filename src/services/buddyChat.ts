@@ -11,6 +11,7 @@ import { handleError } from '@/lib/errors';
 export interface BuddyChatMessage {
   message: string;
   childId: string;
+  image?: File;
 }
 
 export interface BuddyResponse {
@@ -29,6 +30,8 @@ export interface BuddyMessage {
   safety_level: 'green' | 'yellow' | 'red';
   safety_flags: string[];
   safety_notes: string | null;
+  image_key: string | null;
+  image_analysis: string | null;
   created_at: string;
 }
 
@@ -70,11 +73,31 @@ export interface SafetyReport {
 
 /**
  * Send a message to the buddy and get AI response
+ * Supports optional image attachment
  */
 export async function sendMessageToBuddy(
   params: BuddyChatMessage
 ): Promise<BuddyResponse> {
   try {
+    // If there's an image, use FormData for multipart upload
+    if (params.image) {
+      const formData = new FormData();
+      formData.append('message', params.message);
+      formData.append('image', params.image);
+
+      const { data } = await apiClient.post<BuddyResponse>(
+        `/buddy-chat/${params.childId}/send`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      );
+      return data;
+    }
+
+    // Regular JSON request without image
     const { data } = await apiClient.post<BuddyResponse>(
       `/buddy-chat/${params.childId}/send`,
       { message: params.message }
@@ -86,6 +109,24 @@ export async function sendMessageToBuddy(
       userMessage: 'Failed to send message to buddy',
       strategy: 'throw',
     });
+  }
+}
+
+/**
+ * Get signed URL for a message image
+ */
+export async function getMessageImageUrl(
+  childId: string,
+  messageId: string
+): Promise<string | null> {
+  try {
+    const { data } = await apiClient.get<{ url: string }>(
+      `/buddy-chat/${childId}/messages/${messageId}/image`
+    );
+    return data?.url || null;
+  } catch (error) {
+    console.error('Failed to get image URL:', error);
+    return null;
   }
 }
 
@@ -234,4 +275,5 @@ export const buddyChatService = {
   getSafetyReports,
   markReviewed: markSafetyReportReviewed,
   clearHistory: clearChatHistory,
+  getMessageImageUrl,
 };

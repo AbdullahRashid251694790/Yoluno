@@ -10,6 +10,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useChild } from '@/contexts/ChildContext';
 import { useChildProfile } from '@/hooks/queries';
 import { useGamificationStats, useChildBadges } from '@/hooks/queries/useGamification';
+import { useRewardCount } from '@/hooks/queries/useJourneyRewards';
 import { ErrorState } from '@/components/shared';
 import { ChatAvatar } from '@/components/chat/ChatAvatar';
 import { Button } from '@/components/ui/button';
@@ -25,6 +26,7 @@ import {
   Star,
   Sparkles,
   Settings,
+  Gift,
 } from 'lucide-react';
 import type { AvatarExpression } from '@/types/domain';
 
@@ -111,6 +113,7 @@ export function KidsHomePage() {
   // Fetch real gamification data from database
   const { data: gamificationData } = useGamificationStats(childId);
   const { data: badgesData } = useChildBadges(childId);
+  const { data: rewardCountData } = useRewardCount(childId);
 
   const greeting = useMemo(() => getGreeting(), []);
   const buddyExpression = useMemo(() => getBuddyExpression(), []);
@@ -307,7 +310,7 @@ export function KidsHomePage() {
 
         {/* Badges Teaser */}
         <Link to={`/kids/${childId}/badges`}>
-          <Card className="overflow-hidden border-0 bg-white/70 backdrop-blur-sm shadow-md hover:shadow-lg transition-shadow">
+          <Card className="overflow-hidden border-0 bg-white/70 backdrop-blur-sm shadow-md hover:shadow-lg transition-shadow mb-4">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -360,6 +363,39 @@ export function KidsHomePage() {
                       ))}
                     </>
                   )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </Link>
+
+        {/* Journey Rewards Teaser */}
+        <Link to={`/kids/${childId}/rewards`}>
+          <Card className="overflow-hidden border-0 bg-gradient-to-r from-purple-50 to-pink-50 shadow-md hover:shadow-lg transition-shadow">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Gift className="h-6 w-6 text-purple-500" />
+                  <div>
+                    <h3 className="font-display font-bold text-foreground">My Rewards</h3>
+                    <p className="text-xs text-muted-foreground">
+                      {rewardCountData?.unviewed && rewardCountData.unviewed > 0
+                        ? `${rewardCountData.unviewed} new to see!`
+                        : rewardCountData?.total && rewardCountData.total > 0
+                        ? `${rewardCountData.total} treasure${rewardCountData.total !== 1 ? 's' : ''} earned`
+                        : 'Complete journeys to earn!'}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  {rewardCountData?.unviewed && rewardCountData.unviewed > 0 && (
+                    <span className="flex items-center justify-center h-6 w-6 rounded-full bg-purple-500 text-white text-xs font-bold animate-pulse">
+                      {rewardCountData.unviewed}
+                    </span>
+                  )}
+                  <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-purple-200 to-pink-200 flex items-center justify-center">
+                    <span className="text-xl">🎁</span>
+                  </div>
                 </div>
               </div>
             </CardContent>

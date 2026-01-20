@@ -6,7 +6,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from './keys';
-import { journeysService } from '@/services/journeys';
+import { journeysService, type CreateCustomJourneyData, type AddStepData } from '@/services/journeys';
 import type { JourneyInsert, JourneyUpdate } from '@/types/database';
 import { handleError } from '@/lib/errors';
 
@@ -150,6 +150,114 @@ export function useUpdateStepProgress() {
       handleError(error, {
         context: 'useUpdateStepProgress',
         userMessage: 'Failed to update progress',
+      });
+    },
+  });
+}
+
+export function useDeleteJourney() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => journeysService.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.journeys.lists(),
+      });
+    },
+    onError: (error) => {
+      handleError(error, {
+        context: 'useDeleteJourney',
+        userMessage: 'Failed to delete journey',
+      });
+    },
+  });
+}
+
+export function useCreateCustomJourney() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: CreateCustomJourneyData) => journeysService.createCustom(data),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.journeys.active(data.childProfileId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.journeys.lists(),
+      });
+      return data;
+    },
+    onError: (error) => {
+      handleError(error, {
+        context: 'useCreateCustomJourney',
+        userMessage: 'Failed to create journey',
+      });
+    },
+  });
+}
+
+export function useAddJourneyStep() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ journeyId, step }: { journeyId: string; step: AddStepData }) =>
+      journeysService.addStep(journeyId, step),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.journeys.detail(data.journey_id),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.journeys.progress(data.journey_id),
+      });
+    },
+    onError: (error) => {
+      handleError(error, {
+        context: 'useAddJourneyStep',
+        userMessage: 'Failed to add step',
+      });
+    },
+  });
+}
+
+export function useRemoveJourneyStep() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ journeyId, stepId }: { journeyId: string; stepId: string }) =>
+      journeysService.removeStep(journeyId, stepId),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.journeys.detail(variables.journeyId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.journeys.progress(variables.journeyId),
+      });
+    },
+    onError: (error) => {
+      handleError(error, {
+        context: 'useRemoveJourneyStep',
+        userMessage: 'Failed to remove step',
+      });
+    },
+  });
+}
+
+export function useReorderJourneySteps() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ journeyId, stepIds }: { journeyId: string; stepIds: string[] }) =>
+      journeysService.reorderSteps(journeyId, stepIds),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.journeys.detail(variables.journeyId),
+      });
+    },
+    onError: (error) => {
+      handleError(error, {
+        context: 'useReorderJourneySteps',
+        userMessage: 'Failed to reorder steps',
       });
     },
   });

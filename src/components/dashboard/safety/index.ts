@@ -7,3 +7,4 @@
 export { SafetyReportsPanel } from './SafetyReportsPanel';
 export { BuddySettingsPanel } from './BuddySettingsPanel';
 export { SafetyAlertNotification } from './SafetyAlertNotification';
+export { JourneyReminderSettingsPanel } from './JourneyReminderSettingsPanel';
