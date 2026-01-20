@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 import path from 'path';
 import { requireAuth } from '../middleware/auth.js';
 import { AppError } from '../middleware/errorHandler.js';
-import { uploadToS3, deleteFromS3 } from '../utils/s3.js';
+import { uploadToS3, deleteFromS3, getSignedDownloadUrl } from '../utils/s3.js';
 
 const router = Router();
 
@@ -47,7 +47,7 @@ const upload = multer({
   },
 });
 
-// POST /api/upload/:bucket
+// POST /api/upload/:bucket - Upload a file
 router.post('/:bucket', upload.single('file'), async (req: Request, res: Response, next: NextFunction) => {
   try {
     if (!req.file) {
@@ -60,14 +60,35 @@ router.post('/:bucket', upload.single('file'), async (req: Request, res: Respons
     const filename = `${Date.now()}-${uuidv4()}${ext}`;
     const key = `${bucket}/${userId}/${filename}`;
 
-    const url = await uploadToS3(key, req.file.buffer, req.file.mimetype);
+    await uploadToS3(key, req.file.buffer, req.file.mimetype);
+
+    // Return signed URL for immediate use (valid for 24 hours)
+    const url = await getSignedDownloadUrl(key, 86400);
 
     res.json({
+      key,
       url,
       filename,
       size: req.file.size,
       mimeType: req.file.mimetype,
     });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// GET /api/upload/signed-url/:key(*) - Get a signed URL for an existing file
+router.get('/signed-url/*', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const key = req.params[0];
+    if (!key) {
+      throw new AppError(400, 'Key is required');
+    }
+
+    // Generate signed URL valid for 1 hour
+    const url = await getSignedDownloadUrl(key, 3600);
+
+    res.json({ url });
   } catch (error) {
     next(error);
   }

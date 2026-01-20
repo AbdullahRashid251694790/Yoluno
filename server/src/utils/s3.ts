@@ -1,4 +1,5 @@
-import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 const s3Client = new S3Client({
   endpoint: process.env.S3_ENDPOINT,
@@ -26,8 +27,17 @@ export async function uploadToS3(
 
   await s3Client.send(command);
 
-  // Return the public URL
-  return `${process.env.S3_ENDPOINT}/${bucket}/${key}`;
+  // Return the S3 key (will be converted to signed URL when accessed)
+  return key;
+}
+
+export async function getSignedDownloadUrl(key: string, expiresIn = 3600): Promise<string> {
+  const command = new GetObjectCommand({
+    Bucket: bucket,
+    Key: key,
+  });
+
+  return getSignedUrl(s3Client, command, { expiresIn });
 }
 
 export async function deleteFromS3(key: string): Promise<void> {
@@ -39,10 +49,7 @@ export async function deleteFromS3(key: string): Promise<void> {
   await s3Client.send(command);
 }
 
-export function getS3KeyFromUrl(url: string): string | null {
-  const prefix = `${process.env.S3_ENDPOINT}/${bucket}/`;
-  if (url.startsWith(prefix)) {
-    return url.slice(prefix.length);
-  }
-  return null;
+export function isS3Key(value: string): boolean {
+  // S3 keys don't start with http
+  return !value.startsWith('http');
 }
