@@ -16,6 +16,7 @@ import {
   Clock,
   ArrowRight,
   Trophy,
+  Pencil,
 } from 'lucide-react';
 import type { JourneyWithSteps } from '@/types/domain';
 
@@ -35,6 +36,7 @@ interface JourneyCardProps {
   journey: JourneyForCard;
   onContinue?: (journey: JourneyForCard) => void;
   onView?: (journey: JourneyForCard) => void;
+  onEdit?: (journey: JourneyForCard) => void;
   className?: string;
 }
 
@@ -42,6 +44,7 @@ export function JourneyCard({
   journey,
   onContinue,
   onView,
+  onEdit,
   className,
 }: JourneyCardProps) {
   const statusStyle = STATUS_STYLES[journey.status] || STATUS_STYLES.active;
@@ -72,6 +75,11 @@ export function JourneyCard({
     onView?.({ ...journey, child_profile_id: childProfileId });
   };
 
+  const handleEdit = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onEdit?.({ ...journey, child_profile_id: childProfileId });
+  };
+
   return (
     <Card
       className={cn(
@@ -86,13 +94,25 @@ export function JourneyCard({
           <h3 className="font-semibold text-lg line-clamp-1">
             {journey.title}
           </h3>
-          <Badge
-            variant="secondary"
-            className={cn(statusStyle.bg, statusStyle.text)}
-          >
-            <StatusIcon className="h-3 w-3 mr-1" />
-            {journey.status}
-          </Badge>
+          <div className="flex items-center gap-2">
+            {onEdit && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                onClick={handleEdit}
+              >
+                <Pencil className="h-3.5 w-3.5" />
+              </Button>
+            )}
+            <Badge
+              variant="secondary"
+              className={cn(statusStyle.bg, statusStyle.text)}
+            >
+              <StatusIcon className="h-3 w-3 mr-1" />
+              {journey.status}
+            </Badge>
+          </div>
         </div>
       </CardHeader>
 

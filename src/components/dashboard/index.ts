@@ -11,7 +11,7 @@ export { ChildProfileCard, CreateChildDialog, ChildProfileList } from './childre
 export { StoryCard, StoryList } from './stories';
 
 // Journeys
-export { JourneyTemplateCard, JourneyCard, type JourneyForCard } from './journeys';
+export { JourneyTemplateCard, JourneyCard, type JourneyForCard, CreateJourneyDialog, EditJourneyDialog } from './journeys';
 
 // Layout
 export { DashboardHeader, DashboardSidebar } from './layout';

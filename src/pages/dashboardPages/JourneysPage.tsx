@@ -17,7 +17,13 @@ import {
   useStartJourneyFromTemplate,
 } from '@/hooks/queries/useJourneyTemplates';
 import { EmptyState, LoadingSpinner } from '@/components/shared';
-import { JourneyTemplateCard, JourneyCard, type JourneyForCard } from '@/components/dashboard';
+import {
+  JourneyTemplateCard,
+  JourneyCard,
+  type JourneyForCard,
+  CreateJourneyDialog,
+  EditJourneyDialog,
+} from '@/components/dashboard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -44,6 +50,7 @@ import {
   Play,
   CheckCircle2,
   Filter,
+  Plus,
 } from 'lucide-react';
 import type { JourneyTemplate } from '@/services/journeyTemplates';
 
@@ -56,6 +63,8 @@ export function JourneysPage() {
   const [selectedChildId, setSelectedChildId] = useState<string>('all');
   const [selectedTemplate, setSelectedTemplate] = useState<JourneyTemplate | null>(null);
   const [showStartDialog, setShowStartDialog] = useState(false);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [editingJourney, setEditingJourney] = useState<JourneyForCard | null>(null);
 
   // Get active child for template filtering
   const activeChildId = selectedChildId !== 'all' ? selectedChildId : children[0]?.id;
@@ -127,6 +136,10 @@ export function JourneysPage() {
     [navigate]
   );
 
+  const handleEditJourney = useCallback((journey: JourneyForCard) => {
+    setEditingJourney(journey);
+  }, []);
+
   if (loadingChildren) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -146,22 +159,31 @@ export function JourneysPage() {
           </p>
         </div>
 
-        {children.length > 1 && (
-          <Select value={selectedChildId} onValueChange={setSelectedChildId}>
-            <SelectTrigger className="w-[180px]">
-              <Filter className="h-4 w-4 mr-2" />
-              <SelectValue placeholder="All children" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All children</SelectItem>
-              {children.map((child) => (
-                <SelectItem key={child.id} value={child.id}>
-                  {child.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
+        <div className="flex items-center gap-3">
+          {children.length > 1 && (
+            <Select value={selectedChildId} onValueChange={setSelectedChildId}>
+              <SelectTrigger className="w-[180px]">
+                <Filter className="h-4 w-4 mr-2" />
+                <SelectValue placeholder="All children" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All children</SelectItem>
+                {children.map((child) => (
+                  <SelectItem key={child.id} value={child.id}>
+                    {child.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+
+          {children.length > 0 && (
+            <Button onClick={() => setShowCreateDialog(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Create Journey
+            </Button>
+          )}
+        </div>
       </div>
 
       {children.length === 0 ? (
@@ -230,6 +252,7 @@ export function JourneysPage() {
                     journey={journey}
                     onContinue={handleContinueJourney}
                     onView={handleContinueJourney}
+                    onEdit={handleEditJourney}
                   />
                 ))}
               </div>
@@ -338,6 +361,7 @@ export function JourneysPage() {
                     key={journey.id}
                     journey={journey}
                     onView={handleContinueJourney}
+                    onEdit={handleEditJourney}
                   />
                 ))}
               </div>
@@ -386,6 +410,20 @@ export function JourneysPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Create Journey Dialog */}
+      <CreateJourneyDialog
+        open={showCreateDialog}
+        onOpenChange={setShowCreateDialog}
+        preselectedChildId={selectedChildId !== 'all' ? selectedChildId : undefined}
+      />
+
+      {/* Edit Journey Dialog */}
+      <EditJourneyDialog
+        journey={editingJourney}
+        open={!!editingJourney}
+        onOpenChange={(open) => !open && setEditingJourney(null)}
+      />
     </div>
   );
 }
