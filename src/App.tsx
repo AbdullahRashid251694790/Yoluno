@@ -21,6 +21,8 @@ import { KidsChatPage } from '@/pages/KidsChat';
 import { KidsStoriesPage } from '@/pages/KidsStories';
 import { StoryWizardPage } from '@/pages/StoryWizard';
 import { KidsJourneyDetailPage } from '@/pages/KidsJourneyDetail';
+import { KidsJourneysPage } from '@/pages/KidsJourneys';
+import { KidsFamilyPage } from '@/pages/KidsFamily';
 import { KidsRewardGalleryPage } from '@/pages/KidsRewardGallery';
 import { NotFoundPage } from '@/pages/NotFound';
 
@@ -139,10 +141,26 @@ export default function App() {
                   }
                 />
                 <Route
+                  path="/kids/:childId/journeys"
+                  element={
+                    <ProtectedRoute>
+                      <KidsJourneysPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
                   path="/kids/:childId/journeys/:journeyId"
                   element={
                     <ProtectedRoute>
                       <KidsJourneyDetailPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/kids/:childId/family"
+                  element={
+                    <ProtectedRoute>
+                      <KidsFamilyPage />
                     </ProtectedRoute>
                   }
                 />

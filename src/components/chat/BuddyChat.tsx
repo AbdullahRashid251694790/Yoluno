@@ -18,6 +18,7 @@ import { ChatMessage } from './ChatMessage';
 import { ChatInput } from './ChatInput';
 import { ChatAvatar, TypingIndicator } from './ChatAvatar';
 import { SuggestionChips } from './SuggestionChips';
+import { JourneyTasksPanel } from './JourneyTasksPanel';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Star, AlertTriangle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -162,6 +163,9 @@ export function BuddyChat({ childId, childName }: BuddyChatProps) {
           <span className="text-sm font-bold text-yellow-700">{starCount}</span>
         </div>
       </div>
+
+      {/* Journey Tasks Panel */}
+      <JourneyTasksPanel childId={childId} />
 
       {/* Safety alert */}
       {hasRedFlag && (
