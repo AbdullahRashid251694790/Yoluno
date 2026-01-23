@@ -460,6 +460,23 @@ async function generateBuddyResponse(
   );
   const familyMembers = familyResult.rows;
 
+  // Get topic posts for context (both system topics and custom topics)
+  const topicPostsResult = await query<{ topic_name: string; post_title: string; post_content: string }>(
+    `SELECT
+       COALESCE(t.name, ct.name) as topic_name,
+       tp.title as post_title,
+       tp.content as post_content
+     FROM topic_posts tp
+     LEFT JOIN topics t ON tp.topic_id = t.id
+     LEFT JOIN custom_topics ct ON tp.custom_topic_id = ct.id
+     WHERE tp.child_profile_id = $1 AND tp.is_active = true
+       AND (ct.id IS NULL OR ct.is_active = true)
+     ORDER BY COALESCE(t.name, ct.name), tp.sort_order
+     LIMIT 50`,
+    [childId]
+  );
+  const topicPosts = topicPostsResult.rows;
+
   // Get recent messages for context
   const recentMessages = await query<BuddyMessage>(
     `SELECT role, content FROM buddy_messages
@@ -476,7 +493,7 @@ async function generateBuddyResponse(
   }));
 
   // Build system prompt
-  const systemPrompt = buildSystemPrompt(child, guardrails, safety, familyMembers, taskCompletion);
+  const systemPrompt = buildSystemPrompt(child, guardrails, safety, familyMembers, taskCompletion, topicPosts);
 
   // Build user message with image context
   let userContent = message;
@@ -535,7 +552,8 @@ function buildSystemPrompt(
   guardrails: GuardrailSettings | null,
   safety: { level: string; flags: string[] },
   familyMembers: FamilyMember[],
-  taskCompletion?: TaskCompletionResult | null
+  taskCompletion?: TaskCompletionResult | null,
+  topicPosts?: { topic_name: string; post_title: string; post_content: string }[]
 ): string {
   // Luno's World - A Pixar-soft, Dr. Seuss-inspired universe
   let prompt = `You are Luno, a gentle AI companion from Luno's World - a place of calm curiosity and warm wonder.
@@ -593,6 +611,35 @@ EXAMPLE RESPONSES:
       prompt += details.join('\n');
     }
     prompt += `\n\nWhen ${child.name} asks about family, respond with gentle warmth and accurate information.`;
+  }
+
+  // Add topic-specific knowledge from parent
+  if (topicPosts && topicPosts.length > 0) {
+    // Group posts by topic
+    const byTopic: Record<string, string[]> = {};
+    for (const row of topicPosts) {
+      if (!row.post_title) continue;
+      if (!byTopic[row.topic_name]) byTopic[row.topic_name] = [];
+      // Truncate content for prompt efficiency (max 300 chars)
+      const truncatedContent = row.post_content.length > 300
+        ? row.post_content.substring(0, 300) + '...'
+        : row.post_content;
+      byTopic[row.topic_name].push(`${row.post_title}: ${truncatedContent}`);
+    }
+
+    if (Object.keys(byTopic).length > 0) {
+      prompt += `\n\nSPECIAL KNOWLEDGE (shared by ${child.name}'s family):`;
+      let topicCount = 0;
+      for (const [topic, posts] of Object.entries(byTopic)) {
+        if (topicCount >= 10) break; // Max 10 topics
+        prompt += `\n\n${topic}:`;
+        for (const post of posts.slice(0, 5)) { // Max 5 posts per topic
+          prompt += `\n- ${post}`;
+        }
+        topicCount++;
+      }
+      prompt += `\n\nWeave this special knowledge into conversations naturally when ${child.name} asks about these topics.`;
+    }
   }
 
   if (guardrails?.blocked_topics && guardrails.blocked_topics.length > 0) {

@@ -2,7 +2,7 @@
  * Topics Page
  *
  * Manage content topics for children.
- * All data from database - no hardcoding.
+ * Includes system topics, custom topics, and topic posts.
  */
 
 import { useState } from 'react';
@@ -12,11 +12,21 @@ import {
   useChildTopicSettings,
   useUpdateTopicSetting,
 } from '@/hooks/queries/useTopics';
+import {
+  useCustomTopics,
+  useTopicPosts,
+  useDeleteCustomTopic,
+} from '@/hooks/queries/useTopicPosts';
+import {
+  CustomTopicDialog,
+  TopicPostsList,
+} from '@/components/dashboard/topics';
 import { LoadingSpinner, EmptyState } from '@/components/shared';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   Select,
   SelectContent,
@@ -31,11 +41,26 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
   Tag,
   Filter,
   Users,
   Info,
+  Plus,
+  Pencil,
+  Trash2,
+  Sparkles,
 } from 'lucide-react';
+import type { CustomTopic } from '@/hooks/queries/useTopicPosts';
 
 export function TopicsPage() {
   const { user } = useAuth();
@@ -46,7 +71,15 @@ export function TopicsPage() {
   const activeChildId = selectedChildId || children[0]?.id;
 
   const { data: topicSettings, isLoading: topicsLoading } = useChildTopicSettings(activeChildId);
+  const { data: customTopics = [], isLoading: customTopicsLoading } = useCustomTopics(activeChildId);
+  const { data: allPosts = [] } = useTopicPosts(activeChildId);
   const updateSetting = useUpdateTopicSetting();
+  const deleteCustomTopic = useDeleteCustomTopic();
+
+  // Dialog states
+  const [customTopicDialogOpen, setCustomTopicDialogOpen] = useState(false);
+  const [editingCustomTopic, setEditingCustomTopic] = useState<CustomTopic | null>(null);
+  const [deletingCustomTopic, setDeletingCustomTopic] = useState<CustomTopic | null>(null);
 
   if (childrenLoading) {
     return (
@@ -79,7 +112,25 @@ export function TopicsPage() {
     });
   };
 
-  // Group topics by category
+  const handleEditCustomTopic = (topic: CustomTopic) => {
+    setEditingCustomTopic(topic);
+    setCustomTopicDialogOpen(true);
+  };
+
+  const handleDeleteCustomTopic = async () => {
+    if (!deletingCustomTopic || !activeChildId) return;
+    try {
+      await deleteCustomTopic.mutateAsync({
+        childId: activeChildId,
+        customTopicId: deletingCustomTopic.id,
+      });
+      setDeletingCustomTopic(null);
+    } catch {
+      // Error handled by mutation
+    }
+  };
+
+  // Group system topics by category
   const topicsByCategory = topicSettings?.topics.reduce(
     (acc, topic) => {
       const category = topic.category_name || 'Other';
@@ -89,6 +140,13 @@ export function TopicsPage() {
     },
     {} as Record<string, typeof topicSettings.topics>
   ) || {};
+
+  // Get posts for a specific topic
+  const getPostsForTopic = (topicId: string) =>
+    allPosts.filter((p) => p.topic_id === topicId);
+
+  const getPostsForCustomTopic = (customTopicId: string) =>
+    allPosts.filter((p) => p.custom_topic_id === customTopicId);
 
   const selectedChild = children.find((c) => c.id === activeChildId);
 
@@ -127,13 +185,111 @@ export function TopicsPage() {
           <div>
             <p className="text-sm text-blue-900">
               Topics shown are age-appropriate for {selectedChild?.name} (age {topicSettings?.child_age}).
-              Enabled topics can be discussed during conversations.
+              Add posts to topics to give Luno special knowledge for personalized conversations.
             </p>
           </div>
         </CardContent>
       </Card>
 
-      {/* Topics List */}
+      {/* Custom Topics Section */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5" />
+                Custom Topics
+              </CardTitle>
+              <CardDescription>
+                Create your own topics and add custom content for Luno
+              </CardDescription>
+            </div>
+            <Button
+              onClick={() => {
+                setEditingCustomTopic(null);
+                setCustomTopicDialogOpen(true);
+              }}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add Topic
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {customTopicsLoading ? (
+            <div className="flex justify-center py-8">
+              <LoadingSpinner />
+            </div>
+          ) : customTopics.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <Sparkles className="h-12 w-12 mx-auto mb-3 opacity-30" />
+              <p>No custom topics yet.</p>
+              <p className="text-sm">Create a topic to add personalized content for Luno.</p>
+            </div>
+          ) : (
+            <Accordion type="multiple" className="w-full">
+              {customTopics.map((customTopic) => {
+                const posts = getPostsForCustomTopic(customTopic.id);
+                return (
+                  <AccordionItem key={customTopic.id} value={customTopic.id}>
+                    <AccordionTrigger className="hover:no-underline">
+                      <div className="flex items-center gap-3 flex-1">
+                        {customTopic.icon && (
+                          <span className="text-lg">{customTopic.icon}</span>
+                        )}
+                        <span className="font-medium">{customTopic.name}</span>
+                        <Badge variant="secondary">
+                          {posts.length} {posts.length === 1 ? 'post' : 'posts'}
+                        </Badge>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <div className="space-y-4">
+                        {/* Edit/Delete buttons */}
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEditCustomTopic(customTopic)}
+                          >
+                            <Pencil className="h-3.5 w-3.5 mr-1.5" />
+                            Edit Topic
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-destructive hover:text-destructive"
+                            onClick={() => setDeletingCustomTopic(customTopic)}
+                          >
+                            <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+                            Delete Topic
+                          </Button>
+                        </div>
+
+                        {customTopic.description && (
+                          <p className="text-sm text-muted-foreground">
+                            {customTopic.description}
+                          </p>
+                        )}
+
+                        {/* Posts list */}
+                        <TopicPostsList
+                          childId={activeChildId}
+                          customTopicId={customTopic.id}
+                          topicName={customTopic.name}
+                          posts={posts}
+                        />
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                );
+              })}
+            </Accordion>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* System Topics List */}
       {topicsLoading ? (
         <div className="flex justify-center py-12">
           <LoadingSpinner />
@@ -156,7 +312,7 @@ export function TopicsPage() {
               Topic Settings for {selectedChild?.name}
             </CardTitle>
             <CardDescription>
-              Toggle topics on or off to control conversation content
+              Toggle topics on or off and add custom content
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -175,34 +331,53 @@ export function TopicsPage() {
                     </AccordionTrigger>
                     <AccordionContent>
                       <div className="space-y-4 pt-2">
-                        {topics.map((topic) => (
-                          <div
-                            key={topic.id}
-                            className="flex items-center justify-between rounded-lg border p-3"
-                          >
-                            <div className="space-y-0.5">
-                              <Label
-                                htmlFor={topic.id}
-                                className="text-sm font-medium cursor-pointer"
-                              >
-                                {topic.name}
-                              </Label>
-                              {topic.description && (
-                                <p className="text-xs text-muted-foreground">
-                                  {topic.description}
-                                </p>
+                        {topics.map((topic) => {
+                          const posts = getPostsForTopic(topic.id);
+                          return (
+                            <div key={topic.id}>
+                              <div className="flex items-center justify-between rounded-lg border p-3">
+                                <div className="space-y-0.5">
+                                  <Label
+                                    htmlFor={topic.id}
+                                    className="text-sm font-medium cursor-pointer"
+                                  >
+                                    {topic.name}
+                                  </Label>
+                                  {topic.description && (
+                                    <p className="text-xs text-muted-foreground">
+                                      {topic.description}
+                                    </p>
+                                  )}
+                                  {posts.length > 0 && (
+                                    <Badge variant="outline" className="text-xs mt-1">
+                                      {posts.length} custom {posts.length === 1 ? 'post' : 'posts'}
+                                    </Badge>
+                                  )}
+                                </div>
+                                <Switch
+                                  id={topic.id}
+                                  checked={topic.is_allowed}
+                                  onCheckedChange={() =>
+                                    handleToggleTopic(topic.id, topic.is_allowed || false)
+                                  }
+                                  disabled={updateSetting.isPending}
+                                />
+                              </div>
+
+                              {/* Posts for this system topic */}
+                              {topic.is_allowed && (
+                                <div className="ml-4 mt-2 border-l-2 pl-4">
+                                  <TopicPostsList
+                                    childId={activeChildId}
+                                    topicId={topic.id}
+                                    topicName={topic.name}
+                                    posts={posts}
+                                  />
+                                </div>
                               )}
                             </div>
-                            <Switch
-                              id={topic.id}
-                              checked={topic.is_allowed}
-                              onCheckedChange={() =>
-                                handleToggleTopic(topic.id, topic.is_allowed || false)
-                              }
-                              disabled={updateSetting.isPending}
-                            />
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </AccordionContent>
                   </AccordionItem>
@@ -212,6 +387,39 @@ export function TopicsPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* Custom Topic Dialog */}
+      <CustomTopicDialog
+        open={customTopicDialogOpen}
+        onOpenChange={setCustomTopicDialogOpen}
+        childId={activeChildId}
+        topic={editingCustomTopic}
+      />
+
+      {/* Delete Custom Topic Confirmation */}
+      <AlertDialog
+        open={!!deletingCustomTopic}
+        onOpenChange={(open) => !open && setDeletingCustomTopic(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Custom Topic</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{deletingCustomTopic?.name}"? This will also
+              delete all posts within this topic. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteCustomTopic}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete Topic
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

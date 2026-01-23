@@ -144,6 +144,15 @@ export const queryKeys = {
       [...queryKeys.topics.all, 'child-settings', childId] as const,
   },
 
+  // Custom Topics & Topic Posts
+  topicPosts: {
+    all: ['topic-posts'] as const,
+    customTopics: (childId: string) =>
+      [...queryKeys.topicPosts.all, 'custom-topics', childId] as const,
+    posts: (childId: string) =>
+      [...queryKeys.topicPosts.all, 'posts', childId] as const,
+  },
+
   // Content Library
   contentLibrary: {
     all: ['content-library'] as const,
