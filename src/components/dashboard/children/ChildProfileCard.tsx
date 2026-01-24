@@ -66,7 +66,7 @@ export function ChildProfileCard({ child, avatarUrl, onEdit }: ChildProfileCardP
             Play
           </Button>
         </Link>
-        <Link to={`/story-wizard/${child.id}`}>
+        <Link to="/dashboard/stories">
           <Button size="sm" variant="outline" className="gap-2">
             <BookOpen className="h-4 w-4" />
             Story
