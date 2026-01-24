@@ -134,6 +134,7 @@ export function FamilyTreePage() {
             members={members}
             onEditMember={handleEditMember}
             onDeleteMember={handleDeleteMember}
+            onAddMember={handleAddMember}
             onPositionChange={handlePositionChange}
           />
         </TabsContent>

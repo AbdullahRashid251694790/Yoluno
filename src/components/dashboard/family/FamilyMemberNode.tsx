@@ -6,7 +6,7 @@
  */
 
 import { useState, useRef, useCallback } from 'react';
-import { Edit2, Trash2, GripVertical } from 'lucide-react';
+import { Edit2, Trash2, GripVertical, CheckCircle2, Circle, Briefcase, Heart, Calendar } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -21,6 +21,12 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import type { FamilyMemberRow } from '@/types/database';
 import { cn } from '@/lib/utils';
 import { getUploadUrl } from '@/integrations/api';
@@ -35,6 +41,45 @@ const RELATIONSHIP_LABELS: Record<string, string> = {
   child: 'Child',
   other: 'Family',
 };
+
+// Relationship-based colors for avatars
+const RELATIONSHIP_COLORS: Record<string, { bg: string; text: string }> = {
+  parent: { bg: 'bg-blue-100', text: 'text-blue-600' },
+  grandparent: { bg: 'bg-purple-100', text: 'text-purple-600' },
+  sibling: { bg: 'bg-green-100', text: 'text-green-600' },
+  aunt_uncle: { bg: 'bg-orange-100', text: 'text-orange-600' },
+  cousin: { bg: 'bg-teal-100', text: 'text-teal-600' },
+  spouse: { bg: 'bg-pink-100', text: 'text-pink-600' },
+  child: { bg: 'bg-cyan-100', text: 'text-cyan-600' },
+  other: { bg: 'bg-gray-100', text: 'text-gray-600' },
+};
+
+// Calculate completeness score
+function getCompletenessScore(member: FamilyMemberRow): { score: number; total: number } {
+  let score = 0;
+  const total = 5;
+
+  if (member.name) score++;
+  if (member.photo_url) score++;
+  if (member.hobbies && member.hobbies.length > 0) score++;
+  if (member.fun_facts) score++;
+  if (member.occupation || member.birth_date) score++;
+
+  return { score, total };
+}
+
+// Calculate age from birth date
+function getAge(birthDate: string | null): number | null {
+  if (!birthDate) return null;
+  const birth = new Date(birthDate);
+  const today = new Date();
+  let age = today.getFullYear() - birth.getFullYear();
+  const monthDiff = today.getMonth() - birth.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+    age--;
+  }
+  return age;
+}
 
 interface FamilyMemberNodeProps {
   member: FamilyMemberRow;
@@ -66,6 +111,11 @@ export function FamilyMemberNode({
 
   const relationshipLabel =
     RELATIONSHIP_LABELS[member.relationship || 'other'] || 'Family';
+
+  const colors = RELATIONSHIP_COLORS[member.relationship || 'other'] || RELATIONSHIP_COLORS.other;
+  const completeness = getCompletenessScore(member);
+  const age = getAge(member.birth_date);
+  const birthYear = member.birth_date ? new Date(member.birth_date).getFullYear() : null;
 
   const handleDragStart = useCallback(
     (e: React.MouseEvent | React.TouchEvent) => {
@@ -106,7 +156,7 @@ export function FamilyMemberNode({
     <div
       ref={nodeRef}
       className={cn(
-        'relative bg-card rounded-xl shadow-md border p-3 w-40 transition-all hover:shadow-lg',
+        'relative bg-card rounded-xl shadow-md border p-4 w-44 transition-all hover:shadow-lg hover:border-primary/30',
         isDragging && 'shadow-lg scale-105 z-50',
         !member.is_alive && 'opacity-80',
         isDraggable ? 'cursor-grab' : 'cursor-pointer',
@@ -172,29 +222,86 @@ export function FamilyMemberNode({
       </div>
 
       {/* Content */}
-      <div className="flex flex-col items-center text-center">
-        <Avatar className="h-16 w-16 mb-2">
-          <AvatarImage src={getUploadUrl(member.photo_url)} alt={member.name} />
-          <AvatarFallback className="bg-primary/10 text-primary text-lg">
-            {initials}
-          </AvatarFallback>
-        </Avatar>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="flex flex-col items-center text-center">
+              {/* Completeness Indicator */}
+              <div className="absolute top-1 left-1">
+                {completeness.score === completeness.total ? (
+                  <CheckCircle2 className="h-4 w-4 text-green-500" />
+                ) : (
+                  <div className="flex items-center gap-0.5">
+                    {Array.from({ length: completeness.total }).map((_, i) => (
+                      <Circle
+                        key={i}
+                        className={cn(
+                          'h-1.5 w-1.5',
+                          i < completeness.score ? 'fill-primary text-primary' : 'text-muted-foreground/30'
+                        )}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
 
-        <h4 className="font-semibold text-sm truncate w-full">{member.name}</h4>
+              <Avatar className="h-16 w-16 mb-2">
+                <AvatarImage src={getUploadUrl(member.photo_url)} alt={member.name} />
+                <AvatarFallback className={cn(colors.bg, colors.text, 'text-lg font-semibold')}>
+                  {initials}
+                </AvatarFallback>
+              </Avatar>
 
-        <Badge
-          variant={member.is_alive ? 'secondary' : 'outline'}
-          className="mt-1 text-xs"
-        >
-          {relationshipLabel}
-        </Badge>
+              <h4 className="font-semibold text-sm truncate w-full">{member.name}</h4>
 
-        {member.occupation && (
-          <p className="text-xs text-muted-foreground mt-1 truncate w-full">
-            {member.occupation}
-          </p>
-        )}
-      </div>
+              {/* Age/Birth Year */}
+              {(age !== null || birthYear) && (
+                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Calendar className="h-3 w-3" />
+                  {member.is_alive && age !== null ? `${age} yrs` : birthYear}
+                  {!member.is_alive && ' - In Memory'}
+                </p>
+              )}
+
+              <Badge
+                variant={member.is_alive ? 'secondary' : 'outline'}
+                className="mt-1 text-xs"
+              >
+                {relationshipLabel}
+              </Badge>
+
+              {member.occupation && (
+                <p className="text-xs text-muted-foreground mt-1 truncate w-full flex items-center justify-center gap-1">
+                  <Briefcase className="h-3 w-3 flex-shrink-0" />
+                  <span className="truncate">{member.occupation}</span>
+                </p>
+              )}
+            </div>
+          </TooltipTrigger>
+          <TooltipContent side="right" className="max-w-xs p-3">
+            <div className="space-y-2">
+              <p className="font-semibold">{member.name}</p>
+              {member.connection_description && (
+                <p className="text-sm text-muted-foreground">{member.connection_description}</p>
+              )}
+              {member.hobbies && member.hobbies.length > 0 && (
+                <div className="flex items-start gap-1 text-sm">
+                  <Heart className="h-3 w-3 mt-0.5 text-pink-500 flex-shrink-0" />
+                  <span>{member.hobbies.join(', ')}</span>
+                </div>
+              )}
+              {member.fun_facts && (
+                <p className="text-sm italic text-muted-foreground">"{member.fun_facts}"</p>
+              )}
+              {completeness.score < completeness.total && (
+                <p className="text-xs text-amber-600">
+                  Add more details to help Luno ({completeness.score}/{completeness.total})
+                </p>
+              )}
+            </div>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
     </div>
   );
 }
