@@ -246,15 +246,22 @@ export function JourneysPage() {
               </Card>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {activeJourneys.map((journey) => (
-                  <JourneyCard
-                    key={journey.id}
-                    journey={journey}
-                    onContinue={handleContinueJourney}
-                    onView={handleContinueJourney}
-                    onEdit={handleEditJourney}
-                  />
-                ))}
+                {activeJourneys.map((journey) => {
+                  const childId = journey.child_profile_id || journey.childProfileId;
+                  const childName = selectedChildId === 'all'
+                    ? children.find(c => c.id === childId)?.name
+                    : undefined;
+                  return (
+                    <JourneyCard
+                      key={journey.id}
+                      journey={journey}
+                      childName={childName}
+                      onContinue={handleContinueJourney}
+                      onView={handleContinueJourney}
+                      onEdit={handleEditJourney}
+                    />
+                  );
+                })}
               </div>
             )}
           </TabsContent>
@@ -356,14 +363,21 @@ export function JourneysPage() {
               </Card>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {completedJourneys.map((journey) => (
-                  <JourneyCard
-                    key={journey.id}
-                    journey={journey}
-                    onView={handleContinueJourney}
-                    onEdit={handleEditJourney}
-                  />
-                ))}
+                {completedJourneys.map((journey) => {
+                  const childId = journey.child_profile_id || journey.childProfileId;
+                  const childName = selectedChildId === 'all'
+                    ? children.find(c => c.id === childId)?.name
+                    : undefined;
+                  return (
+                    <JourneyCard
+                      key={journey.id}
+                      journey={journey}
+                      childName={childName}
+                      onView={handleContinueJourney}
+                      onEdit={handleEditJourney}
+                    />
+                  );
+                })}
               </div>
             )}
           </TabsContent>

@@ -8,6 +8,12 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import {
   Play,
@@ -17,14 +23,36 @@ import {
   ArrowRight,
   Trophy,
   Pencil,
+  BookOpen,
+  Users,
+  Heart,
+  Palette,
+  Lightbulb,
 } from 'lucide-react';
 import type { JourneyWithSteps } from '@/types/domain';
 
-// Status colors
-const STATUS_STYLES: Record<string, { bg: string; text: string; icon: typeof Play }> = {
-  active: { bg: 'bg-green-100', text: 'text-green-700', icon: Play },
-  paused: { bg: 'bg-yellow-100', text: 'text-yellow-700', icon: Pause },
-  completed: { bg: 'bg-blue-100', text: 'text-blue-700', icon: CheckCircle2 },
+// Category icons and colors (matching JourneyTemplateCard pattern)
+const CATEGORY_ICONS: Record<string, typeof Clock> = {
+  habit: Clock,
+  learning: BookOpen,
+  social: Users,
+  health: Heart,
+  creativity: Palette,
+};
+
+const CATEGORY_COLORS: Record<string, { bg: string; border: string; iconBg: string }> = {
+  habit: { bg: 'bg-blue-50', border: 'border-l-blue-500', iconBg: 'bg-blue-100' },
+  learning: { bg: 'bg-purple-50', border: 'border-l-purple-500', iconBg: 'bg-purple-100' },
+  social: { bg: 'bg-green-50', border: 'border-l-green-500', iconBg: 'bg-green-100' },
+  health: { bg: 'bg-red-50', border: 'border-l-red-500', iconBg: 'bg-red-100' },
+  creativity: { bg: 'bg-orange-50', border: 'border-l-orange-500', iconBg: 'bg-orange-100' },
+};
+
+// Status colors with ring for better definition
+const STATUS_STYLES: Record<string, { bg: string; text: string; icon: typeof Play; ring: string }> = {
+  active: { bg: 'bg-green-100', text: 'text-green-700', icon: Play, ring: 'ring-1 ring-green-200' },
+  paused: { bg: 'bg-amber-100', text: 'text-amber-700', icon: Pause, ring: 'ring-1 ring-amber-200' },
+  completed: { bg: 'bg-blue-100', text: 'text-blue-700', icon: CheckCircle2, ring: 'ring-1 ring-blue-200' },
 };
 
 // Extended type with navigation compatibility
@@ -34,6 +62,7 @@ export interface JourneyForCard extends JourneyWithSteps {
 
 interface JourneyCardProps {
   journey: JourneyForCard;
+  childName?: string;
   onContinue?: (journey: JourneyForCard) => void;
   onView?: (journey: JourneyForCard) => void;
   onEdit?: (journey: JourneyForCard) => void;
@@ -42,6 +71,7 @@ interface JourneyCardProps {
 
 export function JourneyCard({
   journey,
+  childName,
   onContinue,
   onView,
   onEdit,
@@ -50,13 +80,21 @@ export function JourneyCard({
   const statusStyle = STATUS_STYLES[journey.status] || STATUS_STYLES.active;
   const StatusIcon = statusStyle.icon;
 
-  // Calculate progress percentage
-  const progress = journey.totalSteps && journey.currentStep
+  // Calculate progress percentage (capped at 100%)
+  const rawProgress = journey.totalSteps && journey.currentStep
     ? Math.round((journey.currentStep / journey.totalSteps) * 100)
     : journey.progress || 0;
+  const progress = Math.min(rawProgress, 100);
+
+  // Cap display step at total steps
+  const displayStep = Math.min(journey.currentStep || 1, journey.totalSteps || 1);
 
   const isCompleted = journey.status === 'completed';
   const isPaused = journey.status === 'paused';
+
+  // Category styling
+  const categoryStyle = journey.category ? CATEGORY_COLORS[journey.category] : null;
+  const CategoryIcon = journey.category ? CATEGORY_ICONS[journey.category] : Lightbulb;
 
   // Get child_profile_id for navigation (from either snake_case or camelCase)
   const childProfileId = journey.child_profile_id || journey.childProfileId;
@@ -83,18 +121,46 @@ export function JourneyCard({
   return (
     <Card
       className={cn(
-        'overflow-hidden transition-all hover:shadow-md cursor-pointer',
+        'overflow-hidden transition-all hover:shadow-md cursor-pointer border-l-4 relative',
         isCompleted && 'bg-gradient-to-br from-blue-50 to-indigo-50',
+        categoryStyle?.border || 'border-l-primary/50',
         className
       )}
       onClick={handleClick}
     >
+      {/* Celebration badge for completed journeys */}
+      {isCompleted && (
+        <div className="absolute -top-2 -right-2 z-10">
+          <div className="bg-yellow-400 text-yellow-900 rounded-full p-1.5 shadow-lg animate-bounce">
+            <Trophy className="h-4 w-4" />
+          </div>
+        </div>
+      )}
+
       <CardHeader className="pb-2">
         <div className="flex items-start justify-between gap-2">
-          <h3 className="font-semibold text-lg line-clamp-1">
-            {journey.title}
-          </h3>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3 min-w-0 flex-1">
+            {/* Category Icon */}
+            {journey.category && (
+              <div className={cn(
+                'p-2 rounded-lg shrink-0',
+                categoryStyle?.iconBg || 'bg-muted'
+              )}>
+                <CategoryIcon className="h-4 w-4" />
+              </div>
+            )}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <h3 className="font-semibold text-lg line-clamp-1 cursor-default">
+                  {journey.title}
+                </h3>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p className="max-w-xs">{journey.title}</p>
+              </TooltipContent>
+            </Tooltip>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
             {onEdit && (
               <Button
                 variant="ghost"
@@ -107,7 +173,7 @@ export function JourneyCard({
             )}
             <Badge
               variant="secondary"
-              className={cn(statusStyle.bg, statusStyle.text)}
+              className={cn('capitalize text-xs', statusStyle.bg, statusStyle.text, statusStyle.ring)}
             >
               <StatusIcon className="h-3 w-3 mr-1" />
               {journey.status}
@@ -117,30 +183,77 @@ export function JourneyCard({
       </CardHeader>
 
       <CardContent>
+        {/* Child indicator */}
+        {childName && (
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2">
+            <Avatar className="h-5 w-5">
+              <AvatarFallback className="text-[10px] bg-primary/10 text-primary">
+                {childName.charAt(0).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <span>{childName}</span>
+          </div>
+        )}
+
         {journey.description && (
           <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
             {journey.description}
           </p>
         )}
 
-        {/* Progress bar */}
-        <div className="space-y-1">
-          <div className="flex items-center justify-between text-xs">
-            <span className="text-muted-foreground">Progress</span>
-            <span className="font-medium">{progress}%</span>
-          </div>
-          <Progress value={progress} className="h-2" />
-        </div>
-
-        {/* Step info */}
-        {journey.totalSteps > 0 && (
-          <div className="flex items-center gap-1 mt-2 text-xs text-muted-foreground">
-            <Clock className="h-3.5 w-3.5" />
-            <span>
-              Step {journey.currentStep || 1} of {journey.totalSteps}
+        {/* Progress section */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              {/* Step indicator pills */}
+              {journey.totalSteps > 0 && (
+                <div className="flex gap-0.5">
+                  {Array.from({ length: Math.min(journey.totalSteps, 7) }).map((_, i) => (
+                    <div
+                      key={i}
+                      className={cn(
+                        'h-1.5 w-3 rounded-full transition-colors',
+                        i < displayStep ? 'bg-primary' : 'bg-muted'
+                      )}
+                    />
+                  ))}
+                  {journey.totalSteps > 7 && (
+                    <span className="text-xs text-muted-foreground ml-1">+{journey.totalSteps - 7}</span>
+                  )}
+                </div>
+              )}
+            </div>
+            <span className={cn(
+              'text-sm font-semibold',
+              isCompleted && 'text-green-600'
+            )}>
+              {progress}%
             </span>
           </div>
-        )}
+
+          {/* Progress bar with gradient for completed */}
+          <Progress
+            value={progress}
+            className={cn(
+              'h-2',
+              isCompleted && '[&>div]:bg-gradient-to-r [&>div]:from-green-400 [&>div]:to-emerald-500'
+            )}
+          />
+
+          {/* Step counter */}
+          {journey.totalSteps > 0 && (
+            <p className="text-xs text-muted-foreground">
+              {isCompleted ? (
+                <span className="flex items-center gap-1 text-green-600">
+                  <CheckCircle2 className="h-3 w-3" />
+                  All {journey.totalSteps} steps completed
+                </span>
+              ) : (
+                <span>Step {displayStep} of {journey.totalSteps}</span>
+              )}
+            </p>
+          )}
+        </div>
 
         {/* Action buttons */}
         <div className="flex items-center gap-2 mt-4">
@@ -148,16 +261,16 @@ export function JourneyCard({
             <Button
               variant="outline"
               size="sm"
-              className="w-full"
+              className="w-full group/btn"
               onClick={handleView}
             >
-              <Trophy className="h-4 w-4 mr-2 text-yellow-500" />
+              <Trophy className="h-4 w-4 mr-2 text-yellow-500 group-hover/btn:animate-bounce" />
               View Achievement
             </Button>
           ) : (
             <Button
               size="sm"
-              className="w-full"
+              className={cn('w-full group/btn', isPaused && 'opacity-75')}
               disabled={isPaused}
               onClick={handleContinue}
             >
@@ -169,7 +282,7 @@ export function JourneyCard({
               ) : (
                 <>
                   Continue
-                  <ArrowRight className="h-4 w-4 ml-2" />
+                  <ArrowRight className="h-4 w-4 ml-2 transition-transform group-hover/btn:translate-x-1" />
                 </>
               )}
             </Button>
