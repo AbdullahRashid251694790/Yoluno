@@ -20,7 +20,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { pinService } from '@/services/pin';
 import { useSetPin } from '@/hooks/queries/usePin';
 import { toast } from 'sonner';
 import { KeyRound, Loader2 } from 'lucide-react';
