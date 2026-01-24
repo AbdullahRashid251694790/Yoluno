@@ -13,6 +13,7 @@ export interface ChildProfileRow {
   age: number;
   gender: 'boy' | 'girl' | 'prefer_not_to_say' | null;
   avatar_id: string | null;
+  custom_avatar_url: string | null;
   interests: string[];
   personality_traits: string[];
   learning_style: string | null;

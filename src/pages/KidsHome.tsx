@@ -25,9 +25,9 @@ import {
   ArrowLeft,
   Star,
   Sparkles,
-  Settings,
   Gift,
 } from 'lucide-react';
+import { PasswordChangeRequestButton } from '@/components/kids/PasswordChangeRequestButton';
 import type { AvatarExpression } from '@/types/domain';
 
 // Time-aware greeting
@@ -190,14 +190,12 @@ export function KidsHomePage() {
             <span className="text-sm font-bold text-yellow-700">{starCount}</span>
           </div>
 
-          {/* Settings */}
-          <Button
-            variant="ghost"
-            size="icon"
+          {/* Password Change Request (Settings gear icon) */}
+          <PasswordChangeRequestButton
+            childId={childId!}
+            childName={child.name}
             className="rounded-full bg-white/50 backdrop-blur-sm hover:bg-white/70"
-          >
-            <Settings className="h-5 w-5" />
-          </Button>
+          />
         </div>
       </header>
 

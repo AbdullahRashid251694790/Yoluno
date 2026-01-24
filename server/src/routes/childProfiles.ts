@@ -5,8 +5,10 @@ import { query, queryOne } from '../config/database.js';
 import { requireAuth } from '../middleware/auth.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { validateBody } from '../utils/validation.js';
+import { emitToUser } from '../socket/index.js';
 import { z } from 'zod';
-import type { ChildProfile } from '../types/index.js';
+import type { ChildProfile, ParentNotification } from '../types/index.js';
+import type { Server } from 'socket.io';
 
 // PIN validation schemas
 const setPinSchema = z.object({
@@ -60,14 +62,14 @@ router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
 // POST /api/child-profiles
 router.post('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { name, age, gender, avatar_id, interests, learning_style, pin_hash } = req.body;
+    const { name, age, gender, avatar_id, custom_avatar_url, interests, learning_style, pin_hash } = req.body;
     const id = uuidv4();
 
     const result = await queryOne<ChildProfile>(
-      `INSERT INTO child_profiles (id, user_id, name, age, gender, avatar_id, interests, learning_style, pin_hash)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      `INSERT INTO child_profiles (id, user_id, name, age, gender, avatar_id, custom_avatar_url, interests, learning_style, pin_hash)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
        RETURNING *`,
-      [id, req.user!.id, name, age, gender, avatar_id, interests, learning_style, pin_hash]
+      [id, req.user!.id, name, age, gender, avatar_id, custom_avatar_url, interests, learning_style, pin_hash]
     );
 
     res.status(201).json(result);
@@ -79,7 +81,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
 // PUT /api/child-profiles/:id
 router.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { name, age, gender, avatar_id, interests, learning_style, pin_hash } = req.body;
+    const { name, age, gender, avatar_id, custom_avatar_url, interests, learning_style, pin_hash } = req.body;
 
     // Verify ownership
     const existing = await queryOne<ChildProfile>(
@@ -97,13 +99,14 @@ router.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
            age = COALESCE($2, age),
            gender = COALESCE($3, gender),
            avatar_id = COALESCE($4, avatar_id),
-           interests = COALESCE($5, interests),
-           learning_style = COALESCE($6, learning_style),
-           pin_hash = COALESCE($7, pin_hash),
+           custom_avatar_url = COALESCE($5, custom_avatar_url),
+           interests = COALESCE($6, interests),
+           learning_style = COALESCE($7, learning_style),
+           pin_hash = COALESCE($8, pin_hash),
            updated_at = NOW()
-       WHERE id = $8
+       WHERE id = $9
        RETURNING *`,
-      [name, age, gender, avatar_id, interests, learning_style, pin_hash, req.params.id]
+      [name, age, gender, avatar_id, custom_avatar_url, interests, learning_style, pin_hash, req.params.id]
     );
 
     res.json(result);
@@ -263,6 +266,65 @@ router.delete('/:id/pin', async (req: Request, res: Response, next: NextFunction
     );
 
     res.json({ message: 'PIN removed successfully' });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// ============================================================
+// Password Change Request (for kids to notify parents)
+// ============================================================
+
+// POST /api/child-profiles/:id/request-password-change
+// Rate limited: 1 request per hour per child
+router.post('/:id/request-password-change', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    // Get child profile (verify it belongs to the authenticated user)
+    const profile = await queryOne<ChildProfile>(
+      'SELECT id, user_id, name FROM child_profiles WHERE id = $1 AND user_id = $2',
+      [req.params.id, req.user!.id]
+    );
+
+    if (!profile) {
+      throw new AppError(404, 'Child profile not found');
+    }
+
+    // Check for rate limiting - max 1 request per hour per child
+    const recentRequest = await queryOne<{ id: string }>(
+      `SELECT id FROM parent_notifications
+       WHERE child_profile_id = $1
+       AND notification_type = 'password_change_request'
+       AND created_at > NOW() - INTERVAL '1 hour'`,
+      [profile.id]
+    );
+
+    if (recentRequest) {
+      throw new AppError(429, 'A password change request was already sent recently. Please wait before trying again.');
+    }
+
+    // Create notification for parent
+    const notification = await queryOne<ParentNotification>(
+      `INSERT INTO parent_notifications (user_id, child_profile_id, notification_type, title, message)
+       VALUES ($1, $2, 'password_change_request', $3, $4)
+       RETURNING *`,
+      [
+        profile.user_id,
+        profile.id,
+        'Password Change Requested',
+        `${profile.name} has requested a password change. Please check your account settings.`
+      ]
+    );
+
+    // Emit real-time notification via Socket.io
+    const io = req.app.get('io') as Server | undefined;
+    if (io && notification) {
+      emitToUser(io, profile.user_id, 'parent-notification', {
+        ...notification,
+        child_name: profile.name
+      });
+    }
+
+    res.json({ message: 'Password change request sent to parent' });
   } catch (error) {
     next(error);
   }

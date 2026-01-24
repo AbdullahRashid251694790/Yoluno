@@ -218,4 +218,14 @@ export const queryKeys = {
     count: (childId: string) => [...queryKeys.journeyRewards.all, 'count', childId] as const,
     allParent: () => [...queryKeys.journeyRewards.all, 'parent'] as const,
   },
+
+  // Parent Notifications
+  notifications: {
+    all: ['notifications'] as const,
+    lists: () => [...queryKeys.notifications.all, 'list'] as const,
+    list: (options?: { unreadOnly?: boolean }) =>
+      [...queryKeys.notifications.lists(), options] as const,
+    unreadCount: () => [...queryKeys.notifications.all, 'unread-count'] as const,
+    detail: (id: string) => [...queryKeys.notifications.all, 'detail', id] as const,
+  },
 } as const;

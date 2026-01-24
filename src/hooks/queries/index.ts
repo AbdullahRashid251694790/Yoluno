@@ -74,3 +74,14 @@ export {
   usePrefetchAvatarCategory,
   useClearAvatarCache,
 } from './useAvatars';
+
+// Notifications
+export {
+  useNotifications,
+  useUnreadNotificationCount,
+  useMarkNotificationRead,
+  useMarkAllNotificationsRead,
+  useDeleteNotification,
+  useRequestPasswordChange,
+  useAddNotificationToCache,
+} from './useNotifications';

@@ -27,6 +27,7 @@ export interface ChildProfile {
   age: number;
   gender?: 'boy' | 'girl' | 'prefer_not_to_say';
   avatar_id?: string;
+  custom_avatar_url?: string;
   interests?: string[];
   learning_style?: string;
   pin_hash?: string;
@@ -213,4 +214,19 @@ export interface AuthResponse {
   };
   accessToken: string;
   refreshToken: string;
+}
+
+// Parent notification types
+export type NotificationType = 'password_change_request' | 'other';
+
+export interface ParentNotification {
+  id: string;
+  user_id: string;
+  child_profile_id: string | null;
+  notification_type: NotificationType;
+  title: string;
+  message: string;
+  is_read: boolean;
+  created_at: Date;
+  read_at: Date | null;
 }

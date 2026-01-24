@@ -1,21 +1,59 @@
 /**
  * Create Child Dialog
  *
- * Dialog for creating a new child profile.
+ * Dialog for creating a new child profile with required avatar and PIN.
  * Supports both controlled and trigger-based patterns.
  */
 
 import { useState, cloneElement, isValidElement, type ReactElement } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { FormDialog } from '@/components/shared/dialogs/FormDialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { createChildSchema, type CreateChildFormData } from '@/types/forms';
+import { AvatarPicker } from '@/components/shared/AvatarPicker';
 import { useCreateChildProfile } from '@/hooks/queries';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { pinService } from '@/services/pin';
+import { apiPostFormData } from '@/lib/api';
+
+// Extended schema with avatar and PIN requirements
+const createChildWithAvatarPinSchema = z.object({
+  name: z
+    .string()
+    .min(1, 'Name is required')
+    .max(50, 'Name must be less than 50 characters')
+    .regex(/^[a-zA-Z\s'-]+$/, 'Name can only contain letters, spaces, hyphens, and apostrophes'),
+  age: z
+    .number()
+    .int('Age must be a whole number')
+    .min(3, 'Minimum age is 3')
+    .max(18, 'Maximum age is 18'),
+  gender: z.enum(['boy', 'girl', 'prefer_not_to_say']).optional(),
+  avatar: z.object({
+    type: z.enum(['library', 'custom']),
+    avatarId: z.string().optional(),
+    avatarUrl: z.string().optional(),
+    customFile: z.instanceof(File).optional(),
+    customPreview: z.string().optional(),
+  }).refine(
+    (data) => data.type === 'library' ? !!data.avatarId : !!data.customFile,
+    { message: 'Please select an avatar or upload a photo' }
+  ),
+  pin: z
+    .string()
+    .length(4, 'PIN must be exactly 4 digits')
+    .regex(/^\d{4}$/, 'PIN must contain only numbers'),
+  confirmPin: z.string().length(4, 'PIN must be exactly 4 digits'),
+}).refine((data) => data.pin === data.confirmPin, {
+  message: 'PINs do not match',
+  path: ['confirmPin'],
+});
+
+type CreateChildWithAvatarPinFormData = z.infer<typeof createChildWithAvatarPinSchema>;
 
 interface CreateChildDialogProps {
   // Controlled mode
@@ -42,36 +80,69 @@ export function CreateChildDialog({ open: controlledOpen, onOpenChange, trigger 
     reset,
     watch,
     setValue,
+    control,
     formState: { errors },
-  } = useForm<CreateChildFormData>({
-    resolver: zodResolver(createChildSchema),
+  } = useForm<CreateChildWithAvatarPinFormData>({
+    resolver: zodResolver(createChildWithAvatarPinSchema),
     defaultValues: {
       name: '',
       age: 7,
       gender: undefined,
+      avatar: undefined,
+      pin: '',
+      confirmPin: '',
     },
   });
 
   const selectedGender = watch('gender');
 
-  const onSubmit = async (data: CreateChildFormData) => {
+  const onSubmit = async (data: CreateChildWithAvatarPinFormData) => {
     if (!user) return;
 
     setIsSubmitting(true);
     try {
-      await createChild.mutateAsync({
+      let avatarId: string | undefined;
+      let customAvatarUrl: string | undefined;
+
+      // Handle avatar upload if custom
+      if (data.avatar.type === 'custom' && data.avatar.customFile) {
+        const formData = new FormData();
+        formData.append('file', data.avatar.customFile);
+
+        const uploadResult = await apiPostFormData<{ key: string; url: string }>(
+          '/upload/child-avatars',
+          'createChildDialog.uploadAvatar',
+          formData
+        );
+        customAvatarUrl = uploadResult.key;
+      } else if (data.avatar.type === 'library') {
+        avatarId = data.avatar.avatarId;
+      }
+
+      // Create the child profile
+      const profile = await createChild.mutateAsync({
         user_id: user.id,
         name: data.name,
         age: data.age,
         gender: data.gender,
-        personality_mode: data.personalityMode,
-        interests: data.interests,
+        avatar_id: avatarId,
+        custom_avatar_url: customAvatarUrl,
+        interests: [],
+        personality_traits: [],
+        learning_style: null,
+        pin_hash: null,
+        last_active_at: null,
       });
+
+      // Set the PIN for the created profile
+      await pinService.set(profile.id, data.pin);
+
       toast.success('Child profile created!');
       reset();
       setOpen(false);
-    } catch {
-      // Error handled by mutation
+    } catch (error) {
+      console.error('Failed to create child profile:', error);
+      toast.error('Failed to create profile. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -107,7 +178,8 @@ export function CreateChildDialog({ open: controlledOpen, onOpenChange, trigger 
         isLoading={isSubmitting}
         onCancel={() => reset()}
       >
-        <div className="space-y-4">
+        <div className="space-y-6 max-h-[60vh] overflow-y-auto pr-2">
+          {/* Name */}
           <div className="space-y-2">
             <Label htmlFor="name">Name</Label>
             <Input
@@ -120,6 +192,7 @@ export function CreateChildDialog({ open: controlledOpen, onOpenChange, trigger 
             )}
           </div>
 
+          {/* Age */}
           <div className="space-y-2">
             <Label htmlFor="age">Age</Label>
             <Input
@@ -134,6 +207,7 @@ export function CreateChildDialog({ open: controlledOpen, onOpenChange, trigger 
             )}
           </div>
 
+          {/* Gender */}
           <div className="space-y-2">
             <Label>Gender (optional)</Label>
             <div className="flex gap-2">
@@ -174,6 +248,73 @@ export function CreateChildDialog({ open: controlledOpen, onOpenChange, trigger 
             >
               Prefer not to say
             </button>
+          </div>
+
+          {/* Avatar Picker */}
+          <div className="space-y-2">
+            <Label>Avatar <span className="text-destructive">*</span></Label>
+            <Controller
+              name="avatar"
+              control={control}
+              render={({ field }) => (
+                <AvatarPicker
+                  value={field.value}
+                  onChange={field.onChange}
+                  disabled={isSubmitting}
+                />
+              )}
+            />
+            {errors.avatar && (
+              <p className="text-sm text-destructive text-center">
+                {errors.avatar.message || 'Please select an avatar or upload a photo'}
+              </p>
+            )}
+          </div>
+
+          {/* PIN Setup */}
+          <div className="space-y-4 border-t pt-4">
+            <div>
+              <Label className="text-base font-semibold">Set a 4-digit PIN <span className="text-destructive">*</span></Label>
+              <p className="text-sm text-muted-foreground mt-1">
+                Your child will use this PIN to access their profile in Kids Mode.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="pin">PIN</Label>
+                <Input
+                  id="pin"
+                  type="password"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={4}
+                  placeholder="****"
+                  className="text-center text-2xl tracking-widest"
+                  {...register('pin')}
+                />
+                {errors.pin && (
+                  <p className="text-sm text-destructive">{errors.pin.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="confirmPin">Confirm PIN</Label>
+                <Input
+                  id="confirmPin"
+                  type="password"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={4}
+                  placeholder="****"
+                  className="text-center text-2xl tracking-widest"
+                  {...register('confirmPin')}
+                />
+                {errors.confirmPin && (
+                  <p className="text-sm text-destructive">{errors.confirmPin.message}</p>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </FormDialog>

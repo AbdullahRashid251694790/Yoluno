@@ -105,3 +105,39 @@ export function emitSocketEvent(event: string, ...args: unknown[]): void {
     socket.emit(event, ...args);
   }
 }
+
+// Subscribe to parent notifications
+export function onParentNotification(callback: (notification: unknown) => void): () => void {
+  if (!socket) return () => {};
+
+  socket.on('parent-notification', callback);
+  return () => socket?.off('parent-notification', callback);
+}
+
+// React hook to use socket instance
+import { useState, useEffect } from 'react';
+
+export function useSocket(): Socket | null {
+  const [socketInstance, setSocketInstance] = useState<Socket | null>(socket);
+
+  useEffect(() => {
+    // Initialize socket if not already connected
+    if (!socket?.connected) {
+      const newSocket = initSocket();
+      setSocketInstance(newSocket);
+    }
+
+    // Update state when socket changes
+    const checkConnection = setInterval(() => {
+      if (socket !== socketInstance) {
+        setSocketInstance(socket);
+      }
+    }, 1000);
+
+    return () => {
+      clearInterval(checkConnection);
+    };
+  }, [socketInstance]);
+
+  return socketInstance;
+}

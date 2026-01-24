@@ -36,6 +36,7 @@ import kidsModeRoutes from './routes/kidsMode.js';
 import onboardingRoutes from './routes/onboarding.js';
 import journeyRemindersRoutes from './routes/journeyReminders.js';
 import journeyRewardsRoutes from './routes/journeyRewards.js';
+import notificationsRoutes from './routes/notifications.js';
 
 const app = express();
 const httpServer = createServer(app);
@@ -111,6 +112,7 @@ app.use('/api/kids-mode', kidsModeRoutes);
 app.use('/api/onboarding', onboardingRoutes);
 app.use('/api/journey-reminders', journeyRemindersRoutes);
 app.use('/api/journey-rewards', journeyRewardsRoutes);
+app.use('/api/notifications', notificationsRoutes);
 
 // Error handler
 app.use(errorHandler);

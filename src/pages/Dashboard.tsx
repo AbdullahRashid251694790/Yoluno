@@ -11,6 +11,7 @@ import { useSafetyReports } from '@/hooks/queries/useBuddyChat';
 import { SafetyDashboardPage } from './SafetyDashboard';
 import { FamilyTreePage } from '@/components/dashboard/family';
 import { SafetyAlertNotification } from '@/components/dashboard/safety';
+import { NotificationBell } from '@/components/dashboard/layout/NotificationBell';
 import {
   DashboardHome,
   ChildrenPage,
@@ -70,11 +71,12 @@ export function DashboardPage() {
       {/* Sidebar */}
       <aside className="fixed left-0 top-0 z-40 h-screen w-64 border-r bg-white shadow-sm">
         <div className="flex h-full flex-col">
-          {/* Logo */}
-          <div className="flex items-center border-b px-6 py-4">
+          {/* Logo and Notifications */}
+          <div className="flex items-center justify-between border-b px-6 py-4">
             <Link to="/dashboard">
               <img src={yolunoLogo} alt="Yoluno" className="h-9" />
             </Link>
+            <NotificationBell />
           </div>
 
           {/* Navigation */}
