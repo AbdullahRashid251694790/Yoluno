@@ -11,6 +11,7 @@ import { Progress } from '@/components/ui/progress';
 import {
   Tooltip,
   TooltipContent,
+  TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -149,16 +150,18 @@ export function JourneyCard({
                 <CategoryIcon className="h-4 w-4" />
               </div>
             )}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <h3 className="font-semibold text-lg line-clamp-1 cursor-default">
-                  {journey.title}
-                </h3>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p className="max-w-xs">{journey.title}</p>
-              </TooltipContent>
-            </Tooltip>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <h3 className="font-semibold text-lg line-clamp-1 cursor-default">
+                    {journey.title}
+                  </h3>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="max-w-xs">{journey.title}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
           <div className="flex items-center gap-2 shrink-0">
             {onEdit && (
