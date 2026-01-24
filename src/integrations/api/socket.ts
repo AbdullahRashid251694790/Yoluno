@@ -19,8 +19,12 @@ export function initSocket(): Socket {
     },
     autoConnect: true,
     reconnection: true,
-    reconnectionAttempts: 5,
-    reconnectionDelay: 1000,
+    reconnectionAttempts: 3,
+    reconnectionDelay: 2000,
+    reconnectionDelayMax: 10000,
+    timeout: 10000,
+    // Prevent rapid reconnection loops
+    transports: ['websocket', 'polling'],
   });
 
   socket.on('connect', () => {
@@ -121,23 +125,18 @@ export function useSocket(): Socket | null {
   const [socketInstance, setSocketInstance] = useState<Socket | null>(socket);
 
   useEffect(() => {
-    // Initialize socket if not already connected
-    if (!socket?.connected) {
+    // Only initialize if we have a token and socket isn't already connected
+    const token = getAccessToken();
+    if (token && !socket?.connected) {
       const newSocket = initSocket();
       setSocketInstance(newSocket);
     }
 
-    // Update state when socket changes
-    const checkConnection = setInterval(() => {
-      if (socket !== socketInstance) {
-        setSocketInstance(socket);
-      }
-    }, 1000);
-
+    // No polling interval - just set once
     return () => {
-      clearInterval(checkConnection);
+      // Don't disconnect on unmount - keep socket alive
     };
-  }, [socketInstance]);
+  }, []);
 
   return socketInstance;
 }
