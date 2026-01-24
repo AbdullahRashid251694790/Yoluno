@@ -106,10 +106,10 @@ export function FamilyMemberNode({
     <div
       ref={nodeRef}
       className={cn(
-        'relative bg-card rounded-xl shadow-md border p-3 w-40 transition-all',
+        'relative bg-card rounded-xl shadow-md border p-3 w-40 transition-all hover:shadow-lg',
         isDragging && 'shadow-lg scale-105 z-50',
         !member.is_alive && 'opacity-80',
-        isDraggable && 'cursor-grab',
+        isDraggable ? 'cursor-grab' : 'cursor-pointer',
         isDragging && 'cursor-grabbing',
         className
       )}
@@ -117,6 +117,7 @@ export function FamilyMemberNode({
         left: member.position_x || 0,
         top: member.position_y || 0,
       }}
+      onClick={onEdit}
     >
       {/* Drag Handle */}
       {isDraggable && (
