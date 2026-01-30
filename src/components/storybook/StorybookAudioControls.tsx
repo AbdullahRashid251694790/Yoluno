@@ -2,15 +2,18 @@
  * StorybookAudioControls Component
  *
  * Audio playback controls with page-by-page and full story modes.
+ * Supports AI TTS voices for narration.
  */
 
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { Play, Pause, Square, Volume2, Loader2, SkipForward, Repeat } from 'lucide-react';
+import { Play, Pause, Square, Loader2, SkipForward } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { generateSpeech, playAudioFromBase64 } from '@/services/textToSpeech';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import type { StoryPage } from '@/services/storyPages';
+import type { NarratorVoice } from './NarratorVoiceSelector';
+import { getUploadUrl } from '@/integrations/api/client';
 
 type AudioMode = 'page' | 'full';
 
@@ -18,7 +21,7 @@ interface StorybookAudioControlsProps {
   storyId: string;
   pages: StoryPage[];
   currentPage: number; // 1-indexed (page 1 = first story page)
-  narratorVoice: string;
+  narratorVoice: NarratorVoice;
   onPageChange: (page: number) => void;
 }
 
@@ -50,8 +53,43 @@ export function StorybookAudioControls({
     setIsPlaying(false);
   }, []);
 
+  // Get the voice ID for TTS (use AI voice or fallback for Voice Vault)
+  const getVoiceId = useCallback((): 'shimmer' | 'nova' | 'alloy' | 'echo' | 'fable' | 'onyx' => {
+    if (narratorVoice.type === 'ai') {
+      return narratorVoice.voiceId as 'shimmer' | 'nova' | 'alloy' | 'echo' | 'fable' | 'onyx';
+    }
+    // For Voice Vault, use a warm default voice for narration
+    return 'nova';
+  }, [narratorVoice]);
+
+  // Play Voice Vault intro clip before TTS narration
+  const playVoiceVaultIntro = useCallback((): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      if (narratorVoice.type !== 'voice_vault') {
+        resolve();
+        return;
+      }
+
+      const audio = new Audio(getUploadUrl(narratorVoice.audioUrl));
+      audioRef.current = audio;
+      setIsPlaying(true);
+
+      audio.addEventListener('ended', () => {
+        audioRef.current = null;
+        resolve();
+      });
+
+      audio.addEventListener('error', () => {
+        audioRef.current = null;
+        reject(new Error('Failed to play voice clip'));
+      });
+
+      audio.play().catch(reject);
+    });
+  }, [narratorVoice]);
+
   // Generate and play audio for a specific page
-  const generateAndPlayAudio = useCallback(async (text: string, isAutoAdvanceEnabled: boolean, currentPageNum: number, totalPages: number) => {
+  const generateAndPlayAudio = useCallback(async (text: string, isAutoAdvanceEnabled: boolean, currentPageNum: number, totalPages: number, playIntro = false) => {
     if (!text) {
       toast.error('No content to read');
       return;
@@ -59,8 +97,20 @@ export function StorybookAudioControls({
 
     setIsLoading(true);
     try {
+      // Play Voice Vault intro on first page if selected
+      if (playIntro && narratorVoice.type === 'voice_vault' && currentPageNum === 1) {
+        try {
+          await playVoiceVaultIntro();
+          // Small pause after intro
+          await new Promise((resolve) => setTimeout(resolve, 500));
+        } catch (error) {
+          console.warn('Failed to play voice intro:', error);
+          // Continue with TTS narration even if intro fails
+        }
+      }
+
       const response = await generateSpeech(text, {
-        voice: narratorVoice as 'shimmer' | 'nova' | 'alloy' | 'echo' | 'fable' | 'onyx',
+        voice: getVoiceId(),
       });
 
       stopAudio();
@@ -92,7 +142,7 @@ export function StorybookAudioControls({
     } finally {
       setIsLoading(false);
     }
-  }, [narratorVoice, stopAudio, onPageChange]);
+  }, [narratorVoice, stopAudio, onPageChange, getVoiceId, playVoiceVaultIntro]);
 
   // Stop audio when component unmounts
   useEffect(() => {
@@ -150,11 +200,14 @@ export function StorybookAudioControls({
     if (mode === 'page') {
       // Read current page only
       textToRead = pageData?.content || '';
-      await generateAndPlayAudio(textToRead, autoAdvance, currentPage, pages.length);
+      // Play intro on first page if this is a fresh start
+      const isFirstPage = currentPage === 1;
+      await generateAndPlayAudio(textToRead, autoAdvance, currentPage, pages.length, isFirstPage);
     } else {
       // Read full story (all pages combined)
       textToRead = pages.map((p) => p.content).join('\n\n');
-      await generateAndPlayAudio(textToRead, false, currentPage, pages.length);
+      // Always play intro when reading full story
+      await generateAndPlayAudio(textToRead, false, currentPage, pages.length, true);
     }
   }, [isPlaying, mode, pageData, pages, autoAdvance, currentPage, generateAndPlayAudio]);
 

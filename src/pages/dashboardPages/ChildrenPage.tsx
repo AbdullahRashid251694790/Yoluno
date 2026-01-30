@@ -4,18 +4,22 @@
  * Page for managing child profiles.
  */
 
+import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useChildProfiles } from '@/hooks/queries/useChildProfiles';
 import { ChildProfileCard } from '@/components/dashboard/children/ChildProfileCard';
 import { CreateChildDialog } from '@/components/dashboard/children/CreateChildDialog';
+import { EditChildDialog } from '@/components/dashboard/children/EditChildDialog';
 import { LoadingState, EmptyState } from '@/components/shared';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Users, Plus } from 'lucide-react';
+import type { ChildProfileWithAvatar } from '@/services/childProfiles';
 
 export function ChildrenPage() {
   const { user } = useAuth();
   const { data: children = [], isLoading } = useChildProfiles(user?.id);
+  const [editingChild, setEditingChild] = useState<ChildProfileWithAvatar | null>(null);
 
   if (isLoading) {
     return <LoadingState message="Loading children..." />;
@@ -67,13 +71,22 @@ export function ChildrenPage() {
               key={child.id}
               child={child}
               avatarUrl={child.avatarUrl}
-              onEdit={() => {
-                // TODO: Open edit dialog
-              }}
+              onEdit={() => setEditingChild(child)}
             />
           ))}
         </div>
       )}
+
+      {/* Edit Child Dialog */}
+      <EditChildDialog
+        child={editingChild}
+        open={!!editingChild}
+        onOpenChange={(open) => {
+          if (!open) setEditingChild(null);
+        }}
+        onSuccess={() => setEditingChild(null)}
+        onDelete={() => setEditingChild(null)}
+      />
     </div>
   );
 }

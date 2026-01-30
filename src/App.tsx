@@ -24,6 +24,8 @@ import { KidsJourneyDetailPage } from '@/pages/KidsJourneyDetail';
 import { KidsJourneysPage } from '@/pages/KidsJourneys';
 import { KidsFamilyPage } from '@/pages/KidsFamily';
 import { KidsRewardGalleryPage } from '@/pages/KidsRewardGallery';
+import { KidsMoodCheckPage } from '@/pages/KidsMoodCheck';
+import { LandingPage } from '@/pages/Landing';
 import { NotFoundPage } from '@/pages/NotFound';
 
 const queryClient = new QueryClient({
@@ -73,7 +75,14 @@ export default function App() {
             <BrowserRouter>
               <Routes>
                 {/* Public routes */}
-                <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                <Route
+                  path="/"
+                  element={
+                    <PublicRoute>
+                      <LandingPage />
+                    </PublicRoute>
+                  }
+                />
                 <Route
                   path="/login"
                   element={
@@ -113,6 +122,14 @@ export default function App() {
                   element={
                     <ProtectedRoute>
                       <KidsHomePage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/kids/:childId/mood"
+                  element={
+                    <ProtectedRoute>
+                      <KidsMoodCheckPage />
                     </ProtectedRoute>
                   }
                 />

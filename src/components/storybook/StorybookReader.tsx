@@ -2,16 +2,18 @@
  * StorybookReader Component
  *
  * Full-screen storybook reader with page navigation and audio controls.
+ * Supports AI TTS voices and Voice Vault family recordings.
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { X, Loader2 } from 'lucide-react';
+import { X, Loader2, Volume2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useStoryPages, useIllustrationStatus } from '@/hooks/queries/useStoryPages';
 import { StorybookCover } from './StorybookCover';
 import { StorybookPage } from './StorybookPage';
 import { StorybookNavigation } from './StorybookNavigation';
 import { StorybookAudioControls } from './StorybookAudioControls';
+import { NarratorVoiceSelector, type NarratorVoice } from './NarratorVoiceSelector';
 import { cn } from '@/lib/utils';
 import { getUploadUrl } from '@/integrations/api/client';
 
@@ -21,7 +23,8 @@ interface StorybookReaderProps {
   coverImageUrl?: string | null;
   theme?: string | null;
   mood?: string | null;
-  narratorVoice?: string;
+  childId?: string;
+  initialVoice?: string;
   onClose: () => void;
 }
 
@@ -31,11 +34,17 @@ export function StorybookReader({
   coverImageUrl,
   theme,
   mood,
-  narratorVoice = 'nova',
+  childId,
+  initialVoice = 'nova',
   onClose,
 }: StorybookReaderProps) {
   const [currentPage, setCurrentPage] = useState(0); // 0 = cover, 1+ = story pages
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [showVoiceSelector, setShowVoiceSelector] = useState(false);
+  const [narratorVoice, setNarratorVoice] = useState<NarratorVoice>({
+    type: 'ai',
+    voiceId: initialVoice,
+  });
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Fetch story pages
@@ -170,8 +179,21 @@ export function StorybookReader({
       onTouchEnd={handleTouchEnd}
       onClick={handleTap}
     >
-      {/* Close button */}
-      <div className="absolute top-4 right-4 z-10">
+      {/* Top controls */}
+      <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
+        {/* Voice selector toggle */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={(e) => {
+            e.stopPropagation();
+            setShowVoiceSelector(!showVoiceSelector);
+          }}
+          className="rounded-full bg-black/50 hover:bg-black/70 text-white"
+        >
+          <Volume2 className="h-5 w-5" />
+        </Button>
+        {/* Close button */}
         <Button
           variant="ghost"
           size="icon"
@@ -184,6 +206,24 @@ export function StorybookReader({
           <X className="h-6 w-6" />
         </Button>
       </div>
+
+      {/* Voice selector dropdown */}
+      {showVoiceSelector && (
+        <div
+          className="absolute top-16 right-4 z-20"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <NarratorVoiceSelector
+            value={narratorVoice}
+            onChange={(voice) => {
+              setNarratorVoice(voice);
+              setShowVoiceSelector(false);
+            }}
+            childId={childId}
+            className="w-48 bg-black/80 border-white/20 text-white"
+          />
+        </div>
+      )}
 
       {/* Illustration progress indicator */}
       {illustrationProgress && illustrationProgress.completed < illustrationProgress.total && (

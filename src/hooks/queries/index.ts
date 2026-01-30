@@ -85,3 +85,20 @@ export {
   useRequestPasswordChange,
   useAddNotificationToCache,
 } from './useNotifications';
+
+// Mood Check-ins
+export {
+  useTodaysMood,
+  useLogMoodCheckin,
+  useMoodHistory,
+  useMoodSummary,
+  useMoodCalendar,
+  useMoodDistribution,
+  type MoodCheckin,
+  type MoodHistoryEntry,
+  type MoodSummary as MoodSummaryType,
+  type MoodCalendarEntry,
+  type MoodDistribution,
+  type MoodType,
+  type CreateMoodCheckinInput,
+} from './useMoodCheckin';

@@ -164,6 +164,18 @@ export function useDeleteVoiceClip() {
   });
 }
 
+/**
+ * Get voice clips suitable for story narration
+ * Filters to 'story' category clips
+ */
+export function useVoiceClipsForNarration(childId?: string) {
+  return useQuery({
+    queryKey: queryKeys.voiceVault.list({ category: 'story', childId }),
+    queryFn: () => voiceVaultService.getClips({ category: 'story', childId }),
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
 // Re-export types
 export type {
   VoiceClip,

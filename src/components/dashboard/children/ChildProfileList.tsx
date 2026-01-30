@@ -9,14 +9,17 @@ import { useChildProfiles } from '@/hooks/queries';
 import { useAuth } from '@/contexts/AuthContext';
 import { ChildProfileCard } from './ChildProfileCard';
 import { CreateChildDialog } from './CreateChildDialog';
+import { EditChildDialog } from './EditChildDialog';
 import { QueryState } from '@/components/shared/feedback/QueryState';
 import { Button } from '@/components/ui/button';
 import { Users, Plus } from 'lucide-react';
+import type { ChildProfileWithAvatar } from '@/services/childProfiles';
 
 export function ChildProfileList() {
   const { user } = useAuth();
   const { data: children, isLoading, isError, error, refetch } = useChildProfiles(user?.id);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [editingChild, setEditingChild] = useState<ChildProfileWithAvatar | null>(null);
 
   return (
     <div className="space-y-6">
@@ -49,9 +52,7 @@ export function ChildProfileList() {
               <ChildProfileCard
                 key={child.id}
                 child={child}
-                onEdit={() => {
-                  // TODO: Implement edit dialog
-                }}
+                onEdit={() => setEditingChild(child)}
               />
             ))}
           </div>
@@ -61,6 +62,16 @@ export function ChildProfileList() {
       <CreateChildDialog
         open={showCreateDialog}
         onOpenChange={setShowCreateDialog}
+      />
+
+      <EditChildDialog
+        child={editingChild}
+        open={!!editingChild}
+        onOpenChange={(open) => {
+          if (!open) setEditingChild(null);
+        }}
+        onSuccess={() => setEditingChild(null)}
+        onDelete={() => setEditingChild(null)}
       />
     </div>
   );

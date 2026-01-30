@@ -228,4 +228,18 @@ export const queryKeys = {
     unreadCount: () => [...queryKeys.notifications.all, 'unread-count'] as const,
     detail: (id: string) => [...queryKeys.notifications.all, 'detail', id] as const,
   },
+
+  // Mood Check-ins
+  moodCheckin: {
+    all: ['moodCheckin'] as const,
+    today: (childId: string) => [...queryKeys.moodCheckin.all, 'today', childId] as const,
+    history: (childId: string, days?: number) =>
+      [...queryKeys.moodCheckin.all, 'history', childId, days] as const,
+    summary: (childId: string, days?: number) =>
+      [...queryKeys.moodCheckin.all, 'summary', childId, days] as const,
+    calendar: (childId: string, month: string) =>
+      [...queryKeys.moodCheckin.all, 'calendar', childId, month] as const,
+    distribution: (childId: string, days?: number) =>
+      [...queryKeys.moodCheckin.all, 'distribution', childId, days] as const,
+  },
 } as const;

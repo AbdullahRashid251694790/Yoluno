@@ -39,7 +39,13 @@ import {
   Tag,
   Calendar,
   Filter,
+  Heart,
 } from 'lucide-react';
+import {
+  MoodCalendar,
+  MoodDistributionChart,
+  MoodAlerts,
+} from '@/components/dashboard/insights';
 
 export function InsightsPage() {
   const { user } = useAuth();
@@ -175,6 +181,10 @@ export function InsightsPage() {
             <TrendingUp className="h-4 w-4" />
             Activity
           </TabsTrigger>
+          <TabsTrigger value="mood" className="gap-2">
+            <Heart className="h-4 w-4" />
+            Mood
+          </TabsTrigger>
           <TabsTrigger value="topics" className="gap-2">
             <Tag className="h-4 w-4" />
             Topics
@@ -260,6 +270,83 @@ export function InsightsPage() {
               </CardContent>
             </Card>
           )}
+        </TabsContent>
+
+        {/* Mood Tab */}
+        <TabsContent value="mood" className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Mood Calendar */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Calendar className="h-5 w-5" />
+                  Mood Calendar
+                </CardTitle>
+                <CardDescription>
+                  {selectedChild?.name || 'Your child'}'s daily mood check-ins
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {activeChildId ? (
+                  <MoodCalendar childId={activeChildId} days={28} />
+                ) : (
+                  <EmptyState
+                    icon={Heart}
+                    title="No child selected"
+                    description="Select a child to view their mood calendar."
+                  />
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Mood Distribution */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5" />
+                  Weekly Mood Distribution
+                </CardTitle>
+                <CardDescription>
+                  How {selectedChild?.name || 'your child'} has been feeling
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {activeChildId ? (
+                  <MoodDistributionChart childId={activeChildId} days={7} />
+                ) : (
+                  <EmptyState
+                    icon={Heart}
+                    title="No child selected"
+                    description="Select a child to view their mood distribution."
+                  />
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Mood Alerts */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Heart className="h-5 w-5" />
+                Mood Insights
+              </CardTitle>
+              <CardDescription>
+                Patterns and observations from mood check-ins
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {activeChildId && selectedChild ? (
+                <MoodAlerts childId={activeChildId} childName={selectedChild.name} />
+              ) : (
+                <EmptyState
+                  icon={Heart}
+                  title="No child selected"
+                  description="Select a child to view mood insights."
+                />
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* Topics Tab */}

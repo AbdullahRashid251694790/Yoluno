@@ -39,8 +39,8 @@ export function ChildSelectPage() {
         setSelectedChild(child);
         setShowPinDialog(true);
       } else {
-        // No PIN, navigate directly
-        navigate(`/kids/${child.id}`);
+        // No PIN, navigate to mood check
+        navigate(`/kids/${child.id}/mood`);
       }
     },
     [navigate]
@@ -49,7 +49,7 @@ export function ChildSelectPage() {
   // Handle successful PIN verification
   const handlePinSuccess = useCallback(() => {
     if (selectedChild) {
-      navigate(`/kids/${selectedChild.id}`);
+      navigate(`/kids/${selectedChild.id}/mood`);
     }
     setShowPinDialog(false);
     setSelectedChild(null);
