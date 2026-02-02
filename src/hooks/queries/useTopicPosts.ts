@@ -225,6 +225,27 @@ export function useDeleteTopicPost() {
   });
 }
 
+/**
+ * Generate a topic post using AI
+ */
+export function useGenerateTopicPost() {
+  return useMutation({
+    mutationFn: ({
+      topicName,
+      childAge,
+    }: {
+      topicName: string;
+      childAge?: number;
+    }) => topicPostsService.generateTopicPost(topicName, childAge),
+    onError: (error) => {
+      handleError(error, {
+        context: 'useGenerateTopicPost',
+        userMessage: 'Failed to generate content',
+      });
+    },
+  });
+}
+
 // Re-export types
 export type {
   CustomTopic,

@@ -178,6 +178,29 @@ export async function deleteTopicPost(
   );
 }
 
+// ============================================
+// AI Generation
+// ============================================
+
+export interface GeneratedPostContent {
+  title: string;
+  content: string;
+}
+
+/**
+ * Generate a topic post using AI
+ */
+export async function generateTopicPost(
+  topicName: string,
+  childAge?: number
+): Promise<GeneratedPostContent> {
+  return apiPost<GeneratedPostContent>(
+    '/topics/posts/generate',
+    `${CONTEXT}.generateTopicPost`,
+    { topicName, childAge }
+  );
+}
+
 export const topicPostsService = {
   // Custom topics
   getCustomTopics,
@@ -189,4 +212,6 @@ export const topicPostsService = {
   createTopicPost,
   updateTopicPost,
   deleteTopicPost,
+  // AI generation
+  generateTopicPost,
 };

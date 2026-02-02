@@ -2,11 +2,11 @@
  * Topic Posts List
  *
  * Displays posts for a topic with add/edit/delete functionality.
+ * Includes AI generation capability.
  */
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,12 +20,14 @@ import {
 import { TopicPostDialog } from './TopicPostDialog';
 import {
   useDeleteTopicPost,
+  useGenerateTopicPost,
   type TopicPost,
 } from '@/hooks/queries/useTopicPosts';
-import { Plus, Pencil, Trash2, FileText } from 'lucide-react';
+import { Plus, Pencil, Trash2, FileText, Sparkles, Loader2 } from 'lucide-react';
 
 interface TopicPostsListProps {
   childId: string;
+  childAge?: number;
   topicId?: string;
   customTopicId?: string;
   topicName: string;
@@ -34,24 +36,46 @@ interface TopicPostsListProps {
 
 export function TopicPostsList({
   childId,
+  childAge,
   topicId,
   customTopicId,
   topicName,
   posts,
 }: TopicPostsListProps) {
   const deletePost = useDeleteTopicPost();
+  const generatePost = useGenerateTopicPost();
 
   const [postDialogOpen, setPostDialogOpen] = useState(false);
   const [editingPost, setEditingPost] = useState<TopicPost | null>(null);
   const [deletingPost, setDeletingPost] = useState<TopicPost | null>(null);
+  const [generatedContent, setGeneratedContent] = useState<{
+    title: string;
+    content: string;
+  } | null>(null);
 
   const handleAddPost = () => {
     setEditingPost(null);
+    setGeneratedContent(null);
     setPostDialogOpen(true);
+  };
+
+  const handleGenerateWithAI = async () => {
+    try {
+      const result = await generatePost.mutateAsync({
+        topicName,
+        childAge,
+      });
+      setGeneratedContent(result);
+      setEditingPost(null);
+      setPostDialogOpen(true);
+    } catch {
+      // Error handled by mutation
+    }
   };
 
   const handleEditPost = (post: TopicPost) => {
     setEditingPost(post);
+    setGeneratedContent(null);
     setPostDialogOpen(true);
   };
 
@@ -66,6 +90,13 @@ export function TopicPostsList({
       setDeletingPost(null);
     } catch {
       // Error handled by mutation
+    }
+  };
+
+  const handleDialogClose = (open: boolean) => {
+    setPostDialogOpen(open);
+    if (!open) {
+      setGeneratedContent(null);
     }
   };
 
@@ -115,26 +146,43 @@ export function TopicPostsList({
         </div>
       )}
 
-      {/* Add post button */}
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={handleAddPost}
-        className="w-full"
-      >
-        <Plus className="h-4 w-4 mr-2" />
-        Add Post
-      </Button>
+      {/* Action buttons */}
+      <div className="flex gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleGenerateWithAI}
+          disabled={generatePost.isPending}
+          className="flex-1"
+        >
+          {generatePost.isPending ? (
+            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+          ) : (
+            <Sparkles className="h-4 w-4 mr-2" />
+          )}
+          {generatePost.isPending ? 'Generating...' : 'Generate with AI'}
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleAddPost}
+          className="flex-1"
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Add Post
+        </Button>
+      </div>
 
       {/* Post dialog */}
       <TopicPostDialog
         open={postDialogOpen}
-        onOpenChange={setPostDialogOpen}
+        onOpenChange={handleDialogClose}
         childId={childId}
         topicId={topicId}
         customTopicId={customTopicId}
         topicName={topicName}
         post={editingPost}
+        initialContent={generatedContent}
       />
 
       {/* Delete confirmation */}

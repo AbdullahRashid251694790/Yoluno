@@ -275,6 +275,7 @@ export function TopicsPage() {
                         {/* Posts list */}
                         <TopicPostsList
                           childId={activeChildId}
+                          childAge={selectedChild?.age}
                           customTopicId={customTopic.id}
                           topicName={customTopic.name}
                           posts={posts}
@@ -369,6 +370,7 @@ export function TopicsPage() {
                                 <div className="ml-4 mt-2 border-l-2 pl-4">
                                   <TopicPostsList
                                     childId={activeChildId}
+                                    childAge={selectedChild?.age}
                                     topicId={topic.id}
                                     topicName={topic.name}
                                     posts={posts}

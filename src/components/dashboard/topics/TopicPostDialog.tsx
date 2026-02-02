@@ -34,6 +34,8 @@ interface TopicPostDialogProps {
   topicName: string;
   // For editing, provide the existing post
   post?: TopicPost | null;
+  // For AI-generated content, provide initial values
+  initialContent?: { title: string; content: string } | null;
   onSuccess?: () => void;
 }
 
@@ -45,6 +47,7 @@ export function TopicPostDialog({
   customTopicId,
   topicName,
   post,
+  initialContent,
   onSuccess,
 }: TopicPostDialogProps) {
   const createPost = useCreateTopicPost();
@@ -55,15 +58,18 @@ export function TopicPostDialog({
 
   const isEditing = !!post;
 
-  // Populate form when editing
+  // Populate form when editing or with AI-generated content
   useEffect(() => {
     if (post) {
       setTitle(post.title);
       setContent(post.content);
+    } else if (initialContent) {
+      setTitle(initialContent.title);
+      setContent(initialContent.content);
     } else {
       resetForm();
     }
-  }, [post, open]);
+  }, [post, initialContent, open]);
 
   const resetForm = () => {
     setTitle('');
@@ -122,7 +128,9 @@ export function TopicPostDialog({
           <DialogDescription>
             {isEditing
               ? 'Update the post title and content.'
-              : 'Add information that Luno should know about this topic.'}
+              : initialContent
+                ? 'Review and edit the AI-generated content, then save.'
+                : 'Add information that Luno should know about this topic.'}
           </DialogDescription>
         </DialogHeader>
 

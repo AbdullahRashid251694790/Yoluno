@@ -719,4 +719,87 @@ router.delete(
   }
 );
 
+// POST /api/topics/posts/generate - Generate a topic post with AI
+const generatePostSchema = z.object({
+  topicName: z.string().min(1, 'Topic name is required'),
+  childAge: z.number().min(3).max(12).optional(),
+});
+
+router.post(
+  '/posts/generate',
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { topicName, childAge = 7 } = validateBody(generatePostSchema, req.body);
+
+      const systemPrompt = `You are an expert at creating educational content for children.
+Your task is to generate interesting, age-appropriate facts about a given topic that a parent can save for their child's AI companion to know.
+
+Guidelines:
+- Content should be appropriate for a ${childAge}-year-old child
+- Use simple, clear language
+- Focus on fun, engaging facts that spark curiosity
+- Keep the content positive and encouraging
+- Make it educational but not boring
+
+Respond with ONLY valid JSON in this exact format (no markdown, no code blocks):
+{
+  "title": "A short, catchy title (5-8 words)",
+  "content": "2-4 interesting facts or information about the topic (100-200 words)"
+}`;
+
+      const userPrompt = `Generate an educational post about: ${topicName}
+
+Remember: Respond with ONLY the JSON object, no other text.`;
+
+      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
+          'Content-Type': 'application/json',
+          'HTTP-Referer': process.env.FRONTEND_URL || 'http://localhost:5173',
+        },
+        body: JSON.stringify({
+          model: 'google/gemini-2.0-flash-001',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt },
+          ],
+          max_tokens: 500,
+          temperature: 0.7,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('OpenRouter API error:', errorText);
+        throw new AppError(500, 'Failed to generate content');
+      }
+
+      const data = (await response.json()) as { choices: { message: { content: string } }[] };
+      const text = data.choices[0]?.message?.content || '';
+
+      // Parse JSON response
+      try {
+        // Clean up the response (remove any markdown formatting)
+        const cleanedText = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+        const generated = JSON.parse(cleanedText) as { title: string; content: string };
+
+        if (!generated.title || !generated.content) {
+          throw new Error('Invalid response structure');
+        }
+
+        res.json({
+          title: generated.title,
+          content: generated.content,
+        });
+      } catch (parseError) {
+        console.error('Failed to parse AI response:', text);
+        throw new AppError(500, 'Failed to parse generated content');
+      }
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
 export default router;
