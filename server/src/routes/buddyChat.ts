@@ -8,6 +8,7 @@ import { AppError } from '../middleware/errorHandler.js';
 import { emitToUser, emitToChild } from '../socket/index.js';
 import { uploadToS3, getSignedDownloadUrl } from '../utils/s3.js';
 import type { BuddyMessage, ChatBuddy, SafetyReport, ChildProfile, GuardrailSettings, Journey, JourneyStep } from '../types/index.js';
+import { logActivityForChild, type BadgeDefinition } from '../helpers/gamification.js';
 
 const router = Router();
 
@@ -219,7 +220,15 @@ router.post('/:childId/send', upload.single('image'), async (req: Request, res: 
         stepId: taskCompletion.stepId,
         journeyCompleted: taskCompletion.journeyCompleted,
         rewardEarned: taskCompletion.rewardEarned,
+        badgesEarned: taskCompletion.badgesEarned || [],
       });
+
+      // Also emit badges to child for celebration
+      if (taskCompletion.badgesEarned && taskCompletion.badgesEarned.length > 0) {
+        emitToChild(io, childId, 'badges-earned', {
+          badges: taskCompletion.badgesEarned,
+        });
+      }
     }
 
     res.json({
@@ -227,6 +236,7 @@ router.post('/:childId/send', upload.single('image'), async (req: Request, res: 
       buddyMessage,
       safetyLevel: inputSafety.level,
       taskCompleted: taskCompletion?.completed || false,
+      badgesEarned: taskCompletion?.badgesEarned || [],
     });
   } catch (error) {
     next(error);
@@ -289,6 +299,7 @@ interface TaskCompletionResult {
   stepTitle?: string;
   journeyCompleted?: boolean;
   rewardEarned?: boolean;
+  badgesEarned?: BadgeDefinition[];
   requiresImage?: boolean;
   hasImage?: boolean;
 }
@@ -354,6 +365,7 @@ async function checkTaskCompletion(
 
   const journeyCompleted = parseInt(remainingSteps?.count || '0', 10) === 0;
   let rewardEarned = false;
+  let badgesEarned: BadgeDefinition[] = [];
 
   if (journeyCompleted) {
     // Mark journey as complete
@@ -366,6 +378,15 @@ async function checkTaskCompletion(
     // Award reward
     const reward = await awardJourneyReward(childId, activeJourney.id);
     rewardEarned = !!reward;
+
+    // Log journey_completed activity for gamification (points + badges)
+    const activityResult = await logActivityForChild(childId, 'journey_completed', {
+      journeyId: activeJourney.id,
+      journeyTitle: activeJourney.title,
+    });
+    if (activityResult?.newBadges) {
+      badgesEarned = activityResult.newBadges;
+    }
   }
 
   return {
@@ -375,6 +396,7 @@ async function checkTaskCompletion(
     stepTitle: incompleteStep.type,
     journeyCompleted,
     rewardEarned,
+    badgesEarned,
     requiresImage,
     hasImage,
   };
