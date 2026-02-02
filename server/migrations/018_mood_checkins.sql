@@ -24,27 +24,3 @@ CREATE INDEX IF NOT EXISTS idx_mood_checkins_mood
 -- Index for date range queries (calendar view)
 CREATE INDEX IF NOT EXISTS idx_mood_checkins_created_at
   ON mood_checkins(created_at);
-
--- Add RLS policies
-ALTER TABLE mood_checkins ENABLE ROW LEVEL SECURITY;
-
--- Policy: Users can only see mood check-ins for their own children
-CREATE POLICY mood_checkins_select_policy ON mood_checkins
-  FOR SELECT
-  USING (
-    child_profile_id IN (
-      SELECT id FROM child_profiles WHERE user_id = auth.uid()
-    )
-  );
-
--- Policy: Users can only insert mood check-ins for their own children
-CREATE POLICY mood_checkins_insert_policy ON mood_checkins
-  FOR INSERT
-  WITH CHECK (
-    child_profile_id IN (
-      SELECT id FROM child_profiles WHERE user_id = auth.uid()
-    )
-  );
-
--- Grant access to authenticated users
-GRANT SELECT, INSERT ON mood_checkins TO authenticated;
