@@ -2,6 +2,22 @@
 -- Purpose: Add session-based chat support (like ChatGPT)
 -- Created: 2026-02-02
 
+-- Drop and recreate table if it exists but is incomplete (recovery from partial migration)
+DO $$
+BEGIN
+  -- Check if table exists but is missing columns
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'chat_sessions') THEN
+    -- Check if critical columns are missing
+    IF NOT EXISTS (
+      SELECT 1 FROM information_schema.columns
+      WHERE table_name = 'chat_sessions' AND column_name = 'last_message_at'
+    ) THEN
+      -- Drop the incomplete table and recreate
+      DROP TABLE IF EXISTS chat_sessions CASCADE;
+    END IF;
+  END IF;
+END $$;
+
 -- Chat sessions table
 CREATE TABLE IF NOT EXISTS chat_sessions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -15,17 +31,6 @@ CREATE TABLE IF NOT EXISTS chat_sessions (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-
--- Add is_active column if table exists but column doesn't (recovery from partial migration)
-DO $$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM information_schema.columns
-    WHERE table_name = 'chat_sessions' AND column_name = 'is_active'
-  ) THEN
-    ALTER TABLE chat_sessions ADD COLUMN is_active BOOLEAN DEFAULT true;
-  END IF;
-END $$;
 
 -- Index for fetching sessions by child
 CREATE INDEX IF NOT EXISTS idx_chat_sessions_child
