@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS chat_sessions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   child_profile_id UUID NOT NULL REFERENCES child_profiles(id) ON DELETE CASCADE,
   title TEXT NOT NULL DEFAULT 'New Chat',
-  mood VARCHAR(20), -- Optional mood that started this session
+  mood VARCHAR(20),
   started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   last_message_at TIMESTAMPTZ,
   message_count INTEGER DEFAULT 0,
@@ -15,6 +15,17 @@ CREATE TABLE IF NOT EXISTS chat_sessions (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- Add is_active column if table exists but column doesn't (recovery from partial migration)
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'chat_sessions' AND column_name = 'is_active'
+  ) THEN
+    ALTER TABLE chat_sessions ADD COLUMN is_active BOOLEAN DEFAULT true;
+  END IF;
+END $$;
 
 -- Index for fetching sessions by child
 CREATE INDEX IF NOT EXISTS idx_chat_sessions_child
