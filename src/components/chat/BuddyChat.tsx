@@ -10,7 +10,13 @@
 
 import { useRef, useEffect, useState, useMemo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { useBuddyMessages, useChatBuddy, useSendBuddyMessage } from '@/hooks/queries/useBuddyChat';
+import {
+  useBuddyMessages,
+  useChatBuddy,
+  useSendBuddyMessage,
+  useSessionMessages,
+  useSendSessionMessage,
+} from '@/hooks/queries/useBuddyChat';
 import { queryKeys } from '@/hooks/queries/keys';
 import { getSocket, joinChildRoom, leaveChildRoom, onNewMessage } from '@/integrations/api/socket';
 import { avatarExpressionService } from '@/services/avatarExpression';
@@ -27,9 +33,10 @@ import type { BuddyMessage } from '@/services/buddyChat';
 interface BuddyChatProps {
   childId: string;
   childName: string;
+  sessionId?: string;
 }
 
-export function BuddyChat({ childId, childName }: BuddyChatProps) {
+export function BuddyChat({ childId, childName, sessionId }: BuddyChatProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isTyping, setIsTyping] = useState(false);
   const queryClient = useQueryClient();
@@ -37,11 +44,24 @@ export function BuddyChat({ childId, childName }: BuddyChatProps) {
   // Fetch buddy data
   const { data: buddy, isLoading: buddyLoading } = useChatBuddy(childId);
 
-  // Fetch messages
-  const { data: messages = [], isLoading: messagesLoading } = useBuddyMessages(childId);
+  // Fetch messages - use session-based if sessionId is provided
+  const { data: legacyMessages = [], isLoading: legacyMessagesLoading } = useBuddyMessages(
+    sessionId ? undefined : childId // Only fetch if no session
+  );
+  const { data: sessionMessages = [], isLoading: sessionMessagesLoading } = useSessionMessages(
+    sessionId ? childId : undefined,
+    sessionId
+  );
 
-  // Send message mutation
-  const { mutate: sendMessage, isPending: isSending } = useSendBuddyMessage();
+  // Use the appropriate messages based on whether we have a session
+  const messages = sessionId ? sessionMessages : legacyMessages;
+  const messagesLoading = sessionId ? sessionMessagesLoading : legacyMessagesLoading;
+
+  // Send message mutations
+  const { mutate: sendLegacyMessage, isPending: isLegacySending } = useSendBuddyMessage();
+  const { mutate: sendSessionMsg, isPending: isSessionSending } = useSendSessionMessage();
+
+  const isSending = sessionId ? isSessionSending : isLegacySending;
 
   // Find last buddy message
   const lastBuddyMessage = useMemo(
@@ -82,9 +102,22 @@ export function BuddyChat({ childId, childName }: BuddyChatProps) {
 
     // Listen for new messages
     const unsubscribe = onNewMessage(() => {
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.buddyChat.messages(childId),
-      });
+      // Invalidate appropriate queries based on session mode
+      if (sessionId) {
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.buddyChat.sessionMessages(childId, sessionId),
+        });
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.buddyChat.session(childId, sessionId),
+        });
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.buddyChat.sessions(childId),
+        });
+      } else {
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.buddyChat.messages(childId),
+        });
+      }
       queryClient.invalidateQueries({
         queryKey: queryKeys.buddyChat.buddy(childId),
       });
@@ -94,7 +127,7 @@ export function BuddyChat({ childId, childName }: BuddyChatProps) {
       leaveChildRoom(childId);
       unsubscribe();
     };
-  }, [childId, queryClient]);
+  }, [childId, sessionId, queryClient]);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -105,11 +138,20 @@ export function BuddyChat({ childId, childName }: BuddyChatProps) {
 
   const handleSend = (content: string, image?: File) => {
     setIsTyping(false);
-    sendMessage({
-      message: content,
-      childId,
-      image,
-    });
+    if (sessionId) {
+      sendSessionMsg({
+        childId,
+        sessionId,
+        message: content,
+        image,
+      });
+    } else {
+      sendLegacyMessage({
+        message: content,
+        childId,
+        image,
+      });
+    }
   };
 
   const handleSuggestionSelect = (suggestion: { label: string }) => {

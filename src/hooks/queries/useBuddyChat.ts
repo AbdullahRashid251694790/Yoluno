@@ -10,6 +10,8 @@ import {
   buddyChatService,
   type BuddyChatMessage,
   type ChatBuddy,
+  type CreateSessionInput,
+  type UpdateSessionInput,
 } from '@/services/buddyChat';
 import { handleError } from '@/lib/errors';
 
@@ -180,6 +182,159 @@ export function useClearChatHistory() {
       handleError(error, {
         context: 'useClearChatHistory',
         userMessage: 'Failed to clear chat history',
+      });
+    },
+  });
+}
+
+// ============================================
+// Chat Session Hooks
+// ============================================
+
+/**
+ * Hook to fetch all chat sessions for a child
+ */
+export function useChatSessions(childId: string | undefined) {
+  return useQuery({
+    queryKey: queryKeys.buddyChat.sessions(childId ?? ''),
+    queryFn: () => buddyChatService.getSessions(childId!),
+    enabled: !!childId,
+    staleTime: 1 * 60 * 1000, // 1 minute
+  });
+}
+
+/**
+ * Hook to fetch a specific chat session with messages
+ */
+export function useChatSession(
+  childId: string | undefined,
+  sessionId: string | undefined
+) {
+  return useQuery({
+    queryKey: queryKeys.buddyChat.session(childId ?? '', sessionId ?? ''),
+    queryFn: () => buddyChatService.getSession(childId!, sessionId!),
+    enabled: !!childId && !!sessionId,
+    staleTime: 30 * 1000, // 30 seconds
+  });
+}
+
+/**
+ * Hook to fetch messages for a specific session
+ */
+export function useSessionMessages(
+  childId: string | undefined,
+  sessionId: string | undefined,
+  limit = 50
+) {
+  return useQuery({
+    queryKey: queryKeys.buddyChat.sessionMessages(childId ?? '', sessionId ?? ''),
+    queryFn: () => buddyChatService.getSessionMessages(childId!, sessionId!, limit),
+    enabled: !!childId && !!sessionId,
+    staleTime: 30 * 1000, // 30 seconds
+  });
+}
+
+/**
+ * Mutation hook to create a new chat session
+ */
+export function useCreateChatSession() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      childId,
+      input,
+    }: {
+      childId: string;
+      input?: CreateSessionInput;
+    }) => buddyChatService.createSession(childId, input),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.buddyChat.sessions(variables.childId),
+      });
+    },
+    onError: (error) => {
+      handleError(error, {
+        context: 'useCreateChatSession',
+        userMessage: 'Failed to create new chat session',
+      });
+    },
+  });
+}
+
+/**
+ * Mutation hook to update a chat session
+ */
+export function useUpdateChatSession() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      childId,
+      sessionId,
+      input,
+    }: {
+      childId: string;
+      sessionId: string;
+      input: UpdateSessionInput;
+    }) => buddyChatService.updateSession(childId, sessionId, input),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.buddyChat.sessions(variables.childId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.buddyChat.session(variables.childId, variables.sessionId),
+      });
+    },
+    onError: (error) => {
+      handleError(error, {
+        context: 'useUpdateChatSession',
+        userMessage: 'Failed to update chat session',
+      });
+    },
+  });
+}
+
+/**
+ * Mutation hook to send a message within a session
+ */
+export function useSendSessionMessage() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      childId,
+      sessionId,
+      message,
+      image,
+    }: {
+      childId: string;
+      sessionId: string;
+      message: string;
+      image?: File;
+    }) => buddyChatService.sendSessionMessage(childId, sessionId, message, image),
+    onSuccess: (_, variables) => {
+      // Invalidate session messages
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.buddyChat.sessionMessages(variables.childId, variables.sessionId),
+      });
+      // Invalidate session to update message count and last_message_at
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.buddyChat.session(variables.childId, variables.sessionId),
+      });
+      // Invalidate sessions list to update order
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.buddyChat.sessions(variables.childId),
+      });
+      // Invalidate buddy stats
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.buddyChat.buddy(variables.childId),
+      });
+    },
+    onError: (error) => {
+      handleError(error, {
+        context: 'useSendSessionMessage',
+        userMessage: 'Failed to send message',
       });
     },
   });

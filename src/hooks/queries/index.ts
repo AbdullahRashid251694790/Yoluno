@@ -102,3 +102,22 @@ export {
   type MoodType,
   type CreateMoodCheckinInput,
 } from './useMoodCheckin';
+
+// Buddy Chat
+export {
+  useBuddyMessages,
+  useChatBuddy,
+  useSafetyReports,
+  useSendBuddyMessage,
+  useUpdateBuddyPersonality,
+  useUpdateBuddyName,
+  useMarkSafetyReportReviewed,
+  useClearChatHistory,
+  // Sessions
+  useChatSessions,
+  useChatSession,
+  useSessionMessages,
+  useCreateChatSession,
+  useUpdateChatSession,
+  useSendSessionMessage,
+} from './useBuddyChat';

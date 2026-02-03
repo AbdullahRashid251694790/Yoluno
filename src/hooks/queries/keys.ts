@@ -93,6 +93,12 @@ export const queryKeys = {
     buddy: (childId: string) => [...queryKeys.buddyChat.all, 'buddy', childId] as const,
     safetyReports: (userId: string, unreadOnly: boolean) =>
       [...queryKeys.buddyChat.all, 'safety-reports', userId, unreadOnly] as const,
+    // Sessions
+    sessions: (childId: string) => [...queryKeys.buddyChat.all, 'sessions', childId] as const,
+    session: (childId: string, sessionId: string) =>
+      [...queryKeys.buddyChat.all, 'session', childId, sessionId] as const,
+    sessionMessages: (childId: string, sessionId: string) =>
+      [...queryKeys.buddyChat.all, 'session-messages', childId, sessionId] as const,
   },
 
   // Gamification

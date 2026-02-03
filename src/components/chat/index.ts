@@ -11,3 +11,4 @@ export { ChatContainer } from './ChatContainer';
 export { BuddyChat } from './BuddyChat';
 export { SuggestionChips, defaultSuggestions } from './SuggestionChips';
 export { JourneyTasksPanel } from './JourneyTasksPanel';
+export { ChatSessionList, NewChatButton } from './ChatSessionList';

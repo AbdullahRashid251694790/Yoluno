@@ -243,6 +243,286 @@ router.post('/:childId/send', upload.single('image'), async (req: Request, res: 
   }
 });
 
+// ============================================
+// CHAT SESSIONS API
+// ============================================
+
+interface ChatSession {
+  id: string;
+  child_profile_id: string;
+  title: string;
+  mood: string | null;
+  started_at: string;
+  last_message_at: string | null;
+  message_count: number;
+  is_active: boolean;
+  created_at: string;
+}
+
+// GET /api/buddy-chat/:childId/sessions - Get all sessions for a child
+router.get('/:childId/sessions', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    await verifyChildAccess(req.params.childId, req.user!.id);
+
+    const { limit = '20', includeInactive = 'false' } = req.query;
+
+    const result = await query<ChatSession>(
+      `SELECT * FROM chat_sessions
+       WHERE child_profile_id = $1
+       ${includeInactive === 'true' ? '' : 'AND is_active = true'}
+       ORDER BY last_message_at DESC NULLS LAST, created_at DESC
+       LIMIT $2`,
+      [req.params.childId, parseInt(limit as string)]
+    );
+
+    res.json(result.rows);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// POST /api/buddy-chat/:childId/sessions - Create a new session
+router.post('/:childId/sessions', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const childId = req.params.childId;
+    const { mood, title } = req.body;
+
+    await verifyChildAccess(childId, req.user!.id);
+
+    const sessionId = uuidv4();
+    const sessionTitle = title || (mood ? `${mood.charAt(0).toUpperCase() + mood.slice(1)} mood chat` : 'New Chat');
+
+    const session = await queryOne<ChatSession>(
+      `INSERT INTO chat_sessions (id, child_profile_id, title, mood, started_at)
+       VALUES ($1, $2, $3, $4, NOW())
+       RETURNING *`,
+      [sessionId, childId, sessionTitle, mood || null]
+    );
+
+    res.status(201).json(session);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// GET /api/buddy-chat/:childId/sessions/:sessionId - Get session with messages
+router.get('/:childId/sessions/:sessionId', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { childId, sessionId } = req.params;
+    await verifyChildAccess(childId, req.user!.id);
+
+    // Get session
+    const session = await queryOne<ChatSession>(
+      `SELECT * FROM chat_sessions WHERE id = $1 AND child_profile_id = $2`,
+      [sessionId, childId]
+    );
+
+    if (!session) {
+      throw new AppError(404, 'Session not found');
+    }
+
+    // Get messages for this session
+    const messagesResult = await query<BuddyMessage>(
+      `SELECT * FROM buddy_messages
+       WHERE session_id = $1
+       ORDER BY created_at ASC`,
+      [sessionId]
+    );
+
+    res.json({
+      session,
+      messages: messagesResult.rows,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// GET /api/buddy-chat/:childId/sessions/:sessionId/messages - Get messages for a session
+router.get('/:childId/sessions/:sessionId/messages', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { childId, sessionId } = req.params;
+    await verifyChildAccess(childId, req.user!.id);
+
+    const result = await query<BuddyMessage>(
+      `SELECT * FROM buddy_messages
+       WHERE session_id = $1 AND child_profile_id = $2
+       ORDER BY created_at ASC`,
+      [sessionId, childId]
+    );
+
+    res.json(result.rows);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// PATCH /api/buddy-chat/:childId/sessions/:sessionId - Update session (title, archive)
+router.patch('/:childId/sessions/:sessionId', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { childId, sessionId } = req.params;
+    const { title, is_active } = req.body;
+
+    await verifyChildAccess(childId, req.user!.id);
+
+    const updates: string[] = [];
+    const values: unknown[] = [];
+    let paramIndex = 1;
+
+    if (title !== undefined) {
+      updates.push(`title = $${paramIndex++}`);
+      values.push(title);
+    }
+    if (is_active !== undefined) {
+      updates.push(`is_active = $${paramIndex++}`);
+      values.push(is_active);
+    }
+
+    if (updates.length === 0) {
+      throw new AppError(400, 'No updates provided');
+    }
+
+    updates.push(`updated_at = NOW()`);
+    values.push(sessionId, childId);
+
+    const session = await queryOne<ChatSession>(
+      `UPDATE chat_sessions
+       SET ${updates.join(', ')}
+       WHERE id = $${paramIndex++} AND child_profile_id = $${paramIndex}
+       RETURNING *`,
+      values
+    );
+
+    if (!session) {
+      throw new AppError(404, 'Session not found');
+    }
+
+    res.json(session);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// POST /api/buddy-chat/:childId/sessions/:sessionId/send - Send message in session
+router.post('/:childId/sessions/:sessionId/send', upload.single('image'), async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const io: Server = req.app.get('io');
+    const { message } = req.body;
+    const { childId, sessionId } = req.params;
+    const imageFile = req.file;
+
+    if (!message || typeof message !== 'string') {
+      throw new AppError(400, 'Message is required');
+    }
+
+    const child = await verifyChildAccess(childId, req.user!.id);
+
+    // Verify session exists
+    const session = await queryOne<ChatSession>(
+      `SELECT * FROM chat_sessions WHERE id = $1 AND child_profile_id = $2`,
+      [sessionId, childId]
+    );
+
+    if (!session) {
+      throw new AppError(404, 'Session not found');
+    }
+
+    // Analyze safety of input
+    const inputSafety = analyzeSafety(message);
+
+    // Handle image upload if present
+    let imageKey: string | null = null;
+    let imageAnalysis: string | null = null;
+
+    if (imageFile) {
+      const ext = imageFile.mimetype.split('/')[1] || 'jpg';
+      const filename = `${Date.now()}-${uuidv4()}.${ext}`;
+      imageKey = `chat-images/${childId}/${filename}`;
+      await uploadToS3(imageKey, imageFile.buffer, imageFile.mimetype);
+      imageAnalysis = await analyzeImage(imageFile.buffer, imageFile.mimetype);
+    }
+
+    // Save child message with session_id
+    const childMessageId = uuidv4();
+    const childMessage = await queryOne<BuddyMessage>(
+      `INSERT INTO buddy_messages (id, child_profile_id, session_id, role, content, safety_level, safety_flags, image_key, image_analysis)
+       VALUES ($1, $2, $3, 'child', $4, $5, $6, $7, $8)
+       RETURNING *`,
+      [childMessageId, childId, sessionId, message, inputSafety.level, JSON.stringify({ flags: inputSafety.flags }), imageKey, imageAnalysis]
+    );
+
+    // Emit to connected clients
+    emitToChild(io, childId, 'new-message', { ...childMessage, sessionId });
+
+    // Create safety report if needed
+    if (inputSafety.level === 'red' || inputSafety.level === 'yellow') {
+      const reportId = uuidv4();
+      const report = await queryOne<SafetyReport>(
+        `INSERT INTO safety_reports (id, user_id, child_profile_id, message_id, severity, issue_summary)
+         VALUES ($1, $2, $3, $4, $5, $6)
+         RETURNING *`,
+        [reportId, req.user!.id, childId, childMessageId, inputSafety.level,
+         `Child used concerning language: ${inputSafety.flags.join(', ')}`]
+      );
+      emitToUser(io, req.user!.id, 'safety-alert', report);
+    }
+
+    // Check for task completion
+    const taskCompletion = await checkTaskCompletion(childId, message, imageKey, imageAnalysis);
+
+    // Generate buddy response using AI
+    const buddyResponse = await generateBuddyResponse(childId, message, child, inputSafety, imageAnalysis, taskCompletion);
+
+    // Save buddy response with session_id
+    const buddyMessageId = uuidv4();
+    const buddyMessage = await queryOne<BuddyMessage>(
+      `INSERT INTO buddy_messages (id, child_profile_id, session_id, role, content, safety_level)
+       VALUES ($1, $2, $3, 'buddy', $4, 'green')
+       RETURNING *`,
+      [buddyMessageId, childId, sessionId, buddyResponse]
+    );
+
+    // Emit buddy response
+    emitToChild(io, childId, 'new-message', { ...buddyMessage, sessionId });
+
+    // Update buddy stats
+    await query(
+      `UPDATE chat_buddies
+       SET message_count = message_count + 2, last_interaction_at = NOW()
+       WHERE child_profile_id = $1`,
+      [childId]
+    );
+
+    // Handle task completion events
+    if (taskCompletion?.completed) {
+      emitToUser(io, req.user!.id, 'task-completed', {
+        childId,
+        journeyId: taskCompletion.journeyId,
+        stepId: taskCompletion.stepId,
+        journeyCompleted: taskCompletion.journeyCompleted,
+        rewardEarned: taskCompletion.rewardEarned,
+        badgesEarned: taskCompletion.badgesEarned || [],
+      });
+
+      if (taskCompletion.badgesEarned && taskCompletion.badgesEarned.length > 0) {
+        emitToChild(io, childId, 'badges-earned', {
+          badges: taskCompletion.badgesEarned,
+        });
+      }
+    }
+
+    res.json({
+      childMessage,
+      buddyMessage,
+      safetyLevel: inputSafety.level,
+      taskCompleted: taskCompletion?.completed || false,
+      badgesEarned: taskCompletion?.badgesEarned || [],
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 // Helper function to analyze image using vision model
 async function analyzeImage(imageBuffer: Buffer, mimeType: string): Promise<string> {
   const base64Image = imageBuffer.toString('base64');

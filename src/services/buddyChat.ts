@@ -71,6 +71,30 @@ export interface SafetyReport {
   created_at: string;
 }
 
+// Chat Session types
+export interface ChatSession {
+  id: string;
+  child_profile_id: string;
+  title: string;
+  mood: string | null;
+  started_at: string;
+  last_message_at: string | null;
+  message_count: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateSessionInput {
+  mood?: string;
+  title?: string;
+}
+
+export interface UpdateSessionInput {
+  title?: string;
+  is_active?: boolean;
+}
+
 /**
  * Send a message to the buddy and get AI response
  * Supports optional image attachment
@@ -266,6 +290,152 @@ export async function clearChatHistory(childId: string): Promise<void> {
   }
 }
 
+// ============================================
+// Chat Sessions API
+// ============================================
+
+/**
+ * Get all chat sessions for a child
+ */
+export async function getChatSessions(childId: string): Promise<ChatSession[]> {
+  try {
+    const { data } = await apiClient.get<ChatSession[]>(
+      `/buddy-chat/${childId}/sessions`
+    );
+    return data ?? [];
+  } catch (error) {
+    throw handleError(error, {
+      context: 'buddyChat.getSessions',
+      strategy: 'throw',
+    });
+  }
+}
+
+/**
+ * Create a new chat session
+ */
+export async function createChatSession(
+  childId: string,
+  input?: CreateSessionInput
+): Promise<ChatSession> {
+  try {
+    const { data } = await apiClient.post<ChatSession>(
+      `/buddy-chat/${childId}/sessions`,
+      input || {}
+    );
+    return data;
+  } catch (error) {
+    throw handleError(error, {
+      context: 'buddyChat.createSession',
+      strategy: 'throw',
+    });
+  }
+}
+
+/**
+ * Get a specific chat session with messages
+ */
+export async function getChatSession(
+  childId: string,
+  sessionId: string
+): Promise<ChatSession & { messages: BuddyMessage[] }> {
+  try {
+    const { data } = await apiClient.get<ChatSession & { messages: BuddyMessage[] }>(
+      `/buddy-chat/${childId}/sessions/${sessionId}`
+    );
+    return data;
+  } catch (error) {
+    throw handleError(error, {
+      context: 'buddyChat.getSession',
+      strategy: 'throw',
+    });
+  }
+}
+
+/**
+ * Get messages for a specific session
+ */
+export async function getSessionMessages(
+  childId: string,
+  sessionId: string,
+  limit = 50
+): Promise<BuddyMessage[]> {
+  try {
+    const { data } = await apiClient.get<BuddyMessage[]>(
+      `/buddy-chat/${childId}/sessions/${sessionId}/messages`,
+      { params: { limit } }
+    );
+    return data ?? [];
+  } catch (error) {
+    throw handleError(error, {
+      context: 'buddyChat.getSessionMessages',
+      strategy: 'throw',
+    });
+  }
+}
+
+/**
+ * Update a chat session (title or archive)
+ */
+export async function updateChatSession(
+  childId: string,
+  sessionId: string,
+  input: UpdateSessionInput
+): Promise<ChatSession> {
+  try {
+    const { data } = await apiClient.patch<ChatSession>(
+      `/buddy-chat/${childId}/sessions/${sessionId}`,
+      input
+    );
+    return data;
+  } catch (error) {
+    throw handleError(error, {
+      context: 'buddyChat.updateSession',
+      strategy: 'throw',
+    });
+  }
+}
+
+/**
+ * Send a message within a specific session
+ */
+export async function sendSessionMessage(
+  childId: string,
+  sessionId: string,
+  message: string,
+  image?: File
+): Promise<BuddyResponse> {
+  try {
+    if (image) {
+      const formData = new FormData();
+      formData.append('message', message);
+      formData.append('image', image);
+
+      const { data } = await apiClient.post<BuddyResponse>(
+        `/buddy-chat/${childId}/sessions/${sessionId}/send`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      );
+      return data;
+    }
+
+    const { data } = await apiClient.post<BuddyResponse>(
+      `/buddy-chat/${childId}/sessions/${sessionId}/send`,
+      { message }
+    );
+    return data;
+  } catch (error) {
+    throw handleError(error, {
+      context: 'buddyChat.sendSessionMessage',
+      strategy: 'throw',
+    });
+  }
+}
+
 export const buddyChatService = {
   sendMessage: sendMessageToBuddy,
   getMessages: getBuddyMessages,
@@ -276,4 +446,11 @@ export const buddyChatService = {
   markReviewed: markSafetyReportReviewed,
   clearHistory: clearChatHistory,
   getMessageImageUrl,
+  // Sessions
+  getSessions: getChatSessions,
+  createSession: createChatSession,
+  getSession: getChatSession,
+  getSessionMessages,
+  updateSession: updateChatSession,
+  sendSessionMessage,
 };
