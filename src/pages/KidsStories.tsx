@@ -18,10 +18,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { ArrowLeft, BookOpen, Star, Volume2, Pause, Square, Loader2 } from 'lucide-react';
+import { ArrowLeft, BookOpen, Star, Volume2, Pause, Square, Loader2, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import type { StoryWithDetails } from '@/services/stories';
 import { StorybookReader } from '@/components/storybook';
+import { KidsStoryCreator } from '@/components/kids/story';
 import { getUploadUrl } from '@/integrations/api/client';
 import { generateSpeech, playAudioFromBase64, type TTSVoice } from '@/services/textToSpeech';
 
@@ -30,6 +31,7 @@ export function KidsStoriesPage() {
   const navigate = useNavigate();
   const { data: stories, isLoading, isError, refetch } = useStoriesByChild(childId);
   const [selectedStory, setSelectedStory] = useState<StoryWithDetails | null>(null);
+  const [isCreatorOpen, setIsCreatorOpen] = useState(false);
 
   // Legacy audio playback state (for old stories without pages)
   const [isPlaying, setIsPlaying] = useState(false);
@@ -124,6 +126,16 @@ export function KidsStoriesPage() {
     setSelectedStory(null);
   };
 
+  const handleStoryCreated = (storyId: string) => {
+    // Find the newly created story and open it
+    refetch().then(() => {
+      const newStory = stories?.find((s) => s.id === storyId);
+      if (newStory) {
+        setSelectedStory(newStory);
+      }
+    });
+  };
+
   return (
     <div className="min-h-screen bg-kids-gradient safe-area-inset">
       {/* Header */}
@@ -139,8 +151,14 @@ export function KidsStoriesPage() {
 
         <h1 className="text-xl font-display font-bold">My Stories</h1>
 
-        {/* Spacer to balance header layout */}
-        <div className="w-10" />
+        {/* Create Story Button */}
+        <Button
+          size="icon"
+          onClick={() => setIsCreatorOpen(true)}
+          className="rounded-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 shadow-lg"
+        >
+          <Sparkles className="h-5 w-5 text-white" />
+        </Button>
       </header>
 
       {/* Main content */}
@@ -151,7 +169,7 @@ export function KidsStoriesPage() {
           data={stories}
           onRetry={refetch}
           emptyTitle="No stories yet!"
-          emptyDescription="Ask a parent to create a story for you!"
+          emptyDescription="Tap the sparkle button to create your first story!"
           emptyIcon={BookOpen}
         >
           {(storyList) => (
@@ -321,6 +339,15 @@ export function KidsStoriesPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Kids Story Creator */}
+      {isCreatorOpen && (
+        <KidsStoryCreator
+          childId={childId!}
+          onClose={() => setIsCreatorOpen(false)}
+          onSuccess={handleStoryCreated}
+        />
+      )}
     </div>
   );
 }

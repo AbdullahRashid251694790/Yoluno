@@ -78,8 +78,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
         theme,
         mood,
         child_profile_id,
-        'cover',
-        avatar
+        'cover'
       );
     } catch (error) {
       console.error('Failed to generate cover illustration:', error);
@@ -447,19 +446,12 @@ async function generateIllustration(
   theme: string | undefined,
   mood: string | undefined,
   childProfileId: string,
-  type: 'cover' | 'page' = 'page',
-  avatar?: string
+  type: 'cover' | 'page' = 'page'
 ): Promise<string | null> {
-  // Build avatar instruction for illustrations
-  const avatarInstruction = avatar
-    ? `IMPORTANT: Include the character "${avatar}" prominently in this illustration. ${avatar} is the main protagonist and should be clearly visible as a friendly, lovable character.`
-    : '';
-
   const fullPrompt = `Generate a children's book illustration: ${prompt}
 Style: Colorful, friendly, whimsical, suitable for children, picture book style, digital art.
 ${theme ? `Theme: ${theme}.` : ''}
 ${mood ? `Mood: ${mood}.` : ''}
-${avatarInstruction}
 No text or words in the image. Warm and inviting atmosphere.
 ${type === 'cover' ? 'This is a cover illustration, make it eye-catching and magical.' : ''}`;
 
@@ -565,9 +557,9 @@ ${type === 'cover' ? 'This is a cover illustration, make it eye-catching and mag
 }
 
 async function generatePageIllustrations(storyId: string, childProfileId: string): Promise<void> {
-  // Get story info including protagonist avatar
+  // Get story info
   const story = await queryOne<Story>(
-    'SELECT theme, mood, protagonist_avatar FROM stories WHERE id = $1',
+    'SELECT theme, mood FROM stories WHERE id = $1',
     [storyId]
   );
 
@@ -595,8 +587,7 @@ async function generatePageIllustrations(storyId: string, childProfileId: string
         story.theme ?? undefined,
         story.mood ?? undefined,
         childProfileId,
-        'page',
-        story.protagonist_avatar ?? undefined
+        'page'
       );
 
       if (illustrationUrl) {
