@@ -1,24 +1,26 @@
 /**
  * Kids Family Page
  *
- * Shows family members to the child, including:
- * - The child themselves
- * - Siblings (other child profiles)
- * - Family members added by parents (grandparents, aunts, uncles, etc.)
+ * Interactive family album showing family members to the child.
+ * Enhanced UI with larger photos, colorful cards, and detail modals.
  */
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useChildProfile, useFamilyMembers } from '@/hooks/queries';
 import { useChildProfiles } from '@/hooks/queries/useChildProfiles';
 import { useAuth } from '@/contexts/AuthContext';
 import { LoadingSpinner, ErrorState } from '@/components/shared';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ArrowLeft, Users, Crown, Heart } from 'lucide-react';
-import { getUploadUrl } from '@/integrations/api/client';
-import type { FamilyMemberRow } from '@/types/database';
+import { ArrowLeft, Users, Crown } from 'lucide-react';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import {
+  FamilyMemberCard,
+  FamilyMemberDetail,
+  RelationshipGroup,
+  type RelationType,
+} from '@/components/kids/family';
+import type { FamilyMemberRow, ChildProfile } from '@/types/database';
 
 // Group family members by relationship category
 function groupFamilyMembers(members: FamilyMemberRow[]) {
@@ -70,40 +72,16 @@ function groupFamilyMembers(members: FamilyMemberRow[]) {
   return groups;
 }
 
-// Get display label for relationship group
-function getGroupLabel(group: string): string {
-  const labels: Record<string, string> = {
-    grandparents: 'Grandparents',
-    parents: 'Parents',
-    auntsUncles: 'Aunts & Uncles',
-    cousins: 'Cousins',
-    other: 'Other Family',
+// Map group key to RelationType
+function getRelationType(group: string): RelationType {
+  const mapping: Record<string, RelationType> = {
+    grandparents: 'grandparent',
+    parents: 'parent',
+    auntsUncles: 'aunt_uncle',
+    cousins: 'cousin',
+    other: 'other',
   };
-  return labels[group] || group;
-}
-
-// Get border color for relationship group
-function getGroupBorderColor(group: string): string {
-  const colors: Record<string, string> = {
-    grandparents: 'border-purple-200',
-    parents: 'border-amber-200',
-    auntsUncles: 'border-blue-200',
-    cousins: 'border-green-200',
-    other: 'border-gray-200',
-  };
-  return colors[group] || 'border-gray-200';
-}
-
-// Get fallback background color for relationship group
-function getGroupBgColor(group: string): string {
-  const colors: Record<string, string> = {
-    grandparents: 'bg-purple-100',
-    parents: 'bg-amber-100',
-    auntsUncles: 'bg-blue-100',
-    cousins: 'bg-green-100',
-    other: 'bg-gray-100',
-  };
-  return colors[group] || 'bg-gray-100';
+  return mapping[group] || 'other';
 }
 
 export function KidsFamilyPage() {
@@ -113,6 +91,12 @@ export function KidsFamilyPage() {
   const { data: child, isLoading: childLoading } = useChildProfile(childId);
   const { data: siblings = [], isLoading: siblingsLoading } = useChildProfiles(user?.id);
   const { data: familyMembers = [], isLoading: familyLoading } = useFamilyMembers(user?.id);
+
+  // Selected member for detail modal
+  const [selectedMember, setSelectedMember] = useState<{
+    member: FamilyMemberRow | ChildProfile;
+    type: RelationType;
+  } | null>(null);
 
   const handleBack = () => {
     navigate(`/kids/${childId}`);
@@ -127,7 +111,7 @@ export function KidsFamilyPage() {
   // Group family members by relationship
   const groupedFamily = useMemo(() => groupFamilyMembers(familyMembers), [familyMembers]);
 
-  // Count total family members (excluding self)
+  // Count total family members
   const totalMembers = useMemo(() => {
     return otherChildren.length + familyMembers.length + 1; // +1 for parent account
   }, [otherChildren, familyMembers]);
@@ -158,11 +142,19 @@ export function KidsFamilyPage() {
     <div className="min-h-screen bg-kids-gradient safe-area-inset">
       {/* Header */}
       <header className="flex items-center gap-3 px-4 py-4 bg-white/50 backdrop-blur-sm">
-        <Button variant="ghost" size="icon" onClick={handleBack}>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={handleBack}
+          className="rounded-full bg-white/50 hover:bg-white/70"
+        >
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div className="flex-1">
-          <h1 className="text-xl font-bold">My Family</h1>
+          <h1 className="text-xl font-display font-bold flex items-center gap-2">
+            <span>My Family Album</span>
+            <span className="text-lg">👨‍👩‍👧‍👦</span>
+          </h1>
           <p className="text-sm text-muted-foreground">
             {totalMembers} {totalMembers === 1 ? 'member' : 'members'}
           </p>
@@ -170,137 +162,107 @@ export function KidsFamilyPage() {
         <Users className="h-6 w-6 text-primary" />
       </header>
 
-      <div className="px-4 pb-8 pt-4 space-y-4">
+      <div className="px-4 pb-8 pt-4 space-y-6">
         {/* Current Child (Me) */}
-        <Card className="bg-gradient-to-r from-primary/10 to-primary/5 border-primary/20">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-4">
-              <Avatar className="h-16 w-16 border-2 border-primary">
-                <AvatarImage src={child.avatarUrl || undefined} alt={child.name} />
-                <AvatarFallback className="text-xl bg-primary/20">
-                  {child.name.charAt(0).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <h2 className="text-lg font-bold">{child.name}</h2>
-                  <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full font-medium">
-                    That's me!
-                  </span>
-                </div>
-                <p className="text-sm text-muted-foreground">{child.age} years old</p>
-              </div>
-              <Heart className="h-6 w-6 text-pink-500 fill-pink-500" />
-            </div>
-          </CardContent>
-        </Card>
+        <RelationshipGroup type="self">
+          <FamilyMemberCard
+            member={child}
+            type="self"
+            isSelf
+            onPress={() => setSelectedMember({ member: child, type: 'self' })}
+          />
+        </RelationshipGroup>
 
         {/* Parent Account */}
-        <div>
-          <h3 className="text-sm font-medium text-muted-foreground mb-2 px-1">Parent</h3>
-          <Card className="bg-white/70 backdrop-blur-sm">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-4">
-                <Avatar className="h-14 w-14 border-2 border-amber-200">
-                  <AvatarFallback className="text-lg bg-amber-100">
-                    <Crown className="h-6 w-6 text-amber-600" />
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1">
-                  <h2 className="font-semibold">{user?.email?.split('@')[0] || 'Parent'}</h2>
-                  <p className="text-sm text-muted-foreground">Your parent</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Siblings (from child profiles) */}
-        {otherChildren.length > 0 && (
-          <div>
-            <h3 className="text-sm font-medium text-muted-foreground mb-2 px-1">
-              {otherChildren.length === 1 ? 'Sibling' : 'Siblings'}
-            </h3>
-            <div className="space-y-2">
-              {otherChildren.map((sibling) => (
-                <Card key={sibling.id} className="bg-white/70 backdrop-blur-sm">
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-4">
-                      <Avatar className="h-14 w-14 border-2 border-cyan-200">
-                        <AvatarImage src={sibling.avatarUrl || undefined} alt={sibling.name} />
-                        <AvatarFallback className="text-lg bg-cyan-100">
-                          {sibling.name.charAt(0).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1">
-                        <h2 className="font-semibold">{sibling.name}</h2>
-                        <p className="text-sm text-muted-foreground">{sibling.age} years old</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+        <RelationshipGroup type="parent">
+          <button
+            className="w-full p-4 rounded-2xl bg-white/80 backdrop-blur-sm shadow-md hover:shadow-lg transition-all duration-200 active:scale-[0.98] hover:scale-[1.02] flex items-center gap-4 text-left"
+          >
+            <div className="relative">
+              <Avatar className="h-20 w-20 border-4 border-amber-400">
+                <AvatarFallback className="text-2xl bg-amber-100">
+                  <Crown className="h-8 w-8 text-amber-600" />
+                </AvatarFallback>
+              </Avatar>
+              <span className="absolute -bottom-1 -right-1 text-xl bg-white rounded-full p-1 shadow-sm">
+                👑
+              </span>
             </div>
-          </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="font-display font-bold text-lg text-foreground truncate">
+                {user?.email?.split('@')[0] || 'Parent'}
+              </h3>
+              <p className="text-sm font-medium text-amber-600">
+                Your parent
+              </p>
+            </div>
+          </button>
+        </RelationshipGroup>
+
+        {/* Siblings */}
+        {otherChildren.length > 0 && (
+          <RelationshipGroup
+            type="siblings"
+            count={otherChildren.length}
+            horizontal={otherChildren.length >= 3}
+          >
+            {otherChildren.map((sibling) => (
+              <div key={sibling.id} className={otherChildren.length >= 3 ? 'w-48 flex-shrink-0' : ''}>
+                <FamilyMemberCard
+                  member={sibling}
+                  type="sibling"
+                  onPress={() => setSelectedMember({ member: sibling, type: 'sibling' })}
+                />
+              </div>
+            ))}
+          </RelationshipGroup>
         )}
 
-        {/* Family Members (from parent's family tree) */}
+        {/* Family Members by Group */}
         {Object.entries(groupedFamily).map(([group, members]) => {
           if (members.length === 0) return null;
 
+          const groupType = group as 'grandparents' | 'auntsUncles' | 'cousins' | 'other';
+          const relationType = getRelationType(group);
+
           return (
-            <div key={group}>
-              <h3 className="text-sm font-medium text-muted-foreground mb-2 px-1">
-                {getGroupLabel(group)}
-              </h3>
-              <div className="space-y-2">
-                {members.map((member) => (
-                  <Card key={member.id} className="bg-white/70 backdrop-blur-sm">
-                    <CardContent className="p-4">
-                      <div className="flex items-center gap-4">
-                        <Avatar className={`h-14 w-14 border-2 ${getGroupBorderColor(group)}`}>
-                          {member.photo_url ? (
-                            <AvatarImage
-                              src={getUploadUrl(member.photo_url)}
-                              alt={member.name}
-                            />
-                          ) : null}
-                          <AvatarFallback className={`text-lg ${getGroupBgColor(group)}`}>
-                            {member.name.charAt(0).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1">
-                          <h2 className="font-semibold">{member.name}</h2>
-                          <p className="text-sm text-muted-foreground capitalize">
-                            {member.relationship}
-                          </p>
-                          {member.connection_description && (
-                            <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
-                              {member.connection_description}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </div>
+            <RelationshipGroup
+              key={group}
+              type={groupType}
+              count={members.length}
+              horizontal={members.length >= 3}
+            >
+              {members.map((member) => (
+                <div key={member.id} className={members.length >= 3 ? 'w-48 flex-shrink-0' : ''}>
+                  <FamilyMemberCard
+                    member={member}
+                    type={relationType}
+                    onPress={() => setSelectedMember({ member, type: relationType })}
+                  />
+                </div>
+              ))}
+            </RelationshipGroup>
           );
         })}
 
-        {/* Empty state when no extended family */}
+        {/* Empty state */}
         {familyMembers.length === 0 && otherChildren.length === 0 && (
-          <Card className="bg-white/70 backdrop-blur-sm">
-            <CardContent className="py-8 text-center">
-              <Users className="h-8 w-8 mx-auto text-muted-foreground mb-3" />
-              <p className="text-muted-foreground text-sm">
-                Ask your parent to add more family members!
-              </p>
-            </CardContent>
-          </Card>
+          <div className="bg-white/70 backdrop-blur-sm rounded-2xl py-12 text-center">
+            <div className="text-4xl mb-4">👨‍👩‍👧</div>
+            <p className="text-muted-foreground">
+              Ask your parent to add more family members!
+            </p>
+          </div>
         )}
       </div>
+
+      {/* Detail Modal */}
+      <FamilyMemberDetail
+        member={selectedMember?.member || null}
+        type={selectedMember?.type || 'other'}
+        isOpen={!!selectedMember}
+        onClose={() => setSelectedMember(null)}
+      />
     </div>
   );
 }
