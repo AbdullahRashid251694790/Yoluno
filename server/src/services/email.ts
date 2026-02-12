@@ -1,7 +1,7 @@
 import { Resend } from 'resend';
 
-const FROM_EMAIL = process.env.FROM_EMAIL || 'Yoluno <noreply@yoluno.com>';
-const APP_URL = process.env.APP_URL || 'http://localhost:5173';
+const FROM_EMAIL = process.env.FROM_EMAIL || 'Yoluno <onboarding@resend.dev>';
+const APP_URL = process.env.APP_URL || 'https://yoluno.up.railway.app';
 
 // Lazy-init to avoid crashing on startup if RESEND_API_KEY is not set
 let resend: Resend | null = null;
