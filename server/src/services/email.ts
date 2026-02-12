@@ -1,14 +1,21 @@
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 const FROM_EMAIL = process.env.FROM_EMAIL || 'Yoluno <noreply@yoluno.com>';
 const APP_URL = process.env.APP_URL || 'http://localhost:5173';
+
+// Lazy-init to avoid crashing on startup if RESEND_API_KEY is not set
+let resend: Resend | null = null;
+function getResend(): Resend {
+  if (!resend) {
+    resend = new Resend(process.env.RESEND_API_KEY);
+  }
+  return resend;
+}
 
 export async function sendVerificationEmail(to: string, token: string): Promise<void> {
   const verifyUrl = `${APP_URL}/verify-email?token=${token}`;
 
-  await resend.emails.send({
+  await getResend().emails.send({
     from: FROM_EMAIL,
     to,
     subject: 'Verify your Yoluno account',
@@ -29,7 +36,7 @@ export async function sendVerificationEmail(to: string, token: string): Promise<
 export async function sendPasswordResetEmail(to: string, token: string): Promise<void> {
   const resetUrl = `${APP_URL}/reset-password?token=${token}`;
 
-  await resend.emails.send({
+  await getResend().emails.send({
     from: FROM_EMAIL,
     to,
     subject: 'Reset your Yoluno password',
