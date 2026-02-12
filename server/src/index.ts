@@ -12,7 +12,6 @@ import { configurePassport } from './config/passport.js';
 import { pool, testConnection } from './config/database.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { requestLogger } from './middleware/requestLogger.js';
-import { responseWrapper } from './middleware/responseWrapper.js';
 import { setupSocketHandlers } from './socket/index.js';
 
 // Routes
@@ -74,9 +73,6 @@ app.use(requestLogger);
 // Passport
 configurePassport(passport);
 app.use(passport.initialize());
-
-// Response wrapper for consistent API format
-app.use('/api', responseWrapper);
 
 // Static files for uploads
 const uploadDir = process.env.UPLOAD_DIR || './uploads';
