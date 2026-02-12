@@ -76,6 +76,11 @@ apiClient.interceptors.response.use(
       return Promise.reject(error);
     }
 
+    // Don't try to refresh if user was never authenticated
+    if (!accessToken) {
+      return Promise.reject(error);
+    }
+
     // If we're already refreshing, queue this request
     if (isRefreshing) {
       return new Promise((resolve) => {
@@ -110,8 +115,8 @@ apiClient.interceptors.response.use(
       return apiClient(originalRequest);
     } catch (refreshError) {
       isRefreshing = false;
+      refreshSubscribers = [];
       clearTokens();
-      window.location.href = '/login';
       return Promise.reject(refreshError);
     }
   }
