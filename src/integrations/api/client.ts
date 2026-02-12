@@ -12,27 +12,24 @@ export const apiClient = axios.create({
   timeout: 30000, // 30 second timeout to prevent infinite hangs
 });
 
-// Token storage keys
-const ACCESS_TOKEN_KEY = 'access_token';
-const REFRESH_TOKEN_KEY = 'refresh_token';
+// In-memory access token (not in localStorage for security)
+let accessToken: string | null = null;
 
 // Token management functions
 export function getAccessToken(): string | null {
-  return localStorage.getItem(ACCESS_TOKEN_KEY);
+  return accessToken;
 }
 
-export function getRefreshToken(): string | null {
-  return localStorage.getItem(REFRESH_TOKEN_KEY);
-}
-
-export function setTokens(accessToken: string, refreshToken: string): void {
-  localStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
-  localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+export function setTokens(newAccessToken: string): void {
+  accessToken = newAccessToken;
 }
 
 export function clearTokens(): void {
-  localStorage.removeItem(ACCESS_TOKEN_KEY);
-  localStorage.removeItem(REFRESH_TOKEN_KEY);
+  accessToken = null;
+}
+
+export function isAuthenticated(): boolean {
+  return !!accessToken;
 }
 
 // Flag to prevent multiple refresh attempts
@@ -73,6 +70,12 @@ apiClient.interceptors.response.use(
       return Promise.reject(error);
     }
 
+    // Don't try to refresh for auth endpoints (prevents infinite loop)
+    const url = originalRequest.url || '';
+    if (url.includes('/auth/')) {
+      return Promise.reject(error);
+    }
+
     // If we're already refreshing, queue this request
     if (isRefreshing) {
       return new Promise((resolve) => {
@@ -88,28 +91,20 @@ apiClient.interceptors.response.use(
     originalRequest._retry = true;
     isRefreshing = true;
 
-    const refreshToken = getRefreshToken();
-
-    if (!refreshToken) {
-      isRefreshing = false;
-      clearTokens();
-      window.location.href = '/login';
-      return Promise.reject(error);
-    }
-
     try {
-      const response = await axios.post(`${API_URL}/auth/refresh`, {
-        refreshToken,
+      // Refresh token is sent automatically via httpOnly cookie
+      const response = await axios.post(`${API_URL}/auth/refresh`, {}, {
+        withCredentials: true,
       });
 
-      const { accessToken, refreshToken: newRefreshToken } = response.data;
-      setTokens(accessToken, newRefreshToken);
+      const { accessToken: newAccessToken } = response.data;
+      setTokens(newAccessToken);
 
       isRefreshing = false;
-      onTokenRefreshed(accessToken);
+      onTokenRefreshed(newAccessToken);
 
       if (originalRequest.headers) {
-        originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
       }
 
       return apiClient(originalRequest);
