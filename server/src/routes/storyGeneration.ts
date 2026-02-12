@@ -23,7 +23,6 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
       storyLength = 'medium',
       includeFamily = false,
       narratorVoice = 'nova',
-      avatar,
     } = req.body;
 
     // Verify child access
@@ -67,7 +66,6 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
       wordsPerPage: config.wordsPerPage,
       familyMembers,
       interests: child.interests || [],
-      avatar,
     });
 
     // Generate cover illustration
@@ -89,8 +87,8 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
     const story = await queryOne<Story>(
       `INSERT INTO stories (
         id, child_profile_id, title, content, theme, mood,
-        values, word_count, cover_image_url, has_pages, narrator_voice, protagonist_avatar
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+        values, word_count, cover_image_url, has_pages, narrator_voice
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
       RETURNING *`,
       [
         storyId,
@@ -104,7 +102,6 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
         coverImageUrl,
         true,
         narratorVoice,
-        avatar,
       ]
     );
 
@@ -267,7 +264,6 @@ interface StoryGenerationParams {
   wordsPerPage: number;
   familyMembers: FamilyMember[];
   interests: string[];
-  avatar?: string;
 }
 
 interface PageContent {
@@ -293,7 +289,6 @@ async function generateStoryWithPages(params: StoryGenerationParams): Promise<{
     wordsPerPage,
     familyMembers,
     interests,
-    avatar,
   } = params;
 
   const totalWords = pageCount * wordsPerPage;
@@ -306,18 +301,12 @@ async function generateStoryWithPages(params: StoryGenerationParams): Promise<{
     pronounGuidance = `Use she/her pronouns for ${childName}.`;
   }
 
-  // Build avatar guidance for the story protagonist
-  const avatarGuidance = avatar
-    ? `The main protagonist of this story is ${avatar}, a friendly and lovable character. ${avatar} should be featured prominently throughout the story as the hero who goes on adventures and learns important lessons.`
-    : '';
-
   const systemPrompt = `You are a children's story writer creating personalized, age-appropriate stories formatted as picture book pages.
 Write engaging stories with clear narratives, positive messages, and vivid descriptions.
 Each page should have a natural pause point, like a picture book would.
 Use age-appropriate vocabulary for a ${childAge}-year-old.
 Never include scary, violent, or inappropriate content.
-${pronounGuidance}
-${avatarGuidance}`;
+${pronounGuidance}`;
 
   let userPrompt = `Write a children's story for a ${childAge}-year-old child named ${childName}.
 The story should have exactly ${pageCount} pages, with about ${wordsPerPage} words per page (total ~${totalWords} words).

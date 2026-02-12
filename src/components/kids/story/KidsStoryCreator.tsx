@@ -1,8 +1,8 @@
 /**
  * Kids Story Creator
  *
- * Simplified 3-step story creation wizard for children.
- * Steps: Theme -> Avatar -> Creating
+ * Simplified 2-step story creation wizard for children.
+ * Steps: Theme -> Creating
  */
 
 import { useState } from 'react';
@@ -20,8 +20,7 @@ interface KidsStoryCreatorProps {
   onSuccess?: (storyId: string) => void;
 }
 
-type Step = 'theme' | 'avatar' | 'creating' | 'success';
-type Avatar = 'Lolo' | 'Lumi' | 'Luno';
+type Step = 'theme' | 'creating' | 'success';
 
 // Kid-friendly themes with emojis
 const THEMES = [
@@ -31,36 +30,21 @@ const THEMES = [
   { id: 'space', label: 'Space', emoji: '🚀', color: 'from-indigo-400 to-blue-500' },
   { id: 'friendship', label: 'Friendship', emoji: '💝', color: 'from-pink-400 to-rose-500' },
   { id: 'nature', label: 'Nature', emoji: '🌳', color: 'from-lime-400 to-green-500' },
+  { id: 'family', label: 'Family', emoji: '👨‍👩‍👧‍👦', color: 'from-sky-400 to-cyan-500' },
 ] as const;
-
-// Avatars with colors
-const AVATARS: { id: Avatar; label: string; color: string; description: string }[] = [
-  { id: 'Lolo', label: 'Lolo', color: 'from-amber-300 to-orange-400', description: 'Brave & curious' },
-  { id: 'Lumi', label: 'Lumi', color: 'from-pink-300 to-purple-400', description: 'Kind & magical' },
-  { id: 'Luno', label: 'Luno', color: 'from-cyan-300 to-blue-400', description: 'Wise & gentle' },
-];
 
 export function KidsStoryCreator({ childId, onClose, onSuccess }: KidsStoryCreatorProps) {
   const [step, setStep] = useState<Step>('theme');
-  const [selectedTheme, setSelectedTheme] = useState<string | null>(null);
-  const [selectedAvatar, setSelectedAvatar] = useState<Avatar | null>(null);
   const [generatedStoryId, setGeneratedStoryId] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
-  const handleThemeSelect = (themeId: string) => {
-    setSelectedTheme(themeId);
-    setStep('avatar');
-  };
-
-  const handleAvatarSelect = async (avatar: Avatar) => {
-    setSelectedAvatar(avatar);
+  const handleThemeSelect = async (themeId: string) => {
     setStep('creating');
 
     try {
       const story = await generateStory({
         childProfileId: childId,
-        theme: selectedTheme!,
-        avatar,
+        theme: themeId,
         mood: 'magical',
         storyLength: 'short',
         narratorVoice: 'nova',
@@ -78,7 +62,7 @@ export function KidsStoryCreator({ childId, onClose, onSuccess }: KidsStoryCreat
     } catch (error) {
       console.error('Story generation failed:', error);
       toast.error('Oops! Something went wrong. Try again!');
-      setStep('avatar');
+      setStep('theme');
     }
   };
 
@@ -89,27 +73,11 @@ export function KidsStoryCreator({ childId, onClose, onSuccess }: KidsStoryCreat
     onClose();
   };
 
-  const handleBack = () => {
-    if (step === 'avatar') {
-      setStep('theme');
-      setSelectedTheme(null);
-    }
-  };
-
   return (
     <div className="fixed inset-0 z-50 bg-gradient-to-b from-purple-100 via-pink-50 to-white flex flex-col">
       {/* Header */}
       <header className="flex items-center justify-between px-4 py-4 safe-area-inset-top">
-        {step === 'avatar' ? (
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleBack}
-            className="rounded-full bg-white/50 backdrop-blur-sm hover:bg-white/70"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-        ) : step === 'theme' ? (
+        {step === 'theme' ? (
           <Button
             variant="ghost"
             size="icon"
@@ -124,31 +92,12 @@ export function KidsStoryCreator({ childId, onClose, onSuccess }: KidsStoryCreat
 
         <h1 className="text-xl font-display font-bold text-purple-800">
           {step === 'theme' && 'Pick a Theme!'}
-          {step === 'avatar' && 'Choose Your Hero!'}
           {step === 'creating' && 'Creating Magic...'}
           {step === 'success' && 'Your Story!'}
         </h1>
 
         <div className="w-10" />
       </header>
-
-      {/* Progress dots */}
-      {(step === 'theme' || step === 'avatar') && (
-        <div className="flex justify-center gap-2 pb-4">
-          <div
-            className={cn(
-              'w-3 h-3 rounded-full transition-all',
-              step === 'theme' ? 'bg-purple-500 scale-110' : 'bg-purple-300'
-            )}
-          />
-          <div
-            className={cn(
-              'w-3 h-3 rounded-full transition-all',
-              step === 'avatar' ? 'bg-purple-500 scale-110' : 'bg-purple-300'
-            )}
-          />
-        </div>
-      )}
 
       {/* Content */}
       <main className="flex-1 overflow-auto px-4 pb-8">
@@ -174,42 +123,6 @@ export function KidsStoryCreator({ childId, onClose, onSuccess }: KidsStoryCreat
                   <span className="text-white font-display font-bold text-lg drop-shadow-md">
                     {theme.label}
                   </span>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Avatar Selection */}
-        {step === 'avatar' && (
-          <div className="space-y-4">
-            <p className="text-center text-muted-foreground mb-6">
-              Who will be the hero of your story?
-            </p>
-            <div className="grid gap-4">
-              {AVATARS.map((avatar) => (
-                <button
-                  key={avatar.id}
-                  onClick={() => handleAvatarSelect(avatar.id)}
-                  className={cn(
-                    'relative p-6 rounded-2xl bg-gradient-to-r shadow-lg',
-                    'transform transition-all duration-200 active:scale-95 hover:scale-105',
-                    'focus:outline-none focus:ring-4 focus:ring-purple-300',
-                    'flex items-center gap-4',
-                    avatar.color
-                  )}
-                >
-                  <div className="w-16 h-16 rounded-full bg-white/30 flex items-center justify-center text-3xl">
-                    {avatar.id === 'Lolo' && '🦁'}
-                    {avatar.id === 'Lumi' && '🦋'}
-                    {avatar.id === 'Luno' && '🐢'}
-                  </div>
-                  <div className="text-left">
-                    <span className="text-white font-display font-bold text-xl drop-shadow-md block">
-                      {avatar.label}
-                    </span>
-                    <span className="text-white/80 text-sm">{avatar.description}</span>
-                  </div>
                 </button>
               ))}
             </div>
