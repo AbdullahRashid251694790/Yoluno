@@ -59,7 +59,7 @@ export function DashboardHome() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold">Welcome back</h1>
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">Welcome back</h1>
         <p className="text-muted-foreground mt-1">
           Here's what's happening with your children's learning today.
         </p>
@@ -122,7 +122,7 @@ export function DashboardHome() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
             {children.map((child) => (
               <ChildProfileCard
                 key={child.id}
@@ -136,7 +136,7 @@ export function DashboardHome() {
 
       {/* Quick Stats */}
       {children.length > 0 && (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
@@ -220,7 +220,7 @@ export function DashboardHome() {
             </Link>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
             {analyticsOverview.children.map((childData) => (
               <Card key={childData.child.id}>
                 <CardHeader>
@@ -237,7 +237,7 @@ export function DashboardHome() {
                   <CardDescription>Age {childData.child.age}</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                     <div className="flex items-center gap-2">
                       <MessageCircle className="h-4 w-4 text-blue-500" />
                       <span>{childData.weekly_activity.messages} messages</span>

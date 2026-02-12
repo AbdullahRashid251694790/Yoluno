@@ -26,6 +26,8 @@ import { KidsFamilyPage } from '@/pages/KidsFamily';
 import { KidsRewardGalleryPage } from '@/pages/KidsRewardGallery';
 import { KidsMoodCheckPage } from '@/pages/KidsMoodCheck';
 import { LandingPage } from '@/pages/Landing';
+import { ResetPasswordPage } from '@/pages/ResetPassword';
+import { KidsBadgesPage } from '@/pages/KidsBadges';
 import { NotFoundPage } from '@/pages/NotFound';
 
 const queryClient = new QueryClient({
@@ -99,6 +101,9 @@ export default function App() {
                     </PublicRoute>
                   }
                 />
+
+                {/* Public (no redirect) routes */}
+                <Route path="/reset-password" element={<ResetPasswordPage />} />
 
                 {/* Protected routes */}
                 <Route
@@ -186,6 +191,14 @@ export default function App() {
                   element={
                     <ProtectedRoute>
                       <KidsRewardGalleryPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/kids/:childId/badges"
+                  element={
+                    <ProtectedRoute>
+                      <KidsBadgesPage />
                     </ProtectedRoute>
                   }
                 />

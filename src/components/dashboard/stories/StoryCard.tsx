@@ -9,16 +9,17 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { formatRelativeTime, truncate, calculateReadingTime } from '@/lib/utils';
-import { Heart, Clock, BookOpen } from 'lucide-react';
+import { Heart, Clock, BookOpen, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface StoryCardProps {
   story: StoryRow;
   onRead?: () => void;
   onToggleFavorite?: () => void;
+  onDelete?: () => void;
 }
 
-export function StoryCard({ story, onRead, onToggleFavorite }: StoryCardProps) {
+export function StoryCard({ story, onRead, onToggleFavorite, onDelete }: StoryCardProps) {
   const readingTime = story.content ? calculateReadingTime(story.content) : 0;
 
   return (
@@ -67,10 +68,22 @@ export function StoryCard({ story, onRead, onToggleFavorite }: StoryCardProps) {
           <span>{formatRelativeTime(story.created_at)}</span>
         </div>
 
-        <Button size="sm" onClick={onRead} className="gap-2">
-          <BookOpen className="h-4 w-4" />
-          Read
-        </Button>
+        <div className="flex items-center gap-2">
+          {onDelete && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={onDelete}
+              className="text-muted-foreground hover:text-destructive"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          )}
+          <Button size="sm" onClick={onRead} className="gap-2">
+            <BookOpen className="h-4 w-4" />
+            Read
+          </Button>
+        </div>
       </CardFooter>
     </Card>
   );

@@ -8,14 +8,34 @@ import { AppError } from '../middleware/errorHandler.js';
 import {
   registerSchema,
   loginSchema,
-  refreshTokenSchema,
   updatePasswordSchema,
   forgotPasswordSchema,
   validateBody,
 } from '../utils/validation.js';
-import type { User, Session, AuthResponse } from '../types/index.js';
+import type { User, Session } from '../types/index.js';
+import { sendVerificationEmail, sendPasswordResetEmail } from '../services/email.js';
 
 const router = Router();
+
+// Helper to set refresh token cookie
+function setRefreshTokenCookie(res: Response, refreshToken: string) {
+  res.cookie('refresh_token', refreshToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    path: '/api/auth',
+  });
+}
+
+function clearRefreshTokenCookie(res: Response) {
+  res.clearCookie('refresh_token', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    path: '/api/auth',
+  });
+}
 
 // POST /api/auth/register
 router.post('/register', async (req: Request, res: Response, next: NextFunction) => {
@@ -36,11 +56,19 @@ router.post('/register', async (req: Request, res: Response, next: NextFunction)
     const passwordHash = await hashPassword(password);
     const userId = uuidv4();
 
+    // Generate email verification token
+    const verificationToken = uuidv4();
+
     await query(
-      `INSERT INTO users (id, email, password_hash, email_verified)
-       VALUES ($1, $2, $3, $4)`,
-      [userId, email.toLowerCase(), passwordHash, false]
+      `INSERT INTO users (id, email, password_hash, email_verified, email_verification_token, email_verification_expires)
+       VALUES ($1, $2, $3, $4, $5, NOW() + INTERVAL '24 hours')`,
+      [userId, email.toLowerCase(), passwordHash, false, verificationToken]
     );
+
+    // Send verification email (non-blocking)
+    sendVerificationEmail(email.toLowerCase(), verificationToken).catch((err) => {
+      console.error('Failed to send verification email:', err);
+    });
 
     // Create default subscription
     await query(
@@ -61,17 +89,16 @@ router.post('/register', async (req: Request, res: Response, next: NextFunction)
       [uuidv4(), userId, refreshTokenHash]
     );
 
-    const response: AuthResponse = {
+    setRefreshTokenCookie(res, refreshToken);
+
+    res.status(201).json({
       user: {
         id: userId,
         email: email.toLowerCase(),
         email_verified: false,
       },
       accessToken,
-      refreshToken,
-    };
-
-    res.status(201).json(response);
+    });
   } catch (error) {
     next(error);
   }
@@ -108,17 +135,16 @@ router.post('/login', async (req: Request, res: Response, next: NextFunction) =>
       [uuidv4(), user.id, refreshTokenHash]
     );
 
-    const response: AuthResponse = {
+    setRefreshTokenCookie(res, refreshToken);
+
+    res.json({
       user: {
         id: user.id,
         email: user.email,
         email_verified: user.email_verified,
       },
       accessToken,
-      refreshToken,
-    };
-
-    res.json(response);
+    });
   } catch (error) {
     next(error);
   }
@@ -127,7 +153,7 @@ router.post('/login', async (req: Request, res: Response, next: NextFunction) =>
 // POST /api/auth/logout
 router.post('/logout', requireAuth, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { refreshToken } = req.body;
+    const refreshToken = req.cookies?.refresh_token || req.body.refreshToken;
 
     if (refreshToken) {
       // Delete specific session
@@ -148,6 +174,7 @@ router.post('/logout', requireAuth, async (req: Request, res: Response, next: Ne
       await query('DELETE FROM sessions WHERE user_id = $1', [req.user!.id]);
     }
 
+    clearRefreshTokenCookie(res);
     res.json({ message: 'Logged out successfully' });
   } catch (error) {
     next(error);
@@ -157,7 +184,11 @@ router.post('/logout', requireAuth, async (req: Request, res: Response, next: Ne
 // POST /api/auth/refresh
 router.post('/refresh', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { refreshToken } = validateBody(refreshTokenSchema, req.body);
+    // Read from cookie first, fallback to body for backward compat
+    const refreshToken = req.cookies?.refresh_token || req.body.refreshToken;
+    if (!refreshToken) {
+      throw new AppError(401, 'No refresh token provided');
+    }
 
     // Verify token
     let decoded;
@@ -212,17 +243,16 @@ router.post('/refresh', async (req: Request, res: Response, next: NextFunction) 
       [newRefreshTokenHash, validSession.id]
     );
 
-    const response: AuthResponse = {
+    setRefreshTokenCookie(res, newRefreshToken);
+
+    res.json({
       user: {
         id: user.id,
         email: user.email,
         email_verified: user.email_verified,
       },
       accessToken: newAccessToken,
-      refreshToken: newRefreshToken,
-    };
-
-    res.json(response);
+    });
   } catch (error) {
     next(error);
   }
@@ -301,13 +331,153 @@ router.post('/forgot-password', async (req: Request, res: Response, next: NextFu
       [resetTokenHash, user.id]
     );
 
-    // TODO: Send email with reset link
-    // For now, just log it (in development)
-    if (process.env.NODE_ENV === 'development') {
-      console.log(`Password reset token for ${email}: ${resetToken}`);
-    }
+    // Send password reset email (non-blocking)
+    sendPasswordResetEmail(email.toLowerCase(), resetToken).catch((err) => {
+      console.error('Failed to send password reset email:', err);
+    });
 
     res.json({ message: 'If the email exists, a reset link will be sent' });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// GET /api/auth/verify-email
+router.get('/verify-email', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { token } = req.query;
+
+    if (!token || typeof token !== 'string') {
+      throw new AppError(400, 'Verification token is required');
+    }
+
+    const user = await queryOne<User>(
+      `SELECT * FROM users WHERE email_verification_token = $1 AND email_verification_expires > NOW()`,
+      [token]
+    );
+
+    if (!user) {
+      throw new AppError(400, 'Invalid or expired verification token');
+    }
+
+    await query(
+      `UPDATE users SET email_verified = true, email_verification_token = NULL, email_verification_expires = NULL WHERE id = $1`,
+      [user.id]
+    );
+
+    res.json({ message: 'Email verified successfully' });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// POST /api/auth/resend-verification
+router.post('/resend-verification', requireAuth, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const user = await queryOne<User>(
+      'SELECT * FROM users WHERE id = $1',
+      [req.user!.id]
+    );
+
+    if (!user) {
+      throw new AppError(404, 'User not found');
+    }
+
+    if (user.email_verified) {
+      res.json({ message: 'Email is already verified' });
+      return;
+    }
+
+    const verificationToken = uuidv4();
+    await query(
+      `UPDATE users SET email_verification_token = $1, email_verification_expires = NOW() + INTERVAL '24 hours' WHERE id = $2`,
+      [verificationToken, user.id]
+    );
+
+    await sendVerificationEmail(user.email, verificationToken);
+
+    res.json({ message: 'Verification email sent' });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// POST /api/auth/reset-password
+router.post('/reset-password', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { token, password } = req.body;
+
+    if (!token || !password) {
+      throw new AppError(400, 'Token and password are required');
+    }
+
+    if (password.length < 8) {
+      throw new AppError(400, 'Password must be at least 8 characters');
+    }
+
+    // Find user with valid reset token
+    const users = await query<User>(
+      `SELECT * FROM users WHERE password_reset_expires > NOW() AND password_reset_token IS NOT NULL`,
+      []
+    );
+
+    let matchedUser: User | null = null;
+    for (const user of users.rows) {
+      const matches = await verifyPassword(token, user.password_reset_token!);
+      if (matches) {
+        matchedUser = user;
+        break;
+      }
+    }
+
+    if (!matchedUser) {
+      throw new AppError(400, 'Invalid or expired reset token');
+    }
+
+    // Update password and clear reset token
+    const newPasswordHash = await hashPassword(password);
+    await query(
+      `UPDATE users SET password_hash = $1, password_reset_token = NULL, password_reset_expires = NULL WHERE id = $2`,
+      [newPasswordHash, matchedUser.id]
+    );
+
+    // Invalidate all sessions
+    await query('DELETE FROM sessions WHERE user_id = $1', [matchedUser.id]);
+
+    res.json({ message: 'Password reset successfully' });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// DELETE /api/auth/account
+router.delete('/account', requireAuth, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { password } = req.body;
+
+    if (!password) {
+      throw new AppError(400, 'Password is required to delete account');
+    }
+
+    const user = await queryOne<User>(
+      'SELECT * FROM users WHERE id = $1',
+      [req.user!.id]
+    );
+
+    if (!user) {
+      throw new AppError(404, 'User not found');
+    }
+
+    const validPassword = await verifyPassword(password, user.password_hash);
+    if (!validPassword) {
+      throw new AppError(401, 'Incorrect password');
+    }
+
+    // Delete user (cascades to all related data)
+    await query('DELETE FROM users WHERE id = $1', [user.id]);
+
+    clearRefreshTokenCookie(res);
+    res.json({ message: 'Account deleted successfully' });
   } catch (error) {
     next(error);
   }

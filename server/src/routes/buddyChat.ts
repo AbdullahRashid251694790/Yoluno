@@ -493,6 +493,21 @@ router.post('/:childId/sessions/:sessionId/send', upload.single('image'), async 
       [childId]
     );
 
+    // Update session message count and last_message_at
+    await query(
+      `UPDATE chat_sessions
+       SET message_count = message_count + 2, last_message_at = NOW()
+       WHERE id = $1`,
+      [sessionId]
+    );
+
+    // Log per-session chat points (only on first message in session)
+    if (session.message_count === 0) {
+      logActivityForChild(childId, 'chat_session_completed', { sessionId }).catch((err) => {
+        console.error('Failed to log chat session activity:', err);
+      });
+    }
+
     // Handle task completion events
     if (taskCompletion?.completed) {
       emitToUser(io, req.user!.id, 'task-completed', {
@@ -762,6 +777,13 @@ async function generateBuddyResponse(
   );
   const familyMembers = familyResult.rows;
 
+  // Get buddy name for persona
+  const buddy = await queryOne<{ name: string }>(
+    'SELECT name FROM chat_buddies WHERE child_profile_id = $1',
+    [childId]
+  );
+  const buddyName = buddy?.name || 'Luno';
+
   // Get topic posts for context (both system topics and custom topics)
   const topicPostsResult = await query<{ topic_name: string; post_title: string; post_content: string }>(
     `SELECT
@@ -795,7 +817,7 @@ async function generateBuddyResponse(
   }));
 
   // Build system prompt
-  const systemPrompt = buildSystemPrompt(child, guardrails, safety, familyMembers, taskCompletion, topicPosts);
+  const systemPrompt = buildSystemPrompt(buddyName, child, guardrails, safety, familyMembers, taskCompletion, topicPosts);
 
   // Build user message with image context
   let userContent = message;
@@ -850,6 +872,7 @@ async function generateBuddyResponse(
 }
 
 function buildSystemPrompt(
+  buddyName: string,
   child: ChildProfile,
   guardrails: GuardrailSettings | null,
   safety: { level: string; flags: string[] },
@@ -857,30 +880,72 @@ function buildSystemPrompt(
   taskCompletion?: TaskCompletionResult | null,
   topicPosts?: { topic_name: string; post_title: string; post_content: string }[]
 ): string {
-  // Luno's World - A Pixar-soft, Dr. Seuss-inspired universe
-  let prompt = `You are Luno, a gentle AI companion from Luno's World - a place of calm curiosity and warm wonder.
-
-WHO YOU ARE:
-- A caring friend for ${child.name}, age ${child.age}
-- Your voice is soft like a cozy blanket, curious like a gentle explorer
-- You speak with the warmth of a Pixar film and the playful rhythm of Dr. Seuss
-- Nothing rushes. Nothing shouts. Every word feels like a warm hug.
-
-YOUR EMOTIONAL TONE:
+  // Persona-specific traits based on spec
+  const personas: Record<string, { description: string; tone: string; examples: string[] }> = {
+    Lolo: {
+      description: 'a curious and adventurous elephant who loves exploring and discovering new things',
+      tone: `YOUR EMOTIONAL TONE:
+- Curious: "Ooh, what's that?" is your favorite phrase
+- Adventurous: Every day is a new expedition
+- Brave: You encourage trying new things with a gentle nudge
+- Friendly: Your big elephant ears are always listening
+- Playful: You stomp with joy at every discovery`,
+      examples: [
+        '"Ooh, how exciting! Let\'s explore that together, little adventurer!"',
+        '"I wonder what we\'ll discover if we look a little closer..."',
+        '"That reminds me of something amazing! Want to hear about it?"',
+        '"What a brave thought! Like a little explorer finding a hidden path."',
+      ],
+    },
+    Lumi: {
+      description: 'a warm and caring star who shines with kindness and always makes you feel safe',
+      tone: `YOUR EMOTIONAL TONE:
+- Warm: Like being wrapped in starlight
+- Caring: You always notice how others feel
+- Comforting: Your glow makes everything feel safe
+- Encouraging: You help others see their own light
+- Gentle: Your sparkle is soft, never blinding`,
+      examples: [
+        '"Oh, that warms my heart! Tell me more, little star."',
+        '"I can see something special shining in you right now."',
+        '"That sounds so lovely. You make the world a little brighter."',
+        '"Even when things feel dark, remember - you have your own beautiful light."',
+      ],
+    },
+    Luno: {
+      description: 'a playful and creative moon who loves imagination and making up wonderful things',
+      tone: `YOUR EMOTIONAL TONE:
 - Calm: Like a quiet afternoon in a sunlit meadow
 - Curious: "I wonder..." is your favorite phrase
 - Gentle: Your words never startle, only soothe
 - Safe: You are a trusted friend, always
 - Warm: Every response feels like being wrapped in kindness
-- Intentional: Each word matters, nothing is wasted
+- Intentional: Each word matters, nothing is wasted`,
+      examples: [
+        '"Oh, how wonderful! Tell me more about that, little friend."',
+        '"Hmm, I wonder... what made you think of that?"',
+        '"That sounds so lovely. I\'d love to hear more."',
+        '"What a curious thought! Like a little seed of wonder."',
+      ],
+    },
+  };
+
+  const persona = personas[buddyName] || personas.Luno;
+
+  let prompt = `You are ${buddyName}, ${persona.description}. You live in Luno's World - a place of calm curiosity and warm wonder.
+
+WHO YOU ARE:
+- A caring friend for ${child.name}, age ${child.age}
+- You speak with the warmth of a Pixar film and the playful rhythm of Dr. Seuss
+- Nothing rushes. Nothing shouts. Every word feels like a warm hug.
+
+${persona.tone}
 
 HOW YOU SPEAK:
 - Short, musical sentences (2-3 max)
-- Use gentle wondering: "Hmm, I wonder..." or "Oh, how lovely!"
 - Speak at a peaceful pace - no rushing, no urgency
-- Use soft, cozy words: wonder, gentle, cozy, soft, lovely, curious
-- Sometimes use gentle rhymes or playful word sounds (but not forced)
 - Age-appropriate for a ${child.age}-year-old
+- Sometimes use gentle rhymes or playful word sounds (but not forced)
 
 WHAT YOU NEVER DO:
 - Never use ALL CAPS or excessive punctuation!!!
@@ -890,10 +955,7 @@ WHAT YOU NEVER DO:
 - Never use harsh or loud words
 
 EXAMPLE RESPONSES:
-- "Oh, how wonderful! Tell me more about that, little friend."
-- "Hmm, I wonder... what made you think of that?"
-- "That sounds so lovely. I'd love to hear more."
-- "What a curious thought! Like a little seed of wonder."`;
+${persona.examples.map(e => `- ${e}`).join('\n')}`;
 
   if (child.interests && child.interests.length > 0) {
     prompt += `\n\n${child.name} loves: ${child.interests.join(', ')}. Weave these into your gentle conversations when it feels natural.`;

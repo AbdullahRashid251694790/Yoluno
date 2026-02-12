@@ -153,7 +153,7 @@ export function JourneysPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Learning Journeys</h1>
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">Learning Journeys</h1>
           <p className="text-muted-foreground mt-1">
             Track progress and discover new learning adventures.
           </p>
@@ -245,7 +245,7 @@ export function JourneysPage() {
                 </CardContent>
               </Card>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {activeJourneys.map((journey) => {
                   const childId = journey.child_profile_id || journey.childProfileId;
                   const childName = selectedChildId === 'all'
@@ -278,7 +278,7 @@ export function JourneysPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {featuredTemplates.map((template) => (
                       <JourneyTemplateCard
                         key={template.id}
@@ -306,7 +306,7 @@ export function JourneysPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {childTemplates.slice(0, 6).map((template) => (
                       <JourneyTemplateCard
                         key={template.id}
@@ -362,7 +362,7 @@ export function JourneysPage() {
                 </CardContent>
               </Card>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {completedJourneys.map((journey) => {
                   const childId = journey.child_profile_id || journey.childProfileId;
                   const childName = selectedChildId === 'all'

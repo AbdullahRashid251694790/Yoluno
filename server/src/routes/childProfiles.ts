@@ -62,14 +62,14 @@ router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
 // POST /api/child-profiles
 router.post('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { name, age, gender, avatar_id, custom_avatar_url, interests, learning_style, pin_hash } = req.body;
+    const { name, age, gender, birthday, avatar_id, custom_avatar_url, interests, learning_style, pin_hash } = req.body;
     const id = uuidv4();
 
     const result = await queryOne<ChildProfile>(
-      `INSERT INTO child_profiles (id, user_id, name, age, gender, avatar_id, custom_avatar_url, interests, learning_style, pin_hash)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      `INSERT INTO child_profiles (id, user_id, name, age, gender, birthday, avatar_id, custom_avatar_url, interests, learning_style, pin_hash)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
        RETURNING *`,
-      [id, req.user!.id, name, age, gender, avatar_id, custom_avatar_url, interests, learning_style, pin_hash]
+      [id, req.user!.id, name, age, gender, birthday || null, avatar_id, custom_avatar_url, interests, learning_style, pin_hash]
     );
 
     res.status(201).json(result);
@@ -81,7 +81,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
 // PUT /api/child-profiles/:id
 router.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { name, age, gender, avatar_id, custom_avatar_url, interests, learning_style, pin_hash } = req.body;
+    const { name, age, gender, birthday, avatar_id, custom_avatar_url, interests, learning_style, pin_hash } = req.body;
 
     // Verify ownership
     const existing = await queryOne<ChildProfile>(
@@ -98,15 +98,16 @@ router.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
        SET name = COALESCE($1, name),
            age = COALESCE($2, age),
            gender = COALESCE($3, gender),
-           avatar_id = COALESCE($4, avatar_id),
-           custom_avatar_url = COALESCE($5, custom_avatar_url),
-           interests = COALESCE($6, interests),
-           learning_style = COALESCE($7, learning_style),
-           pin_hash = COALESCE($8, pin_hash),
+           birthday = COALESCE($4, birthday),
+           avatar_id = COALESCE($5, avatar_id),
+           custom_avatar_url = COALESCE($6, custom_avatar_url),
+           interests = COALESCE($7, interests),
+           learning_style = COALESCE($8, learning_style),
+           pin_hash = COALESCE($9, pin_hash),
            updated_at = NOW()
-       WHERE id = $9
+       WHERE id = $10
        RETURNING *`,
-      [name, age, gender, avatar_id, custom_avatar_url, interests, learning_style, pin_hash, req.params.id]
+      [name, age, gender, birthday, avatar_id, custom_avatar_url, interests, learning_style, pin_hash, req.params.id]
     );
 
     res.json(result);

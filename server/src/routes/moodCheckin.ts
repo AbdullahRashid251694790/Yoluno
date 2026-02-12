@@ -9,6 +9,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { query, queryOne } from '../config/database.js';
 import { requireAuth } from '../middleware/auth.js';
 import { AppError } from '../middleware/errorHandler.js';
+import { logActivityForChild } from '../helpers/gamification.js';
 
 const router = Router();
 
@@ -16,7 +17,7 @@ const router = Router();
 router.use(requireAuth);
 
 // Types
-type MoodType = 'happy' | 'sad' | 'angry' | 'scared' | 'calm';
+type MoodType = 'happy' | 'sad' | 'angry' | 'scared' | 'calm' | 'worried' | 'tired' | 'excited';
 
 interface MoodCheckin {
   id: string;
@@ -70,9 +71,9 @@ router.post(
       const { mood, luno_response, suggested_activity } = req.body;
 
       // Validate mood
-      const validMoods: MoodType[] = ['happy', 'sad', 'angry', 'scared', 'calm'];
+      const validMoods: MoodType[] = ['happy', 'sad', 'angry', 'scared', 'calm', 'worried', 'tired', 'excited'];
       if (!mood || !validMoods.includes(mood)) {
-        throw new AppError(400, 'Invalid mood. Must be one of: happy, sad, angry, scared, calm');
+        throw new AppError(400, 'Invalid mood. Must be one of: happy, sad, angry, scared, calm, worried, tired, excited');
       }
 
       // Verify child belongs to user
@@ -87,6 +88,11 @@ router.post(
          RETURNING id, child_profile_id, mood, luno_response, suggested_activity, session_id, created_at::text`,
         [childId, mood, luno_response || null, suggested_activity || null]
       );
+
+      // Log gamification activity (non-blocking)
+      logActivityForChild(childId, 'mood_checkin', { mood }).catch((err) => {
+        console.error('Failed to log mood_checkin activity:', err);
+      });
 
       res.status(201).json(result);
     } catch (error) {
@@ -279,6 +285,9 @@ router.get(
           angry: 0,
           scared: 0,
           calm: 0,
+          worried: 0,
+          tired: 0,
+          excited: 0,
         };
         row.moods.forEach((mood) => {
           moodCounts[mood]++;

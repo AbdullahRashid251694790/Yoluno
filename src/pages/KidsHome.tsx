@@ -11,6 +11,7 @@ import { useChild } from '@/contexts/ChildContext';
 import { useChildProfile } from '@/hooks/queries';
 import { useGamificationStats, useChildBadges } from '@/hooks/queries/useGamification';
 import { useRewardCount } from '@/hooks/queries/useJourneyRewards';
+import { useChatBuddy } from '@/hooks/queries/useBuddyChat';
 import { ErrorState } from '@/components/shared';
 import { ChatAvatar } from '@/components/chat/ChatAvatar';
 import { Button } from '@/components/ui/button';
@@ -114,6 +115,8 @@ export function KidsHomePage() {
   const { data: gamificationData } = useGamificationStats(childId);
   const { data: badgesData } = useChildBadges(childId);
   const { data: rewardCountData } = useRewardCount(childId);
+  const { data: buddy } = useChatBuddy(childId);
+  const buddyName = buddy?.buddy_name || 'Luno';
 
   const greeting = useMemo(() => getGreeting(), []);
   const buddyExpression = useMemo(() => getBuddyExpression(), []);
@@ -219,7 +222,7 @@ export function KidsHomePage() {
                 expression={buddyExpression}
                 size="xl"
                 showName
-                buddyName="Luno"
+                buddyName={buddyName}
               />
 
               <p className="mt-4 text-lg text-muted-foreground">

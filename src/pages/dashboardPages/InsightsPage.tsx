@@ -90,7 +90,7 @@ export function InsightsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Insights & Analytics</h1>
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">Insights & Analytics</h1>
           <p className="text-muted-foreground mt-1">
             Track your children's learning progress and activities.
           </p>
@@ -115,7 +115,7 @@ export function InsightsPage() {
       </div>
 
       {/* Overview Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
@@ -453,7 +453,7 @@ export function InsightsPage() {
           </Card>
 
           {/* Journey Stats Summary */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">

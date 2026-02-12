@@ -1,4 +1,4 @@
-import { apiClient, setTokens, clearTokens, getRefreshToken } from './client';
+import { apiClient, setTokens, clearTokens } from './client';
 
 export interface User {
   id: string;
@@ -9,7 +9,6 @@ export interface User {
 export interface AuthResponse {
   user: User;
   accessToken: string;
-  refreshToken: string;
 }
 
 export interface SessionResponse {
@@ -23,8 +22,8 @@ export async function register(email: string, password: string): Promise<AuthRes
     password,
   });
 
-  const { accessToken, refreshToken } = response.data;
-  setTokens(accessToken, refreshToken);
+  const { accessToken } = response.data;
+  setTokens(accessToken);
 
   return response.data;
 }
@@ -36,18 +35,16 @@ export async function login(email: string, password: string): Promise<AuthRespon
     password,
   });
 
-  const { accessToken, refreshToken } = response.data;
-  setTokens(accessToken, refreshToken);
+  const { accessToken } = response.data;
+  setTokens(accessToken);
 
   return response.data;
 }
 
 // Logout
 export async function logout(): Promise<void> {
-  const refreshToken = getRefreshToken();
-
   try {
-    await apiClient.post('/auth/logout', { refreshToken });
+    await apiClient.post('/auth/logout');
   } finally {
     clearTokens();
   }
@@ -84,9 +81,4 @@ export async function forgotPassword(email: string): Promise<void> {
 // Reset password with token
 export async function resetPassword(token: string, password: string): Promise<void> {
   await apiClient.post('/auth/reset-password', { token, password });
-}
-
-// Check if user is authenticated (has valid tokens)
-export function isAuthenticated(): boolean {
-  return !!localStorage.getItem('access_token');
 }

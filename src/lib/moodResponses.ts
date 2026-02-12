@@ -214,6 +214,117 @@ export const moodConfigs: Record<MoodType, MoodConfig> = {
       },
     ],
   },
+
+  worried: {
+    emoji: '😟',
+    label: 'Worried',
+    color: 'text-purple-600',
+    bgGradient: 'from-purple-200 to-violet-200',
+    responses: [
+      "It's okay to feel worried. Let's talk about it together.",
+      "Worrying means you care. I'm here to help you feel better!",
+      "Everyone worries sometimes. You're not alone - I'm right here!",
+      "Let's take it one step at a time. What's on your mind?",
+      "I understand that feeling. Want to do something calming together?",
+    ],
+    activities: [
+      {
+        id: 'worried-chat',
+        title: 'Share Your Thoughts',
+        description: "Tell me what's on your mind",
+        emoji: '💭',
+        path: 'chat',
+      },
+      {
+        id: 'worried-story',
+        title: 'Comfort Story',
+        description: 'A story to ease your worries',
+        emoji: '🌟',
+        path: 'stories',
+      },
+      {
+        id: 'worried-journey',
+        title: 'Mindfulness Journey',
+        description: 'Breathing and relaxation',
+        emoji: '🧘',
+        path: 'journeys',
+      },
+    ],
+  },
+
+  tired: {
+    emoji: '😴',
+    label: 'Tired',
+    color: 'text-indigo-600',
+    bgGradient: 'from-indigo-200 to-blue-200',
+    responses: [
+      "Feeling sleepy? That's okay! Let's do something gentle.",
+      "Even superheroes need rest. Want to do something cozy?",
+      "Being tired means you've been busy! Time for something calm.",
+      "Let's take it easy today. Something gentle sounds perfect.",
+      "Rest is important! How about a quiet activity?",
+    ],
+    activities: [
+      {
+        id: 'tired-story',
+        title: 'Bedtime Story',
+        description: 'A gentle, cozy tale',
+        emoji: '🌙',
+        path: 'stories',
+      },
+      {
+        id: 'tired-chat',
+        title: 'Quiet Chat',
+        description: 'A peaceful conversation',
+        emoji: '☁️',
+        path: 'chat',
+      },
+      {
+        id: 'tired-family',
+        title: 'Family Time',
+        description: 'See your family photos',
+        emoji: '🏡',
+        path: 'family',
+      },
+    ],
+  },
+
+  excited: {
+    emoji: '🤩',
+    label: 'Excited',
+    color: 'text-orange-600',
+    bgGradient: 'from-orange-200 to-yellow-200',
+    responses: [
+      "Woohoo! That excited energy is awesome!",
+      "I love your enthusiasm! Let's channel that energy!",
+      "How exciting! What should we do with all that energy?",
+      "Amazing! Your excitement is contagious!",
+      "Yes! Let's do something awesome with that energy!",
+    ],
+    activities: [
+      {
+        id: 'excited-story',
+        title: 'Epic Story',
+        description: 'Create an action-packed adventure!',
+        emoji: '🚀',
+        path: 'stories',
+      },
+      {
+        id: 'excited-journey',
+        title: 'New Challenge',
+        description: 'Take on something exciting!',
+        emoji: '🏆',
+        path: 'journeys',
+      },
+      {
+        id: 'excited-chat',
+        title: 'Share the News!',
+        description: "Tell me what's exciting!",
+        emoji: '🎉',
+        path: 'chat',
+      },
+    ],
+  },
 };
 
 /**
@@ -243,7 +354,7 @@ export function getMoodConfig(mood: MoodType): MoodConfig {
  * Get all mood types for rendering mood selection buttons
  */
 export function getAllMoods(): MoodType[] {
-  return ['happy', 'sad', 'angry', 'scared', 'calm'];
+  return ['happy', 'sad', 'angry', 'scared', 'calm', 'worried', 'tired', 'excited'];
 }
 
 /**

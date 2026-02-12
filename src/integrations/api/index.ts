@@ -2,9 +2,9 @@
 export {
   apiClient,
   getAccessToken,
-  getRefreshToken,
   setTokens,
   clearTokens,
+  isAuthenticated,
   isApiError,
   getErrorMessage,
   getUploadUrl,
@@ -19,7 +19,6 @@ export {
   updatePassword,
   forgotPassword,
   resetPassword,
-  isAuthenticated,
 } from './auth';
 export type { User, AuthResponse, SessionResponse } from './auth';
 

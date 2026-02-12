@@ -5,7 +5,7 @@
  */
 
 import { useState } from 'react';
-import { useRecentStories, useToggleFavorite } from '@/hooks/queries';
+import { useRecentStories, useToggleFavorite, useDeleteStory } from '@/hooks/queries';
 import { useAuth } from '@/contexts/AuthContext';
 import { StoryCard } from './StoryCard';
 import { QueryState } from '@/components/shared/feedback/QueryState';
@@ -16,6 +16,7 @@ export function StoryList() {
   const { user } = useAuth();
   const { data: stories, isLoading, isError, error, refetch } = useRecentStories(user?.id);
   const toggleFavorite = useToggleFavorite();
+  const deleteStory = useDeleteStory();
   const [activeTab, setActiveTab] = useState('all');
 
   const filteredStories = stories?.filter((story) => {
@@ -67,6 +68,11 @@ export function StoryList() {
                     onToggleFavorite={() =>
                       handleToggleFavorite(story.id, story.is_favorite)
                     }
+                    onDelete={() => {
+                      if (window.confirm('Are you sure you want to delete this story?')) {
+                        deleteStory.mutate(story.id);
+                      }
+                    }}
                   />
                 ))}
               </div>

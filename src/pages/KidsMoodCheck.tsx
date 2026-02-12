@@ -28,6 +28,7 @@ import type { MoodType } from '@/services/moodCheckin';
 import type { AvatarExpression } from '@/types/domain';
 import { cn } from '@/lib/utils';
 import { ArrowLeft, Sparkles } from 'lucide-react';
+import { useChatBuddy } from '@/hooks/queries/useBuddyChat';
 
 // Map mood to avatar expression
 const moodToExpression: Record<MoodType, AvatarExpression> = {
@@ -36,6 +37,9 @@ const moodToExpression: Record<MoodType, AvatarExpression> = {
   angry: 'caring',
   scared: 'caring',
   calm: 'neutral',
+  worried: 'caring',
+  tired: 'caring',
+  excited: 'happy',
 };
 
 export function KidsMoodCheckPage() {
@@ -53,6 +57,8 @@ export function KidsMoodCheckPage() {
   const { data: child, isLoading: childLoading, isError: childError } = useChildProfile(childId);
   const { data: todaysMood, isLoading: moodLoading } = useTodaysMood(childId);
   const logMoodMutation = useLogMoodCheckin();
+  const { data: buddy } = useChatBuddy(childId);
+  const buddyName = buddy?.buddy_name || 'Luno';
 
   // If already checked in today, redirect to home
   useEffect(() => {
@@ -199,7 +205,7 @@ export function KidsMoodCheckPage() {
             expression={selectedMood ? moodToExpression[selectedMood] : 'curious'}
             size="xl"
             showName
-            buddyName="Luno"
+            buddyName={buddyName}
           />
 
           <h1 className="text-2xl font-display font-bold text-foreground mt-4">

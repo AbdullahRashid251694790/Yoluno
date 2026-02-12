@@ -2,9 +2,10 @@
  * Dashboard Page
  *
  * Main parent dashboard with routing and navigation.
- * Refactored to use separate page components for SRP compliance.
+ * Responsive: collapsible sidebar on mobile, fixed on desktop.
  */
 
+import { useState } from 'react';
 import { Routes, Route, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSafetyReports } from '@/hooks/queries/useBuddyChat';
@@ -39,6 +40,8 @@ import {
   Tag,
   Library,
   Mic,
+  Menu,
+  X,
 } from 'lucide-react';
 import yolunoLogo from '@/assets/yoluno-logo.svg';
 
@@ -60,6 +63,7 @@ export function DashboardPage() {
   const { user, signOut } = useAuth();
   const location = useLocation();
   const { data: safetyReports = [] } = useSafetyReports(user?.id, true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const unreadAlerts = safetyReports.length;
 
@@ -68,19 +72,59 @@ export function DashboardPage() {
       {/* Real-time safety alerts */}
       <SafetyAlertNotification />
 
+      {/* Mobile header */}
+      <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between border-b bg-white px-4 py-3 shadow-sm lg:hidden">
+        <button
+          onClick={() => setSidebarOpen(true)}
+          className="rounded-md p-2 hover:bg-gray-100"
+          aria-label="Open menu"
+        >
+          <Menu className="h-6 w-6" />
+        </button>
+        <Link to="/dashboard">
+          <img src={yolunoLogo} alt="Yoluno" className="h-8" />
+        </Link>
+        <NotificationBell />
+      </header>
+
+      {/* Backdrop */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <aside className="fixed left-0 top-0 z-40 h-screen w-64 border-r bg-white shadow-sm">
+      <aside
+        className={cn(
+          'fixed inset-y-0 left-0 z-50 w-64 transform border-r bg-white shadow-sm transition-transform duration-200 ease-in-out',
+          'lg:translate-x-0',
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        )}
+      >
         <div className="flex h-full flex-col">
           {/* Logo and Notifications */}
           <div className="flex items-center justify-between border-b px-6 py-4">
             <Link to="/dashboard">
               <img src={yolunoLogo} alt="Yoluno" className="h-9" />
             </Link>
-            <NotificationBell />
+            <div className="flex items-center gap-2">
+              <span className="hidden lg:block">
+                <NotificationBell />
+              </span>
+              <button
+                onClick={() => setSidebarOpen(false)}
+                className="rounded-md p-1 hover:bg-gray-100 lg:hidden"
+                aria-label="Close menu"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 space-y-1 px-3 py-4">
+          <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
             {navItems.map((item) => {
               const isActive =
                 item.path === '/dashboard'
@@ -90,7 +134,11 @@ export function DashboardPage() {
               const showBadge = item.path === '/dashboard/safety' && unreadAlerts > 0;
 
               return (
-                <Link key={item.path} to={item.path}>
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  onClick={() => setSidebarOpen(false)}
+                >
                   <Button
                     variant={isActive ? 'secondary' : 'ghost'}
                     className={cn('w-full justify-start gap-3', isActive && 'bg-secondary')}
@@ -126,8 +174,8 @@ export function DashboardPage() {
       </aside>
 
       {/* Main content */}
-      <main className="ml-64 flex-1 p-8">
-        <div className="max-w-6xl mx-auto">
+      <main className="flex-1 pt-16 lg:pt-0 lg:ml-64">
+        <div className="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8">
           <Routes>
             <Route path="/" element={<DashboardHome />} />
             <Route path="/children" element={<ChildrenPage />} />

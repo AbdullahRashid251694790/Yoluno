@@ -2,6 +2,8 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import cookieParser from 'cookie-parser';
+import rateLimit from 'express-rate-limit';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import passport from 'passport';
@@ -10,6 +12,7 @@ import { configurePassport } from './config/passport.js';
 import { pool, testConnection } from './config/database.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { requestLogger } from './middleware/requestLogger.js';
+import { responseWrapper } from './middleware/responseWrapper.js';
 import { setupSocketHandlers } from './socket/index.js';
 
 // Routes
@@ -38,6 +41,7 @@ import journeyRemindersRoutes from './routes/journeyReminders.js';
 import journeyRewardsRoutes from './routes/journeyRewards.js';
 import notificationsRoutes from './routes/notifications.js';
 import moodCheckinRoutes from './routes/moodCheckin.js';
+import dataExportRoutes from './routes/dataExport.js';
 
 const app = express();
 const httpServer = createServer(app);
@@ -62,6 +66,7 @@ app.use(cors({
   origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
   credentials: true,
 }));
+app.use(cookieParser());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(requestLogger);
@@ -69,6 +74,9 @@ app.use(requestLogger);
 // Passport
 configurePassport(passport);
 app.use(passport.initialize());
+
+// Response wrapper for consistent API format
+app.use('/api', responseWrapper);
 
 // Static files for uploads
 const uploadDir = process.env.UPLOAD_DIR || './uploads';
@@ -88,6 +96,29 @@ app.get('/', (req, res) => {
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
+
+// Rate limiting for auth endpoints
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 20, // 20 requests per window
+  message: { error: 'Too many requests, please try again later' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const strictAuthLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // 5 requests per window for sensitive endpoints
+  message: { error: 'Too many requests, please try again later' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Apply rate limiters
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/register', authLimiter);
+app.use('/api/auth/forgot-password', strictAuthLimiter);
+app.use('/api/auth/reset-password', strictAuthLimiter);
 
 // API Routes
 app.use('/api/auth', authRoutes);
@@ -115,6 +146,7 @@ app.use('/api/journey-reminders', journeyRemindersRoutes);
 app.use('/api/journey-rewards', journeyRewardsRoutes);
 app.use('/api/notifications', notificationsRoutes);
 app.use('/api/mood-checkin', moodCheckinRoutes);
+app.use('/api/data-export', dataExportRoutes);
 
 // Error handler
 app.use(errorHandler);

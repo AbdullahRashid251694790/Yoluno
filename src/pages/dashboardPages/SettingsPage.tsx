@@ -1,28 +1,112 @@
 /**
  * Settings Page
  *
- * Page for managing account and preferences.
+ * Page for managing account, password, data export, and account deletion.
  */
 
+import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { apiClient, getErrorMessage } from '@/integrations/api/client';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { LogOut } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { LogOut, Download, Trash2, Key } from 'lucide-react';
+import { toast } from 'sonner';
 
 export function SettingsPage() {
-  const { user, signOut } = useAuth();
+  const { user, signOut, updatePassword } = useAuth();
+
+  // Password change state
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+
+  // Account deletion state
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deletePassword, setDeletePassword] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // Data export state
+  const [isExporting, setIsExporting] = useState(false);
+
+  async function handlePasswordChange(e: React.FormEvent) {
+    e.preventDefault();
+
+    if (newPassword.length < 8) {
+      toast.error('New password must be at least 8 characters');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      toast.error('Passwords do not match');
+      return;
+    }
+
+    setIsChangingPassword(true);
+    try {
+      await updatePassword(currentPassword, newPassword);
+      toast.success('Password updated. Please sign in again.');
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    } finally {
+      setIsChangingPassword(false);
+    }
+  }
+
+  async function handleDeleteAccount() {
+    setIsDeleting(true);
+    try {
+      await apiClient.delete('/auth/account', { data: { password: deletePassword } });
+      toast.success('Account deleted');
+      signOut();
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    } finally {
+      setIsDeleting(false);
+    }
+  }
+
+  async function handleExportData() {
+    setIsExporting(true);
+    try {
+      const response = await apiClient.get('/data-export', { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `yoluno-data-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      toast.success('Data exported successfully');
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    } finally {
+      setIsExporting(false);
+    }
+  }
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Settings</h1>
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">Settings</h1>
         <p className="text-muted-foreground mt-1">
           Manage your account and preferences.
         </p>
       </div>
 
       <div className="grid gap-6 max-w-2xl">
+        {/* Account Info */}
         <Card>
           <CardHeader>
             <CardTitle>Account</CardTitle>
@@ -40,6 +124,57 @@ export function SettingsPage() {
           </CardContent>
         </Card>
 
+        {/* Change Password */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Key className="h-5 w-5" />
+              Change Password
+            </CardTitle>
+            <CardDescription>Update your account password</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handlePasswordChange} className="space-y-4">
+              <div>
+                <label className="text-sm font-medium" htmlFor="currentPassword">Current Password</label>
+                <Input
+                  id="currentPassword"
+                  type="password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  required
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium" htmlFor="newPassword">New Password</label>
+                <Input
+                  id="newPassword"
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="At least 8 characters"
+                  required
+                  minLength={8}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium" htmlFor="confirmNewPassword">Confirm New Password</label>
+                <Input
+                  id="confirmNewPassword"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                />
+              </div>
+              <Button type="submit" disabled={isChangingPassword}>
+                {isChangingPassword ? 'Updating...' : 'Update Password'}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+
+        {/* Notifications */}
         <Card>
           <CardHeader>
             <CardTitle>Notifications</CardTitle>
@@ -58,19 +193,83 @@ export function SettingsPage() {
           </CardContent>
         </Card>
 
+        {/* Data Export */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Download className="h-5 w-5" />
+              Export Data
+            </CardTitle>
+            <CardDescription>Download all your data as JSON</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button variant="outline" onClick={handleExportData} disabled={isExporting}>
+              <Download className="h-4 w-4 mr-2" />
+              {isExporting ? 'Exporting...' : 'Export My Data'}
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Danger Zone */}
         <Card className="border-destructive/20">
           <CardHeader>
             <CardTitle className="text-destructive">Danger Zone</CardTitle>
             <CardDescription>Irreversible account actions</CardDescription>
           </CardHeader>
-          <CardContent>
-            <Button variant="destructive" onClick={signOut}>
+          <CardContent className="space-y-3">
+            <Button variant="outline" onClick={signOut}>
               <LogOut className="h-4 w-4 mr-2" />
               Sign Out
             </Button>
+            <div>
+              <Button variant="destructive" onClick={() => setShowDeleteDialog(true)}>
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete Account
+              </Button>
+              <p className="text-xs text-muted-foreground mt-1">
+                This will permanently delete your account and all associated data.
+              </p>
+            </div>
           </CardContent>
         </Card>
       </div>
+
+      {/* Delete Account Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Account</DialogTitle>
+            <DialogDescription>
+              This action cannot be undone. All your data including children profiles,
+              stories, journeys, and chat history will be permanently deleted.
+            </DialogDescription>
+          </DialogHeader>
+          <div>
+            <label className="text-sm font-medium" htmlFor="deletePassword">
+              Enter your password to confirm
+            </label>
+            <Input
+              id="deletePassword"
+              type="password"
+              value={deletePassword}
+              onChange={(e) => setDeletePassword(e.target.value)}
+              placeholder="Your password"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteAccount}
+              disabled={!deletePassword || isDeleting}
+            >
+              {isDeleting ? 'Deleting...' : 'Delete My Account'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

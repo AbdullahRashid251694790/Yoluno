@@ -20,7 +20,6 @@ import {
   getSession,
   forgotPassword,
   updatePassword as apiUpdatePassword,
-  isAuthenticated as checkIsAuthenticated,
   type User,
 } from '@/integrations/api';
 import {
@@ -57,19 +56,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
     isAuthenticated: false,
   });
 
-  // Check for existing session on mount
+  // Check for existing session on mount (uses httpOnly cookie for refresh)
   useEffect(() => {
     async function checkSession() {
-      // Quick check for tokens
-      if (!checkIsAuthenticated()) {
-        setState({
-          user: null,
-          isLoading: false,
-          isAuthenticated: false,
-        });
-        return;
-      }
-
       try {
         const session = await getSession();
         if (session?.user) {
