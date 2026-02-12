@@ -59,9 +59,14 @@ export function KidsStoryCreator({ childId, onClose, onSuccess }: KidsStoryCreat
       setGeneratedStoryId(story.id || null);
       setStep('success');
       toast.success('Your story is ready!');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Story generation failed:', error);
-      toast.error('Oops! Something went wrong. Try again!');
+      const message = error?.message || '';
+      if (message.includes('limit') || message.includes('429')) {
+        toast.error("You've used all 3 stories this month! Come back next month.");
+      } else {
+        toast.error('Oops! Something went wrong. Try again!');
+      }
       setStep('theme');
     }
   };

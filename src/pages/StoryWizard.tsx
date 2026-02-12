@@ -223,11 +223,18 @@ export function StoryWizardPage() {
           description: `"${story.title}" has been saved to your library!`,
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to generate story:', error);
-      toast.error('Failed to generate story', {
-        description: 'Please try again.',
-      });
+      const message = error?.message || '';
+      if (message.includes('limit') || message.includes('429')) {
+        toast.error('Story limit reached', {
+          description: 'You can create up to 3 stories per month per child.',
+        });
+      } else {
+        toast.error('Failed to generate story', {
+          description: 'Please try again.',
+        });
+      }
     } finally {
       setIsGenerating(false);
     }
