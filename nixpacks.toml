@@ -5,7 +5,7 @@ providers = ["node"]
 cmds = ["npm install --legacy-peer-deps"]
 
 [phases.build]
-cmds = ["npm run build"]
+cmds = ["rm -rf node_modules/.vite && npm run build"]
 
 [start]
 cmd = "npx serve dist -s -l ${PORT:-3000}"
