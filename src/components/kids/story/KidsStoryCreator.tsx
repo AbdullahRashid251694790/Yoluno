@@ -53,7 +53,7 @@ export function KidsStoryCreator({ childId, onClose, onSuccess }: KidsStoryCreat
 
       // Invalidate stories cache
       await queryClient.invalidateQueries({
-        queryKey: queryKeys.stories.byChild(childId),
+        queryKey: queryKeys.stories.listByChild(childId),
       });
 
       setGeneratedStoryId(story.id || null);

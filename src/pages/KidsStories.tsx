@@ -247,7 +247,7 @@ export function KidsStoriesPage() {
           }
           theme={selectedStory.theme}
           mood={(selectedStory as { mood?: string }).mood}
-          narratorVoice={(selectedStory as { narrator_voice?: string }).narrator_voice || 'nova'}
+          initialVoice={(selectedStory as { narrator_voice?: string }).narrator_voice || 'nova'}
           onClose={handleCloseReader}
         />
       )}
