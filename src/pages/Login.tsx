@@ -91,6 +91,11 @@ export function LoginPage() {
                 </button>
               </div>
             </div>
+            <div className="text-right">
+              <Link to="/forgot-password" className="text-sm text-cyan hover:underline">
+                Forgot password?
+              </Link>
+            </div>
           </CardContent>
           <CardFooter className="flex flex-col gap-4">
             <Button type="submit" className="w-full" disabled={isLoading}>

@@ -26,6 +26,7 @@ import { KidsFamilyPage } from '@/pages/KidsFamily';
 import { KidsRewardGalleryPage } from '@/pages/KidsRewardGallery';
 import { KidsMoodCheckPage } from '@/pages/KidsMoodCheck';
 import { LandingPage } from '@/pages/Landing';
+import { ForgotPasswordPage } from '@/pages/ForgotPassword';
 import { ResetPasswordPage } from '@/pages/ResetPassword';
 import { KidsBadgesPage } from '@/pages/KidsBadges';
 import { NotFoundPage } from '@/pages/NotFound';
@@ -103,6 +104,7 @@ export default function App() {
                 />
 
                 {/* Public (no redirect) routes */}
+                <Route path="/forgot-password" element={<ForgotPasswordPage />} />
                 <Route path="/reset-password" element={<ResetPasswordPage />} />
 
                 {/* Protected routes */}
