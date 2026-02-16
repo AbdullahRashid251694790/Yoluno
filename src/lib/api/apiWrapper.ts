@@ -134,6 +134,5 @@ export async function apiPostFormData<T>(
   return apiRequest<T>('post', endpoint, context, {
     ...options,
     data: formData,
-    headers: { 'Content-Type': 'multipart/form-data', ...options.headers },
   });
 }
