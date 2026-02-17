@@ -183,7 +183,7 @@ function mapJourneyWithSteps(
     status: data.status as JourneyWithSteps['status'],
     templateId: data.template_id ?? undefined,
     childProfileId: data.child_profile_id,
-    currentStep: completedSteps + 1,
+    currentStep: completedSteps,
     totalSteps: steps.length,
     steps,
     progress: calculateProgress(steps),

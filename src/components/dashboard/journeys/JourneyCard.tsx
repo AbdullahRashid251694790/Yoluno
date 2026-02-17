@@ -82,13 +82,13 @@ export function JourneyCard({
   const StatusIcon = statusStyle.icon;
 
   // Calculate progress percentage (capped at 100%)
-  const rawProgress = journey.totalSteps && journey.currentStep
-    ? Math.round((journey.currentStep / journey.totalSteps) * 100)
+  const rawProgress = journey.totalSteps
+    ? Math.round(((journey.currentStep || 0) / journey.totalSteps) * 100)
     : journey.progress || 0;
   const progress = Math.min(rawProgress, 100);
 
-  // Cap display step at total steps
-  const displayStep = Math.min(journey.currentStep || 1, journey.totalSteps || 1);
+  // Show which step you're currently on (completed + 1, capped at total)
+  const displayStep = Math.min((journey.currentStep || 0) + 1, journey.totalSteps || 1);
 
   const isCompleted = journey.status === 'completed';
   const isPaused = journey.status === 'paused';

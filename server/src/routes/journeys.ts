@@ -198,6 +198,23 @@ router.put('/:journeyId/steps/:stepId', async (req: Request, res: Response, next
       throw new AppError(404, 'Journey step not found');
     }
 
+    // Auto-complete journey if all steps are done
+    if (progress === 100) {
+      const remaining = await queryOne<{ count: string }>(
+        `SELECT COUNT(*) as count FROM journey_steps
+         WHERE journey_id = $1 AND (progress IS NULL OR progress < 100)`,
+        [req.params.journeyId]
+      );
+
+      if (parseInt(remaining?.count || '0', 10) === 0) {
+        await query(
+          `UPDATE journeys SET status = 'completed', completed_at = NOW(), progress = 100
+           WHERE id = $1`,
+          [req.params.journeyId]
+        );
+      }
+    }
+
     res.json(result);
   } catch (error) {
     next(error);

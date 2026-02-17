@@ -164,7 +164,7 @@ export function JourneyManagementPanel() {
           <div className="flex items-center gap-1 mt-2 text-xs text-muted-foreground">
             <Clock className="h-3.5 w-3.5" />
             <span>
-              {journey.currentStep || 1} of {journey.totalSteps} steps
+              {journey.currentStep || 0} of {journey.totalSteps} steps
             </span>
           </div>
         </CardContent>
