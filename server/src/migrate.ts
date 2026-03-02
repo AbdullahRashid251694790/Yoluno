@@ -1,13 +1,24 @@
-import 'dotenv/config';
+import dotenv from 'dotenv';
+import { existsSync } from 'fs';
+import { resolve } from 'path';
+
+const envLocalPath = resolve(process.cwd(), '.env.local');
+if (existsSync(envLocalPath)) {
+  dotenv.config({ path: envLocalPath, override: true });
+} else {
+  dotenv.config();
+}
+
 import fs from 'fs/promises';
 import path from 'path';
-import { pool } from './config/database.js';
+import { getPool } from './config/database.js';
 
 const MIGRATIONS_DIR = path.join(process.cwd(), 'migrations');
 
 async function runMigrations() {
   console.log('Starting database migrations...');
 
+  const pool = getPool();
   const client = await pool.connect();
 
   try {
@@ -15,9 +26,9 @@ async function runMigrations() {
     await client.query(`
       CREATE TABLE IF NOT EXISTS _migrations (
         id serial PRIMARY KEY,
-        name text NOT NULL UNIQUE,
-        executed_at timestamptz NOT NULL DEFAULT now()
-      )
+        name text NOT NULL UNIQUE, 
+        executed_at timestamptz NOT  NULL DEFAULT now()
+      ) 
     `);
 
     // Get executed migrations

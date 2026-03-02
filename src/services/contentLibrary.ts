@@ -10,7 +10,7 @@ import { apiGet, apiPost, apiPut, apiDelete } from '@/lib/api';
 const CONTEXT = 'contentLibrary';
 
 // Types
-export type ContentType = 'story' | 'chat_snippet' | 'journey' | 'note';
+export type ContentType = 'story' | 'chat_snippet' | 'journey' | 'note' | 'voice';
 
 export interface ContentItem {
   id: string;

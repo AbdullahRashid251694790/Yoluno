@@ -1,17 +1,27 @@
 import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
-const s3Client = new S3Client({
-  endpoint: process.env.S3_ENDPOINT,
-  region: process.env.S3_REGION || 'auto',
-  credentials: {
-    accessKeyId: process.env.S3_ACCESS_KEY_ID || '',
-    secretAccessKey: process.env.S3_SECRET_ACCESS_KEY || '',
-  },
-  forcePathStyle: true,
-});
+// Lazy-initialize to avoid ESM import hoisting issues with dotenv
+let _s3Client: S3Client | null = null;
 
-const bucket = process.env.S3_BUCKET || '';
+function getS3Client(): S3Client {
+  if (!_s3Client) {
+    _s3Client = new S3Client({
+      endpoint: process.env.S3_ENDPOINT,
+      region: process.env.S3_REGION || 'auto',
+      credentials: {
+        accessKeyId: process.env.S3_ACCESS_KEY_ID || '',
+        secretAccessKey: process.env.S3_SECRET_ACCESS_KEY || '',
+      },
+      forcePathStyle: true,
+    });
+  }
+  return _s3Client;
+}
+
+function getBucket(): string {
+  return process.env.S3_BUCKET || '';
+}
 
 export async function uploadToS3(
   key: string,
@@ -19,13 +29,13 @@ export async function uploadToS3(
   contentType: string
 ): Promise<string> {
   const command = new PutObjectCommand({
-    Bucket: bucket,
+    Bucket: getBucket(),
     Key: key,
     Body: body,
     ContentType: contentType,
   });
 
-  await s3Client.send(command);
+  await getS3Client().send(command);
 
   // Return the S3 key (will be converted to signed URL when accessed)
   return key;
@@ -33,20 +43,20 @@ export async function uploadToS3(
 
 export async function getSignedDownloadUrl(key: string, expiresIn = 3600): Promise<string> {
   const command = new GetObjectCommand({
-    Bucket: bucket,
+    Bucket: getBucket(),
     Key: key,
   });
 
-  return getSignedUrl(s3Client, command, { expiresIn });
+  return getSignedUrl(getS3Client(), command, { expiresIn });
 }
 
 export async function deleteFromS3(key: string): Promise<void> {
   const command = new DeleteObjectCommand({
-    Bucket: bucket,
+    Bucket: getBucket(),
     Key: key,
   });
 
-  await s3Client.send(command);
+  await getS3Client().send(command);
 }
 
 export function isS3Key(value: string): boolean {

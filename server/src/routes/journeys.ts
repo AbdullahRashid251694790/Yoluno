@@ -266,7 +266,7 @@ router.post('/custom', async (req: Request, res: Response, next: NextFunction) =
     const createdSteps: JourneyStep[] = [];
     for (let i = 0; i < steps.length; i++) {
       const step = await queryOne<JourneyStep>(
-        `INSERT INTO journey_steps (id, journey_id, type, description, step_order, progress)
+        `INSERT INTO journey_steps (id, journey_id, title, description, step_order, progress)
          VALUES ($1, $2, $3, $4, $5, 0)
          RETURNING *`,
         [uuidv4(), journeyId, steps[i].title, steps[i].description || null, i + 1]
@@ -311,7 +311,7 @@ router.post('/:id/steps', async (req: Request, res: Response, next: NextFunction
     }
 
     const step = await queryOne<JourneyStep>(
-      `INSERT INTO journey_steps (id, journey_id, type, description, step_order, progress)
+      `INSERT INTO journey_steps (id, journey_id, title, description, step_order, progress)
        VALUES ($1, $2, $3, $4, $5, 0)
        RETURNING *`,
       [uuidv4(), req.params.id, title, description || null, order]

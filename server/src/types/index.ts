@@ -120,7 +120,9 @@ export interface Journey {
 export interface JourneyStep {
   id: string;
   journey_id: string;
-  type: string;
+  type: string | null;
+  title: string | null;
+  description: string | null;
   step_order: number;
   content?: Record<string, unknown>;
   progress: number;

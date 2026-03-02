@@ -5,9 +5,6 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 // Create axios instance
 export const apiClient = axios.create({
   baseURL: API_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
   withCredentials: true,
   timeout: 30000, // 30 second timeout to prevent infinite hangs
 });
@@ -34,23 +31,66 @@ export function isAuthenticated(): boolean {
 
 // Flag to prevent multiple refresh attempts
 let isRefreshing = false;
-let refreshSubscribers: ((token: string) => void)[] = [];
+let refreshPromise: Promise<string> | null = null;
+let refreshSubscribers: { resolve: (token: string) => void; reject: (err: unknown) => void }[] = [];
 
-function subscribeTokenRefresh(cb: (token: string) => void) {
-  refreshSubscribers.push(cb);
+function subscribeTokenRefresh(resolve: (token: string) => void, reject: (err: unknown) => void) {
+  refreshSubscribers.push({ resolve, reject });
 }
 
 function onTokenRefreshed(token: string) {
-  refreshSubscribers.forEach((cb) => cb(token));
+  refreshSubscribers.forEach((s) => s.resolve(token));
   refreshSubscribers = [];
 }
 
-// Request interceptor - add auth token
+function onRefreshFailed(err: unknown) {
+  refreshSubscribers.forEach((s) => s.reject(err));
+  refreshSubscribers = [];
+}
+
+/**
+ * Attempt to refresh the access token using the httpOnly refresh cookie.
+ * Returns the new access token, or throws if refresh fails.
+ * Deduplicates concurrent calls — only one refresh request is in-flight at a time.
+ */
+export async function refreshAccessToken(): Promise<string> {
+  if (isRefreshing && refreshPromise) {
+    return refreshPromise;
+  }
+
+  isRefreshing = true;
+  refreshPromise = (async () => {
+    try {
+      const response = await axios.post(`${API_URL}/auth/refresh`, {}, {
+        withCredentials: true,
+      });
+      const { accessToken: newAccessToken } = response.data;
+      setTokens(newAccessToken);
+      onTokenRefreshed(newAccessToken);
+      return newAccessToken;
+    } catch (err) {
+      onRefreshFailed(err);
+      clearTokens();
+      throw err;
+    } finally {
+      isRefreshing = false;
+      refreshPromise = null;
+    }
+  })();
+
+  return refreshPromise;
+}
+
+// Request interceptor - add auth token and handle FormData Content-Type
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     const token = getAccessToken();
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
+    }
+    // Let the browser set Content-Type with boundary for FormData
+    if (config.data instanceof FormData) {
+      config.headers.delete('Content-Type');
     }
     return config;
   },
@@ -70,43 +110,31 @@ apiClient.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    // Don't try to refresh for auth endpoints (prevents infinite loop)
+    // Don't try to refresh for refresh/login/register endpoints (prevents infinite loop)
     const url = originalRequest.url || '';
-    if (url.includes('/auth/')) {
-      return Promise.reject(error);
-    }
-
-    // Don't try to refresh if user was never authenticated
-    if (!accessToken) {
+    if (url.includes('/auth/refresh') || url.includes('/auth/login') || url.includes('/auth/register')) {
       return Promise.reject(error);
     }
 
     // If we're already refreshing, queue this request
     if (isRefreshing) {
-      return new Promise((resolve) => {
-        subscribeTokenRefresh((token: string) => {
-          if (originalRequest.headers) {
-            originalRequest.headers.Authorization = `Bearer ${token}`;
-          }
-          resolve(apiClient(originalRequest));
-        });
+      return new Promise((resolve, reject) => {
+        subscribeTokenRefresh(
+          (token: string) => {
+            if (originalRequest.headers) {
+              originalRequest.headers.Authorization = `Bearer ${token}`;
+            }
+            resolve(apiClient(originalRequest));
+          },
+          reject
+        );
       });
     }
 
     originalRequest._retry = true;
-    isRefreshing = true;
 
     try {
-      // Refresh token is sent automatically via httpOnly cookie
-      const response = await axios.post(`${API_URL}/auth/refresh`, {}, {
-        withCredentials: true,
-      });
-
-      const { accessToken: newAccessToken } = response.data;
-      setTokens(newAccessToken);
-
-      isRefreshing = false;
-      onTokenRefreshed(newAccessToken);
+      const newAccessToken = await refreshAccessToken();
 
       if (originalRequest.headers) {
         originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
@@ -114,9 +142,6 @@ apiClient.interceptors.response.use(
 
       return apiClient(originalRequest);
     } catch (refreshError) {
-      isRefreshing = false;
-      refreshSubscribers = [];
-      clearTokens();
       return Promise.reject(refreshError);
     }
   }
@@ -144,7 +169,10 @@ export function getErrorMessage(error: unknown): string {
 
 /**
  * Get the full URL for an uploaded file.
- * Converts relative URLs like /uploads/... to full URLs pointing to the backend.
+ * Handles three formats:
+ *   - Full URL (http/https) → returned as-is (e.g., S3 signed URLs)
+ *   - Absolute path (/uploads/...) → prepends backend base URL
+ *   - Bare storage key (child-avatars/...) → prepends /uploads/ and backend base URL
  */
 export function getUploadUrl(relativePath: string | null | undefined): string | undefined {
   if (!relativePath) return undefined;
@@ -157,8 +185,11 @@ export function getUploadUrl(relativePath: string | null | undefined): string | 
   // Get the base URL (API_URL without /api suffix)
   const baseUrl = API_URL.replace(/\/api\/?$/, '');
 
-  // Ensure path starts with /
-  const path = relativePath.startsWith('/') ? relativePath : `/${relativePath}`;
+  // If it's already an absolute path (starts with /), use as-is
+  // Otherwise it's a bare storage key — prepend /uploads/
+  const path = relativePath.startsWith('/')
+    ? relativePath
+    : `/uploads/${relativePath}`;
 
   return `${baseUrl}${path}`;
 }

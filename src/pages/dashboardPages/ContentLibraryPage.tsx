@@ -44,6 +44,7 @@ import {
   MessageCircle,
   Map,
   StickyNote,
+  Mic,
   Star,
   Trash2,
   Filter,
@@ -52,8 +53,9 @@ import {
 
 const CONTENT_TYPE_INFO: Record<ContentType, { label: string; icon: typeof BookOpen; color: string }> = {
   story: { label: 'Story', icon: BookOpen, color: 'text-purple-500' },
-  chat_snippet: { label: 'Chat', icon: MessageCircle, color: 'text-blue-500' },
   journey: { label: 'Journey', icon: Map, color: 'text-green-500' },
+  voice: { label: 'Voice', icon: Mic, color: 'text-orange-500' },
+  chat_snippet: { label: 'Chat', icon: MessageCircle, color: 'text-blue-500' },
   note: { label: 'Note', icon: StickyNote, color: 'text-yellow-500' },
 };
 
@@ -91,7 +93,7 @@ export function ContentLibraryPage() {
         <div>
           <h1 className="text-3xl font-bold">Content Library</h1>
           <p className="text-muted-foreground mt-1">
-            Saved stories, conversations, and notes.
+            Stories, journeys, voice recordings, and saved notes.
           </p>
         </div>
 
@@ -157,7 +159,7 @@ export function ContentLibraryPage() {
                   description={
                     showFavorites
                       ? 'Mark content as favorite to see it here.'
-                      : 'Save stories, chats, or notes to see them here.'
+                      : 'Create stories, start journeys, or record voice clips to see them here.'
                   }
                 />
               </CardContent>
@@ -165,7 +167,7 @@ export function ContentLibraryPage() {
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {contentData.items.map((item) => {
-                const typeInfo = CONTENT_TYPE_INFO[item.content_type];
+                const typeInfo = CONTENT_TYPE_INFO[item.content_type] ?? { label: item.content_type, icon: Library, color: 'text-gray-500' };
                 const TypeIcon = typeInfo.icon;
 
                 return (
@@ -236,8 +238,50 @@ export function ContentLibraryPage() {
                       <p className="text-sm text-muted-foreground line-clamp-3">
                         {item.content}
                       </p>
+                      {/* Extra metadata for specific types */}
+                      {item.content_type === 'journey' && item.metadata?.status && (
+                        <div className="flex items-center gap-2 mt-2">
+                          <Badge
+                            variant={item.metadata.status === 'completed' ? 'default' : 'secondary'}
+                            className="text-xs"
+                          >
+                            {item.metadata.status === 'completed' ? 'Completed' : item.metadata.status === 'active' ? 'Active' : String(item.metadata.status)}
+                          </Badge>
+                          {typeof item.metadata.step_count === 'number' && item.metadata.step_count > 0 && (
+                            <span className="text-xs text-muted-foreground">
+                              {item.metadata.step_count} steps
+                            </span>
+                          )}
+                        </div>
+                      )}
+                      {item.content_type === 'voice' && (
+                        <div className="flex items-center gap-2 mt-2">
+                          {item.metadata?.category && (
+                            <Badge variant="outline" className="text-xs capitalize">
+                              {String(item.metadata.category)}
+                            </Badge>
+                          )}
+                          {typeof item.metadata?.duration_seconds === 'number' && (
+                            <span className="text-xs text-muted-foreground">
+                              {Math.floor(Number(item.metadata.duration_seconds) / 60)}:{String(Number(item.metadata.duration_seconds) % 60).padStart(2, '0')}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                      {item.content_type === 'story' && item.metadata?.theme && (
+                        <div className="flex items-center gap-2 mt-2">
+                          <Badge variant="outline" className="text-xs capitalize">
+                            {String(item.metadata.theme)}
+                          </Badge>
+                          {typeof item.metadata?.word_count === 'number' && (
+                            <span className="text-xs text-muted-foreground">
+                              {item.metadata.word_count} words
+                            </span>
+                          )}
+                        </div>
+                      )}
                       <p className="text-xs text-muted-foreground mt-3">
-                        Saved {new Date(item.created_at).toLocaleDateString()}
+                        {new Date(item.created_at).toLocaleDateString()}
                       </p>
                     </CardContent>
                   </Card>

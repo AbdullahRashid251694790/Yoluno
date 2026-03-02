@@ -30,9 +30,10 @@ export function StoriesPage() {
   const { data: stories, isLoading, isError, error, refetch } = useRecentStories(user?.id);
   const toggleFavorite = useToggleFavorite();
   const [activeTab, setActiveTab] = useState('all');
-  const [selectedChildId, setSelectedChildId] = useState<string>('');
+  const [selectedChildId, setSelectedChildId] = useState<string>('all');
 
   const filteredStories = stories?.filter((story) => {
+    if (selectedChildId !== 'all' && story.child_profile_id !== selectedChildId) return false;
     if (activeTab === 'favorites') return story.is_favorite;
     return true;
   });
@@ -42,7 +43,7 @@ export function StoriesPage() {
   };
 
   const handleCreateStory = () => {
-    if (selectedChildId) {
+    if (selectedChildId && selectedChildId !== 'all') {
       navigate(`/story-wizard/${selectedChildId}`);
     }
   };
@@ -62,9 +63,10 @@ export function StoriesPage() {
           <div className="flex items-center gap-2">
             <Select value={selectedChildId} onValueChange={setSelectedChildId}>
               <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Select child" />
+                <SelectValue placeholder="All children" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="all">All children</SelectItem>
                 {children.map((child) => (
                   <SelectItem key={child.id} value={child.id}>
                     {child.name}
@@ -72,7 +74,7 @@ export function StoriesPage() {
                 ))}
               </SelectContent>
             </Select>
-            <Button onClick={handleCreateStory} disabled={!selectedChildId} className="gap-2">
+            <Button onClick={handleCreateStory} disabled={selectedChildId === 'all'} className="gap-2">
               <Plus className="h-4 w-4" />
               Create Story
             </Button>

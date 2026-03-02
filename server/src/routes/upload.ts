@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 import path from 'path';
 import { requireAuth } from '../middleware/auth.js';
 import { AppError } from '../middleware/errorHandler.js';
-import { uploadToS3, deleteFromS3, getSignedDownloadUrl } from '../utils/s3.js';
+import { uploadFile, deleteFile, getFileUrl } from '../utils/storage.js';
 
 const router = Router();
 
@@ -60,10 +60,10 @@ router.post('/:bucket', upload.single('file'), async (req: Request, res: Respons
     const filename = `${Date.now()}-${uuidv4()}${ext}`;
     const key = `${bucket}/${userId}/${filename}`;
 
-    await uploadToS3(key, req.file.buffer, req.file.mimetype);
+    await uploadFile(key, req.file.buffer, req.file.mimetype);
 
-    // Return signed URL for immediate use (valid for 24 hours)
-    const url = await getSignedDownloadUrl(key, 86400);
+    // Return URL for immediate use
+    const url = await getFileUrl(key, 86400);
 
     res.json({
       key,
@@ -85,8 +85,7 @@ router.get('/signed-url/*', async (req: Request, res: Response, next: NextFuncti
       throw new AppError(400, 'Key is required');
     }
 
-    // Generate signed URL valid for 1 hour
-    const url = await getSignedDownloadUrl(key, 3600);
+    const url = await getFileUrl(key, 3600);
 
     res.json({ url });
   } catch (error) {
@@ -101,7 +100,7 @@ router.delete('/:bucket/:filename', async (req: Request, res: Response, next: Ne
     const userId = req.user!.id;
     const key = `${bucket}/${userId}/${filename}`;
 
-    await deleteFromS3(key);
+    await deleteFile(key);
 
     res.json({ message: 'File deleted' });
   } catch (error) {

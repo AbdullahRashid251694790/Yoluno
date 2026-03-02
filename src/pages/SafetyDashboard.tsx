@@ -4,7 +4,7 @@
  * Parent dashboard for monitoring Luno chat safety and managing Luno settings.
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useChildProfiles } from '@/hooks/queries';
 import { SafetyReportsPanel, BuddySettingsPanel, JourneyReminderSettingsPanel } from '@/components/dashboard/safety';
@@ -22,11 +22,11 @@ export function SafetyDashboardPage() {
   const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
 
   // Auto-select first child if available
-  useState(() => {
+  useEffect(() => {
     if (childProfiles.length > 0 && !selectedChildId) {
       setSelectedChildId(childProfiles[0].id);
     }
-  });
+  }, [childProfiles, selectedChildId]);
 
   const selectedChild = childProfiles.find((child) => child.id === selectedChildId);
 

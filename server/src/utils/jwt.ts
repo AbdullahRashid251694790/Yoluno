@@ -1,6 +1,10 @@
 import jwt from 'jsonwebtoken';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'default-secret-change-me';
+// Read secret lazily to avoid ESM import hoisting issues with dotenv
+function getJwtSecret(): string {
+  return process.env.JWT_SECRET || 'default-secret-change-me';
+}
+
 // Convert time strings to seconds
 const ACCESS_EXPIRY_SECONDS = 15 * 60; // 15 minutes
 const REFRESH_EXPIRY_SECONDS = 7 * 24 * 60 * 60; // 7 days
@@ -19,7 +23,7 @@ interface DecodedToken extends TokenPayload {
 export function generateAccessToken(userId: string, email: string): string {
   return jwt.sign(
     { sub: userId, email, type: 'access' } as TokenPayload,
-    JWT_SECRET,
+    getJwtSecret(),
     { expiresIn: ACCESS_EXPIRY_SECONDS }
   );
 }
@@ -27,13 +31,13 @@ export function generateAccessToken(userId: string, email: string): string {
 export function generateRefreshToken(userId: string, email: string): string {
   return jwt.sign(
     { sub: userId, email, type: 'refresh' } as TokenPayload,
-    JWT_SECRET,
+    getJwtSecret(),
     { expiresIn: REFRESH_EXPIRY_SECONDS }
   );
 }
 
 export function verifyToken(token: string): DecodedToken {
-  return jwt.verify(token, JWT_SECRET) as DecodedToken;
+  return jwt.verify(token, getJwtSecret()) as DecodedToken;
 }
 
 export function decodeToken(token: string): DecodedToken | null {

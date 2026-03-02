@@ -139,7 +139,9 @@ export type JourneyUpdate = Partial<Omit<JourneyRow, 'id' | 'child_profile_id' |
 export interface JourneyStepRow {
   id: string;
   journey_id: string;
-  type: string;
+  type: string | null;
+  title: string | null;
+  description: string | null;
   step_order: number;
   progress: number;
   completed_at: string | null;

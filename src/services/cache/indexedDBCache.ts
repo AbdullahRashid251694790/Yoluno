@@ -17,6 +17,8 @@ interface CacheOptions {
 }
 
 const DEFAULT_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+const DB_VERSION = 2; // Bump when adding new stores
+const ALL_STORE_NAMES = ['avatars', 'stories'];
 
 export class IndexedDBCache<T> {
   private dbName: string;
@@ -34,7 +36,7 @@ export class IndexedDBCache<T> {
     if (this.db) return this.db;
 
     return new Promise((resolve, reject) => {
-      const request = indexedDB.open(this.dbName, 1);
+      const request = indexedDB.open(this.dbName, DB_VERSION);
 
       request.onerror = () => reject(request.error);
 
@@ -45,8 +47,11 @@ export class IndexedDBCache<T> {
 
       request.onupgradeneeded = (event) => {
         const db = (event.target as IDBOpenDBRequest).result;
-        if (!db.objectStoreNames.contains(this.storeName)) {
-          db.createObjectStore(this.storeName, { keyPath: 'key' });
+        // Create all known stores on upgrade so they're all available
+        for (const name of ALL_STORE_NAMES) {
+          if (!db.objectStoreNames.contains(name)) {
+            db.createObjectStore(name, { keyPath: 'key' });
+          }
         }
       };
     });

@@ -182,3 +182,17 @@ export function getInitials(name: string): string {
 export function pluralize(count: number, singular: string, plural?: string): string {
   return count === 1 ? singular : (plural ?? `${singular}s`);
 }
+
+/**
+ * Validate password strength — shared across Signup, ResetPassword, and Settings.
+ * Returns an error message string or null if valid.
+ */
+export function validatePassword(password: string): string | null {
+  if (password.length < 8) {
+    return 'Password must be at least 8 characters';
+  }
+  if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z0-9]).+$/.test(password)) {
+    return 'Password must include uppercase, lowercase, number, and special character';
+  }
+  return null;
+}

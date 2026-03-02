@@ -4,7 +4,16 @@
  * Creates a test user with a child profile for development.
  */
 
-import 'dotenv/config';
+import dotenv from 'dotenv';
+import { existsSync } from 'fs';
+import { resolve } from 'path';
+
+const envLocalPath = resolve(process.cwd(), '.env.local');
+if (existsSync(envLocalPath)) {
+  dotenv.config({ path: envLocalPath });
+} else {
+  dotenv.config();
+}
 import { v4 as uuidv4 } from 'uuid';
 import { pool, query, queryOne } from './config/database.js';
 import { hashPassword } from './utils/password.js';

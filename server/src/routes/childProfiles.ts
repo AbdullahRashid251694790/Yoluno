@@ -9,6 +9,7 @@ import { emitToUser } from '../socket/index.js';
 import { z } from 'zod';
 import type { ChildProfile, ParentNotification } from '../types/index.js';
 import type { Server } from 'socket.io';
+import { getFileUrl } from '../utils/storage.js';
 
 // PIN validation schemas
 const setPinSchema = z.object({
@@ -23,6 +24,24 @@ const SALT_ROUNDS = 10;
 
 const router = Router();
 
+// Resolve avatar to a usable URL (custom upload or library avatar)
+async function resolveAvatarUrl(profile: ChildProfile): Promise<ChildProfile & { avatarUrl?: string }> {
+  if (profile.custom_avatar_url) {
+    const avatarUrl = await getFileUrl(profile.custom_avatar_url);
+    return { ...profile, avatarUrl };
+  }
+  if (profile.avatar_id) {
+    const avatar = await queryOne<{ image_url: string }>(
+      'SELECT image_url FROM avatar_library WHERE id = $1',
+      [profile.avatar_id]
+    );
+    if (avatar) {
+      return { ...profile, avatarUrl: avatar.image_url };
+    }
+  }
+  return profile;
+}
+
 // All routes require authentication
 router.use(requireAuth);
 
@@ -35,7 +54,8 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
        ORDER BY created_at DESC`,
       [req.user!.id]
     );
-    res.json(result.rows);
+    const profiles = await Promise.all(result.rows.map(resolveAvatarUrl));
+    res.json(profiles);
   } catch (error) {
     next(error);
   }
@@ -53,7 +73,7 @@ router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
       throw new AppError(404, 'Child profile not found');
     }
 
-    res.json(profile);
+    res.json(await resolveAvatarUrl(profile));
   } catch (error) {
     next(error);
   }

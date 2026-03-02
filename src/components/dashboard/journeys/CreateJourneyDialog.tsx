@@ -16,8 +16,6 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Switch } from '@/components/ui/switch';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -28,11 +26,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useJourneyTemplates } from '@/hooks/queries/useJourneyTemplates';
+import { useJourneyTemplates, useJourneyTemplate, useStartJourneyFromTemplate } from '@/hooks/queries/useJourneyTemplates';
 import { useChildProfiles } from '@/hooks/queries/useChildProfiles';
-import { useCreateCustomJourney } from '@/hooks/queries/useJourneys';
 import { useAuth } from '@/contexts/AuthContext';
-import { Loader2, CheckCircle2, ImageIcon } from 'lucide-react';
+import { Loader2, CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface CreateJourneyDialogProps {
@@ -51,31 +48,21 @@ export function CreateJourneyDialog({
   const { user } = useAuth();
   const { data: templates = [], isLoading: templatesLoading } = useJourneyTemplates();
   const { data: children = [] } = useChildProfiles(user?.id);
-  const createJourney = useCreateCustomJourney();
+  const startJourney = useStartJourneyFromTemplate();
 
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
   const [selectedChildId, setSelectedChildId] = useState<string>(preselectedChildId || '');
-  const [requiresImageProof, setRequiresImageProof] = useState(false);
 
-  // Find selected template
-  const selectedTemplate = templates.find((t) => t.id === selectedTemplateId);
+  // Fetch selected template details (with steps) for preview
+  const { data: selectedTemplateDetail } = useJourneyTemplate(selectedTemplateId ?? undefined);
 
   const handleCreate = async () => {
     if (!selectedTemplateId || !selectedChildId) return;
 
-    const template = templates.find((t) => t.id === selectedTemplateId);
-    if (!template) return;
-
     try {
-      await createJourney.mutateAsync({
-        child_profile_id: selectedChildId,
-        title: template.title,
-        template_id: selectedTemplateId,
-        requires_image_proof: requiresImageProof,
-        steps: template.steps?.map((s) => ({
-          title: s.title,
-          description: s.description,
-        })) || [],
+      await startJourney.mutateAsync({
+        templateId: selectedTemplateId,
+        childId: selectedChildId,
       });
 
       onSuccess?.();
@@ -89,7 +76,6 @@ export function CreateJourneyDialog({
   const resetForm = () => {
     setSelectedTemplateId(null);
     setSelectedChildId(preselectedChildId || '');
-    setRequiresImageProof(false);
   };
 
   const handleClose = (isOpen: boolean) => {
@@ -159,14 +145,9 @@ export function CreateJourneyDialog({
                           <CardTitle className="text-sm font-medium">
                             {template.title}
                           </CardTitle>
-                          <div className="flex items-center gap-2">
-                            {template.rewardImageUrl && (
-                              <ImageIcon className="h-4 w-4 text-muted-foreground" />
-                            )}
-                            {selectedTemplateId === template.id && (
-                              <CheckCircle2 className="h-4 w-4 text-primary" />
-                            )}
-                          </div>
+                          {selectedTemplateId === template.id && (
+                            <CheckCircle2 className="h-4 w-4 text-primary" />
+                          )}
                         </div>
                       </CardHeader>
                       <CardContent className="py-2">
@@ -177,11 +158,9 @@ export function CreateJourneyDialog({
                           <Badge variant="secondary" className="text-xs">
                             {template.category}
                           </Badge>
-                          {template.stepCount > 0 && (
-                            <span className="text-xs text-muted-foreground">
-                              {template.stepCount} steps
-                            </span>
-                          )}
+                          <span className="text-xs text-muted-foreground">
+                            {template.duration_days} days
+                          </span>
                         </div>
                       </CardContent>
                     </Card>
@@ -191,37 +170,22 @@ export function CreateJourneyDialog({
             </ScrollArea>
           </div>
 
-          {/* Image proof toggle */}
-          <div className="flex items-center justify-between rounded-lg border p-4">
-            <div className="space-y-0.5">
-              <Label htmlFor="image-proof">Require Image Proof</Label>
-              <p className="text-sm text-muted-foreground">
-                Child must attach a photo when marking tasks complete
-              </p>
-            </div>
-            <Switch
-              id="image-proof"
-              checked={requiresImageProof}
-              onCheckedChange={setRequiresImageProof}
-            />
-          </div>
-
           {/* Preview selected template */}
-          {selectedTemplate && (
+          {selectedTemplateDetail && (
             <div className="rounded-lg border p-4 bg-muted/50">
               <h4 className="font-medium text-sm mb-2">Journey Preview</h4>
               <p className="text-xs text-muted-foreground mb-2">
-                {selectedTemplate.description}
+                {selectedTemplateDetail.description}
               </p>
-              {selectedTemplate.steps && selectedTemplate.steps.length > 0 && (
+              {selectedTemplateDetail.steps && selectedTemplateDetail.steps.length > 0 && (
                 <div className="space-y-1">
-                  <p className="text-xs font-medium">Steps:</p>
+                  <p className="text-xs font-medium">{selectedTemplateDetail.steps.length} Steps:</p>
                   <ul className="text-xs text-muted-foreground space-y-1">
-                    {selectedTemplate.steps.slice(0, 3).map((step, i) => (
+                    {selectedTemplateDetail.steps.slice(0, 3).map((step, i) => (
                       <li key={step.id || i}>• {step.title}</li>
                     ))}
-                    {selectedTemplate.steps.length > 3 && (
-                      <li>• ... and {selectedTemplate.steps.length - 3} more</li>
+                    {selectedTemplateDetail.steps.length > 3 && (
+                      <li>• ... and {selectedTemplateDetail.steps.length - 3} more</li>
                     )}
                   </ul>
                 </div>
@@ -239,10 +203,10 @@ export function CreateJourneyDialog({
             disabled={
               !selectedTemplateId ||
               !selectedChildId ||
-              createJourney.isPending
+              startJourney.isPending
             }
           >
-            {createJourney.isPending && (
+            {startJourney.isPending && (
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
             )}
             Create Journey

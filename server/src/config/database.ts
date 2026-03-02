@@ -2,12 +2,26 @@ import { Pool, PoolClient, QueryResult, QueryResultRow } from 'pg';
 
 export type { PoolClient };
 
-export const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-  max: 20,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
+let _pool: Pool | null = null;
+
+export function getPool(): Pool {
+  if (!_pool) {
+    _pool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+      max: 20,
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 2000,
+    });
+  }
+  return _pool;
+}
+
+// Backwards-compatible export
+export const pool = new Proxy({} as Pool, {
+  get(_target, prop) {
+    return (getPool() as any)[prop];
+  },
 });
 
 // Test database connection

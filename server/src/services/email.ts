@@ -1,7 +1,17 @@
 import { Resend } from 'resend';
 
-const FROM_EMAIL = process.env.FROM_EMAIL || 'Yoluno <onboarding@resend.dev>';
-const APP_URL = process.env.APP_URL || 'https://yoluno.up.railway.app';
+// Lazy getters to avoid ESM import hoisting issues with dotenv
+function getFromEmail(): string {
+  return process.env.FROM_EMAIL || 'Yoluno <onboarding@resend.dev>';
+}
+
+function getAppUrl(): string {
+  return process.env.APP_URL || 'https://yoluno.up.railway.app';
+}
+
+function isDev(): boolean {
+  return process.env.NODE_ENV !== 'production';
+}
 
 // Lazy-init to avoid crashing on startup if RESEND_API_KEY is not set
 let resend: Resend | null = null;
@@ -13,10 +23,18 @@ function getResend(): Resend {
 }
 
 export async function sendVerificationEmail(to: string, token: string): Promise<void> {
-  const verifyUrl = `${APP_URL}/verify-email?token=${token}`;
+  const verifyUrl = `${getAppUrl()}/verify-email?token=${token}`;
+
+  if (isDev()) {
+    console.log('\n--- DEV EMAIL: Verify Account ---');
+    console.log(`To: ${to}`);
+    console.log(`URL: ${verifyUrl}`);
+    console.log('---\n');
+    return;
+  }
 
   await getResend().emails.send({
-    from: FROM_EMAIL,
+    from: getFromEmail(),
     to,
     subject: 'Verify your Yoluno account',
     html: `
@@ -34,10 +52,18 @@ export async function sendVerificationEmail(to: string, token: string): Promise<
 }
 
 export async function sendPasswordResetEmail(to: string, token: string): Promise<void> {
-  const resetUrl = `${APP_URL}/reset-password?token=${token}`;
+  const resetUrl = `${getAppUrl()}/reset-password?token=${token}`;
+
+  if (isDev()) {
+    console.log('\n--- DEV EMAIL: Password Reset ---');
+    console.log(`To: ${to}`);
+    console.log(`URL: ${resetUrl}`);
+    console.log('---\n');
+    return;
+  }
 
   await getResend().emails.send({
-    from: FROM_EMAIL,
+    from: getFromEmail(),
     to,
     subject: 'Reset your Yoluno password',
     html: `

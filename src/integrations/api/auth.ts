@@ -1,4 +1,4 @@
-import { apiClient, setTokens, clearTokens } from './client';
+import { apiClient, setTokens, clearTokens, getAccessToken, refreshAccessToken } from './client';
 
 export interface User {
   id: string;
@@ -50,9 +50,19 @@ export async function logout(): Promise<void> {
   }
 }
 
-// Get current session
+// Get current session (tries to refresh token first if none in memory)
 export async function getSession(): Promise<SessionResponse | null> {
   try {
+    // If no access token in memory (e.g., page reload), try refreshing via cookie first
+    if (!getAccessToken()) {
+      try {
+        await refreshAccessToken();
+      } catch {
+        // No valid refresh cookie → user is truly logged out
+        return null;
+      }
+    }
+
     const response = await apiClient.get<SessionResponse>('/auth/session');
     return response.data;
   } catch {

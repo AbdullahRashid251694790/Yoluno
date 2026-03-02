@@ -8,6 +8,7 @@ export {
   isApiError,
   getErrorMessage,
   getUploadUrl,
+  refreshAccessToken,
 } from './client';
 
 // Auth exports

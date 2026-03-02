@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { ZodError } from 'zod';
 
 export class AppError extends Error {
   constructor(
@@ -30,6 +31,12 @@ export function errorHandler(
       error: err.message,
       ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
     });
+    return;
+  }
+
+  if (err instanceof ZodError) {
+    const message = err.errors.map(e => e.message).join('. ');
+    res.status(400).json({ success: false, error: message });
     return;
   }
 

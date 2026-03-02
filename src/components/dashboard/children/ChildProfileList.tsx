@@ -52,6 +52,7 @@ export function ChildProfileList() {
               <ChildProfileCard
                 key={child.id}
                 child={child}
+                avatarUrl={child.avatarUrl}
                 onEdit={() => setEditingChild(child)}
               />
             ))}

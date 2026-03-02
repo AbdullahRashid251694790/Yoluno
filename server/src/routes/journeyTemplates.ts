@@ -176,6 +176,25 @@ router.get('/featured', async (req: Request, res: Response, next: NextFunction) 
   }
 });
 
+// GET /api/journey-templates/for-child/:childId - Get templates appropriate for a child's age
+router.get('/for-child/:childId', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const child = await verifyChildAccess(req.params.childId, req.user!.id);
+
+    const result = await query<JourneyTemplate>(
+      `SELECT * FROM journey_templates
+       WHERE age_range_min <= $1 AND age_range_max >= $1
+       ORDER BY is_featured DESC, usage_count DESC
+       LIMIT 20`,
+      [child.age]
+    );
+
+    res.json(result.rows);
+  } catch (error) {
+    next(error);
+  }
+});
+
 // GET /api/journey-templates/:id - Get a single template with steps
 router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -270,7 +289,7 @@ router.post('/:id/start', async (req: Request, res: Response, next: NextFunction
             templateStep.title,
             templateStep.description,
             templateStep.type,
-            JSON.stringify(templateStep.content),
+            templateStep.content,
           ]
         );
       }
@@ -285,25 +304,6 @@ router.post('/:id/start', async (req: Request, res: Response, next: NextFunction
     });
 
     res.status(201).json(result);
-  } catch (error) {
-    next(error);
-  }
-});
-
-// GET /api/journey-templates/for-child/:childId - Get templates appropriate for a child's age
-router.get('/for-child/:childId', async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const child = await verifyChildAccess(req.params.childId, req.user!.id);
-
-    const result = await query<JourneyTemplate>(
-      `SELECT * FROM journey_templates
-       WHERE age_range_min <= $1 AND age_range_max >= $1
-       ORDER BY is_featured DESC, usage_count DESC
-       LIMIT 20`,
-      [child.age]
-    );
-
-    res.json(result.rows);
   } catch (error) {
     next(error);
   }

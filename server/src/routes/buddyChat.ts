@@ -6,7 +6,7 @@ import { query, queryOne } from '../config/database.js';
 import { requireAuth } from '../middleware/auth.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { emitToUser, emitToChild } from '../socket/index.js';
-import { uploadToS3, getSignedDownloadUrl } from '../utils/s3.js';
+import { uploadFile, getFileUrl } from '../utils/storage.js';
 import type { BuddyMessage, ChatBuddy, SafetyReport, ChildProfile, GuardrailSettings, Journey, JourneyStep } from '../types/index.js';
 import { logActivityForChild, type BadgeDefinition } from '../helpers/gamification.js';
 
@@ -153,7 +153,7 @@ router.post('/:childId/send', upload.single('image'), async (req: Request, res: 
       const ext = imageFile.mimetype.split('/')[1] || 'jpg';
       const filename = `${Date.now()}-${uuidv4()}.${ext}`;
       imageKey = `chat-images/${childId}/${filename}`;
-      await uploadToS3(imageKey, imageFile.buffer, imageFile.mimetype);
+      await uploadFile(imageKey, imageFile.buffer, imageFile.mimetype);
 
       // Analyze image using vision model
       imageAnalysis = await analyzeImage(imageFile.buffer, imageFile.mimetype);
@@ -438,7 +438,7 @@ router.post('/:childId/sessions/:sessionId/send', upload.single('image'), async 
       const ext = imageFile.mimetype.split('/')[1] || 'jpg';
       const filename = `${Date.now()}-${uuidv4()}.${ext}`;
       imageKey = `chat-images/${childId}/${filename}`;
-      await uploadToS3(imageKey, imageFile.buffer, imageFile.mimetype);
+      await uploadFile(imageKey, imageFile.buffer, imageFile.mimetype);
       imageAnalysis = await analyzeImage(imageFile.buffer, imageFile.mimetype);
     }
 
@@ -688,7 +688,7 @@ async function checkTaskCompletion(
     completed: true,
     journeyId: activeJourney.id,
     stepId: incompleteStep.id,
-    stepTitle: incompleteStep.type,
+    stepTitle: incompleteStep.title || incompleteStep.type || undefined,
     journeyCompleted,
     rewardEarned,
     badgesEarned,
@@ -1051,7 +1051,7 @@ router.get('/:childId/messages/:messageId/image', async (req: Request, res: Resp
       throw new AppError(404, 'Image not found');
     }
 
-    const signedUrl = await getSignedDownloadUrl(message.image_key, 3600);
+    const signedUrl = await getFileUrl(message.image_key, 3600);
     res.json({ url: signedUrl });
   } catch (error) {
     next(error);

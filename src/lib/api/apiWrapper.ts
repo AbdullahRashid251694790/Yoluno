@@ -36,19 +36,24 @@ export async function apiRequest<T>(
 
   try {
     let response;
+    // Only include headers/params in config when defined to avoid
+    // passing undefined which can interfere with axios config merging
+    const config: Record<string, unknown> = {};
+    if (headers) config.headers = headers;
+    if (params) config.params = params;
 
     switch (method) {
       case 'get':
-        response = await apiClient.get<T>(endpoint, { params, headers });
+        response = await apiClient.get<T>(endpoint, config);
         break;
       case 'post':
-        response = await apiClient.post<T>(endpoint, data, { headers });
+        response = await apiClient.post<T>(endpoint, data, config);
         break;
       case 'put':
-        response = await apiClient.put<T>(endpoint, data, { headers });
+        response = await apiClient.put<T>(endpoint, data, config);
         break;
       case 'delete':
-        response = await apiClient.delete<T>(endpoint, { headers });
+        response = await apiClient.delete<T>(endpoint, config);
         break;
     }
 

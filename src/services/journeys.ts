@@ -168,8 +168,8 @@ function mapJourneyWithSteps(
     id: step.id,
     journeyId: step.journey_id,
     stepNumber: step.step_order ?? index + 1,
-    title: step.type ?? `Step ${index + 1}`,
-    description: null,
+    title: step.title || step.type || `Step ${index + 1}`,
+    description: step.description || null,
     isCompleted: step.progress === 100,
     completedAt: step.completed_at,
   }));

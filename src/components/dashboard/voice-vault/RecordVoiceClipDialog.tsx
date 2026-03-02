@@ -56,7 +56,7 @@ export function RecordVoiceClipDialog({ open, onOpenChange }: RecordVoiceClipDia
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState<VoiceClipCategoryType>('other');
-  const [familyMemberId, setFamilyMemberId] = useState<string>('');
+  const [familyMemberId, setFamilyMemberId] = useState<string>('none');
   const [isUploading, setIsUploading] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
 
@@ -96,7 +96,7 @@ export function RecordVoiceClipDialog({ open, onOpenChange }: RecordVoiceClipDia
     setTitle('');
     setDescription('');
     setCategory('other');
-    setFamilyMemberId('');
+    setFamilyMemberId('none');
     setIsPlaying(false);
     resetRecording();
     if (audioRef.current) {
@@ -142,12 +142,7 @@ export function RecordVoiceClipDialog({ open, onOpenChange }: RecordVoiceClipDia
 
       const uploadResponse = await apiClient.post<{ url: string; size: number }>(
         '/upload/voice-clips',
-        formData,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        }
+        formData
       );
 
       // Create the voice clip record
@@ -155,7 +150,7 @@ export function RecordVoiceClipDialog({ open, onOpenChange }: RecordVoiceClipDia
         title: title.trim(),
         description: description.trim() || undefined,
         category,
-        family_member_id: familyMemberId || undefined,
+        family_member_id: familyMemberId !== 'none' ? familyMemberId : undefined,
         audio_url: uploadResponse.data.url,
         duration_seconds: duration,
         file_size_bytes: uploadResponse.data.size,
@@ -289,7 +284,7 @@ export function RecordVoiceClipDialog({ open, onOpenChange }: RecordVoiceClipDia
                     <SelectValue placeholder="Select family member" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">None</SelectItem>
+                    <SelectItem value="none">None</SelectItem>
                     {familyMembers.map((member) => (
                       <SelectItem key={member.id} value={member.id}>
                         {member.name}

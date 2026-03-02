@@ -141,13 +141,15 @@ export function AvatarPicker({
         <p className="text-sm font-medium text-muted-foreground">
           Choose an avatar
         </p>
-        <div className="flex gap-3 justify-center">
+        <div className="flex flex-wrap gap-3 justify-center">
           {isLoading ? (
             <>
-              {[...Array(maxAvatars)].map((_, i) => (
-                <Skeleton key={i} className="h-20 w-20 rounded-full" />
+              {[...Array(Math.min(maxAvatars, 3))].map((_, i) => (
+                <Skeleton key={i} className="h-16 w-16 rounded-full" />
               ))}
             </>
+          ) : displayAvatars.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-2">No avatars available</p>
           ) : (
             displayAvatars.map((avatar) => {
               const isSelected =
@@ -165,9 +167,9 @@ export function AvatarPicker({
                     disabled && 'cursor-not-allowed opacity-50'
                   )}
                 >
-                  <Avatar className="h-20 w-20 border-2 border-white shadow-md">
+                  <Avatar className="h-16 w-16 border-2 border-white shadow-md">
                     <AvatarImage src={avatar.imageUrl} alt={avatar.name} />
-                    <AvatarFallback className="bg-gradient-to-br from-primary to-child-secondary text-2xl text-white">
+                    <AvatarFallback className="bg-gradient-to-br from-primary to-child-secondary text-xl text-white">
                       {avatar.name.charAt(0)}
                     </AvatarFallback>
                   </Avatar>

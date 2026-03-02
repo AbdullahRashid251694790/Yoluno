@@ -13,6 +13,7 @@ import { useChildProfiles } from '@/hooks/queries/useChildProfiles';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn, getInitials } from '@/lib/utils';
+import { getUploadUrl } from '@/integrations/api/client';
 import { Sparkles, Lock, Star, ShieldCheck } from 'lucide-react';
 import { KidsPINDialog } from '@/components/kids/auth';
 import type { ChildProfileWithAvatar } from '@/services/childProfiles';
@@ -143,7 +144,7 @@ export function ChildSelectPage() {
                   {/* Avatar */}
                   <div className="relative">
                     <Avatar className="h-32 w-32 border-4 border-white shadow-md group-hover:animate-wiggle">
-                      <AvatarImage src={child.avatarUrl || undefined} alt={child.name} />
+                      <AvatarImage src={getUploadUrl(child.avatarUrl) || undefined} alt={child.name} />
                       <AvatarFallback className="bg-gradient-to-br from-primary to-child-secondary text-4xl text-white font-display">
                         {getInitials(child.name)}
                       </AvatarFallback>

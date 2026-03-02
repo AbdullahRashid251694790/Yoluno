@@ -261,6 +261,7 @@ export function CreateChildDialog({ open: controlledOpen, onOpenChange, trigger 
                   value={field.value}
                   onChange={field.onChange}
                   disabled={isSubmitting}
+                  maxAvatars={6}
                 />
               )}
             />

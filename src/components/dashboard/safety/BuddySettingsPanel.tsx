@@ -39,8 +39,16 @@ export function BuddySettingsPanel({ childId, childName }: BuddySettingsPanelPro
 
   useEffect(() => {
     if (buddy) {
-      setBuddyName(buddy.buddy_name);
-      setTraits(buddy.personality_traits);
+      setBuddyName(buddy.buddy_name || 'Luno');
+      // Merge with defaults — DB may return empty {} for new buddies
+      setTraits({
+        curious: 5,
+        patient: 5,
+        playful: 5,
+        educational: 5,
+        empathetic: 5,
+        ...buddy.personality_traits,
+      });
     }
   }, [buddy]);
 
@@ -155,7 +163,9 @@ export function BuddySettingsPanel({ childId, childName }: BuddySettingsPanelPro
           </div>
           <div className="text-center">
             <p className="text-2xl font-bold">
-              {buddy.conversation_context.length}
+              {Array.isArray(buddy.conversation_context)
+                ? buddy.conversation_context.length
+                : 0}
             </p>
             <p className="text-xs text-muted-foreground">Context Messages</p>
           </div>

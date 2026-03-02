@@ -2,30 +2,18 @@
  * Avatars Service
  *
  * Data access layer for avatar library operations.
- * Uses Railway API instead of Supabase.
+ * Caching handled by React Query (30-min staleTime) — no IndexedDB layer needed.
  */
 
 import { apiClient } from '@/integrations/api';
 import type { AvatarLibraryRow } from '@/types/database';
 import type { AvatarLibraryItem, AvatarCategory } from '@/types/domain';
 import { handleError } from '@/lib/errors';
-import { avatarCache } from './cache/indexedDBCache';
 
 export async function getAllAvatars(): Promise<AvatarLibraryItem[]> {
-  const cacheKey = 'all-avatars';
-  const cached = await avatarCache.get(cacheKey);
-
-  if (cached) {
-    return JSON.parse(cached) as AvatarLibraryItem[];
-  }
-
   try {
     const { data } = await apiClient.get<AvatarLibraryRow[]>('/avatars');
-
-    const avatars = (data ?? []).map(mapRowToAvatar);
-    await avatarCache.set(cacheKey, JSON.stringify(avatars));
-
-    return avatars;
+    return (data ?? []).map(mapRowToAvatar);
   } catch (error) {
     throw handleError(error, {
       context: 'avatars.getAllAvatars',
@@ -37,22 +25,11 @@ export async function getAllAvatars(): Promise<AvatarLibraryItem[]> {
 export async function getAvatarsByCategory(
   category: AvatarCategory
 ): Promise<AvatarLibraryItem[]> {
-  const cacheKey = `avatars-${category}`;
-  const cached = await avatarCache.get(cacheKey);
-
-  if (cached) {
-    return JSON.parse(cached) as AvatarLibraryItem[];
-  }
-
   try {
     const { data } = await apiClient.get<AvatarLibraryRow[]>('/avatars', {
       params: { category },
     });
-
-    const avatars = (data ?? []).map(mapRowToAvatar);
-    await avatarCache.set(cacheKey, JSON.stringify(avatars));
-
-    return avatars;
+    return (data ?? []).map(mapRowToAvatar);
   } catch (error) {
     throw handleError(error, {
       context: 'avatars.getAvatarsByCategory',
@@ -108,7 +85,7 @@ export async function searchAvatars(query: string): Promise<AvatarLibraryItem[]>
 }
 
 export async function clearAvatarCache(): Promise<void> {
-  await avatarCache.clear();
+  // No-op: caching handled by React Query
 }
 
 function mapRowToAvatar(row: AvatarLibraryRow): AvatarLibraryItem {

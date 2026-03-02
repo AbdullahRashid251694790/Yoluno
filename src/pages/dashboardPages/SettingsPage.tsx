@@ -6,6 +6,7 @@
 
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { validatePassword } from '@/lib/utils';
 import { apiClient, getErrorMessage } from '@/integrations/api/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -42,8 +43,9 @@ export function SettingsPage() {
   async function handlePasswordChange(e: React.FormEvent) {
     e.preventDefault();
 
-    if (newPassword.length < 8) {
-      toast.error('New password must be at least 8 characters');
+    const passwordError = validatePassword(newPassword);
+    if (passwordError) {
+      toast.error(passwordError);
       return;
     }
 
@@ -156,6 +158,9 @@ export function SettingsPage() {
                   required
                   minLength={8}
                 />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Must include uppercase, lowercase, number, and special character.
+                </p>
               </div>
               <div>
                 <label className="text-sm font-medium" htmlFor="confirmNewPassword">Confirm New Password</label>

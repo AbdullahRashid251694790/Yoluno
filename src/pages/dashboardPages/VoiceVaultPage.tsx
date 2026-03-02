@@ -5,8 +5,9 @@
  * All data from database - no hardcoding.
  */
 
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { getUploadUrl } from '@/integrations/api/client';
 import { useFamilyMembers } from '@/hooks/queries/useFamily';
 import {
   useVoiceClips,
@@ -71,7 +72,10 @@ export function VoiceVaultPage() {
   const [selectedCategory, setSelectedCategory] = useState<VoiceCategory>('all');
   const [showFavorites, setShowFavorites] = useState(false);
   const [playingClipId, setPlayingClipId] = useState<string | null>(null);
+  const [playbackProgress, setPlaybackProgress] = useState(0);
+  const [currentTime, setCurrentTime] = useState(0);
   const [isRecordDialogOpen, setIsRecordDialogOpen] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // Build filters
   const filters: VoiceClipFilters = {
@@ -94,16 +98,71 @@ export function VoiceVaultPage() {
     deleteClip.mutate(id);
   };
 
-  const handlePlay = (id: string, audioUrl: string) => {
+  const handlePlay = useCallback((id: string, audioUrl: string, totalSeconds: number) => {
     if (playingClipId === id) {
+      audioRef.current?.pause();
       setPlayingClipId(null);
-      // In a real implementation, this would pause the audio
-    } else {
+      setPlaybackProgress(0);
+      setCurrentTime(0);
+      return;
+    }
+
+    // Stop any currently playing audio
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
+
+    setPlaybackProgress(0);
+    setCurrentTime(0);
+
+    const fullUrl = getUploadUrl(audioUrl) || audioUrl;
+    const audio = new Audio(fullUrl);
+    audioRef.current = audio;
+
+    // Use known duration from DB so progress works immediately
+    // (webm files often report duration=Infinity until fully loaded)
+    const knownDuration = totalSeconds || 1;
+
+    audio.addEventListener('timeupdate', () => {
+      const effectiveDuration = (audio.duration && isFinite(audio.duration))
+        ? audio.duration
+        : knownDuration;
+      setPlaybackProgress((audio.currentTime / effectiveDuration) * 100);
+      setCurrentTime(Math.floor(audio.currentTime));
+    });
+
+    audio.addEventListener('ended', () => {
+      setPlayingClipId(null);
+      setPlaybackProgress(0);
+      setCurrentTime(0);
+      audioRef.current = null;
+    });
+
+    audio.play().then(() => {
       setPlayingClipId(id);
       recordPlay.mutate(id);
-      // In a real implementation, this would play the audio
-    }
-  };
+    }).catch((err) => {
+      console.error('Failed to play audio:', err);
+      setPlayingClipId(null);
+      setPlaybackProgress(0);
+      setCurrentTime(0);
+      audioRef.current = null;
+    });
+  }, [playingClipId, recordPlay]);
+
+  const handleSeek = useCallback((e: React.MouseEvent<HTMLDivElement>, clipId: string) => {
+    if (playingClipId !== clipId || !audioRef.current) return;
+    const audio = audioRef.current;
+    const effectiveDuration = (audio.duration && isFinite(audio.duration))
+      ? audio.duration
+      : null;
+    if (!effectiveDuration) return;
+    const bar = e.currentTarget;
+    const rect = bar.getBoundingClientRect();
+    const percent = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    audio.currentTime = percent * effectiveDuration;
+  }, [playingClipId]);
 
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -270,7 +329,7 @@ export function VoiceVaultPage() {
                           variant="secondary"
                           size="icon"
                           className="h-10 w-10 rounded-full"
-                          onClick={() => handlePlay(clip.id, clip.audio_url)}
+                          onClick={() => handlePlay(clip.id, clip.audio_url, clip.duration_seconds)}
                         >
                           {isPlaying ? (
                             <Pause className="h-5 w-5" />
@@ -278,16 +337,21 @@ export function VoiceVaultPage() {
                             <Play className="h-5 w-5" />
                           )}
                         </Button>
-                        <div className="flex-1">
-                          <div className="h-2 bg-background rounded-full">
+                        <div
+                          className="flex-1 cursor-pointer"
+                          onClick={(e) => handleSeek(e, clip.id)}
+                        >
+                          <div className="h-2 bg-background rounded-full overflow-hidden">
                             <div
-                              className="h-full bg-primary rounded-full transition-all"
-                              style={{ width: isPlaying ? '50%' : '0%' }}
+                              className="h-full bg-primary rounded-full"
+                              style={{ width: `${isPlaying ? playbackProgress : 0}%`, transition: 'width 0.1s linear' }}
                             />
                           </div>
                         </div>
-                        <span className="text-xs text-muted-foreground">
-                          {formatDuration(clip.duration_seconds)}
+                        <span className="text-xs text-muted-foreground tabular-nums">
+                          {isPlaying
+                            ? `${formatDuration(currentTime)} / ${formatDuration(clip.duration_seconds)}`
+                            : formatDuration(clip.duration_seconds)}
                         </span>
                       </div>
 

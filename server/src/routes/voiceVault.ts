@@ -51,7 +51,7 @@ const createVoiceClipSchema = z.object({
   title: z.string().min(1).max(200),
   description: z.string().max(500).optional(),
   category: z.enum(['encouragement', 'praise', 'celebration', 'story', 'memory', 'greeting', 'other']),
-  audio_url: z.string().url(),
+  audio_url: z.string().min(1),
   duration_seconds: z.number().int().positive(),
   file_size_bytes: z.number().int().positive().optional(),
   transcription: z.string().optional(),

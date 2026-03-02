@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { cn, formatRelativeTime, getInitials } from '@/lib/utils';
+import { getUploadUrl } from '@/integrations/api/client';
 import { Play, BookOpen, Settings, KeyRound, ShieldCheck } from 'lucide-react';
 import { PINSetupDialog } from './PINSetupDialog';
 import { usePinStatus } from '@/hooks/queries/usePin';
@@ -35,7 +36,7 @@ export function ChildProfileCard({ child, avatarUrl, onEdit }: ChildProfileCardP
           <div className="flex flex-col items-center text-center">
             <div className="relative">
               <Avatar className="h-20 w-20">
-                <AvatarImage src={avatarUrl || child.custom_avatar_url || undefined} alt={child.name} />
+                <AvatarImage src={getUploadUrl(avatarUrl || child.custom_avatar_url) || undefined} alt={child.name} />
                 <AvatarFallback className="bg-child-primary/20 text-2xl text-child-primary">
                   {getInitials(child.name)}
                 </AvatarFallback>
