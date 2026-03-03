@@ -9,10 +9,6 @@ function getAppUrl(): string {
   return process.env.APP_URL || 'https://yoluno.up.railway.app';
 }
 
-function isDev(): boolean {
-  return process.env.NODE_ENV !== 'production';
-}
-
 // Lazy-init to avoid crashing on startup if RESEND_API_KEY is not set
 let resend: Resend | null = null;
 function getResend(): Resend {
@@ -24,14 +20,6 @@ function getResend(): Resend {
 
 export async function sendVerificationEmail(to: string, token: string): Promise<void> {
   const verifyUrl = `${getAppUrl()}/verify-email?token=${token}`;
-
-  if (isDev()) {
-    console.log('\n--- DEV EMAIL: Verify Account ---');
-    console.log(`To: ${to}`);
-    console.log(`URL: ${verifyUrl}`);
-    console.log('---\n');
-    return;
-  }
 
   await getResend().emails.send({
     from: getFromEmail(),
@@ -53,14 +41,6 @@ export async function sendVerificationEmail(to: string, token: string): Promise<
 
 export async function sendPasswordResetEmail(to: string, token: string): Promise<void> {
   const resetUrl = `${getAppUrl()}/reset-password?token=${token}`;
-
-  if (isDev()) {
-    console.log('\n--- DEV EMAIL: Password Reset ---');
-    console.log(`To: ${to}`);
-    console.log(`URL: ${resetUrl}`);
-    console.log('---\n');
-    return;
-  }
 
   await getResend().emails.send({
     from: getFromEmail(),

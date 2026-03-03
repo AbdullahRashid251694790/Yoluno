@@ -10,6 +10,7 @@ import {
   loginSchema,
   updatePasswordSchema,
   forgotPasswordSchema,
+  resetPasswordSchema,
   validateBody,
 } from '../utils/validation.js';
 import type { User, Session } from '../types/index.js';
@@ -405,15 +406,7 @@ router.post('/resend-verification', requireAuth, async (req: Request, res: Respo
 // POST /api/auth/reset-password
 router.post('/reset-password', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { token, password } = req.body;
-
-    if (!token || !password) {
-      throw new AppError(400, 'Token and password are required');
-    }
-
-    if (password.length < 8) {
-      throw new AppError(400, 'Password must be at least 8 characters');
-    }
+    const { token, password } = validateBody(resetPasswordSchema, req.body);
 
     // Find user with valid reset token
     const users = await query<User>(
