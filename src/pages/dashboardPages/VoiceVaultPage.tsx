@@ -5,7 +5,8 @@
  * All data from database - no hardcoding.
  */
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { getUploadUrl } from '@/integrations/api/client';
 import { useFamilyMembers } from '@/hooks/queries/useFamily';
@@ -76,6 +77,21 @@ export function VoiceVaultPage() {
   const [currentTime, setCurrentTime] = useState(0);
   const [isRecordDialogOpen, setIsRecordDialogOpen] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const location = useLocation();
+
+  // Stop audio on route change or unmount
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.src = '';
+        audioRef.current = null;
+      }
+      setPlayingClipId(null);
+      setPlaybackProgress(0);
+      setCurrentTime(0);
+    };
+  }, [location.pathname]);
 
   // Build filters
   const filters: VoiceClipFilters = {
@@ -113,9 +129,6 @@ export function VoiceVaultPage() {
       audioRef.current = null;
     }
 
-    setPlaybackProgress(0);
-    setCurrentTime(0);
-
     const fullUrl = getUploadUrl(audioUrl) || audioUrl;
     const audio = new Audio(fullUrl);
     audioRef.current = audio;
@@ -125,6 +138,8 @@ export function VoiceVaultPage() {
     const knownDuration = totalSeconds || 1;
 
     audio.addEventListener('timeupdate', () => {
+      // Guard against stale listeners from a previous audio instance
+      if (audioRef.current !== audio) return;
       const effectiveDuration = (audio.duration && isFinite(audio.duration))
         ? audio.duration
         : knownDuration;
@@ -133,14 +148,19 @@ export function VoiceVaultPage() {
     });
 
     audio.addEventListener('ended', () => {
+      if (audioRef.current !== audio) return;
       setPlayingClipId(null);
       setPlaybackProgress(0);
       setCurrentTime(0);
       audioRef.current = null;
     });
 
+    // Set playing state BEFORE play() so ended/timeupdate have correct state
+    setPlayingClipId(id);
+    setPlaybackProgress(0);
+    setCurrentTime(0);
+
     audio.play().then(() => {
-      setPlayingClipId(id);
       recordPlay.mutate(id);
     }).catch((err) => {
       console.error('Failed to play audio:', err);

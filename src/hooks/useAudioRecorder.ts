@@ -64,6 +64,7 @@ export function useAudioRecorder(options: AudioRecorderOptions = {}): AudioRecor
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<number | null>(null);
   const maxDurationTimerRef = useRef<number | null>(null);
+  const audioUrlRef = useRef<string | null>(null);
 
   const cleanup = useCallback(() => {
     if (timerRef.current) {
@@ -78,10 +79,11 @@ export function useAudioRecorder(options: AudioRecorderOptions = {}): AudioRecor
       streamRef.current.getTracks().forEach((track) => track.stop());
       streamRef.current = null;
     }
-    if (audioUrl) {
-      URL.revokeObjectURL(audioUrl);
+    if (audioUrlRef.current) {
+      URL.revokeObjectURL(audioUrlRef.current);
+      audioUrlRef.current = null;
     }
-  }, [audioUrl]);
+  }, []);
 
   const startRecording = useCallback(async () => {
     try {
@@ -111,6 +113,7 @@ export function useAudioRecorder(options: AudioRecorderOptions = {}): AudioRecor
         const blob = new Blob(chunksRef.current, { type: actualMimeType });
         setAudioBlob(blob);
         const url = URL.createObjectURL(blob);
+        audioUrlRef.current = url;
         setAudioUrl(url);
         onRecordingComplete?.(blob);
       };
@@ -203,6 +206,7 @@ export function useAudioRecorder(options: AudioRecorderOptions = {}): AudioRecor
     setError(null);
     chunksRef.current = [];
     mediaRecorderRef.current = null;
+    audioUrlRef.current = null;
   }, [cleanup]);
 
   return {

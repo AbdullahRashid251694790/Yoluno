@@ -76,9 +76,15 @@ export function RecordVoiceClipDialog({ open, onOpenChange }: RecordVoiceClipDia
     maxDuration: 180000, // 3 minutes max
   });
 
-  // Reset form when dialog closes
+  // Stop playback and reset form when dialog closes
   useEffect(() => {
     if (!open) {
+      // Stop any playing audio immediately
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+      setIsPlaying(false);
       resetForm();
     }
   }, [open]);
@@ -88,6 +94,7 @@ export function RecordVoiceClipDialog({ open, onOpenChange }: RecordVoiceClipDia
     return () => {
       if (audioRef.current) {
         audioRef.current.pause();
+        audioRef.current = null;
       }
     };
   }, []);
@@ -136,9 +143,13 @@ export function RecordVoiceClipDialog({ open, onOpenChange }: RecordVoiceClipDia
 
     setIsUploading(true);
     try {
-      // Upload the audio file
+      // Upload the audio file — derive extension from actual MIME type
+      const ext = audioBlob.type.includes('ogg') ? 'ogg'
+        : audioBlob.type.includes('mp4') ? 'mp4'
+        : audioBlob.type.includes('wav') ? 'wav'
+        : 'webm';
       const formData = new FormData();
-      formData.append('file', audioBlob, `voice-clip-${Date.now()}.webm`);
+      formData.append('file', audioBlob, `voice-clip-${Date.now()}.${ext}`);
 
       const uploadResponse = await apiClient.post<{ url: string; size: number }>(
         '/upload/voice-clips',
