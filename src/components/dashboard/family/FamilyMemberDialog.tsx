@@ -67,76 +67,46 @@ export function FamilyMemberDialog({
     data: CreateFamilyMemberFormData,
     photoFile: File | null
   ) => {
-    if (!user) return;
+    if (!user || isSubmitting) return;
 
     setIsSubmitting(true);
     try {
       let photoUrl = member?.photo_url || null;
 
-      // Create or update the member first to get the ID
-      if (isEditing) {
-        // Upload photo if provided
-        if (photoFile) {
-          photoUrl = await uploadPhoto.mutateAsync({
-            userId: user.id,
-            memberId: member.id,
-            file: photoFile,
-          });
-        }
+      // Upload photo FIRST (before create) so the member record is created atomically with its photo
+      if (photoFile) {
+        photoUrl = await uploadPhoto.mutateAsync({
+          userId: user.id,
+          memberId: member?.id || 'new',
+          file: photoFile,
+        });
+      }
 
+      const memberData = {
+        name: data.name,
+        relationship: data.relationshipToChild,
+        birth_date: data.birthYear ? `${data.birthYear}-01-01` : null,
+        occupation: data.occupation || null,
+        notes: data.bio || null,
+        is_alive: data.isLiving,
+        hobbies: data.hobbies || [],
+        fun_facts: data.funFacts || null,
+        connection_description: data.connectionDescription || null,
+        photo_description: data.photoDescription || null,
+        photo_url: photoUrl,
+      };
+
+      if (isEditing) {
         await updateMember.mutateAsync({
           id: member.id,
-          updates: {
-            name: data.name,
-            relationship_type: data.relationshipToChild,
-            birth_date: data.birthYear
-              ? `${data.birthYear}-01-01`
-              : null,
-            occupation: data.occupation || null,
-            notes: data.bio || null,
-            is_alive: data.isLiving,
-            hobbies: data.hobbies || [],
-            fun_facts: data.funFacts || null,
-            connection_description: data.connectionDescription || null,
-            photo_description: data.photoDescription || null,
-            photo_url: photoUrl,
-          },
+          updates: memberData,
         });
-
         toast.success('Family member updated!');
       } else {
-        // Create new member
-        const newMember = await createMember.mutateAsync({
+        await createMember.mutateAsync({
           user_id: user.id,
-          name: data.name,
-          relationship_type: data.relationshipToChild,
-          birth_date: data.birthYear
-            ? `${data.birthYear}-01-01`
-            : null,
-          occupation: data.occupation || null,
-          notes: data.bio || null,
-          is_alive: data.isLiving,
-          hobbies: data.hobbies || [],
-          fun_facts: data.funFacts || null,
-          connection_description: data.connectionDescription || null,
-          photo_description: data.photoDescription || null,
+          ...memberData,
         });
-
-        // Upload photo if provided
-        if (photoFile && newMember) {
-          photoUrl = await uploadPhoto.mutateAsync({
-            userId: user.id,
-            memberId: newMember.id,
-            file: photoFile,
-          });
-
-          // Update member with photo URL
-          await updateMember.mutateAsync({
-            id: newMember.id,
-            updates: { photo_url: photoUrl },
-          });
-        }
-
         toast.success('Family member added!');
       }
 
@@ -152,36 +122,34 @@ export function FamilyMemberDialog({
   const handleVoiceComplete = async (
     data: ExtractedFamilyData & { photoFile: File | null }
   ) => {
-    if (!user) return;
+    if (!user || isSubmitting) return;
 
     setIsSubmitting(true);
     try {
-      // Create the family member
-      const newMember = await createMember.mutateAsync({
+      // Upload photo FIRST so member is created atomically with photo
+      let photoUrl: string | null = null;
+      if (data.photoFile) {
+        photoUrl = await uploadPhoto.mutateAsync({
+          userId: user.id,
+          memberId: 'new',
+          file: data.photoFile,
+        });
+      }
+
+      await createMember.mutateAsync({
         user_id: user.id,
         name: data.name,
-        relationship_type: data.relationship,
+        relationship: data.relationship,
+        birth_date: null,
         occupation: data.occupation,
+        notes: null,
         is_alive: data.isLiving,
         hobbies: data.hobbies,
         fun_facts: data.funFacts,
         connection_description: data.connectionDescription,
+        photo_description: null,
+        photo_url: photoUrl,
       });
-
-      // Upload photo if provided
-      if (data.photoFile && newMember) {
-        const photoUrl = await uploadPhoto.mutateAsync({
-          userId: user.id,
-          memberId: newMember.id,
-          file: data.photoFile,
-        });
-
-        // Update member with photo URL
-        await updateMember.mutateAsync({
-          id: newMember.id,
-          updates: { photo_url: photoUrl },
-        });
-      }
 
       toast.success('Family member added!');
       onOpenChange(false);

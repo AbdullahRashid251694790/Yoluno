@@ -66,6 +66,15 @@ router.post('/members', async (req: Request, res: Response, next: NextFunction) 
     // Use relationship_type if relationship is not provided
     const relationshipValue = relationship || relationship_type;
 
+    // Prevent duplicate members (same user + name)
+    const existing = await queryOne<{ id: string }>(
+      'SELECT id FROM family_members WHERE user_id = $1 AND LOWER(name) = LOWER($2)',
+      [req.user!.id, name]
+    );
+    if (existing) {
+      throw new AppError(409, 'A family member with this name already exists');
+    }
+
     // Ensure hobbies is a proper array for PostgreSQL
     const hobbiesArray = Array.isArray(hobbies) ? hobbies : (hobbies ? [hobbies] : []);
 
