@@ -128,10 +128,8 @@ export function CreateChildDialog({ open: controlledOpen, onOpenChange, trigger 
         avatar_id: avatarId,
         custom_avatar_url: customAvatarUrl,
         interests: [],
-        personality_traits: [],
         learning_style: null,
         pin_hash: null,
-        last_active_at: null,
       });
 
       // Set the PIN for the created profile

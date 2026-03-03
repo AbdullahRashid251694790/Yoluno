@@ -15,14 +15,13 @@ export interface ChildProfileRow {
   avatar_id: string | null;
   custom_avatar_url: string | null;
   interests: string[];
-  personality_traits: string[];
   learning_style: string | null;
   pin_hash: string | null;
   last_active_at: string | null;
   created_at: string;
   updated_at: string;
 }
-export type ChildProfileInsert = Omit<ChildProfileRow, 'id' | 'created_at' | 'updated_at'>;
+export type ChildProfileInsert = Omit<ChildProfileRow, 'id' | 'last_active_at' | 'created_at' | 'updated_at'>;
 export type ChildProfileUpdate = Partial<Omit<ChildProfileRow, 'id' | 'user_id' | 'created_at'>>;
 
 // Stories
@@ -108,7 +107,7 @@ export interface FamilyMemberRow {
   created_at: string;
   updated_at: string;
 }
-export type FamilyMemberInsert = Omit<FamilyMemberRow, 'id' | 'created_at' | 'updated_at'>;
+export type FamilyMemberInsert = Omit<FamilyMemberRow, 'id' | 'generation' | 'generation_level' | 'position_x' | 'position_y' | 'created_at' | 'updated_at'>;
 export type FamilyMemberUpdate = Partial<Omit<FamilyMemberRow, 'id' | 'user_id' | 'created_at'>>;
 
 // Family Relationships
