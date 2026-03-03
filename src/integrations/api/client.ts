@@ -12,6 +12,20 @@ export const apiClient = axios.create({
 // In-memory access token (not in localStorage for security)
 let accessToken: string | null = null;
 
+// Proactive refresh timer
+let refreshTimer: ReturnType<typeof setTimeout> | null = null;
+
+// Callback for external listeners (e.g., socket reconnect) after token refresh
+let onTokenRefreshCallback: (() => void) | null = null;
+
+/** Register a callback that fires after every successful token refresh */
+export function onTokenRefresh(cb: () => void): void {
+  onTokenRefreshCallback = cb;
+}
+
+// How many minutes before expiry to proactively refresh (access token is 15min)
+const PROACTIVE_REFRESH_MS = 13 * 60 * 1000; // 13 minutes — 2 min before 15-min expiry
+
 // Token management functions
 export function getAccessToken(): string | null {
   return accessToken;
@@ -19,14 +33,34 @@ export function getAccessToken(): string | null {
 
 export function setTokens(newAccessToken: string): void {
   accessToken = newAccessToken;
+  scheduleProactiveRefresh();
+  onTokenRefreshCallback?.();
 }
 
 export function clearTokens(): void {
   accessToken = null;
+  if (refreshTimer) {
+    clearTimeout(refreshTimer);
+    refreshTimer = null;
+  }
 }
 
 export function isAuthenticated(): boolean {
   return !!accessToken;
+}
+
+/** Schedule a silent token refresh before the access token expires */
+function scheduleProactiveRefresh(): void {
+  if (refreshTimer) {
+    clearTimeout(refreshTimer);
+  }
+  refreshTimer = setTimeout(async () => {
+    try {
+      await refreshAccessToken();
+    } catch {
+      // Proactive refresh failed — will fall back to reactive 401 refresh
+    }
+  }, PROACTIVE_REFRESH_MS);
 }
 
 // Flag to prevent multiple refresh attempts
@@ -70,7 +104,11 @@ export async function refreshAccessToken(): Promise<string> {
       return newAccessToken;
     } catch (err) {
       onRefreshFailed(err);
-      clearTokens();
+      // Only clear tokens on definitive auth failure (401/403 from refresh endpoint).
+      // Network errors or 5xx should NOT log the user out — they can retry.
+      if (axios.isAxiosError(err) && err.response && (err.response.status === 401 || err.response.status === 403)) {
+        clearTokens();
+      }
       throw err;
     } finally {
       isRefreshing = false;

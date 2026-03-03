@@ -27,6 +27,7 @@ import {
   disconnectSocket,
   reconnectSocket,
 } from '@/integrations/api/socket';
+import { onTokenRefresh } from '@/integrations/api/client';
 import { handleError } from '@/lib/errors';
 
 interface AuthState {
@@ -88,6 +89,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     checkSession();
 
+    // Reconnect socket whenever tokens are refreshed (proactive or reactive)
+    onTokenRefresh(() => {
+      reconnectSocket();
+    });
+
     // Cleanup socket on unmount
     return () => {
       disconnectSocket();
@@ -102,8 +108,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         isLoading: false,
         isAuthenticated: true,
       });
-      // Initialize socket with new token
-      reconnectSocket();
+      // Socket reconnect is handled automatically by onTokenRefresh callback
     } catch (error) {
       throw handleError(error, {
         context: 'AuthContext.signIn',
@@ -120,8 +125,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         isLoading: false,
         isAuthenticated: true,
       });
-      // Initialize socket
-      reconnectSocket();
+      // Socket reconnect is handled automatically by onTokenRefresh callback
     } catch (error) {
       console.error('Signup error:', error);
       throw handleError(error, {

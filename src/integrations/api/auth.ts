@@ -58,8 +58,14 @@ export async function getSession(): Promise<SessionResponse | null> {
       try {
         await refreshAccessToken();
       } catch {
-        // No valid refresh cookie → user is truly logged out
-        return null;
+        // Retry once after a short delay (handles transient network issues on page load)
+        await new Promise((r) => setTimeout(r, 1000));
+        try {
+          await refreshAccessToken();
+        } catch {
+          // Refresh failed twice → user is truly logged out
+          return null;
+        }
       }
     }
 

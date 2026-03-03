@@ -11,19 +11,17 @@ export function initSocket(): Socket {
     return socket;
   }
 
-  const token = getAccessToken();
-
   socket = io(SOCKET_URL, {
-    auth: {
-      token,
+    // Use a function so socket.io fetches the LATEST token on every reconnect
+    auth: (cb) => {
+      cb({ token: getAccessToken() });
     },
     autoConnect: true,
     reconnection: true,
-    reconnectionAttempts: 3,
+    reconnectionAttempts: 5,
     reconnectionDelay: 2000,
     reconnectionDelayMax: 10000,
     timeout: 10000,
-    // Prevent rapid reconnection loops
     transports: ['websocket', 'polling'],
   });
 
@@ -37,6 +35,7 @@ export function initSocket(): Socket {
 
   socket.on('connect_error', (error) => {
     console.error('Socket connection error:', error.message);
+    // If auth error, the socket.io auth function will fetch the latest token on next reconnect attempt
   });
 
   socket.on('error', (error) => {
