@@ -46,6 +46,23 @@ export function formatRelativeTime(date: Date | string): string {
   return formatDate(d);
 }
 
+export function formatMessageTime(date: Date | string): string {
+  const d = typeof date === 'string' ? new Date(date) : date;
+  const now = new Date();
+  const diffMs = now.getTime() - d.getTime();
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+  const time = d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+
+  if (diffDays < 1 && d.getDate() === now.getDate()) return time;
+  if (diffDays < 2) return `Yesterday ${time}`;
+  if (diffDays < 7) {
+    const day = d.toLocaleDateString([], { weekday: 'short' });
+    return `${day} ${time}`;
+  }
+  return `${formatDate(d)} ${time}`;
+}
+
 /**
  * Truncate text to a maximum length
  */

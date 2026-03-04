@@ -6,8 +6,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { cn } from '@/lib/utils';
-import { formatRelativeTime } from '@/lib/utils';
+import { cn, formatMessageTime } from '@/lib/utils';
 import type { ChatMessage as ChatMessageType } from '@/types/domain';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { MiniAvatar } from '@/components/chat/ChatAvatar';
@@ -94,7 +93,7 @@ export function ChatMessage({ message, childId, avatarUrl, childName }: ChatMess
             isUser ? 'text-white/70' : 'text-muted-foreground'
           )}
         >
-          {formatRelativeTime(message.timestamp)}
+          {formatMessageTime(message.timestamp)}
         </span>
       </div>
     </div>
