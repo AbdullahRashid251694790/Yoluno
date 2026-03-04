@@ -2,7 +2,7 @@
  * Kids Chat Page
  *
  * Child-facing AI chat interface with buddy chat.
- * Supports session-based chats like ChatGPT.
+ * Supports session-based chats with a ChatGPT-style sidebar.
  */
 
 import { useEffect, useState, useCallback } from 'react';
@@ -11,10 +11,12 @@ import { useChild } from '@/contexts/ChildContext';
 import { useChat } from '@/contexts/ChatContext';
 import { useChildProfile } from '@/hooks/queries';
 import { useChatSessions, useCreateChatSession } from '@/hooks/queries/useBuddyChat';
+import { useIsMobile } from '@/hooks/useIsMobile';
 import { LoadingState, ErrorState } from '@/components/shared';
 import { Button } from '@/components/ui/button';
 import { BuddyChat, ChatSessionList, NewChatButton } from '@/components/chat';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, PanelLeft } from 'lucide-react';
+import { getUploadUrl } from '@/integrations/api/client';
 import type { ChatSession } from '@/services/buddyChat';
 
 export function KidsChatPage() {
@@ -26,6 +28,10 @@ export function KidsChatPage() {
   const { data: child, isLoading, isError } = useChildProfile(childId);
   const { data: sessions = [] } = useChatSessions(childId);
   const createSession = useCreateChatSession();
+  const isMobile = useIsMobile();
+
+  // Sidebar state: collapsed on mobile by default, expanded on desktop
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(isMobile);
 
   // Get session ID from URL or state
   const [currentSessionId, setCurrentSessionId] = useState<string | undefined>(
@@ -35,39 +41,27 @@ export function KidsChatPage() {
   // Get mood from URL params (passed from mood check page)
   const moodParam = searchParams.get('mood');
 
+  const activateSession = useCallback((sessionId: string, closeSidebar = false) => {
+    setCurrentSessionId(sessionId);
+    setSearchParams({ session: sessionId });
+    if (closeSidebar && isMobile) setSidebarCollapsed(true);
+  }, [setSearchParams, isMobile]);
+
   // Create a new session when page loads with mood param or if no session exists
   useEffect(() => {
     if (!childId || isLoading) return;
 
-    // If we have a mood param and no current session, create a new session with that mood
     if (moodParam && !currentSessionId) {
       createSession.mutate(
         { childId, input: { mood: moodParam } },
-        {
-          onSuccess: (newSession) => {
-            setCurrentSessionId(newSession.id);
-            // Update URL to include session ID and remove mood param
-            setSearchParams({ session: newSession.id });
-          },
-        }
+        { onSuccess: (s) => activateSession(s.id) }
       );
-    }
-    // If no session is selected and sessions exist, use the most recent one
-    else if (!currentSessionId && sessions.length > 0) {
-      const latestSession = sessions[0];
-      setCurrentSessionId(latestSession.id);
-      setSearchParams({ session: latestSession.id });
-    }
-    // If no sessions exist and no mood param, create a fresh session
-    else if (!currentSessionId && sessions.length === 0 && !moodParam && !createSession.isPending) {
+    } else if (!currentSessionId && sessions.length > 0) {
+      activateSession(sessions[0].id);
+    } else if (!currentSessionId && sessions.length === 0 && !moodParam && !createSession.isPending) {
       createSession.mutate(
         { childId },
-        {
-          onSuccess: (newSession) => {
-            setCurrentSessionId(newSession.id);
-            setSearchParams({ session: newSession.id });
-          },
-        }
+        { onSuccess: (s) => activateSession(s.id) }
       );
     }
   }, [childId, sessions, currentSessionId, moodParam, isLoading]);
@@ -89,22 +83,20 @@ export function KidsChatPage() {
   };
 
   const handleSessionSelect = useCallback((session: ChatSession) => {
-    setCurrentSessionId(session.id);
-    setSearchParams({ session: session.id });
-  }, [setSearchParams]);
+    activateSession(session.id, true);
+  }, [activateSession]);
 
   const handleNewSession = useCallback(() => {
     if (!childId) return;
     createSession.mutate(
       { childId },
-      {
-        onSuccess: (newSession) => {
-          setCurrentSessionId(newSession.id);
-          setSearchParams({ session: newSession.id });
-        },
-      }
+      { onSuccess: (s) => activateSession(s.id, true) }
     );
-  }, [childId, createSession, setSearchParams]);
+  }, [childId, createSession, activateSession]);
+
+  const toggleSidebar = useCallback(() => {
+    setSidebarCollapsed((prev) => !prev);
+  }, []);
 
   if (isLoading) {
     return <LoadingState message="Loading..." fullPage />;
@@ -123,38 +115,73 @@ export function KidsChatPage() {
   }
 
   return (
-    <div className="flex h-screen flex-col bg-gradient-to-b from-pastel-blue to-white overflow-hidden">
-      {/* Header */}
-      <header className="flex items-center justify-between border-b bg-white/80 backdrop-blur-sm px-4 py-3 shadow-sm">
-        <div className="flex items-center gap-1">
-          <Button variant="ghost" size="sm" onClick={handleBack} className="text-charcoal-muted">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Exit
-          </Button>
-          <ChatSessionList
-            childId={childId!}
-            currentSessionId={currentSessionId}
-            onSessionSelect={handleSessionSelect}
-            onNewSession={handleNewSession}
-          />
-        </div>
-        <h1 className="text-lg font-semibold text-charcoal">Hi, {child.name}!</h1>
-        <NewChatButton
-          onClick={handleNewSession}
-          isLoading={createSession.isPending}
+    <div className="flex h-screen bg-gradient-to-b from-pastel-blue to-white overflow-hidden">
+      {/* Mobile backdrop overlay */}
+      {isMobile && !sidebarCollapsed && (
+        <div
+          className="fixed inset-0 z-40 bg-black/40"
+          onClick={() => setSidebarCollapsed(true)}
         />
-      </header>
+      )}
 
-      {/* Buddy Chat */}
-      <main className="flex-1 overflow-hidden">
-        <div className="mx-auto h-full w-full max-w-4xl">
-          <BuddyChat
-            childId={childId!}
-            childName={child.name}
-            sessionId={currentSessionId}
+      {/* Sidebar */}
+      <div
+        className={
+          isMobile
+            ? 'fixed inset-y-0 left-0 z-50'
+            : 'relative shrink-0'
+        }
+      >
+        <ChatSessionList
+          childId={childId!}
+          currentSessionId={currentSessionId}
+          onSessionSelect={handleSessionSelect}
+          onNewSession={handleNewSession}
+          isCollapsed={sidebarCollapsed}
+          onToggleCollapse={toggleSidebar}
+          isNewSessionLoading={createSession.isPending}
+        />
+      </div>
+
+      {/* Main content */}
+      <div className="flex flex-1 flex-col min-w-0">
+        {/* Header */}
+        <header className="flex items-center justify-between border-b bg-white/80 backdrop-blur-sm px-4 py-3 shadow-sm shrink-0">
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="sm" onClick={handleBack} className="text-charcoal-muted">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Exit
+            </Button>
+            {sidebarCollapsed && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleSidebar}
+                className="text-charcoal-muted"
+              >
+                <PanelLeft className="h-5 w-5" />
+              </Button>
+            )}
+          </div>
+          <h1 className="text-lg font-semibold text-charcoal">Hi, {child.name}!</h1>
+          <NewChatButton
+            onClick={handleNewSession}
+            isLoading={createSession.isPending}
           />
-        </div>
-      </main>
+        </header>
+
+        {/* Buddy Chat */}
+        <main className="flex-1 overflow-hidden">
+          <div className="mx-auto h-full w-full max-w-4xl">
+            <BuddyChat
+              childId={childId!}
+              childName={child.name}
+              sessionId={currentSessionId}
+              childAvatarUrl={getUploadUrl(child.avatarUrl || child.custom_avatar_url)}
+            />
+          </div>
+        </main>
+      </div>
     </div>
   );
 }
