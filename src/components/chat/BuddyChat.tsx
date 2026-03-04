@@ -34,9 +34,10 @@ interface BuddyChatProps {
   childId: string;
   childName: string;
   sessionId?: string;
+  childAvatarUrl?: string;
 }
 
-export function BuddyChat({ childId, childName, sessionId }: BuddyChatProps) {
+export function BuddyChat({ childId, childName, sessionId, childAvatarUrl }: BuddyChatProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isTyping, setIsTyping] = useState(false);
   const queryClient = useQueryClient();
@@ -251,7 +252,7 @@ export function BuddyChat({ childId, childName, sessionId }: BuddyChatProps) {
                     imageKey: message.image_key,
                   }}
                   childId={childId}
-                  avatarUrl={buddy?.buddy_avatar_url || undefined}
+                  avatarUrl={childAvatarUrl}
                   childName={childName}
                 />
               </div>
