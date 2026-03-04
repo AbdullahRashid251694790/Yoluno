@@ -27,6 +27,10 @@ const upload = multer({
   },
 });
 
+// Session title constants
+const DEFAULT_SESSION_TITLE = 'New Chat';
+const GENERIC_SESSION_TITLE = 'Chat with Luno';
+
 // Task completion keywords
 const COMPLETION_KEYWORDS = ['done', 'finished', 'completed', 'i did it', 'all done', 'look what i made', 'i finished'];
 
@@ -290,7 +294,7 @@ router.post('/:childId/sessions', async (req: Request, res: Response, next: Next
     await verifyChildAccess(childId, req.user!.id);
 
     const sessionId = uuidv4();
-    const sessionTitle = title || (mood ? `${mood.charAt(0).toUpperCase() + mood.slice(1)} mood chat` : 'New Chat');
+    const sessionTitle = title || (mood ? `${mood.charAt(0).toUpperCase() + mood.slice(1)} mood chat` : DEFAULT_SESSION_TITLE);
 
     const session = await queryOne<ChatSession>(
       `INSERT INTO chat_sessions (id, child_profile_id, title, mood, started_at)
@@ -508,6 +512,16 @@ router.post('/:childId/sessions/:sessionId/send', upload.single('image'), async 
       });
     }
 
+    // Auto-generate session title on first exchange, or re-generate on second
+    // exchange if the first title was generic (e.g. child just said "hi")
+    const isDefaultTitle = session.title === DEFAULT_SESSION_TITLE || session.title.endsWith('mood chat');
+    const isGenericTitle = session.title === GENERIC_SESSION_TITLE;
+    if (isDefaultTitle || (isGenericTitle && session.message_count <= 2)) {
+      generateSessionTitle(sessionId, message, buddyResponse).catch((err) => {
+        console.error('Failed to auto-generate session title:', err);
+      });
+    }
+
     // Handle task completion events
     if (taskCompletion?.completed) {
       emitToUser(io, req.user!.id, 'task-completed', {
@@ -537,6 +551,56 @@ router.post('/:childId/sessions/:sessionId/send', upload.single('image'), async 
     next(error);
   }
 });
+
+// Helper function to auto-generate a chat session title from conversation
+async function generateSessionTitle(sessionId: string, childMessage: string, buddyResponse: string): Promise<void> {
+  try {
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': process.env.FRONTEND_URL || 'http://localhost:5173',
+      },
+      body: JSON.stringify({
+        model: 'google/gemini-2.5-flash',
+        messages: [
+          {
+            role: 'system',
+            content: `You name chat conversations. Given a child's message to their AI buddy, output a short title (2-6 words) that captures the SPECIFIC TOPIC the child is talking about.
+
+Rules:
+- Focus on what the CHILD said, not the AI response
+- Be specific: "Drawing a Dragon" not "Art Chat"
+- Be specific: "Help With Math Homework" not "Learning Together"
+- If the child said "hi" or something generic, use "${GENERIC_SESSION_TITLE}"
+- No quotes, no punctuation at the end
+- Output ONLY the title, nothing else`,
+          },
+          {
+            role: 'user',
+            content: `Child said: "${childMessage}"\nAI buddy replied: "${buddyResponse}"`,
+          },
+        ],
+        max_tokens: 20,
+        temperature: 0.3,
+      }),
+    });
+
+    if (!response.ok) return;
+
+    const data = (await response.json()) as { choices: { message: { content: string } }[] };
+    const title = data.choices[0]?.message?.content?.trim();
+    if (title && title.length > 0 && title.length <= 60) {
+      await query(
+        `UPDATE chat_sessions SET title = $1 WHERE id = $2`,
+        [title, sessionId]
+      );
+    }
+  } catch (error) {
+    console.error('Error generating session title:', error);
+  }
+}
 
 // Helper function to analyze image using vision model
 async function analyzeImage(imageBuffer: Buffer, mimeType: string): Promise<string> {
