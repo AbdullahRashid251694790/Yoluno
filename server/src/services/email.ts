@@ -6,7 +6,7 @@ function getFromEmail(): string {
 }
 
 function getAppUrl(): string {
-  return process.env.APP_URL || 'https://yoluno.up.railway.app';
+  return process.env.APP_URL || process.env.FRONTEND_URL || 'https://yoluno.up.railway.app';
 }
 
 // Lazy-init to avoid crashing on startup if RESEND_API_KEY is not set

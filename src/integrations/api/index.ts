@@ -20,6 +20,8 @@ export {
   updatePassword,
   forgotPassword,
   resetPassword,
+  verifyEmail,
+  resendVerification,
 } from './auth';
 export type { User, AuthResponse, SessionResponse } from './auth';
 

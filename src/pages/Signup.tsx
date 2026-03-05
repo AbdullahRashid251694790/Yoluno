@@ -1,7 +1,7 @@
 /**
  * Signup Page
  *
- * New user registration page.
+ * New user registration page. After signup, redirects to verify-email page.
  */
 
 import { useState } from 'react';
@@ -50,11 +50,8 @@ export function SignupPage() {
 
     try {
       await signUp(email, password);
-      toast.success('Check your email to confirm your account');
-      navigate('/login');
+      navigate(`/verify-email?email=${encodeURIComponent(email)}`);
     } catch (error: unknown) {
-      // Show actual error from Supabase
-      console.error('Signup error:', error);
       const err = error as { message?: string; userMessage?: string };
       toast.error(err.userMessage || err.message || 'Failed to create account');
     } finally {

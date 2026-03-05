@@ -1,19 +1,20 @@
 /**
  * Login Page
  *
- * User authentication page.
+ * User authentication page. Blocks unverified users with a resend option.
  */
 
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { resendVerification } from '@/integrations/api/auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { handleError } from '@/lib/errors';
-import { Loader2, Eye, EyeOff } from 'lucide-react';
-import { Link as RouterLink } from 'react-router-dom';
+import { Loader2, Eye, EyeOff, Mail } from 'lucide-react';
+import { toast } from 'sonner';
 import yolunoLogo from '@/assets/yoluno-logo.svg';
 
 export function LoginPage() {
@@ -23,19 +24,39 @@ export function LoginPage() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isResending, setIsResending] = useState(false);
+  const [showNotVerified, setShowNotVerified] = useState(false);
+
+  const handleResend = async () => {
+    setIsResending(true);
+    try {
+      await resendVerification(email);
+      toast.success('Verification email sent. Check your inbox.');
+    } catch {
+      toast.error('Failed to resend verification email');
+    } finally {
+      setIsResending(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setShowNotVerified(false);
 
     try {
       await signIn(email, password);
       navigate('/dashboard');
     } catch (error) {
-      handleError(error, {
-        context: 'LoginPage',
-        userMessage: 'Invalid email or password',
-      });
+      const err = error as { code?: string };
+      if (err.code === 'EMAIL_NOT_VERIFIED') {
+        setShowNotVerified(true);
+      } else {
+        handleError(error, {
+          context: 'LoginPage',
+          userMessage: 'Invalid email or password',
+        });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -45,14 +66,45 @@ export function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-pastel-blue to-white p-4">
       <Card className="w-full max-w-md shadow-xl border-0">
         <CardHeader className="text-center">
-          <RouterLink to="/" className="mx-auto mb-4 block">
+          <Link to="/" className="mx-auto mb-4 block">
             <img src={yolunoLogo} alt="Yoluno" className="h-12 mx-auto" />
-          </RouterLink>
+          </Link>
           <CardTitle className="text-2xl text-charcoal">Welcome back</CardTitle>
           <CardDescription className="text-charcoal-muted">Sign in to your Yoluno account</CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
+            {showNotVerified && (
+              <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-center space-y-3">
+                <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-amber-100">
+                  <Mail className="h-5 w-5 text-amber-600" />
+                </div>
+                <p className="text-sm text-amber-800 font-medium">
+                  Please verify your email before signing in.
+                </p>
+                <p className="text-xs text-amber-700">
+                  Check your inbox for the verification link we sent to{' '}
+                  <span className="font-medium">{email}</span>.
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleResend}
+                  disabled={isResending}
+                  className="border-amber-300 text-amber-800 hover:bg-amber-100"
+                >
+                  {isResending ? (
+                    <>
+                      <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                      Resending...
+                    </>
+                  ) : (
+                    'Resend verification email'
+                  )}
+                </Button>
+              </div>
+            )}
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input

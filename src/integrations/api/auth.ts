@@ -15,15 +15,12 @@ export interface SessionResponse {
   user: User;
 }
 
-// Register a new user
-export async function register(email: string, password: string): Promise<AuthResponse> {
-  const response = await apiClient.post<AuthResponse>('/auth/register', {
+// Register a new user (no tokens returned — email verification required first)
+export async function register(email: string, password: string): Promise<{ message: string }> {
+  const response = await apiClient.post<{ message: string }>('/auth/register', {
     email,
     password,
   });
-
-  const { accessToken } = response.data;
-  setTokens(accessToken);
 
   return response.data;
 }
@@ -97,4 +94,17 @@ export async function forgotPassword(email: string): Promise<void> {
 // Reset password with token
 export async function resetPassword(token: string, password: string): Promise<void> {
   await apiClient.post('/auth/reset-password', { token, password });
+}
+
+// Verify email with token
+export async function verifyEmail(token: string): Promise<{ message: string }> {
+  const response = await apiClient.get<{ message: string }>('/auth/verify-email', {
+    params: { token },
+  });
+  return response.data;
+}
+
+// Resend verification email
+export async function resendVerification(email: string): Promise<void> {
+  await apiClient.post('/auth/resend-verification', { email });
 }

@@ -20,6 +20,7 @@ import {
   getSession,
   forgotPassword,
   updatePassword as apiUpdatePassword,
+  isApiError,
   type User,
 } from '@/integrations/api';
 import {
@@ -110,6 +111,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
       });
       // Socket reconnect is handled automatically by onTokenRefresh callback
     } catch (error) {
+      // Let EMAIL_NOT_VERIFIED pass through so LoginPage can handle it
+      if (
+        isApiError(error) &&
+        error.response?.status === 403 &&
+        error.response?.data?.error === 'EMAIL_NOT_VERIFIED'
+      ) {
+        throw { code: 'EMAIL_NOT_VERIFIED', message: error.response.data.message };
+      }
       throw handleError(error, {
         context: 'AuthContext.signIn',
         strategy: 'throw',
@@ -119,13 +128,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const signUp = useCallback(async (email: string, password: string) => {
     try {
-      const response = await apiRegister(email, password);
-      setState({
-        user: response.user,
-        isLoading: false,
-        isAuthenticated: true,
-      });
-      // Socket reconnect is handled automatically by onTokenRefresh callback
+      await apiRegister(email, password);
+      // No login — user must verify email first
     } catch (error) {
       console.error('Signup error:', error);
       throw handleError(error, {

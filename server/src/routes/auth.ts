@@ -66,11 +66,6 @@ router.post('/register', async (req: Request, res: Response, next: NextFunction)
       [userId, email.toLowerCase(), passwordHash, false, verificationToken]
     );
 
-    // Send verification email (non-blocking)
-    sendVerificationEmail(email.toLowerCase(), verificationToken).catch((err) => {
-      console.error('Failed to send verification email:', err);
-    });
-
     // Create default subscription
     await query(
       `INSERT INTO user_subscriptions (id, user_id, tier, stories_limit, chat_messages_limit)
@@ -78,27 +73,13 @@ router.post('/register', async (req: Request, res: Response, next: NextFunction)
       [uuidv4(), userId, 'free', 10, 100]
     );
 
-    // Generate tokens
-    const accessToken = generateAccessToken(userId, email);
-    const refreshToken = generateRefreshToken(userId, email);
-
-    // Store refresh token
-    const refreshTokenHash = await hashPassword(refreshToken);
-    await query(
-      `INSERT INTO sessions (id, user_id, refresh_token_hash, expires_at)
-       VALUES ($1, $2, $3, NOW() + INTERVAL '7 days')`,
-      [uuidv4(), userId, refreshTokenHash]
-    );
-
-    setRefreshTokenCookie(res, refreshToken);
+    // Send verification email (non-blocking)
+    sendVerificationEmail(email.toLowerCase(), verificationToken).catch((err) => {
+      console.error('Failed to send verification email:', err);
+    });
 
     res.status(201).json({
-      user: {
-        id: userId,
-        email: email.toLowerCase(),
-        email_verified: false,
-      },
-      accessToken,
+      message: 'Account created. Please check your email to verify your account.',
     });
   } catch (error) {
     next(error);
@@ -122,6 +103,15 @@ router.post('/login', async (req: Request, res: Response, next: NextFunction) =>
     const validPassword = await verifyPassword(password, user.password_hash);
     if (!validPassword) {
       throw new AppError(401, 'Invalid email or password');
+    }
+
+    // Block unverified users
+    if (!user.email_verified) {
+      res.status(403).json({
+        error: 'EMAIL_NOT_VERIFIED',
+        message: 'Please verify your email before signing in. Check your inbox for the verification link.',
+      });
+      return;
     }
 
     // Generate tokens
@@ -373,19 +363,21 @@ router.get('/verify-email', async (req: Request, res: Response, next: NextFuncti
 });
 
 // POST /api/auth/resend-verification
-router.post('/resend-verification', requireAuth, async (req: Request, res: Response, next: NextFunction) => {
+router.post('/resend-verification', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const user = await queryOne<User>(
-      'SELECT * FROM users WHERE id = $1',
-      [req.user!.id]
-    );
-
-    if (!user) {
-      throw new AppError(404, 'User not found');
+    const { email } = req.body;
+    if (!email || typeof email !== 'string') {
+      throw new AppError(400, 'Email is required');
     }
 
-    if (user.email_verified) {
-      res.json({ message: 'Email is already verified' });
+    const user = await queryOne<User>(
+      'SELECT * FROM users WHERE email = $1',
+      [email.toLowerCase()]
+    );
+
+    // Always return success to prevent email enumeration
+    if (!user || user.email_verified) {
+      res.json({ message: 'If the email exists and is unverified, a verification link will be sent.' });
       return;
     }
 
@@ -395,9 +387,11 @@ router.post('/resend-verification', requireAuth, async (req: Request, res: Respo
       [verificationToken, user.id]
     );
 
-    await sendVerificationEmail(user.email, verificationToken);
+    sendVerificationEmail(user.email, verificationToken).catch((err) => {
+      console.error('Failed to send verification email:', err);
+    });
 
-    res.json({ message: 'Verification email sent' });
+    res.json({ message: 'If the email exists and is unverified, a verification link will be sent.' });
   } catch (error) {
     next(error);
   }
