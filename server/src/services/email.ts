@@ -2,7 +2,7 @@ import { Resend } from 'resend';
 
 // Lazy getters to avoid ESM import hoisting issues with dotenv
 function getFromEmail(): string {
-  return process.env.FROM_EMAIL || 'Yoluno <onboarding@resend.dev>';
+  return process.env.FROM_EMAIL || 'Yoluno <noreply@yoluno.ai>';
 }
 
 function getAppUrl(): string {
