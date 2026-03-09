@@ -13,7 +13,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { LoadingSpinner, ErrorState } from '@/components/shared';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Users, Crown } from 'lucide-react';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
   FamilyMemberCard,
   FamilyMemberDetail,
@@ -163,40 +162,34 @@ export function KidsFamilyPage() {
       </header>
 
       <div className="px-4 pb-8 pt-4 space-y-6">
-        {/* Current Child (Me) */}
+        {/* Current Child (Me) & Parent */}
         <RelationshipGroup type="self">
-          <FamilyMemberCard
-            member={child}
-            type="self"
-            isSelf
-            onPress={() => setSelectedMember({ member: child, type: 'self' })}
-          />
-        </RelationshipGroup>
-
-        {/* Parent Account */}
-        <RelationshipGroup type="parent">
-          <button
-            className="w-full p-4 rounded-2xl bg-white/80 backdrop-blur-sm shadow-md hover:shadow-lg transition-all duration-200 active:scale-[0.98] hover:scale-[1.02] flex items-center gap-4 text-left"
-          >
-            <div className="relative">
-              <Avatar className="h-20 w-20 border-4 border-amber-400">
-                <AvatarFallback className="text-2xl bg-amber-100">
-                  <Crown className="h-8 w-8 text-amber-600" />
-                </AvatarFallback>
-              </Avatar>
-              <span className="absolute -bottom-1 -right-1 text-xl bg-white rounded-full p-1 shadow-sm">
-                👑
-              </span>
-            </div>
-            <div className="flex-1 min-w-0">
-              <h3 className="font-display font-bold text-lg text-foreground truncate">
-                {user?.email?.split('@')[0] || 'Parent'}
-              </h3>
-              <p className="text-sm font-medium text-amber-600">
-                Your parent
-              </p>
-            </div>
-          </button>
+          <div className="grid grid-cols-2 gap-3">
+            <FamilyMemberCard
+              member={child}
+              type="self"
+              isSelf
+              onPress={() => setSelectedMember({ member: child, type: 'self' })}
+            />
+            <button
+              className="rounded-2xl bg-white/80 backdrop-blur-sm shadow-md hover:shadow-lg transition-all duration-200 active:scale-[0.98] hover:scale-[1.02] overflow-hidden text-left"
+            >
+              <div className="relative w-full aspect-square bg-gradient-to-br from-amber-50 to-orange-50 flex items-center justify-center">
+                <Crown className="h-16 w-16 text-amber-500" />
+                <span className="absolute top-2 right-2 text-2xl bg-white/90 rounded-full p-1.5 shadow-md">
+                  👑
+                </span>
+              </div>
+              <div className="p-3">
+                <h3 className="font-display font-bold text-base text-foreground truncate">
+                  {user?.email?.split('@')[0] || 'Parent'}
+                </h3>
+                <p className="text-xs font-medium text-amber-600">
+                  Your parent
+                </p>
+              </div>
+            </button>
+          </div>
         </RelationshipGroup>
 
         {/* Siblings */}
@@ -204,17 +197,17 @@ export function KidsFamilyPage() {
           <RelationshipGroup
             type="siblings"
             count={otherChildren.length}
-            horizontal={otherChildren.length >= 3}
           >
-            {otherChildren.map((sibling) => (
-              <div key={sibling.id} className={otherChildren.length >= 3 ? 'w-48 flex-shrink-0' : ''}>
+            <div className="grid grid-cols-2 gap-3">
+              {otherChildren.map((sibling) => (
                 <FamilyMemberCard
+                  key={sibling.id}
                   member={sibling}
                   type="sibling"
                   onPress={() => setSelectedMember({ member: sibling, type: 'sibling' })}
                 />
-              </div>
-            ))}
+              ))}
+            </div>
           </RelationshipGroup>
         )}
 
@@ -230,17 +223,17 @@ export function KidsFamilyPage() {
               key={group}
               type={groupType}
               count={members.length}
-              horizontal={members.length >= 3}
             >
-              {members.map((member) => (
-                <div key={member.id} className={members.length >= 3 ? 'w-48 flex-shrink-0' : ''}>
+              <div className="grid grid-cols-2 gap-3">
+                {members.map((member) => (
                   <FamilyMemberCard
+                    key={member.id}
                     member={member}
                     type={relationType}
                     onPress={() => setSelectedMember({ member, type: relationType })}
                   />
-                </div>
-              ))}
+                ))}
+              </div>
             </RelationshipGroup>
           );
         })}

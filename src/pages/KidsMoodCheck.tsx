@@ -223,12 +223,13 @@ export function KidsMoodCheckPage() {
           )}
         </div>
 
-        {/* Mood selection buttons */}
+        {/* Mood selection buttons with Luno faces */}
         {!showResponse && (
-          <div className="grid grid-cols-5 gap-3 mb-8 max-w-md mx-auto">
+          <div className="grid grid-cols-4 gap-3 mb-8 max-w-md mx-auto">
             {moods.map((mood) => {
               const config = moodConfigs[mood];
               const isSelected = selectedMood === mood;
+              const expression = moodToExpression[mood];
 
               return (
                 <button
@@ -243,8 +244,12 @@ export function KidsMoodCheckPage() {
                     isSelected && 'ring-4 ring-primary ring-offset-2 scale-105'
                   )}
                 >
-                  <span className="text-4xl mb-1">{config.emoji}</span>
-                  <span className={cn('text-xs font-medium', config.color)}>
+                  <ChatAvatar
+                    expression={expression}
+                    size="sm"
+                    buddyName={buddyName}
+                  />
+                  <span className={cn('text-xs font-medium mt-1', config.color)}>
                     {config.label}
                   </span>
                 </button>

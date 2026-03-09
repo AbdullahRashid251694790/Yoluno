@@ -130,92 +130,115 @@ export function FamilyMemberDetail({ member, type, isOpen, onClose }: FamilyMemb
           <X className="h-5 w-5" />
         </Button>
 
-        <div className="p-6 space-y-6">
-          {/* Avatar */}
-          <div className="flex flex-col items-center">
-            <div className="relative">
-              <Avatar className={cn('h-32 w-32 border-4 shadow-lg', config.borderColor)}>
-                <AvatarImage src={avatarUrl} alt={name} />
-                <AvatarFallback className={cn('text-4xl font-bold', config.bgColor)}>
-                  {name.charAt(0).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-              <span className="absolute -bottom-2 -right-2 text-3xl bg-white rounded-full p-2 shadow-md">
-                {config.emoji}
-              </span>
+        {/* Large photo header */}
+        {avatarUrl ? (
+          <div className="relative w-full aspect-[4/3] overflow-hidden">
+            <img
+              src={avatarUrl}
+              alt={name}
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+            <div className="absolute bottom-4 left-4 right-4">
+              <h2 className="text-2xl font-display font-bold text-white drop-shadow-md">
+                {name}
+              </h2>
+              {relationship && (
+                <p className="text-white/90 capitalize drop-shadow-sm">{relationship}</p>
+              )}
             </div>
-
-            {/* Name & Relationship */}
+            <span className="absolute top-3 right-3 text-3xl bg-white/90 rounded-full p-2 shadow-md">
+              {config.emoji}
+            </span>
+          </div>
+        ) : (
+          <div className={cn(
+            'relative w-full pt-8 pb-4 flex flex-col items-center',
+            'bg-gradient-to-b', config.gradientFrom, config.gradientTo
+          )}>
+            <Avatar className={cn('h-32 w-32 border-4 shadow-lg', config.borderColor)}>
+              <AvatarFallback className={cn('text-4xl font-bold', config.bgColor)}>
+                {name.charAt(0).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <span className="absolute top-3 right-3 text-3xl bg-white/90 rounded-full p-2 shadow-md">
+              {config.emoji}
+            </span>
             <h2 className="mt-4 text-2xl font-display font-bold text-center">
               {name}
             </h2>
             {relationship && (
               <p className="text-muted-foreground capitalize">{relationship}</p>
             )}
-            {!isAlive && (
-              <p className="text-sm text-muted-foreground mt-1">
-                Remembered with love 💕
-              </p>
-            )}
           </div>
+        )}
 
-          {/* Details */}
-          <div className="space-y-4">
-            {/* Connection description */}
-            {connectionDescription && (
-              <div className="bg-white/60 rounded-xl p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <Heart className="h-4 w-4 text-pink-500" />
-                  <span className="text-sm font-medium text-muted-foreground">About</span>
-                </div>
-                <p className="text-foreground">{connectionDescription}</p>
-              </div>
-            )}
-
-            {/* Occupation */}
-            {occupation && (
-              <div className="bg-white/60 rounded-xl p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <Briefcase className="h-4 w-4 text-blue-500" />
-                  <span className="text-sm font-medium text-muted-foreground">Works as</span>
-                </div>
-                <p className="text-foreground">{occupation}</p>
-              </div>
-            )}
-
-            {/* Hobbies */}
-            {hobbies && hobbies.length > 0 && (
-              <div className="bg-white/60 rounded-xl p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <Sparkles className="h-4 w-4 text-amber-500" />
-                  <span className="text-sm font-medium text-muted-foreground">Likes</span>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {hobbies.map((hobby, index) => (
-                    <span
-                      key={index}
-                      className="px-3 py-1 bg-white/80 rounded-full text-sm text-foreground"
-                    >
-                      {hobby}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Fun facts */}
-            {funFacts && (
-              <div className="bg-white/60 rounded-xl p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-base">✨</span>
-                  <span className="text-sm font-medium text-muted-foreground">Fun fact</span>
-                </div>
-                <p className="text-foreground">{funFacts}</p>
-              </div>
-            )}
+        {!isAlive && (
+          <div className="px-6 pt-2">
+            <p className="text-sm text-muted-foreground text-center">
+              Remembered with love 💕
+            </p>
           </div>
+        )}
 
-          {/* Close button */}
+        {/* Details */}
+        <div className="px-6 space-y-4">
+          {/* Connection description */}
+          {connectionDescription && (
+            <div className="bg-white/60 rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Heart className="h-4 w-4 text-pink-500" />
+                <span className="text-sm font-medium text-muted-foreground">About</span>
+              </div>
+              <p className="text-foreground">{connectionDescription}</p>
+            </div>
+          )}
+
+          {/* Occupation */}
+          {occupation && (
+            <div className="bg-white/60 rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Briefcase className="h-4 w-4 text-blue-500" />
+                <span className="text-sm font-medium text-muted-foreground">Works as</span>
+              </div>
+              <p className="text-foreground">{occupation}</p>
+            </div>
+          )}
+
+          {/* Hobbies */}
+          {hobbies && hobbies.length > 0 && (
+            <div className="bg-white/60 rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Sparkles className="h-4 w-4 text-amber-500" />
+                <span className="text-sm font-medium text-muted-foreground">Likes</span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {hobbies.map((hobby, index) => (
+                  <span
+                    key={index}
+                    className="px-3 py-1 bg-white/80 rounded-full text-sm text-foreground"
+                  >
+                    {hobby}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Fun facts */}
+          {funFacts && (
+            <div className="bg-white/60 rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-base">✨</span>
+                <span className="text-sm font-medium text-muted-foreground">Fun fact</span>
+              </div>
+              <p className="text-foreground">{funFacts}</p>
+            </div>
+          )}
+        </div>
+
+        {/* Close button */}
+        <div className="px-6 pb-6">
           <Button
             onClick={onClose}
             className="w-full rounded-full h-12 bg-white hover:bg-white/90 text-foreground font-display font-bold"
