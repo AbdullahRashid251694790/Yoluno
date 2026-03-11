@@ -17,10 +17,12 @@ UPDATE journey_templates SET badge_emoji = '🧘' WHERE title ILIKE '%mindful%';
 -- Add badge_emoji to journeys (copied from template on creation, or custom for custom journeys)
 ALTER TABLE journeys ADD COLUMN IF NOT EXISTS badge_emoji TEXT NOT NULL DEFAULT '🏅';
 
--- Add requirement_metadata to badge_definitions for template/journey-specific matching
-ALTER TABLE badge_definitions ADD COLUMN IF NOT EXISTS requirement_metadata JSONB NOT NULL DEFAULT '{}';
+-- requirement_metadata already exists as nullable in migration 004; just ensure NOT NULL default is set
+ALTER TABLE badge_definitions ALTER COLUMN requirement_metadata SET DEFAULT '{}';
+UPDATE badge_definitions SET requirement_metadata = '{}' WHERE requirement_metadata IS NULL;
+ALTER TABLE badge_definitions ALTER COLUMN requirement_metadata SET NOT NULL;
 
--- Seed one badge definition per journey template
+-- Seed one badge definition per journey template (skip if already exists by name)
 INSERT INTO badge_definitions (
   id, name, display_name, description,
   category, icon_url, requirement_type, requirement_value,
@@ -39,4 +41,5 @@ SELECT
   (200 + ROW_NUMBER() OVER (ORDER BY title))::integer,
   true
 FROM journey_templates
-WHERE is_active = true;
+WHERE is_active = true
+ON CONFLICT (name) DO NOTHING;
