@@ -135,6 +135,67 @@ async function checkAndAwardBadges(
 }
 
 /**
+ * Award the journey-specific completion badge for a given journey.
+ * For template journeys: matches the seeded badge definition via template_id.
+ * For custom journeys: matches a badge definition created at journey-creation time.
+ * Returns the awarded badge, or null if already earned / not found.
+ */
+export async function awardJourneyCompletionBadge(
+  childId: string,
+  journeyId: string
+): Promise<BadgeDefinition | null> {
+  try {
+    const journey = await queryOne<{ template_id: string | null; badge_emoji: string; title: string }>(
+      'SELECT template_id, badge_emoji, title FROM journeys WHERE id = $1',
+      [journeyId]
+    );
+    if (!journey) return null;
+
+    let badgeDef: BadgeDefinition | null = null;
+
+    if (journey.template_id) {
+      badgeDef = await queryOne<BadgeDefinition>(
+        `SELECT * FROM badge_definitions
+         WHERE requirement_type = 'journey_template_completion'
+         AND requirement_metadata->>'template_id' = $1
+         AND is_active = true`,
+        [journey.template_id]
+      );
+    } else {
+      // Custom journey — badge definition was created when journey was created
+      badgeDef = await queryOne<BadgeDefinition>(
+        `SELECT * FROM badge_definitions
+         WHERE requirement_type = 'journey_custom_completion'
+         AND requirement_metadata->>'journey_id' = $1
+         AND is_active = true`,
+        [journeyId]
+      );
+    }
+
+    if (!badgeDef) return null;
+
+    // Check if already earned
+    const alreadyEarned = await queryOne<{ id: string }>(
+      'SELECT id FROM badges_earned WHERE child_profile_id = $1 AND badge_definition_id = $2',
+      [childId, badgeDef.id]
+    );
+    if (alreadyEarned) return null;
+
+    await query(
+      `INSERT INTO badges_earned (id, child_profile_id, badge_definition_id, notified)
+       VALUES ($1, $2, $3, false)
+       ON CONFLICT (child_profile_id, badge_definition_id) DO NOTHING`,
+      [uuidv4(), childId, badgeDef.id]
+    );
+
+    return badgeDef;
+  } catch (error) {
+    console.error('Error awarding journey completion badge:', error);
+    return null;
+  }
+}
+
+/**
  * Log an activity for a child and check for badge awards
  * Used internally by buddyChat and other services
  */

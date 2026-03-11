@@ -175,10 +175,14 @@ export function KidsBadgesPage() {
                       >
                         <CardContent className="p-3 text-center">
                           <div className="relative mx-auto w-16 h-16 mb-2 flex items-center justify-center rounded-full bg-gradient-to-br from-yellow-100 to-orange-100">
-                            <Award className={cn(
-                              'h-8 w-8',
-                              isEarned ? 'text-yellow-500' : 'text-gray-400'
-                            )} />
+                            {badge.icon_url && !badge.icon_url.startsWith('http') ? (
+                              <span className="text-3xl leading-none">{badge.icon_url}</span>
+                            ) : (
+                              <Award className={cn(
+                                'h-8 w-8',
+                                isEarned ? 'text-yellow-500' : 'text-gray-400'
+                              )} />
+                            )}
                             {!isEarned && (
                               <Lock className="absolute bottom-0 right-0 h-4 w-4 text-gray-500 bg-white rounded-full p-0.5" />
                             )}
@@ -216,7 +220,11 @@ export function KidsBadgesPage() {
           {celebratingBadge && (
             <div className="space-y-4 text-center">
               <div className="mx-auto w-24 h-24 flex items-center justify-center rounded-full bg-gradient-to-br from-yellow-100 to-orange-100">
-                <Award className="h-12 w-12 text-yellow-500" />
+                {celebratingBadge.icon_url && !celebratingBadge.icon_url.startsWith('http') ? (
+                  <span className="text-5xl leading-none">{celebratingBadge.icon_url}</span>
+                ) : (
+                  <Award className="h-12 w-12 text-yellow-500" />
+                )}
               </div>
               <div>
                 <h3 className="text-xl font-bold">{celebratingBadge.display_name}</h3>

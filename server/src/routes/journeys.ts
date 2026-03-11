@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { query, queryOne } from '../config/database.js';
 import { requireAuth } from '../middleware/auth.js';
 import { AppError } from '../middleware/errorHandler.js';
+import { logActivityForChild, awardJourneyCompletionBadge } from '../helpers/gamification.js';
 import type { Journey, JourneyStep, ChildProfile } from '../types/index.js';
 
 const router = Router();
@@ -212,6 +213,12 @@ router.put('/:journeyId/steps/:stepId', async (req: Request, res: Response, next
            WHERE id = $1`,
           [req.params.journeyId]
         );
+        // Fire-and-forget: award points + generic badges + journey-specific badge
+        logActivityForChild(journey.child_profile_id, 'journey_completed', {
+          journeyId: req.params.journeyId,
+        }).catch((err) => console.error('Error logging journey completion:', err));
+        awardJourneyCompletionBadge(journey.child_profile_id, req.params.journeyId)
+          .catch((err) => console.error('Error awarding journey badge:', err));
       }
     }
 
@@ -250,16 +257,31 @@ router.delete('/:id', async (req: Request, res: Response, next: NextFunction) =>
 // POST /api/journeys/custom - Create journey with steps in one call
 router.post('/custom', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { child_profile_id, title, template_id, requires_image_proof, steps = [] } = req.body;
+    const { child_profile_id, title, template_id, requires_image_proof, badge_emoji = '🏅', steps = [] } = req.body;
 
     await verifyChildAccess(child_profile_id, req.user!.id);
 
     const journeyId = uuidv4();
     const journey = await queryOne<Journey>(
-      `INSERT INTO journeys (id, child_profile_id, title, template_id, status, progress, requires_image_proof)
-       VALUES ($1, $2, $3, $4, 'active', 0, $5)
+      `INSERT INTO journeys (id, child_profile_id, title, template_id, status, progress, requires_image_proof, badge_emoji)
+       VALUES ($1, $2, $3, $4, 'active', 0, $5, $6)
        RETURNING *`,
-      [journeyId, child_profile_id, title, template_id, requires_image_proof ?? false]
+      [journeyId, child_profile_id, title, template_id, requires_image_proof ?? false, badge_emoji]
+    );
+
+    // Create a badge definition for this custom journey so it can be awarded on completion
+    await query(
+      `INSERT INTO badge_definitions
+         (id, name, display_name, description, category, icon_url, requirement_type, requirement_value, requirement_metadata, sort_order, is_active)
+       VALUES ($1, $2, $3, $4, 'journey', $5, 'journey_custom_completion', 1, $6, 300, true)`,
+      [
+        uuidv4(),
+        `journey_complete_custom_${journeyId}`,
+        title + ' Champion',
+        'You completed the ' + title + ' journey! Amazing work! 🎉',
+        badge_emoji,
+        JSON.stringify({ journey_id: journeyId }),
+      ]
     );
 
     // Create steps

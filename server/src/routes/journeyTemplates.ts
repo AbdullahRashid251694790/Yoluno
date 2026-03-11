@@ -29,6 +29,7 @@ interface JourneyTemplate {
   duration_days: number;
   difficulty: string | null;
   icon: string | null;
+  badge_emoji: string;
   is_featured: boolean;
   usage_count: number;
   created_at: string;
@@ -266,12 +267,12 @@ router.post('/:id/start', async (req: Request, res: Response, next: NextFunction
     const result = await withTransaction(async (client: PoolClient) => {
       const journeyId = uuidv4();
 
-      // Create the journey
+      // Create the journey (copy badge_emoji from template)
       const journeyResult = await client.query<Journey>(
-        `INSERT INTO journeys (id, child_profile_id, template_id, title, status, progress)
-         VALUES ($1, $2, $3, $4, 'active', 0)
+        `INSERT INTO journeys (id, child_profile_id, template_id, title, status, progress, badge_emoji)
+         VALUES ($1, $2, $3, $4, 'active', 0, $5)
          RETURNING *`,
-        [journeyId, childId, template.id, template.title]
+        [journeyId, childId, template.id, template.title, template.badge_emoji || '🏅']
       );
 
       const journey = journeyResult.rows[0];

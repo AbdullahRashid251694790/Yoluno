@@ -8,7 +8,7 @@ import { AppError } from '../middleware/errorHandler.js';
 import { emitToUser, emitToChild } from '../socket/index.js';
 import { uploadFile, getFileUrl } from '../utils/storage.js';
 import type { BuddyMessage, ChatBuddy, SafetyReport, ChildProfile, GuardrailSettings, Journey, JourneyStep } from '../types/index.js';
-import { logActivityForChild, type BadgeDefinition } from '../helpers/gamification.js';
+import { logActivityForChild, awardJourneyCompletionBadge, type BadgeDefinition } from '../helpers/gamification.js';
 
 const router = Router();
 
@@ -738,13 +738,19 @@ async function checkTaskCompletion(
     const reward = await awardJourneyReward(childId, activeJourney.id);
     rewardEarned = !!reward;
 
-    // Log journey_completed activity for gamification (points + badges)
+    // Log journey_completed activity for gamification (points + generic badges)
     const activityResult = await logActivityForChild(childId, 'journey_completed', {
       journeyId: activeJourney.id,
       journeyTitle: activeJourney.title,
     });
     if (activityResult?.newBadges) {
       badgesEarned = activityResult.newBadges;
+    }
+
+    // Award the journey-specific badge (emoji badge tied to this journey/template)
+    const journeyBadge = await awardJourneyCompletionBadge(childId, activeJourney.id);
+    if (journeyBadge) {
+      badgesEarned.push(journeyBadge);
     }
   }
 
