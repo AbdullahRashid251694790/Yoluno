@@ -6,10 +6,12 @@
  */
 
 import { Router, Request, Response, NextFunction } from 'express';
+import { Server } from 'socket.io';
 import { query, queryOne } from '../config/database.js';
 import { requireAuth } from '../middleware/auth.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { logActivityForChild } from '../helpers/gamification.js';
+import { emitToUser } from '../socket/index.js';
 
 const router = Router();
 
@@ -76,8 +78,12 @@ router.post(
         throw new AppError(400, 'Invalid mood. Must be one of: happy, sad, angry, scared, calm, worried, tired, excited');
       }
 
-      // Verify child belongs to user
-      if (!(await verifyChildOwnership(childId, userId))) {
+      // Verify child belongs to user and fetch name in one query
+      const child = await queryOne<{ id: string; name: string }>(
+        'SELECT id, name FROM child_profiles WHERE id = $1 AND user_id = $2',
+        [childId, userId]
+      );
+      if (!child) {
         throw new AppError(404, 'Child profile not found');
       }
 
@@ -88,6 +94,17 @@ router.post(
          RETURNING id, child_profile_id, mood, luno_response, suggested_activity, session_id, created_at::text`,
         [childId, mood, luno_response || null, suggested_activity || null]
       );
+
+      // Emit real-time mood update to the parent's dashboard
+      const io = req.app.get('io') as Server;
+      if (io) {
+        emitToUser(io, userId, 'mood-checkin', {
+          childId,
+          childName: child.name,
+          mood,
+          checkin: result,
+        });
+      }
 
       // Log gamification activity (non-blocking)
       logActivityForChild(childId, 'mood_checkin', { mood }).catch((err) => {

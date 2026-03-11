@@ -117,6 +117,16 @@ export function onParentNotification(callback: (notification: unknown) => void):
   return () => socket?.off('parent-notification', callback);
 }
 
+// Subscribe to child mood check-in events (real-time parent dashboard updates)
+export function onMoodCheckin(
+  callback: (data: { childId: string; childName: string; mood: string; checkin: unknown }) => void
+): () => void {
+  if (!socket) return () => {};
+
+  socket.on('mood-checkin', callback);
+  return () => socket?.off('mood-checkin', callback);
+}
+
 // React hook to use socket instance
 import { useState, useEffect } from 'react';
 

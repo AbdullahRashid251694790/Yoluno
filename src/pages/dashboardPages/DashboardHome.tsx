@@ -6,38 +6,88 @@
  */
 
 import { Link } from 'react-router-dom';
+import { useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { useChildProfiles } from '@/hooks/queries/useChildProfiles';
 import { useSafetyReports } from '@/hooks/queries/useBuddyChat';
 import { useAnalyticsOverview } from '@/hooks/queries/useAnalytics';
+import { useTodaysMood } from '@/hooks/queries/useMoodCheckin';
 import { ChildProfileCard } from '@/components/dashboard/children/ChildProfileCard';
 import { CreateChildDialog } from '@/components/dashboard/children/CreateChildDialog';
 import { LoadingState, EmptyState } from '@/components/shared';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { onMoodCheckin } from '@/integrations/api/socket';
+import { queryKeys } from '@/hooks/queries/keys';
 import {
   Users,
   AlertTriangle,
   MessageCircle,
   Trophy,
   BookOpen,
-  TrendingUp,
-  Clock,
   Shield,
   Plus,
   ChevronRight,
   Flame,
   Map,
   BarChart3,
+  Heart,
 } from 'lucide-react';
+
+const MOOD_CONFIG: Record<string, { emoji: string; label: string; className: string }> = {
+  happy:   { emoji: '😊', label: 'Happy',   className: 'text-yellow-700 bg-yellow-50 border-yellow-200' },
+  sad:     { emoji: '😢', label: 'Sad',     className: 'text-blue-700 bg-blue-50 border-blue-200' },
+  angry:   { emoji: '😠', label: 'Angry',   className: 'text-red-700 bg-red-50 border-red-200' },
+  scared:  { emoji: '😨', label: 'Scared',  className: 'text-purple-700 bg-purple-50 border-purple-200' },
+  calm:    { emoji: '😌', label: 'Calm',    className: 'text-green-700 bg-green-50 border-green-200' },
+  worried: { emoji: '😟', label: 'Worried', className: 'text-orange-700 bg-orange-50 border-orange-200' },
+  tired:   { emoji: '😴', label: 'Tired',   className: 'text-gray-700 bg-gray-50 border-gray-200' },
+  excited: { emoji: '🤩', label: 'Excited', className: 'text-pink-700 bg-pink-50 border-pink-200' },
+};
+
+function ChildMoodStatus({ childId, childName }: { childId: string; childName: string }) {
+  const { data: todayMood, isLoading } = useTodaysMood(childId);
+  const config = todayMood ? MOOD_CONFIG[todayMood.mood] : null;
+
+  return (
+    <div className="flex items-center justify-between py-2">
+      <span className="font-medium text-sm">{childName}</span>
+      {isLoading ? (
+        <span className="text-xs text-muted-foreground">Loading...</span>
+      ) : config ? (
+        <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm font-medium ${config.className}`}>
+          <span>{config.emoji}</span>
+          {config.label}
+          {todayMood?.created_at && (
+            <span className="ml-1 opacity-60 text-xs">
+              {new Date(todayMood.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </span>
+          )}
+        </span>
+      ) : (
+        <span className="text-sm text-muted-foreground italic">Not checked in yet</span>
+      )}
+    </div>
+  );
+}
 
 export function DashboardHome() {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const { data: children = [], isLoading: childrenLoading } = useChildProfiles(user?.id);
   const { data: safetyReports = [] } = useSafetyReports(user?.id, true);
   const { data: analyticsOverview, isLoading: analyticsLoading } = useAnalyticsOverview();
 
   const unreadAlerts = safetyReports.length;
+
+  // Real-time mood updates: invalidate a child's today mood when they check in
+  useEffect(() => {
+    const unsubscribe = onMoodCheckin(({ childId }) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.moodCheckin.today(childId) });
+    });
+    return unsubscribe;
+  }, [queryClient]);
 
   if (childrenLoading) {
     return <LoadingState message="Loading dashboard..." />;
@@ -133,6 +183,36 @@ export function DashboardHome() {
           </div>
         )}
       </div>
+
+      {/* Today's Moods */}
+      {children.length > 0 && (
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Heart className="h-5 w-5 text-pink-500" />
+                  Today's Moods
+                </CardTitle>
+                <CardDescription>How your children are feeling today</CardDescription>
+              </div>
+              <Link to="/dashboard/insights">
+                <Button variant="ghost" size="sm" className="text-xs gap-1">
+                  View history
+                  <ChevronRight className="h-3 w-3" />
+                </Button>
+              </Link>
+            </div>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="divide-y">
+              {children.map((child) => (
+                <ChildMoodStatus key={child.id} childId={child.id} childName={child.name} />
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Quick Stats */}
       {children.length > 0 && (
