@@ -6,7 +6,7 @@
  */
 
 import { useState, useRef, useCallback } from 'react';
-import { Upload, X, Check, ImageIcon } from 'lucide-react';
+import { Upload, X, Check, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
@@ -36,14 +36,18 @@ export function AvatarPicker({
   maxAvatars = 3,
   className,
 }: AvatarPickerProps) {
+  const PAGE_SIZE = 4;
   const { data: avatars = [], isLoading } = useAllAvatars();
   const [customPreview, setCustomPreview] = useState<string | null>(
     value?.customPreview || null
   );
+  const [page, setPage] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Get first N avatars from library
-  const displayAvatars = avatars.slice(0, maxAvatars);
+  const totalPages = Math.ceil(avatars.length / PAGE_SIZE);
+  const displayAvatars = avatars.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+  const canGoPrev = page > 0;
+  const canGoNext = page < totalPages - 1;
 
   const handleAvatarSelect = useCallback(
     (avatarId: string, avatarUrl: string) => {
@@ -141,47 +145,73 @@ export function AvatarPicker({
         <p className="text-sm font-medium text-muted-foreground">
           Choose an avatar
         </p>
-        <div className="flex flex-wrap gap-3 justify-center">
-          {isLoading ? (
-            <>
-              {[...Array(Math.min(maxAvatars, 3))].map((_, i) => (
-                <Skeleton key={i} className="h-16 w-16 rounded-full" />
-              ))}
-            </>
-          ) : displayAvatars.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-2">No avatars available</p>
-          ) : (
-            displayAvatars.map((avatar) => {
-              const isSelected =
-                isLibrarySelected && value?.avatarId === avatar.id;
-              return (
-                <button
-                  key={avatar.id}
-                  type="button"
-                  disabled={disabled}
-                  onClick={() => handleAvatarSelect(avatar.id, avatar.imageUrl)}
-                  className={cn(
-                    'relative rounded-full p-1 transition-all',
-                    'hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2',
-                    isSelected && 'ring-2 ring-primary ring-offset-2',
-                    disabled && 'cursor-not-allowed opacity-50'
-                  )}
-                >
-                  <Avatar className="h-16 w-16 border-2 border-white shadow-md">
-                    <AvatarImage src={avatar.imageUrl} alt={avatar.name} />
-                    <AvatarFallback className="bg-gradient-to-br from-primary to-child-secondary text-xl text-white">
-                      {avatar.name.charAt(0)}
-                    </AvatarFallback>
-                  </Avatar>
-                  {isSelected && (
-                    <div className="absolute -bottom-1 -right-1 h-6 w-6 rounded-full bg-primary flex items-center justify-center">
-                      <Check className="h-4 w-4 text-white" />
-                    </div>
-                  )}
-                </button>
-              );
-            })
-          )}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setPage((p) => p - 1)}
+            disabled={!canGoPrev || disabled}
+            className={cn(
+              'rounded-full p-1 transition-colors',
+              canGoPrev ? 'hover:bg-muted text-foreground' : 'text-muted-foreground/30 cursor-default'
+            )}
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </button>
+
+          <div className="flex gap-3 flex-1 justify-center">
+            {isLoading ? (
+              <>
+                {[...Array(Math.min(PAGE_SIZE, 3))].map((_, i) => (
+                  <Skeleton key={i} className="h-16 w-16 rounded-full" />
+                ))}
+              </>
+            ) : displayAvatars.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-2">No avatars available</p>
+            ) : (
+              displayAvatars.map((avatar) => {
+                const isSelected =
+                  isLibrarySelected && value?.avatarId === avatar.id;
+                return (
+                  <button
+                    key={avatar.id}
+                    type="button"
+                    disabled={disabled}
+                    onClick={() => handleAvatarSelect(avatar.id, avatar.imageUrl)}
+                    className={cn(
+                      'relative rounded-full p-1 transition-all',
+                      'hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2',
+                      isSelected && 'ring-2 ring-primary ring-offset-2',
+                      disabled && 'cursor-not-allowed opacity-50'
+                    )}
+                  >
+                    <Avatar className="h-16 w-16 border-2 border-white shadow-md">
+                      <AvatarImage src={avatar.imageUrl} alt={avatar.name} />
+                      <AvatarFallback className="bg-gradient-to-br from-primary to-child-secondary text-xl text-white">
+                        {avatar.name.charAt(0)}
+                      </AvatarFallback>
+                    </Avatar>
+                    {isSelected && (
+                      <div className="absolute -bottom-1 -right-1 h-6 w-6 rounded-full bg-primary flex items-center justify-center">
+                        <Check className="h-4 w-4 text-white" />
+                      </div>
+                    )}
+                  </button>
+                );
+              })
+            )}
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setPage((p) => p + 1)}
+            disabled={!canGoNext || disabled}
+            className={cn(
+              'rounded-full p-1 transition-colors',
+              canGoNext ? 'hover:bg-muted text-foreground' : 'text-muted-foreground/30 cursor-default'
+            )}
+          >
+            <ChevronRight className="h-5 w-5" />
+          </button>
         </div>
       </div>
 

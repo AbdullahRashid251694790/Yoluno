@@ -99,7 +99,10 @@ export function FamilyMemberDetail({ member, type, isOpen, onClose }: FamilyMemb
   if (isFamilyMember(member)) {
     avatarUrl = member.photo_url ? getUploadUrl(member.photo_url) : undefined;
   } else {
-    avatarUrl = member.avatarUrl || undefined;
+    const childMember = member as ChildProfile & { avatarUrl?: string };
+    avatarUrl = childMember.avatarUrl
+      ? getUploadUrl(childMember.avatarUrl)
+      : undefined;
   }
 
   // Get details
@@ -114,7 +117,7 @@ export function FamilyMemberDetail({ member, type, isOpen, onClose }: FamilyMemb
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent
         className={cn(
-          'max-w-sm mx-auto rounded-3xl border-0 p-0 overflow-hidden',
+          'max-w-sm mx-auto rounded-3xl border-0 p-0 overflow-hidden [&>button:last-child]:hidden',
           'bg-gradient-to-b',
           config.gradientFrom,
           config.gradientTo
@@ -125,7 +128,7 @@ export function FamilyMemberDetail({ member, type, isOpen, onClose }: FamilyMemb
           variant="ghost"
           size="icon"
           onClick={onClose}
-          className="absolute right-3 top-3 z-10 rounded-full bg-white/50 hover:bg-white/80"
+          className="absolute right-3 top-3 z-20 rounded-full bg-white/50 hover:bg-white/80"
         >
           <X className="h-5 w-5" />
         </Button>

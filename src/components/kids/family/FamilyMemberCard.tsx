@@ -100,7 +100,11 @@ export function FamilyMemberCard({ member, type, isSelf, onPress }: FamilyMember
   if (isFamilyMember(member)) {
     photoUrl = member.photo_url ? getUploadUrl(member.photo_url) : undefined;
   } else {
-    photoUrl = member.avatarUrl || undefined;
+    // For child profiles: avatarUrl may be a relative path (/uploads/...) that needs the API base URL
+    const childMember = member as ChildProfile & { avatarUrl?: string };
+    photoUrl = childMember.avatarUrl
+      ? getUploadUrl(childMember.avatarUrl)
+      : undefined;
   }
 
   // Get subtitle

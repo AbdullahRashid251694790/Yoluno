@@ -88,11 +88,14 @@ export function KidsChatPage() {
 
   const handleNewSession = useCallback(() => {
     if (!childId) return;
+    // If current session is empty, just stay on it (GPT-style)
+    const currentSession = sessions.find((s) => s.id === currentSessionId);
+    if (currentSession && currentSession.message_count === 0) return;
     createSession.mutate(
       { childId },
       { onSuccess: (s) => activateSession(s.id, true) }
     );
-  }, [childId, createSession, activateSession]);
+  }, [childId, createSession, activateSession, sessions, currentSessionId]);
 
   const toggleSidebar = useCallback(() => {
     setSidebarCollapsed((prev) => !prev);

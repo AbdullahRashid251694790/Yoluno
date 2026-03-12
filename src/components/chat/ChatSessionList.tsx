@@ -112,7 +112,9 @@ export function ChatSessionList({
           </div>
         ) : (
           <div className="p-2 space-y-1">
-            {sessions.map((session) => (
+            {sessions
+              .filter((session) => session.id === currentSessionId || session.message_count > 0)
+              .map((session) => (
               <SessionItem
                 key={session.id}
                 session={session}
@@ -233,11 +235,6 @@ function SessionItem({ session, isActive, moodEmoji, onSelect, onRename, onDelet
               <span className="text-xs text-muted-foreground">
                 {timeAgo}
               </span>
-              {session.message_count > 0 && (
-                <span className="text-xs text-muted-foreground">
-                  · {session.message_count} msgs
-                </span>
-              )}
             </div>
           </div>
         </div>
