@@ -141,43 +141,6 @@ export const moodConfigs: Record<MoodType, MoodConfig> = {
     ],
   },
 
-  scared: {
-    emoji: '😨',
-    label: 'Scared',
-    color: 'text-purple-600',
-    bgGradient: 'from-purple-200 to-indigo-200',
-    responses: [
-      "You're safe here with me. Want to hear something nice?",
-      "It's brave to share when you're scared. I'm right here!",
-      "Don't worry, I've got you. We can do something fun together.",
-      "Being scared is okay. You're not alone - I'm here!",
-      "Let's think about happy things together. You're safe with me.",
-    ],
-    activities: [
-      {
-        id: 'scared-chat',
-        title: 'Safe Space',
-        description: "Let's talk about it",
-        emoji: '🏠',
-        path: 'chat',
-      },
-      {
-        id: 'scared-story',
-        title: 'Brave Story',
-        description: 'A story about courage',
-        emoji: '🦁',
-        path: 'stories',
-      },
-      {
-        id: 'scared-family',
-        title: 'Family Love',
-        description: 'See your loved ones',
-        emoji: '❤️',
-        path: 'family',
-      },
-    ],
-  },
-
   calm: {
     emoji: '😌',
     label: 'Calm',
@@ -354,7 +317,7 @@ export function getMoodConfig(mood: MoodType): MoodConfig {
  * Get all mood types for rendering mood selection buttons
  */
 export function getAllMoods(): MoodType[] {
-  return ['happy', 'sad', 'angry', 'scared', 'calm', 'worried', 'tired', 'excited'];
+  return ['happy', 'sad', 'angry', 'calm', 'worried', 'tired', 'excited'];
 }
 
 /**

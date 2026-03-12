@@ -16,8 +16,20 @@ const BUDDY_AVATARS: Record<string, string> = {
   Lolo: '/avatars/Lolo.png',
 };
 
+// Mood-specific Luno face images
+export const MOOD_IMAGES: Record<string, string> = {
+  happy: '/avatars/moods/happy.webp',
+  sad: '/avatars/moods/sad.webp',
+  angry: '/avatars/moods/angry.webp',
+  calm: '/avatars/moods/calm.webp',
+  worried: '/avatars/moods/worried.webp',
+  tired: '/avatars/moods/tired.webp',
+  excited: '/avatars/moods/excited.webp',
+};
+
 interface ChatAvatarProps {
   imageUrl?: string;
+  moodImage?: string;
   buddyName?: string;
   expression?: AvatarExpression;
   size?: 'sm' | 'md' | 'lg' | 'xl' | 'hero';
@@ -44,6 +56,7 @@ const nameSizeClasses = {
 
 export function ChatAvatar({
   imageUrl,
+  moodImage,
   buddyName = 'Luno',
   expression = 'neutral',
   size = 'md',
@@ -52,8 +65,8 @@ export function ChatAvatar({
   className,
 }: ChatAvatarProps) {
   const config = BUDDY_EXPRESSIONS[expression];
-  // Use provided imageUrl, or fall back to default buddy avatar
-  const avatarSrc = imageUrl ?? BUDDY_AVATARS[buddyName] ?? BUDDY_AVATARS.Luno;
+  // Use mood image first, then provided imageUrl, then default buddy avatar
+  const avatarSrc = moodImage ?? imageUrl ?? BUDDY_AVATARS[buddyName] ?? BUDDY_AVATARS.Luno;
 
   return (
     <div className={cn('flex flex-col items-center gap-2', className)}>

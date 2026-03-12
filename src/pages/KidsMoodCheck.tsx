@@ -12,7 +12,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useChild } from '@/contexts/ChildContext';
 import { useChildProfile } from '@/hooks/queries';
 import { useTodaysMood, useLogMoodCheckin } from '@/hooks/queries/useMoodCheckin';
-import { ChatAvatar } from '@/components/chat/ChatAvatar';
+import { ChatAvatar, MOOD_IMAGES } from '@/components/chat/ChatAvatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ErrorState } from '@/components/shared';
@@ -35,7 +35,6 @@ const moodToExpression: Record<MoodType, AvatarExpression> = {
   happy: 'happy',
   sad: 'caring',
   angry: 'caring',
-  scared: 'caring',
   calm: 'neutral',
   worried: 'caring',
   tired: 'caring',
@@ -203,6 +202,7 @@ export function KidsMoodCheckPage() {
         <div className="flex flex-col items-center text-center mb-8">
           <ChatAvatar
             expression={selectedMood ? moodToExpression[selectedMood] : 'curious'}
+            moodImage={selectedMood ? MOOD_IMAGES[selectedMood] : undefined}
             size="xl"
             showName
             buddyName={buddyName}
@@ -246,6 +246,7 @@ export function KidsMoodCheckPage() {
                 >
                   <ChatAvatar
                     expression={expression}
+                    moodImage={MOOD_IMAGES[mood]}
                     size="sm"
                     buddyName={buddyName}
                   />
