@@ -23,16 +23,19 @@ export function onTokenRefresh(cb: () => void): void {
   onTokenRefreshCallback = cb;
 }
 
-// How many minutes before expiry to proactively refresh (access token is 15min)
-const PROACTIVE_REFRESH_MS = 13 * 60 * 1000; // 13 minutes — 2 min before 15-min expiry
+// How many minutes before expiry to proactively refresh (access token is 1 hour)
+const PROACTIVE_REFRESH_MS = 55 * 60 * 1000; // 55 minutes — 5 min before 1-hour expiry
 
 // Token management functions
 export function getAccessToken(): string | null {
   return accessToken;
 }
 
+let lastRefreshTime = Date.now();
+
 export function setTokens(newAccessToken: string): void {
   accessToken = newAccessToken;
+  lastRefreshTime = Date.now();
   scheduleProactiveRefresh();
   onTokenRefreshCallback?.();
 }
@@ -184,6 +187,16 @@ apiClient.interceptors.response.use(
     }
   }
 );
+
+// Refresh token when tab wakes up after being idle
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && accessToken) {
+    const elapsed = Date.now() - lastRefreshTime;
+    if (elapsed > 50 * 60 * 1000) { // 50 minutes
+      refreshAccessToken().catch(() => {});
+    }
+  }
+});
 
 // API response types
 export interface ApiError {

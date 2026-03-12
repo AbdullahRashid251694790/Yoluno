@@ -189,4 +189,13 @@ process.on('SIGTERM', async () => {
   process.exit(0);
 });
 
+// Prevent crashes from unhandled errors
+process.on('unhandledRejection', (reason) => {
+  console.error('Unhandled Rejection:', reason);
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception:', err);
+});
+
 export { app, io };

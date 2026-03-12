@@ -10,8 +10,13 @@ export function getPool(): Pool {
       connectionString: process.env.DATABASE_URL,
       ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
       max: 20,
-      idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 10000,
+      idleTimeoutMillis: 300000, // 5 minutes — prevent premature connection drops
+      connectionTimeoutMillis: 15000, // 15 seconds — allow time for reconnection
+    });
+
+    // Prevent unhandled pool errors from crashing the server
+    _pool.on('error', (err) => {
+      console.error('Unexpected database pool error:', err.message);
     });
   }
   return _pool;

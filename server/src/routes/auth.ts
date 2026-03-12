@@ -18,13 +18,15 @@ import { sendVerificationEmail, sendPasswordResetEmail } from '../services/email
 
 const router = Router();
 
+const isProduction = process.env.NODE_ENV === 'production';
+
 // Helper to set refresh token cookie
 function setRefreshTokenCookie(res: Response, refreshToken: string) {
   res.cookie('refresh_token', refreshToken, {
     httpOnly: true,
-    secure: true,
-    sameSite: 'none',
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    secure: isProduction,
+    sameSite: isProduction ? 'none' : 'lax',
+    maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
     path: '/api/auth',
   });
 }
@@ -32,8 +34,8 @@ function setRefreshTokenCookie(res: Response, refreshToken: string) {
 function clearRefreshTokenCookie(res: Response) {
   res.clearCookie('refresh_token', {
     httpOnly: true,
-    secure: true,
-    sameSite: 'none',
+    secure: isProduction,
+    sameSite: isProduction ? 'none' : 'lax',
     path: '/api/auth',
   });
 }
@@ -122,7 +124,7 @@ router.post('/login', async (req: Request, res: Response, next: NextFunction) =>
     const refreshTokenHash = await hashPassword(refreshToken);
     await query(
       `INSERT INTO sessions (id, user_id, refresh_token_hash, expires_at)
-       VALUES ($1, $2, $3, NOW() + INTERVAL '7 days')`,
+       VALUES ($1, $2, $3, NOW() + INTERVAL '30 days')`,
       [uuidv4(), user.id, refreshTokenHash]
     );
 
@@ -229,7 +231,7 @@ router.post('/refresh', async (req: Request, res: Response, next: NextFunction) 
     // Update session with new refresh token
     const newRefreshTokenHash = await hashPassword(newRefreshToken);
     await query(
-      `UPDATE sessions SET refresh_token_hash = $1, expires_at = NOW() + INTERVAL '7 days'
+      `UPDATE sessions SET refresh_token_hash = $1, expires_at = NOW() + INTERVAL '30 days'
        WHERE id = $2`,
       [newRefreshTokenHash, validSession.id]
     );
