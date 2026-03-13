@@ -67,6 +67,9 @@ const io = new Server(httpServer, {
 // Make io available to routes
 app.set('io', io);
 
+// Trust first proxy (Railway runs behind a reverse proxy)
+app.set('trust proxy', 1);
+
 // Middleware
 app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' },
