@@ -626,19 +626,13 @@ Do NOT use emojis. Do NOT include your name at the start. Just write the message
       greeting = getMoodFallbackGreeting(mood, child.name, buddyName);
     }
 
-    // Save as buddy message
+    // Save as buddy message (DB trigger auto-updates session message_count)
     const buddyMessageId = uuidv4();
     const buddyMessage = await queryOne<BuddyMessage>(
       `INSERT INTO buddy_messages (id, child_profile_id, session_id, role, content, safety_level)
        VALUES ($1, $2, $3, 'buddy', $4, 'green')
        RETURNING *`,
       [buddyMessageId, childId, sessionId, greeting]
-    );
-
-    // Update session message count
-    await query(
-      `UPDATE chat_sessions SET message_count = message_count + 1, last_message_at = NOW() WHERE id = $1`,
-      [sessionId]
     );
 
     // Emit to connected clients
