@@ -59,12 +59,12 @@ export function KidsMoodCheckPage() {
   const { data: buddy } = useChatBuddy(childId);
   const buddyName = buddy?.buddy_name || 'Luno';
 
-  // If already checked in today, redirect to home
+  // If already checked in today (before this session), redirect to home
   useEffect(() => {
-    if (todaysMood && !moodLoading) {
+    if (todaysMood && !moodLoading && !selectedMood) {
       navigate(`/kids/${childId}`, { replace: true });
     }
-  }, [todaysMood, moodLoading, childId, navigate]);
+  }, [todaysMood, moodLoading, childId, navigate, selectedMood]);
 
   // Enter kids mode when child loads
   useEffect(() => {
