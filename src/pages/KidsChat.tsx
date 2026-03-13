@@ -11,6 +11,7 @@ import { useChild } from '@/contexts/ChildContext';
 import { useChat } from '@/contexts/ChatContext';
 import { useChildProfile } from '@/hooks/queries';
 import { useChatSessions, useCreateChatSession } from '@/hooks/queries/useBuddyChat';
+import { greetSession } from '@/services/buddyChat';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { LoadingState, ErrorState } from '@/components/shared';
 import { Button } from '@/components/ui/button';
@@ -54,7 +55,13 @@ export function KidsChatPage() {
     if (moodParam && !currentSessionId) {
       createSession.mutate(
         { childId, input: { mood: moodParam } },
-        { onSuccess: (s) => activateSession(s.id) }
+        {
+          onSuccess: (s) => {
+            activateSession(s.id);
+            // Trigger Luno's mood-aware opening message
+            greetSession(childId, s.id).catch(() => {});
+          },
+        }
       );
     } else if (!currentSessionId && sessions.length > 0) {
       activateSession(sessions[0].id);

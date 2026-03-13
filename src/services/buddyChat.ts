@@ -333,6 +333,26 @@ export async function createChatSession(
 }
 
 /**
+ * Trigger a mood-aware greeting from Luno for a new session
+ */
+export async function greetSession(
+  childId: string,
+  sessionId: string
+): Promise<{ buddyMessage: BuddyMessage }> {
+  try {
+    const { data } = await apiClient.post<{ buddyMessage: BuddyMessage }>(
+      `/buddy-chat/${childId}/sessions/${sessionId}/greet`
+    );
+    return data;
+  } catch (error) {
+    throw handleError(error, {
+      context: 'buddyChat.greetSession',
+      strategy: 'throw',
+    });
+  }
+}
+
+/**
  * Get a specific chat session with messages
  */
 export async function getChatSession(

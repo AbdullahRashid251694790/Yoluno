@@ -35,6 +35,58 @@ const CATEGORY_LABELS: Record<string, { label: string; emoji: string }> = {
   mood: { label: 'Mood', emoji: '😊' },
 };
 
+// Badge name to emoji mapping (since SVG files don't exist)
+const BADGE_EMOJIS: Record<string, string> = {
+  first_chat: '💬',
+  chat_explorer: '🗣️',
+  chat_master: '🏆',
+  storyteller: '📝',
+  story_collector: '📚',
+  story_master: '🌟',
+  journey_starter: '🚀',
+  journey_finisher: '🏁',
+  journey_explorer: '🧭',
+  streak_3: '🔥',
+  streak_7: '⚡',
+  streak_14: '💪',
+  streak_30: '👑',
+  points_100: '⭐',
+  points_500: '🌟',
+  points_1000: '💫',
+  points_5000: '🏅',
+  family_first: '👨‍👩‍👧',
+  family_explorer: '👨‍👩‍👧‍👦',
+  family_champion: '🏠',
+  mood_first: '😊',
+  mood_explorer: '🌈',
+  mood_master: '🧘',
+};
+
+function getBadgeEmoji(badge: BadgeDefinition): string {
+  return BADGE_EMOJIS[badge.name] || CATEGORY_LABELS[badge.category]?.emoji || '🏅';
+}
+
+function getRequirementHint(badge: BadgeDefinition): string {
+  const val = badge.requirement_value;
+  switch (badge.requirement_type) {
+    case 'streak':
+      return `Be active for ${val} days in a row!`;
+    case 'points':
+      return `Earn ${val.toLocaleString()} points by completing activities!`;
+    case 'activity_count':
+      if (badge.category === 'learning') return `Send ${val} message${val > 1 ? 's' : ''} to Luno in chat!`;
+      if (badge.category === 'story') return `Create ${val} stor${val > 1 ? 'ies' : 'y'}!`;
+      if (badge.category === 'journey') return `Complete ${val} learning journey${val > 1 ? 's' : ''}!`;
+      if (badge.category === 'family') return `Add ${val} family member${val > 1 ? 's' : ''} to your album!`;
+      if (badge.category === 'mood') return `Check in with your mood ${val} time${val > 1 ? 's' : ''}!`;
+      return `Complete this activity ${val} time${val > 1 ? 's' : ''}!`;
+    case 'specific_action':
+      return badge.description;
+    default:
+      return badge.description;
+  }
+}
+
 export function KidsBadgesPage() {
   const { childId } = useParams<{ childId: string }>();
   const navigate = useNavigate();
@@ -46,6 +98,7 @@ export function KidsBadgesPage() {
   const acknowledgeBadges = useAcknowledgeBadges();
 
   const [celebratingBadge, setCelebratingBadge] = useState<BadgeDefinition | null>(null);
+  const [lockedBadge, setLockedBadge] = useState<BadgeDefinition | null>(null);
   const [showConfetti, setShowConfetti] = useState(false);
 
   const earned = badgesData?.earned ?? [];
@@ -170,19 +223,14 @@ export function KidsBadgesPage() {
                         onClick={() => {
                           if (isEarned) {
                             setCelebratingBadge(badge);
+                          } else {
+                            setLockedBadge(badge);
                           }
                         }}
                       >
                         <CardContent className="p-3 text-center">
                           <div className="relative mx-auto w-16 h-16 mb-2 flex items-center justify-center rounded-full bg-gradient-to-br from-yellow-100 to-orange-100">
-                            {badge.icon_url && !badge.icon_url.startsWith('http') ? (
-                              <span className="text-3xl leading-none">{badge.icon_url}</span>
-                            ) : (
-                              <Award className={cn(
-                                'h-8 w-8',
-                                isEarned ? 'text-yellow-500' : 'text-gray-400'
-                              )} />
-                            )}
+                            <span className="text-3xl leading-none">{getBadgeEmoji(badge)}</span>
                             {!isEarned && (
                               <Lock className="absolute bottom-0 right-0 h-4 w-4 text-gray-500 bg-white rounded-full p-0.5" />
                             )}
@@ -220,11 +268,7 @@ export function KidsBadgesPage() {
           {celebratingBadge && (
             <div className="space-y-4 text-center">
               <div className="mx-auto w-24 h-24 flex items-center justify-center rounded-full bg-gradient-to-br from-yellow-100 to-orange-100">
-                {celebratingBadge.icon_url && !celebratingBadge.icon_url.startsWith('http') ? (
-                  <span className="text-5xl leading-none">{celebratingBadge.icon_url}</span>
-                ) : (
-                  <Award className="h-12 w-12 text-yellow-500" />
-                )}
+                <span className="text-5xl leading-none">{getBadgeEmoji(celebratingBadge)}</span>
               </div>
               <div>
                 <h3 className="text-xl font-bold">{celebratingBadge.display_name}</h3>
@@ -233,6 +277,37 @@ export function KidsBadgesPage() {
               <Button onClick={() => setCelebratingBadge(null)} className="w-full" size="lg">
                 <Sparkles className="h-5 w-5 mr-2" />
                 Awesome!
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Locked Badge Dialog */}
+      <Dialog open={!!lockedBadge} onOpenChange={() => setLockedBadge(null)}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-center text-2xl font-display flex items-center justify-center gap-2">
+              <Lock className="h-6 w-6 text-gray-400" />
+              Locked Badge
+            </DialogTitle>
+          </DialogHeader>
+
+          {lockedBadge && (
+            <div className="space-y-4 text-center">
+              <div className="mx-auto w-24 h-24 flex items-center justify-center rounded-full bg-gradient-to-br from-gray-100 to-gray-200 opacity-60 grayscale">
+                <span className="text-5xl leading-none">{getBadgeEmoji(lockedBadge)}</span>
+              </div>
+              <div>
+                <h3 className="text-xl font-bold">{lockedBadge.display_name}</h3>
+                <p className="text-muted-foreground mt-1">{lockedBadge.description}</p>
+              </div>
+              <div className="rounded-xl bg-primary/5 border border-primary/20 p-4">
+                <p className="text-sm font-semibold text-primary mb-1">How to unlock:</p>
+                <p className="text-sm text-muted-foreground">{getRequirementHint(lockedBadge)}</p>
+              </div>
+              <Button onClick={() => setLockedBadge(null)} variant="secondary" className="w-full" size="lg">
+                Got it!
               </Button>
             </div>
           )}

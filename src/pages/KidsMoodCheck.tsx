@@ -116,7 +116,6 @@ export function KidsMoodCheckPage() {
     const basePath = `/kids/${childId}`;
     switch (activity.path) {
       case 'chat':
-        // Pass mood to chat to create a session with that mood
         navigate(`${basePath}/chat?mood=${selectedMood}`);
         break;
       case 'stories':

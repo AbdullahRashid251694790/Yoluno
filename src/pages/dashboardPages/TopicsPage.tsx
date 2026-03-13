@@ -278,6 +278,7 @@ export function TopicsPage() {
                           childAge={selectedChild?.age}
                           customTopicId={customTopic.id}
                           topicName={customTopic.name}
+                          topicDescription={customTopic.description}
                           posts={posts}
                         />
                       </div>
@@ -344,11 +345,6 @@ export function TopicsPage() {
                                   >
                                     {topic.name}
                                   </Label>
-                                  {topic.description && (
-                                    <p className="text-xs text-muted-foreground">
-                                      {topic.description}
-                                    </p>
-                                  )}
                                   {posts.length > 0 && (
                                     <Badge variant="outline" className="text-xs mt-1">
                                       {posts.length} custom {posts.length === 1 ? 'post' : 'posts'}
@@ -373,6 +369,7 @@ export function TopicsPage() {
                                     childAge={selectedChild?.age}
                                     topicId={topic.id}
                                     topicName={topic.name}
+                                    topicDescription={topic.description}
                                     posts={posts}
                                   />
                                 </div>

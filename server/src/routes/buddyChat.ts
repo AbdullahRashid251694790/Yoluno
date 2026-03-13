@@ -552,6 +552,118 @@ router.post('/:childId/sessions/:sessionId/send', upload.single('image'), async 
   }
 });
 
+// POST /api/buddy-chat/:childId/sessions/:sessionId/greet - Generate mood-aware opening message from Luno
+router.post('/:childId/sessions/:sessionId/greet', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const io: Server = req.app.get('io');
+    const { childId, sessionId } = req.params;
+
+    const child = await verifyChildAccess(childId, req.user!.id);
+
+    // Get session and its mood
+    const session = await queryOne<ChatSession>(
+      `SELECT * FROM chat_sessions WHERE id = $1 AND child_profile_id = $2`,
+      [sessionId, childId]
+    );
+
+    if (!session) {
+      throw new AppError(404, 'Session not found');
+    }
+
+    // Only greet if session has no messages yet
+    if (session.message_count > 0) {
+      res.json({ message: 'Session already has messages' });
+      return;
+    }
+
+    const mood = session.mood || 'calm';
+
+    // Get buddy name
+    const buddy = await queryOne<{ name: string }>(
+      'SELECT name FROM chat_buddies WHERE child_profile_id = $1',
+      [childId]
+    );
+    const buddyName = buddy?.name || 'Luno';
+
+    // Generate a mood-aware greeting via AI
+    const greetingPrompt = `You are ${buddyName}, a warm, caring AI friend for a child named ${child.name} (age ${child.age}). The child just told you they are feeling "${mood}" today. Write a short, warm opening message (2-3 sentences) that:
+- Acknowledges their ${mood} feeling with empathy
+- Shows you care about how they feel
+- Gently invites them to talk about it or do something together
+- Uses simple, age-appropriate language
+- Feels natural, not clinical
+
+Do NOT use emojis. Do NOT include your name at the start. Just write the message directly.`;
+
+    let greeting: string;
+    try {
+      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
+          'Content-Type': 'application/json',
+          'HTTP-Referer': process.env.FRONTEND_URL || 'http://localhost:5173',
+        },
+        body: JSON.stringify({
+          model: 'google/gemini-2.5-flash',
+          messages: [
+            { role: 'system', content: greetingPrompt },
+            { role: 'user', content: `The child is feeling ${mood}. Generate the opening message.` },
+          ],
+          max_tokens: 200,
+          temperature: 0.8,
+        }),
+      });
+
+      if (!response.ok) {
+        console.error('Greeting generation failed:', await response.text());
+        greeting = getMoodFallbackGreeting(mood, child.name, buddyName);
+      } else {
+        const data = (await response.json()) as { choices: { message: { content: string } }[] };
+        greeting = data.choices[0]?.message?.content || getMoodFallbackGreeting(mood, child.name, buddyName);
+      }
+    } catch {
+      greeting = getMoodFallbackGreeting(mood, child.name, buddyName);
+    }
+
+    // Save as buddy message
+    const buddyMessageId = uuidv4();
+    const buddyMessage = await queryOne<BuddyMessage>(
+      `INSERT INTO buddy_messages (id, child_profile_id, session_id, role, content, safety_level)
+       VALUES ($1, $2, $3, 'buddy', $4, 'green')
+       RETURNING *`,
+      [buddyMessageId, childId, sessionId, greeting]
+    );
+
+    // Update session message count
+    await query(
+      `UPDATE chat_sessions SET message_count = message_count + 1, last_message_at = NOW() WHERE id = $1`,
+      [sessionId]
+    );
+
+    // Emit to connected clients
+    emitToChild(io, childId, 'new-message', { ...buddyMessage, sessionId });
+
+    res.json({ buddyMessage });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Fallback greetings when AI generation fails
+function getMoodFallbackGreeting(mood: string, childName: string, buddyName: string): string {
+  const greetings: Record<string, string> = {
+    happy: `Hey ${childName}! I can tell you're feeling really happy today, and that makes me happy too! What's making your day so great?`,
+    sad: `Hey ${childName}, I can see you're feeling a little sad right now, and that's okay. I'm right here with you. Want to tell me what's on your mind?`,
+    angry: `Hey ${childName}, it sounds like something is really bothering you today. I'm here to listen whenever you're ready to talk about it.`,
+    calm: `Hey ${childName}, it's so nice that you're feeling calm and peaceful today. What would you like to do together?`,
+    worried: `Hey ${childName}, I noticed you're feeling worried about something. That's a really brave thing to share. Want to talk about what's on your mind?`,
+    tired: `Hey ${childName}, it sounds like you could use some rest! Let's take it easy together. We could have a quiet chat or I could tell you something fun.`,
+    excited: `Hey ${childName}! I can feel your excitement from here! Something awesome must be going on. Tell me everything!`,
+  };
+  return greetings[mood] || `Hey ${childName}! I'm ${buddyName}, and I'm so glad you're here. What would you like to talk about?`;
+}
+
 // Helper function to auto-generate a chat session title from conversation
 async function generateSessionTitle(sessionId: string, childMessage: string, buddyResponse: string): Promise<void> {
   try {

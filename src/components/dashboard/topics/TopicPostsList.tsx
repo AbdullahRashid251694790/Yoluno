@@ -31,6 +31,7 @@ interface TopicPostsListProps {
   topicId?: string;
   customTopicId?: string;
   topicName: string;
+  topicDescription?: string;
   posts: TopicPost[];
 }
 
@@ -40,6 +41,7 @@ export function TopicPostsList({
   topicId,
   customTopicId,
   topicName,
+  topicDescription,
   posts,
 }: TopicPostsListProps) {
   const deletePost = useDeleteTopicPost();
@@ -102,15 +104,21 @@ export function TopicPostsList({
 
   return (
     <div className="space-y-3 pt-2">
-      {/* Posts list */}
-      {posts.length === 0 ? (
-        <div className="flex flex-col items-center py-4 text-center">
-          <FileText className="h-8 w-8 text-muted-foreground/50 mb-2" />
-          <p className="text-sm text-muted-foreground">
-            No posts yet. Add content for Luno to know about this topic.
-          </p>
+      {/* Default content from topic description */}
+      {topicDescription && (
+        <div className="flex items-start gap-3 rounded-lg border p-3 bg-primary/5 border-primary/20">
+          <Sparkles className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="font-medium text-sm text-primary">About {topicName}</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {topicDescription}
+            </p>
+          </div>
         </div>
-      ) : (
+      )}
+
+      {/* User-added posts */}
+      {posts.length > 0 && (
         <div className="space-y-2">
           {posts.map((post) => (
             <div
@@ -147,26 +155,11 @@ export function TopicPostsList({
       )}
 
       {/* Action buttons */}
-      <div className="flex gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleGenerateWithAI}
-          disabled={generatePost.isPending}
-          className="flex-1"
-        >
-          {generatePost.isPending ? (
-            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-          ) : (
-            <Sparkles className="h-4 w-4 mr-2" />
-          )}
-          {generatePost.isPending ? 'Generating...' : 'Generate with AI'}
-        </Button>
+      <div className="flex justify-center">
         <Button
           variant="outline"
           size="sm"
           onClick={handleAddPost}
-          className="flex-1"
         >
           <Plus className="h-4 w-4 mr-2" />
           Add Post
