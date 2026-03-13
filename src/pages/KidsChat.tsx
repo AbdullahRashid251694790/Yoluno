@@ -7,9 +7,11 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { useChild } from '@/contexts/ChildContext';
 import { useChat } from '@/contexts/ChatContext';
 import { useChildProfile } from '@/hooks/queries';
+import { queryKeys } from '@/hooks/queries/keys';
 import { useChatSessions, useCreateChatSession } from '@/hooks/queries/useBuddyChat';
 import { greetSession } from '@/services/buddyChat';
 import { useIsMobile } from '@/hooks/useIsMobile';
@@ -24,6 +26,7 @@ export function KidsChatPage() {
   const { childId } = useParams<{ childId: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { enterKidsMode, exitKidsMode } = useChild();
   const { startSession, endSession } = useChat();
   const { data: child, isLoading, isError } = useChildProfile(childId);
@@ -58,8 +61,14 @@ export function KidsChatPage() {
         {
           onSuccess: (s) => {
             activateSession(s.id);
-            // Trigger Luno's mood-aware opening message
-            greetSession(childId, s.id).catch(() => {});
+            // Trigger Luno's mood-aware opening message, then refetch messages
+            greetSession(childId, s.id)
+              .then(() => {
+                queryClient.invalidateQueries({
+                  queryKey: queryKeys.buddyChat.sessionMessages(childId, s.id),
+                });
+              })
+              .catch(() => {});
           },
         }
       );
