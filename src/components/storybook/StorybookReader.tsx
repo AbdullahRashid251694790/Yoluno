@@ -6,8 +6,10 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { X, Loader2, Volume2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { queryKeys } from '@/hooks/queries/keys';
 import { useStoryPages, useIllustrationStatus } from '@/hooks/queries/useStoryPages';
 import { StorybookCover } from './StorybookCover';
 import { StorybookPage } from './StorybookPage';
@@ -46,14 +48,30 @@ export function StorybookReader({
     voiceId: initialVoice,
   });
   const containerRef = useRef<HTMLDivElement>(null);
+  const queryClient = useQueryClient();
+  const prevInProgressRef = useRef(true);
 
-  // Fetch story pages
-  const { data: pages, isLoading: isLoadingPages } = useStoryPages(storyId);
+  // Poll illustration status (for the progress counter)
+  const { data: illustrationStatus } = useIllustrationStatus(storyId);
 
-  // Poll illustration status
-  const { data: illustrationStatus } = useIllustrationStatus(storyId, {
-    enabled: !!pages && pages.some((p) => p.illustration_status !== 'completed'),
+  // Check if illustrations are still being generated (from status polling)
+  const illustrationsInProgress = !!illustrationStatus &&
+    illustrationStatus.completed + illustrationStatus.failed < illustrationStatus.total_pages;
+
+  // Fetch story pages — polls every 4s while illustrations are in progress
+  const { data: pages, isLoading: isLoadingPages } = useStoryPages(storyId, {
+    illustrationsInProgress,
   });
+
+  // Final refetch when all illustrations complete (catches the last image)
+  useEffect(() => {
+    if (prevInProgressRef.current && !illustrationsInProgress && storyId) {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.storyPages.forStory(storyId),
+      });
+    }
+    prevInProgressRef.current = illustrationsInProgress;
+  }, [illustrationsInProgress, storyId, queryClient]);
 
   const totalPages = (pages?.length ?? 0) + 1; // +1 for cover
 

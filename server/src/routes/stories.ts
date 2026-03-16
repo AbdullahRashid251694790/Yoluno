@@ -3,7 +3,21 @@ import { v4 as uuidv4 } from 'uuid';
 import { query, queryOne } from '../config/database.js';
 import { requireAuth } from '../middleware/auth.js';
 import { AppError } from '../middleware/errorHandler.js';
+import { getFileUrl } from '../utils/storage.js';
 import type { Story, ChildProfile } from '../types/index.js';
+
+/** Resolve cover_image_url to signed S3 URL in production */
+async function resolveStoryUrls(stories: Story[]): Promise<Story[]> {
+  return Promise.all(
+    stories.map(async (story) => {
+      if (story.cover_image_url && !story.cover_image_url.startsWith('http')) {
+        const url = await getFileUrl(story.cover_image_url, 3600);
+        return { ...story, cover_image_url: url };
+      }
+      return story;
+    })
+  );
+}
 
 const router = Router();
 
@@ -41,7 +55,7 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
         : [req.user!.id, parseInt(limit as string), parseInt(offset as string)]
     );
 
-    res.json(result.rows);
+    res.json(await resolveStoryUrls(result.rows));
   } catch (error) {
     next(error);
   }
@@ -61,7 +75,7 @@ router.get('/recent', async (req: Request, res: Response, next: NextFunction) =>
       [req.user!.id, parseInt(limit as string)]
     );
 
-    res.json(result.rows);
+    res.json(await resolveStoryUrls(result.rows));
   } catch (error) {
     next(error);
   }
@@ -85,7 +99,7 @@ router.get('/favorites', async (req: Request, res: Response, next: NextFunction)
       childId ? [req.user!.id, childId] : [req.user!.id]
     );
 
-    res.json(result.rows);
+    res.json(await resolveStoryUrls(result.rows));
   } catch (error) {
     next(error);
   }
@@ -109,7 +123,8 @@ router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
       throw new AppError(403, 'Access denied');
     }
 
-    res.json(story);
+    const [resolved] = await resolveStoryUrls([story]);
+    res.json(resolved);
   } catch (error) {
     next(error);
   }

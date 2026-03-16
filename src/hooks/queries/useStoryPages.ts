@@ -9,12 +9,15 @@ import { queryKeys } from './keys';
 import { storyPagesService, type StoryPage, type IllustrationStatusResponse } from '@/services/storyPages';
 
 // Query hooks
-export function useStoryPages(storyId: string | undefined) {
+export function useStoryPages(storyId: string | undefined, options?: { illustrationsInProgress?: boolean }) {
+  const illustrationsInProgress = options?.illustrationsInProgress ?? false;
+
   return useQuery({
     queryKey: queryKeys.storyPages.forStory(storyId ?? ''),
     queryFn: () => storyPagesService.getPages(storyId!),
     enabled: !!storyId,
-    staleTime: 30 * 1000, // 30 seconds - pages don't change often
+    staleTime: illustrationsInProgress ? 2000 : 30 * 1000,
+    refetchInterval: illustrationsInProgress ? 4000 : false,
   });
 }
 

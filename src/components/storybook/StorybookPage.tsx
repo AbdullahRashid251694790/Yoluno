@@ -64,10 +64,10 @@ export function StorybookPage({
         {pageNumber} / {totalPages}
       </div>
 
-      {/* Centered text overlay */}
-      <div className="absolute inset-0 flex items-center justify-center p-6 md:p-10">
-        <div className="bg-white/85 backdrop-blur-sm rounded-xl p-4 md:p-6 shadow-lg max-w-prose overflow-y-auto max-h-[60%]">
-          <p className="text-base md:text-lg lg:text-xl leading-relaxed text-gray-800 font-serif text-center">
+      {/* Bottom text overlay */}
+      <div className="absolute bottom-0 left-0 right-0 p-4 md:p-6">
+        <div className="bg-white/90 backdrop-blur-sm rounded-xl p-3 md:p-4 shadow-lg max-w-prose mx-auto max-h-[40%] overflow-y-auto">
+          <p className="text-sm md:text-base lg:text-lg leading-relaxed text-gray-800 font-serif text-center">
             {page.content}
           </p>
         </div>
