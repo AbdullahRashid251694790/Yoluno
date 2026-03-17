@@ -10,6 +10,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { X, Loader2, Volume2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { queryKeys } from '@/hooks/queries/keys';
+import { useStory } from '@/hooks/queries';
 import { useStoryPages, useIllustrationStatus } from '@/hooks/queries/useStoryPages';
 import { StorybookCover } from './StorybookCover';
 import { StorybookPage } from './StorybookPage';
@@ -51,6 +52,11 @@ export function StorybookReader({
   const queryClient = useQueryClient();
   const prevInProgressRef = useRef(true);
 
+  // Fetch story data (for live cover image updates)
+  const { data: storyData } = useStory(storyId);
+  const liveCoverUrl = (storyData as { cover_image_url?: string })?.cover_image_url;
+  const resolvedCoverUrl = liveCoverUrl || coverImageUrl;
+
   // Poll illustration status (for the progress counter)
   const { data: illustrationStatus } = useIllustrationStatus(storyId);
 
@@ -63,11 +69,15 @@ export function StorybookReader({
     illustrationsInProgress,
   });
 
-  // Final refetch when all illustrations complete (catches the last image)
+  // Final refetch when all illustrations complete (catches the last image + cover)
   useEffect(() => {
     if (prevInProgressRef.current && !illustrationsInProgress && storyId) {
       queryClient.invalidateQueries({
         queryKey: queryKeys.storyPages.forStory(storyId),
+      });
+      // Also refresh stories list to pick up the cover image
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.stories.all,
       });
     }
     prevInProgressRef.current = illustrationsInProgress;
@@ -262,7 +272,7 @@ export function StorybookReader({
           {currentPage === 0 ? (
             <StorybookCover
               title={storyTitle}
-              coverImageUrl={coverImageUrl ? getUploadUrl(coverImageUrl) : undefined}
+              coverImageUrl={resolvedCoverUrl ? getUploadUrl(resolvedCoverUrl) : undefined}
               theme={theme}
               mood={mood}
               onStart={goToNextPage}

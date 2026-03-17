@@ -79,21 +79,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
       interests: child.interests || [],
     });
 
-    // Generate cover illustration
-    let coverImageUrl: string | null = null;
-    try {
-      coverImageUrl = await generateIllustration(
-        `Cover image for "${storyContent.title}"`,
-        theme,
-        mood,
-        child_profile_id,
-        'cover'
-      );
-    } catch (error) {
-      console.error('Failed to generate cover illustration:', error);
-    }
-
-    // Save story to database
+    // Save story to database (cover image generated in background)
     const storyId = uuidv4();
     const story = await queryOne<Story>(
       `INSERT INTO stories (
@@ -110,7 +96,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
         mood,
         values,
         storyContent.wordCount,
-        coverImageUrl,
+        null,
         true,
         narratorVoice,
       ]
@@ -135,8 +121,8 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
       );
     }
 
-    // Start generating illustrations in the background
-    generatePageIllustrations(storyId, child_profile_id).catch((error) => {
+    // Generate cover + page illustrations in the background
+    generateAllIllustrations(storyId, child_profile_id, storyContent.title, theme, mood).catch((error) => {
       console.error('Background illustration generation failed:', error);
     });
 
@@ -149,7 +135,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
           illustration_status: 'pending',
         })),
       },
-      warning: coverImageUrl ? null : 'Cover illustration generation failed',
+      warning: null,
     });
   } catch (error) {
     next(error);
@@ -259,7 +245,7 @@ router.post('/:storyId/regenerate-illustrations', async (req: Request, res: Resp
     );
 
     // Start regenerating illustrations
-    generatePageIllustrations(storyId, story.child_profile_id).catch((error) => {
+    generateAllIllustrations(storyId, story.child_profile_id, story.title, story.theme ?? undefined, story.mood ?? undefined).catch((error) => {
       console.error('Background illustration regeneration failed:', error);
     });
 
@@ -467,44 +453,66 @@ No text or words in the image. Warm and inviting atmosphere.
 ${type === 'cover' ? 'Cover illustration — eye-catching and magical.' : ''}`;
 
   try {
-    const response = await fetch('https://api.openai.com/v1/images/generations', {
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+        'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
         'Content-Type': 'application/json',
+        'HTTP-Referer': process.env.FRONTEND_URL || 'http://localhost:5173',
       },
       body: JSON.stringify({
-        model: 'dall-e-3',
-        prompt: fullPrompt,
-        n: 1,
-        size: '1024x1024',
-        quality: 'standard',
-        response_format: 'b64_json',
+        model: 'google/gemini-3.1-flash-image-preview',
+        messages: [
+          { role: 'user', content: fullPrompt },
+        ],
       }),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('DALL-E image generation failed:', errorText);
+      console.error('Image generation failed:', errorText);
       return null;
     }
 
     const data = (await response.json()) as {
-      data: Array<{ b64_json: string }>;
+      choices: Array<{
+        message: {
+          content?: string;
+          images?: Array<{ type: string; image_url: { url: string } }>;
+        };
+      }>;
     };
 
-    const base64Data = data.data?.[0]?.b64_json;
-    if (!base64Data) {
-      console.error('No image data in DALL-E response');
+    // Extract base64 image from response images array
+    const images = data.choices?.[0]?.message?.images;
+    if (!images || images.length === 0) {
+      console.error('No images in response:', JSON.stringify(data.choices?.[0]?.message).substring(0, 500));
       return null;
     }
 
+    const imageUrl = images[0].image_url?.url;
+    if (!imageUrl) {
+      console.error('No image URL in response');
+      return null;
+    }
+
+    // Parse base64 from data URL (data:image/png;base64,...)
+    const match = imageUrl.match(/data:image\/([\w+]+);base64,(.+)/);
+    if (!match) {
+      console.error('Could not parse base64 from image URL');
+      return null;
+    }
+
+    const imageFormat = match[1].replace('+', '');
+    const base64Data = match[2];
+
     // Upload via storage service (S3 in production, local in dev)
-    const filename = `${Date.now()}-${type}.png`;
+    const ext = imageFormat === 'jpeg' ? 'jpg' : imageFormat;
+    const filename = `${Date.now()}-${type}.${ext}`;
     const key = `story-illustrations/${childProfileId}/${filename}`;
     const buffer = Buffer.from(base64Data, 'base64');
 
-    await uploadFile(key, buffer, 'image/png');
+    await uploadFile(key, buffer, `image/${imageFormat}`);
 
     return key;
   } catch (error) {
@@ -513,14 +521,33 @@ ${type === 'cover' ? 'Cover illustration — eye-catching and magical.' : ''}`;
   }
 }
 
-async function generatePageIllustrations(storyId: string, childProfileId: string): Promise<void> {
-  // Get story info
-  const story = await queryOne<Story>(
-    'SELECT theme, mood FROM stories WHERE id = $1',
-    [storyId]
-  );
+async function generateAllIllustrations(
+  storyId: string,
+  childProfileId: string,
+  title: string,
+  theme: string | undefined,
+  mood: string | undefined
+): Promise<void> {
+  // Generate cover image first
+  try {
+    const coverUrl = await generateIllustration(
+      `Cover image for "${title}"`,
+      theme,
+      mood,
+      childProfileId,
+      'cover'
+    );
+    if (coverUrl) {
+      await query(
+        `UPDATE stories SET cover_image_url = $1 WHERE id = $2`,
+        [coverUrl, storyId]
+      );
+    }
+  } catch (error) {
+    console.error('Failed to generate cover illustration:', error);
+  }
 
-  if (!story) return;
+  await new Promise((resolve) => setTimeout(resolve, 3000));
 
   // Get all pending pages
   const result = await query<StoryPage>(
@@ -530,10 +557,9 @@ async function generatePageIllustrations(storyId: string, childProfileId: string
 
   const pages = result.rows;
 
-  // Generate illustrations sequentially with retry for rate limits
+  // Generate page illustrations sequentially with retry
   for (const page of pages) {
     try {
-      // Mark as generating
       await query(
         `UPDATE story_pages SET illustration_status = 'generating' WHERE id = $1`,
         [page.id]
@@ -545,13 +571,12 @@ async function generatePageIllustrations(storyId: string, childProfileId: string
       for (let attempt = 0; attempt <= maxRetries; attempt++) {
         illustrationUrl = await generateIllustration(
           page.illustration_prompt || `Page ${page.page_number} scene`,
-          story.theme ?? undefined,
-          story.mood ?? undefined,
+          theme,
+          mood,
           childProfileId,
           'page'
         );
         if (illustrationUrl) break;
-        // Wait longer before retry (rate limit backoff)
         if (attempt < maxRetries) {
           console.log(`Retrying illustration for page ${page.page_number} (attempt ${attempt + 2})`);
           await new Promise((resolve) => setTimeout(resolve, 15000));
@@ -577,7 +602,6 @@ async function generatePageIllustrations(storyId: string, childProfileId: string
       );
     }
 
-    // Short delay between generations
     await new Promise((resolve) => setTimeout(resolve, 3000));
   }
 }
