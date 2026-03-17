@@ -4,7 +4,7 @@
  * Root component with providers and routing.
  */
 
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useSearchParams } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
@@ -44,13 +44,16 @@ const queryClient = new QueryClient({
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
+  const location = useLocation();
 
   if (isLoading) {
     return null;
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    // Preserve the intended destination so we can redirect back after login
+    const redirectTo = location.pathname + location.search;
+    return <Navigate to={`/login?redirect=${encodeURIComponent(redirectTo)}`} replace />;
   }
 
   return <>{children}</>;
@@ -58,13 +61,16 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 function PublicRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
+  const [searchParams] = useSearchParams();
 
   if (isLoading) {
     return null;
   }
 
   if (isAuthenticated) {
-    return <Navigate to="/dashboard" replace />;
+    // Redirect to the originally intended page, or dashboard by default
+    const redirectTo = searchParams.get('redirect') || '/dashboard';
+    return <Navigate to={redirectTo} replace />;
   }
 
   return <>{children}</>;
