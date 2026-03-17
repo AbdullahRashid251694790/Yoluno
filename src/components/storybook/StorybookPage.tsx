@@ -29,47 +29,48 @@ export function StorybookPage({
   return (
     <div
       className={cn(
-        'relative w-full h-full rounded-2xl overflow-hidden shadow-2xl bg-gradient-to-br from-amber-50 to-orange-50',
+        'relative w-full h-full rounded-2xl overflow-hidden shadow-2xl bg-gradient-to-b from-blue-100 to-purple-100',
         'transition-opacity duration-300',
         isActive ? 'opacity-100' : 'opacity-0'
       )}
     >
-      {/* Full-page illustration background */}
-      <div className="absolute inset-0 bg-gradient-to-b from-blue-100 to-purple-100">
+      {/* Page number badge */}
+      <div className="absolute top-4 right-4 bg-white/80 backdrop-blur-sm rounded-full px-3 py-1 text-sm font-medium text-gray-700 z-10">
+        {pageNumber} / {totalPages}
+      </div>
+
+      {/* Vertically centered content: image + text stacked */}
+      <div className="w-full h-full overflow-y-auto flex flex-col justify-center">
+        {/* Illustration */}
         {page.illustration_status === 'completed' && illustrationUrl ? (
           <img
             src={illustrationUrl}
             alt={`Illustration for page ${pageNumber}`}
-            className="w-full h-full object-cover"
+            className="w-full"
           />
         ) : page.illustration_status === 'generating' || page.illustration_status === 'pending' ? (
-          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-purple-200 to-pink-200">
+          <div className="w-full aspect-square flex items-center justify-center bg-gradient-to-br from-purple-200 to-pink-200">
             <div className="text-center text-purple-600">
               <Loader2 className="h-12 w-12 animate-spin mx-auto mb-2" />
               <p className="text-sm">Creating illustration...</p>
             </div>
           </div>
         ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-200 to-gray-300">
+          <div className="w-full aspect-square flex items-center justify-center bg-gradient-to-br from-gray-200 to-gray-300">
             <div className="text-center text-gray-500">
               <ImageOff className="h-12 w-12 mx-auto mb-2" />
               <p className="text-sm">Illustration unavailable</p>
             </div>
           </div>
         )}
-      </div>
 
-      {/* Page number badge */}
-      <div className="absolute top-4 right-4 bg-white/80 backdrop-blur-sm rounded-full px-3 py-1 text-sm font-medium text-gray-700 z-10">
-        {pageNumber} / {totalPages}
-      </div>
-
-      {/* Bottom text overlay */}
-      <div className="absolute bottom-0 left-0 right-0 p-4 md:p-6">
-        <div className="bg-white/90 backdrop-blur-sm rounded-xl p-3 md:p-4 shadow-lg max-w-prose mx-auto max-h-[40%] overflow-y-auto">
-          <p className="text-sm md:text-base lg:text-lg leading-relaxed text-gray-800 font-serif text-center">
-            {page.content}
-          </p>
+        {/* Text directly below image */}
+        <div className="px-4 py-3 md:px-6 md:py-4">
+          <div className="bg-white/90 backdrop-blur-sm rounded-xl p-3 md:p-4 shadow-lg max-w-prose mx-auto">
+            <p className="text-sm md:text-base lg:text-lg leading-relaxed text-gray-800 font-serif text-center">
+              {page.content}
+            </p>
+          </div>
         </div>
       </div>
 
