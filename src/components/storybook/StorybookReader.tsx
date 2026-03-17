@@ -85,6 +85,24 @@ export function StorybookReader({
 
   const totalPages = (pages?.length ?? 0) + 1; // +1 for cover
 
+  // Preload adjacent page images so transitions are instant
+  useEffect(() => {
+    if (!pages) return;
+    const pagesToPreload = [currentPage, currentPage + 1].filter(
+      (p) => p >= 1 && p <= (pages.length ?? 0)
+    );
+    for (const p of pagesToPreload) {
+      const page = pages[p - 1];
+      if (page?.illustration_url) {
+        const url = getUploadUrl(page.illustration_url);
+        if (url) {
+          const img = new Image();
+          img.src = url;
+        }
+      }
+    }
+  }, [currentPage, pages]);
+
   // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
