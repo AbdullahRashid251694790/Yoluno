@@ -5,7 +5,7 @@
  */
 
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { resendVerification } from '@/integrations/api/auth';
 import { Button } from '@/components/ui/button';
@@ -19,6 +19,7 @@ import yolunoLogo from '@/assets/yoluno-logo.svg';
 
 export function LoginPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { signIn } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -46,7 +47,8 @@ export function LoginPage() {
 
     try {
       await signIn(email, password);
-      navigate('/dashboard');
+      const redirectTo = searchParams.get('redirect') || '/dashboard';
+      navigate(redirectTo);
     } catch (error) {
       const err = error as { code?: string };
       if (err.code === 'EMAIL_NOT_VERIFIED') {
