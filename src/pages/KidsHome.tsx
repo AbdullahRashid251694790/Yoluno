@@ -31,6 +31,17 @@ import {
 import { PasswordChangeRequestButton } from '@/components/kids/PasswordChangeRequestButton';
 import type { AvatarExpression } from '@/types/domain';
 
+// Badge emoji mapping (matches KidsBadges page)
+const BADGE_EMOJIS: Record<string, string> = {
+  first_chat: '💬', chat_explorer: '🗣️', chat_master: '🏆',
+  storyteller: '📝', story_collector: '📚', story_master: '🌟',
+  journey_starter: '🚀', journey_finisher: '🏁', journey_explorer: '🧭',
+  streak_3: '🔥', streak_7: '⚡', streak_14: '💪', streak_30: '👑',
+  points_100: '⭐', points_500: '🌟', points_1000: '💫', points_5000: '🏅',
+  family_first: '👨‍👩‍👧', family_explorer: '👨‍👩‍👧‍👦', family_champion: '🏠',
+  mood_first: '😊', mood_explorer: '🌈', mood_master: '🧘',
+};
+
 // Time-aware greeting
 function getGreeting(): { text: string; emoji: string } {
   const hour = new Date().getHours();
@@ -327,7 +338,7 @@ export function KidsHomePage() {
                     </p>
                   </div>
                 </div>
-                <div className="flex -space-x-2">
+                <div className="flex gap-1.5">
                   {recentBadges.length > 0 ? (
                     <>
                       {recentBadges.map((badge, i) => (
@@ -335,15 +346,9 @@ export function KidsHomePage() {
                           key={badge.id}
                           className="h-8 w-8 rounded-full flex items-center justify-center bg-yellow-100 border-2 border-white"
                         >
-                          {badge.badge?.icon_url ? (
-                            <img
-                              src={badge.badge.icon_url}
-                              alt={badge.badge.display_name}
-                              className="h-5 w-5"
-                            />
-                          ) : (
-                            <span className="text-lg">🏆</span>
-                          )}
+                          <span className="text-lg">
+                            {badge.badge?.name ? (BADGE_EMOJIS[badge.badge.name] || '🏅') : '🏆'}
+                          </span>
                         </div>
                       ))}
                       <div className="h-8 w-8 rounded-full flex items-center justify-center bg-gray-200 border-2 border-white">

@@ -5,6 +5,16 @@
  * All data from database - no hardcoding.
  */
 
+const BADGE_EMOJIS: Record<string, string> = {
+  first_chat: '💬', chat_explorer: '🗣️', chat_master: '🏆',
+  storyteller: '📝', story_collector: '📚', story_master: '🌟',
+  journey_starter: '🚀', journey_finisher: '🏁', journey_explorer: '🧭',
+  streak_3: '🔥', streak_7: '⚡', streak_14: '💪', streak_30: '👑',
+  points_100: '⭐', points_500: '🌟', points_1000: '💫', points_5000: '🏅',
+  family_first: '👨‍👩‍👧', family_explorer: '👨‍👩‍👧‍👦', family_champion: '🏠',
+  mood_first: '😊', mood_explorer: '🌈', mood_master: '🧘',
+};
+
 import { useEffect, useState } from 'react';
 import { useConfetti } from '@/hooks/useConfetti';
 import {
@@ -98,12 +108,8 @@ export function BadgeCelebration({
             <div
               className={`w-24 h-24 rounded-full bg-gradient-to-br ${gradientClass} flex items-center justify-center shadow-lg animate-bounce`}
             >
-              {badge.icon_url ? (
-                <img
-                  src={badge.icon_url}
-                  alt={badge.display_name}
-                  className="w-16 h-16 object-contain"
-                />
+              {badge.name ? (
+                <span className="text-5xl">{BADGE_EMOJIS[badge.name] || '🏅'}</span>
               ) : (
                 <CategoryIcon className="w-12 h-12 text-white" />
               )}
