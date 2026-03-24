@@ -274,7 +274,7 @@ router.get('/:childId/sessions', async (req: Request, res: Response, next: NextF
       `SELECT * FROM chat_sessions
        WHERE child_profile_id = $1
        ${includeInactive === 'true' ? '' : 'AND is_active = true'}
-       ORDER BY last_message_at DESC NULLS LAST, created_at DESC
+       ORDER BY created_at DESC
        LIMIT $2`,
       [req.params.childId, parseInt(limit as string)]
     );

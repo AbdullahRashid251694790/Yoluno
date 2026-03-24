@@ -142,8 +142,8 @@ export function KidsMoodCheckPage() {
     navigate('/play');
   };
 
-  // Loading state
-  if (childLoading || moodLoading) {
+  // Loading state OR already checked in (prevent flash before redirect)
+  if (childLoading || moodLoading || (todaysMood && !selectedMood)) {
     return (
       <div className="min-h-screen bg-kids-gradient flex items-center justify-center">
         <div className="text-center">
