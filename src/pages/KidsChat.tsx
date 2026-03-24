@@ -47,7 +47,7 @@ export function KidsChatPage() {
 
   const activateSession = useCallback((sessionId: string, closeSidebar = false) => {
     setCurrentSessionId(sessionId);
-    setSearchParams({ session: sessionId });
+    setSearchParams({ session: sessionId }, { replace: true });
     if (closeSidebar && isMobile) setSidebarCollapsed(true);
   }, [setSearchParams, isMobile]);
 
