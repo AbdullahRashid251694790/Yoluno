@@ -4,6 +4,7 @@
  * Root component with providers and routing.
  */
 
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useSearchParams } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
@@ -25,12 +26,21 @@ import { KidsJourneysPage } from '@/pages/KidsJourneys';
 import { KidsFamilyPage } from '@/pages/KidsFamily';
 import { KidsRewardGalleryPage } from '@/pages/KidsRewardGallery';
 import { KidsMoodCheckPage } from '@/pages/KidsMoodCheck';
-import { LandingPage } from '@/pages/Landing';
 import { ForgotPasswordPage } from '@/pages/ForgotPassword';
 import { ResetPasswordPage } from '@/pages/ResetPassword';
 import { VerifyEmailPage } from '@/pages/VerifyEmail';
 import { KidsBadgesPage } from '@/pages/KidsBadges';
 import { NotFoundPage } from '@/pages/NotFound';
+
+// Landing pages (lazy-loaded)
+import LandingLayout from '@/components/landing/LandingLayout';
+const LandingHomePage = lazy(() => import('@/pages/landing/HomePage'));
+const LandingFeaturesPage = lazy(() => import('@/pages/landing/FeaturesPage'));
+const LandingForParentsPage = lazy(() => import('@/pages/landing/ForParentsPage'));
+const LandingPricingPage = lazy(() => import('@/pages/landing/PricingPage'));
+const LandingAboutPage = lazy(() => import('@/pages/landing/AboutPage'));
+const LandingBlogPage = lazy(() => import('@/pages/landing/BlogPage'));
+const LandingFAQsPage = lazy(() => import('@/pages/landing/FAQsPage'));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -84,15 +94,21 @@ export default function App() {
           <ChatProvider>
             <BrowserRouter>
               <Routes>
-                {/* Public routes */}
+                {/* Landing site pages */}
                 <Route
                   path="/"
                   element={
                     <PublicRoute>
-                      <LandingPage />
+                      <LandingLayout><Suspense fallback={null}><LandingHomePage /></Suspense></LandingLayout>
                     </PublicRoute>
                   }
                 />
+                <Route path="/features" element={<LandingLayout><Suspense fallback={null}><LandingFeaturesPage /></Suspense></LandingLayout>} />
+                <Route path="/for-parents" element={<LandingLayout><Suspense fallback={null}><LandingForParentsPage /></Suspense></LandingLayout>} />
+                <Route path="/pricing" element={<LandingLayout><Suspense fallback={null}><LandingPricingPage /></Suspense></LandingLayout>} />
+                <Route path="/about" element={<LandingLayout><Suspense fallback={null}><LandingAboutPage /></Suspense></LandingLayout>} />
+                <Route path="/blog" element={<LandingLayout><Suspense fallback={null}><LandingBlogPage /></Suspense></LandingLayout>} />
+                <Route path="/faqs" element={<LandingLayout><Suspense fallback={null}><LandingFAQsPage /></Suspense></LandingLayout>} />
                 <Route
                   path="/login"
                   element={

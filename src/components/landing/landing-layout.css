@@ -1,0 +1,16 @@
+.landing-layout section {
+  background-color: transparent !important;
+}
+
+.landing-layout main {
+  background-color: transparent;
+}
+
+.landing-layout h1,
+.landing-layout h2,
+.landing-layout h3,
+.landing-layout h4,
+.landing-layout h5,
+.landing-layout h6 {
+  font-family: var(--font-heading-landing, 'Fraunces', Georgia, serif);
+}
