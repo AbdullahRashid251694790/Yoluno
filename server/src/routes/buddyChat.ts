@@ -960,6 +960,31 @@ async function generateBuddyResponse(
   );
   const buddyName = buddy?.name || 'Luno';
 
+  // Get enabled topic descriptions (hardcoded content from topics table)
+  const enabledTopicsResult = await query<{ topic_name: string; description: string }>(
+    `SELECT t.name as topic_name, t.description
+     FROM child_topic_settings cts
+     JOIN topics t ON cts.topic_id = t.id
+     WHERE cts.child_profile_id = $1 AND cts.is_allowed = true
+       AND t.description IS NOT NULL AND t.description != ''
+     ORDER BY t.name
+     LIMIT 30`,
+    [childId]
+  );
+  const enabledTopics = enabledTopicsResult.rows;
+
+  // Get enabled custom topics descriptions
+  const customTopicsResult = await query<{ topic_name: string; description: string }>(
+    `SELECT name as topic_name, description
+     FROM custom_topics
+     WHERE child_profile_id = $1 AND is_active = true
+       AND description IS NOT NULL AND description != ''
+     ORDER BY name
+     LIMIT 20`,
+    [childId]
+  );
+  const customTopics = customTopicsResult.rows;
+
   // Get topic posts for context (both system topics and custom topics)
   const topicPostsResult = await query<{ topic_name: string; post_title: string; post_content: string }>(
     `SELECT
@@ -993,7 +1018,7 @@ async function generateBuddyResponse(
   }));
 
   // Build system prompt
-  const systemPrompt = buildSystemPrompt(buddyName, child, guardrails, safety, familyMembers, taskCompletion, topicPosts);
+  const systemPrompt = buildSystemPrompt(buddyName, child, guardrails, safety, familyMembers, taskCompletion, topicPosts, enabledTopics, customTopics);
 
   // Build user message with image context
   let userContent = message;
@@ -1054,7 +1079,9 @@ function buildSystemPrompt(
   safety: { level: string; flags: string[] },
   familyMembers: FamilyMember[],
   taskCompletion?: TaskCompletionResult | null,
-  topicPosts?: { topic_name: string; post_title: string; post_content: string }[]
+  topicPosts?: { topic_name: string; post_title: string; post_content: string }[],
+  enabledTopics?: { topic_name: string; description: string }[],
+  customTopics?: { topic_name: string; description: string }[]
 ): string {
   // Persona-specific traits based on spec
   const personas: Record<string, { description: string; tone: string; examples: string[] }> = {
@@ -1153,32 +1180,55 @@ ${persona.examples.map(e => `- ${e}`).join('\n')}`;
     prompt += `\n\nWhen ${child.name} asks about family, respond with gentle warmth and accurate information.`;
   }
 
-  // Add topic-specific knowledge from parent
-  if (topicPosts && topicPosts.length > 0) {
-    // Group posts by topic
-    const byTopic: Record<string, string[]> = {};
-    for (const row of topicPosts) {
+  // Add topic-specific knowledge (descriptions + posts)
+  const hasTopicContent = (enabledTopics && enabledTopics.length > 0) ||
+    (customTopics && customTopics.length > 0) ||
+    (topicPosts && topicPosts.length > 0);
+
+  if (hasTopicContent) {
+    // Build a combined topic knowledge map: topic name -> { description, posts[] }
+    const topicKnowledge: Record<string, { description?: string; posts: string[] }> = {};
+
+    // Add enabled topic descriptions
+    for (const topic of enabledTopics ?? []) {
+      if (!topicKnowledge[topic.topic_name]) topicKnowledge[topic.topic_name] = { posts: [] };
+      topicKnowledge[topic.topic_name].description = topic.description;
+    }
+
+    // Add custom topic descriptions
+    for (const topic of customTopics ?? []) {
+      if (!topicKnowledge[topic.topic_name]) topicKnowledge[topic.topic_name] = { posts: [] };
+      topicKnowledge[topic.topic_name].description = topic.description;
+    }
+
+    // Add topic posts
+    for (const row of topicPosts ?? []) {
       if (!row.post_title) continue;
-      if (!byTopic[row.topic_name]) byTopic[row.topic_name] = [];
-      // Truncate content for prompt efficiency (max 300 chars)
+      if (!topicKnowledge[row.topic_name]) topicKnowledge[row.topic_name] = { posts: [] };
       const truncatedContent = row.post_content.length > 300
         ? row.post_content.substring(0, 300) + '...'
         : row.post_content;
-      byTopic[row.topic_name].push(`${row.post_title}: ${truncatedContent}`);
+      topicKnowledge[row.topic_name].posts.push(`${row.post_title}: ${truncatedContent}`);
     }
 
-    if (Object.keys(byTopic).length > 0) {
-      prompt += `\n\nSPECIAL KNOWLEDGE (shared by ${child.name}'s family):`;
+    if (Object.keys(topicKnowledge).length > 0) {
+      prompt += `\n\nSPECIAL KNOWLEDGE (topics ${child.name}'s family wants you to know about):`;
       let topicCount = 0;
-      for (const [topic, posts] of Object.entries(byTopic)) {
-        if (topicCount >= 10) break; // Max 10 topics
+      for (const [topic, data] of Object.entries(topicKnowledge)) {
+        if (topicCount >= 15) break;
         prompt += `\n\n${topic}:`;
-        for (const post of posts.slice(0, 5)) { // Max 5 posts per topic
+        if (data.description) {
+          const truncDesc = data.description.length > 250
+            ? data.description.substring(0, 250) + '...'
+            : data.description;
+          prompt += `\n- About: ${truncDesc}`;
+        }
+        for (const post of data.posts.slice(0, 5)) {
           prompt += `\n- ${post}`;
         }
         topicCount++;
       }
-      prompt += `\n\nWeave this special knowledge into conversations naturally when ${child.name} asks about these topics.`;
+      prompt += `\n\nWeave this special knowledge into conversations naturally when ${child.name} asks about these topics. Use age-appropriate language.`;
     }
   }
 
