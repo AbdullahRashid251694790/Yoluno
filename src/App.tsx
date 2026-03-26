@@ -98,9 +98,7 @@ export default function App() {
                 <Route
                   path="/"
                   element={
-                    <PublicRoute>
-                      <LandingLayout><Suspense fallback={null}><LandingHomePage /></Suspense></LandingLayout>
-                    </PublicRoute>
+                    <LandingLayout><Suspense fallback={null}><LandingHomePage /></Suspense></LandingLayout>
                   }
                 />
                 <Route path="/features" element={<LandingLayout><Suspense fallback={null}><LandingFeaturesPage /></Suspense></LandingLayout>} />
