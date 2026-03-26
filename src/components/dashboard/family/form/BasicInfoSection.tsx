@@ -4,7 +4,7 @@
  * Form section for family member basic information.
  */
 
-import { Controller, type Control, type FieldErrors } from 'react-hook-form';
+import { Controller, useWatch, type Control, type FieldErrors } from 'react-hook-form';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -23,10 +23,67 @@ const RELATIONSHIP_OPTIONS = [
   { value: 'sibling', label: 'Sibling' },
   { value: 'aunt_uncle', label: 'Aunt/Uncle' },
   { value: 'cousin', label: 'Cousin' },
-  { value: 'spouse', label: 'Spouse' },
-  { value: 'child', label: 'Child' },
   { value: 'other', label: 'Other' },
 ];
+
+const SIDE_OPTIONS = [
+  { value: 'direct', label: "Child's direct family" },
+  { value: 'paternal', label: "Father's side" },
+  { value: 'maternal', label: "Mother's side" },
+];
+
+// Specific relationships shown based on generic relationship + side
+const SPECIFIC_RELATIONSHIP_OPTIONS: Record<string, Record<string, { value: string; label: string }[]>> = {
+  parent: {
+    direct: [
+      { value: 'father', label: 'Father' },
+      { value: 'mother', label: 'Mother' },
+    ],
+  },
+  grandparent: {
+    paternal: [
+      { value: 'paternal_grandfather', label: 'Paternal Grandfather' },
+      { value: 'paternal_grandmother', label: 'Paternal Grandmother' },
+    ],
+    maternal: [
+      { value: 'maternal_grandfather', label: 'Maternal Grandfather' },
+      { value: 'maternal_grandmother', label: 'Maternal Grandmother' },
+    ],
+  },
+  sibling: {
+    direct: [
+      { value: 'brother', label: 'Brother' },
+      { value: 'sister', label: 'Sister' },
+      { value: 'step_sibling', label: 'Step-Sibling' },
+    ],
+  },
+  aunt_uncle: {
+    paternal: [
+      { value: 'paternal_uncle', label: 'Paternal Uncle' },
+      { value: 'paternal_aunt', label: 'Paternal Aunt' },
+    ],
+    maternal: [
+      { value: 'maternal_uncle', label: 'Maternal Uncle' },
+      { value: 'maternal_aunt', label: 'Maternal Aunt' },
+    ],
+  },
+  cousin: {
+    paternal: [{ value: 'cousin', label: 'Cousin (Paternal)' }],
+    maternal: [{ value: 'cousin', label: 'Cousin (Maternal)' }],
+  },
+};
+
+// Which relationships need a side selection
+const NEEDS_SIDE: Record<string, string[]> = {
+  parent: ['direct'],
+  grandparent: ['paternal', 'maternal'],
+  sibling: ['direct'],
+  aunt_uncle: ['paternal', 'maternal'],
+  cousin: ['paternal', 'maternal'],
+  spouse: [],
+  child: [],
+  other: [],
+};
 
 interface BasicInfoSectionProps {
   control: Control<CreateFamilyMemberFormData>;
@@ -34,6 +91,7 @@ interface BasicInfoSectionProps {
   errors: FieldErrors<CreateFamilyMemberFormData>;
   isLiving: boolean;
   isLoading: boolean;
+  setValue: (name: keyof CreateFamilyMemberFormData, value: any) => void;
 }
 
 export function BasicInfoSection({
@@ -42,7 +100,16 @@ export function BasicInfoSection({
   errors,
   isLiving,
   isLoading,
+  setValue,
 }: BasicInfoSectionProps) {
+  const relationship = useWatch({ control, name: 'relationshipToChild' });
+  const side = useWatch({ control, name: 'side' });
+
+  const sideOptions = NEEDS_SIDE[relationship] || [];
+  const showSide = sideOptions.length > 0;
+  const specificOptions = SPECIFIC_RELATIONSHIP_OPTIONS[relationship]?.[side] || [];
+  const showSpecific = specificOptions.length > 0;
+
   return (
     <div className="space-y-4">
       <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
@@ -71,7 +138,17 @@ export function BasicInfoSection({
             render={({ field }) => (
               <Select
                 value={field.value}
-                onValueChange={field.onChange}
+                onValueChange={(val) => {
+                  field.onChange(val);
+                  // Auto-set side based on relationship
+                  const sides = NEEDS_SIDE[val] || [];
+                  if (sides.length === 1) {
+                    setValue('side', sides[0] as any);
+                  } else if (sides.length === 0) {
+                    setValue('side', 'direct');
+                  }
+                  setValue('specificRelationship', undefined as any);
+                }}
                 disabled={isLoading}
               >
                 <SelectTrigger>
@@ -94,6 +171,67 @@ export function BasicInfoSection({
           )}
         </div>
       </div>
+
+      {/* Family side selection */}
+      {showSide && sideOptions.length > 1 && (
+        <div className="space-y-2">
+          <Label>Which side of the family?</Label>
+          <Controller
+            name="side"
+            control={control}
+            render={({ field }) => (
+              <Select
+                value={field.value}
+                onValueChange={(val) => {
+                  field.onChange(val);
+                  setValue('specificRelationship', undefined as any);
+                }}
+                disabled={isLoading}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select side" />
+                </SelectTrigger>
+                <SelectContent>
+                  {SIDE_OPTIONS.filter((opt) => sideOptions.includes(opt.value)).map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          />
+        </div>
+      )}
+
+      {/* Specific relationship */}
+      {showSpecific && (
+        <div className="space-y-2">
+          <Label>Specific Relationship</Label>
+          <Controller
+            name="specificRelationship"
+            control={control}
+            render={({ field }) => (
+              <Select
+                value={field.value || ''}
+                onValueChange={field.onChange}
+                disabled={isLoading}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select specific relationship" />
+                </SelectTrigger>
+                <SelectContent>
+                  {specificOptions.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          />
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">

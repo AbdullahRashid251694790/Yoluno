@@ -8,6 +8,7 @@ import { useState, useRef, useCallback } from 'react';
 import { Upload, X, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { getUploadUrl } from '@/integrations/api/client';
 
 interface PhotoUploadProps {
   value?: string | null;
@@ -24,7 +25,7 @@ export function PhotoUpload({
   disabled = false,
   className,
 }: PhotoUploadProps) {
-  const [preview, setPreview] = useState<string | null>(value || null);
+  const [preview, setPreview] = useState<string | null>(value ? (getUploadUrl(value) || value) : null);
   const [isDragging, setIsDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 

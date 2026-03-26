@@ -1,8 +1,8 @@
 /**
  * Family Member Detail Modal
  *
- * Full details view when tapping on a family member card.
- * Shows large photo, name, relationship, fun facts, and hobbies.
+ * Kid-friendly, scrollable detail card for family members.
+ * Shows photo, name, relationship, fun facts, hobbies, and video.
  */
 
 import {
@@ -10,12 +10,11 @@ import {
   DialogContent,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getUploadUrl } from '@/integrations/api/client';
 import { cn } from '@/lib/utils';
-import { Heart, Briefcase, Sparkles, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import type { FamilyMemberRow } from '@/types/database';
-import type { ChildProfile } from '@/types/database';
+import type { ChildProfileRow as ChildProfile } from '@/types/database';
 import type { RelationType } from './FamilyMemberCard';
 
 interface FamilyMemberDetailProps {
@@ -25,63 +24,14 @@ interface FamilyMemberDetailProps {
   onClose: () => void;
 }
 
-// Relationship configuration
-const RELATIONSHIP_CONFIG: Record<RelationType, {
-  emoji: string;
-  borderColor: string;
-  bgColor: string;
-  gradientFrom: string;
-  gradientTo: string;
-}> = {
-  self: {
-    emoji: '💖',
-    borderColor: 'border-pink-400',
-    bgColor: 'bg-pink-100',
-    gradientFrom: 'from-pink-100',
-    gradientTo: 'to-purple-100',
-  },
-  parent: {
-    emoji: '👑',
-    borderColor: 'border-amber-400',
-    bgColor: 'bg-amber-100',
-    gradientFrom: 'from-amber-100',
-    gradientTo: 'to-orange-100',
-  },
-  sibling: {
-    emoji: '🎯',
-    borderColor: 'border-cyan-400',
-    bgColor: 'bg-cyan-100',
-    gradientFrom: 'from-cyan-100',
-    gradientTo: 'to-blue-100',
-  },
-  grandparent: {
-    emoji: '🏠',
-    borderColor: 'border-purple-400',
-    bgColor: 'bg-purple-100',
-    gradientFrom: 'from-purple-100',
-    gradientTo: 'to-indigo-100',
-  },
-  aunt_uncle: {
-    emoji: '🎁',
-    borderColor: 'border-blue-400',
-    bgColor: 'bg-blue-100',
-    gradientFrom: 'from-blue-100',
-    gradientTo: 'to-indigo-100',
-  },
-  cousin: {
-    emoji: '🎮',
-    borderColor: 'border-green-400',
-    bgColor: 'bg-green-100',
-    gradientFrom: 'from-green-100',
-    gradientTo: 'to-emerald-100',
-  },
-  other: {
-    emoji: '⭐',
-    borderColor: 'border-gray-400',
-    bgColor: 'bg-gray-100',
-    gradientFrom: 'from-gray-100',
-    gradientTo: 'to-slate-100',
-  },
+const THEME: Record<RelationType, { emoji: string; bg: string; accent: string; badge: string }> = {
+  self:       { emoji: '💖', bg: 'from-pink-200 via-purple-100 to-pink-50',    accent: 'text-pink-600',   badge: 'bg-pink-100 text-pink-700' },
+  parent:     { emoji: '👑', bg: 'from-amber-200 via-orange-100 to-amber-50',  accent: 'text-amber-600',  badge: 'bg-amber-100 text-amber-700' },
+  sibling:    { emoji: '🎯', bg: 'from-cyan-200 via-blue-100 to-cyan-50',      accent: 'text-cyan-600',   badge: 'bg-cyan-100 text-cyan-700' },
+  grandparent:{ emoji: '🏠', bg: 'from-purple-200 via-indigo-100 to-purple-50',accent: 'text-purple-600', badge: 'bg-purple-100 text-purple-700' },
+  aunt_uncle: { emoji: '🎁', bg: 'from-blue-200 via-indigo-100 to-blue-50',    accent: 'text-blue-600',   badge: 'bg-blue-100 text-blue-700' },
+  cousin:     { emoji: '🎮', bg: 'from-green-200 via-emerald-100 to-green-50', accent: 'text-green-600',  badge: 'bg-green-100 text-green-700' },
+  other:      { emoji: '⭐', bg: 'from-gray-200 via-slate-100 to-gray-50',     accent: 'text-gray-600',   badge: 'bg-gray-100 text-gray-700' },
 };
 
 function isFamilyMember(member: FamilyMemberRow | ChildProfile): member is FamilyMemberRow {
@@ -91,164 +41,183 @@ function isFamilyMember(member: FamilyMemberRow | ChildProfile): member is Famil
 export function FamilyMemberDetail({ member, type, isOpen, onClose }: FamilyMemberDetailProps) {
   if (!member) return null;
 
-  const config = RELATIONSHIP_CONFIG[type];
+  const theme = THEME[type];
   const name = member.name;
 
-  // Get avatar URL
+  // Resolve avatar
   let avatarUrl: string | undefined;
   if (isFamilyMember(member)) {
     avatarUrl = member.photo_url ? getUploadUrl(member.photo_url) : undefined;
   } else {
-    const childMember = member as ChildProfile & { avatarUrl?: string };
-    avatarUrl = childMember.avatarUrl
-      ? getUploadUrl(childMember.avatarUrl)
-      : undefined;
+    const child = member as ChildProfile & { avatarUrl?: string };
+    const url = child.avatarUrl || child.custom_avatar_url;
+    avatarUrl = url ? (url.startsWith('http') ? url : getUploadUrl(url)) : undefined;
   }
 
-  // Get details
   const relationship = isFamilyMember(member) ? member.relationship : null;
-  const occupation = isFamilyMember(member) ? member.occupation : null;
-  const hobbies = isFamilyMember(member) ? member.hobbies : null;
-  const funFacts = isFamilyMember(member) ? member.fun_facts : null;
   const connectionDescription = isFamilyMember(member) ? member.connection_description : null;
+  const occupation = isFamilyMember(member) ? member.occupation : null;
+  const hobbies = isFamilyMember(member) ? (member.hobbies || []) : ((member as any).interests || []);
+  const funFacts = isFamilyMember(member) ? member.fun_facts : null;
   const isAlive = isFamilyMember(member) ? member.is_alive !== false : true;
+  const videoUrl = isFamilyMember(member) ? (member as any).video_url : null;
+  const resolvedVideoUrl = videoUrl ? getUploadUrl(videoUrl) : null;
+
+  // Child profile extras
+  const age = !isFamilyMember(member) ? (member as any).age : null;
+  const gender = !isFamilyMember(member) ? (member as any).gender : null;
+
+  const hasDetails = connectionDescription || occupation || (hobbies && hobbies.length > 0) || funFacts || resolvedVideoUrl || age;
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent
-        className={cn(
-          'max-w-sm mx-auto rounded-3xl border-0 p-0 overflow-hidden [&>button:last-child]:hidden',
-          'bg-gradient-to-b',
-          config.gradientFrom,
-          config.gradientTo
-        )}
+        className="max-w-sm mx-auto rounded-3xl border-0 p-0 overflow-hidden [&>button:last-child]:hidden"
       >
-        {/* Close button */}
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onClose}
-          className="absolute right-3 top-3 z-20 rounded-full bg-white/50 hover:bg-white/80"
-        >
-          <X className="h-5 w-5" />
-        </Button>
+        {/* Scrollable container */}
+        <div className="max-h-[85vh] overflow-y-auto scrollbar-hide">
 
-        {/* Large photo header */}
-        {avatarUrl ? (
-          <div className="relative w-full aspect-[4/3] overflow-hidden">
-            <img
-              src={avatarUrl}
-              alt={name}
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-            <div className="absolute bottom-4 left-4 right-4">
-              <h2 className="text-2xl font-display font-bold text-white drop-shadow-md">
+          {/* Hero header with gradient */}
+          <div className={cn('relative pt-12 pb-6 px-6 bg-gradient-to-b', theme.bg)}>
+            {/* Close button */}
+            <button
+              onClick={onClose}
+              className="absolute right-4 top-4 z-10 w-8 h-8 rounded-full bg-white/70 hover:bg-white flex items-center justify-center transition-colors"
+            >
+              <X className="h-4 w-4" />
+            </button>
+
+            {/* Avatar */}
+            <div className="flex flex-col items-center">
+              <div className="relative">
+                <div className="w-28 h-28 rounded-full border-4 border-white shadow-lg overflow-hidden bg-white">
+                  {avatarUrl ? (
+                    <img src={avatarUrl} alt={name} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-4xl font-bold text-muted-foreground/30">
+                      {name.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                </div>
+                <span className="absolute -bottom-1 -right-1 text-2xl bg-white rounded-full p-1.5 shadow-md">
+                  {theme.emoji}
+                </span>
+              </div>
+
+              {/* Name */}
+              <h2 className="mt-4 text-2xl font-display font-bold text-center text-foreground">
                 {name}
               </h2>
-              {relationship && (
-                <p className="text-white/90 capitalize drop-shadow-sm">{relationship}</p>
+
+              {/* Relationship badge */}
+              {(connectionDescription || relationship) && (
+                <span className={cn('mt-2 px-4 py-1 rounded-full text-sm font-semibold', theme.badge)}>
+                  {connectionDescription || relationship}
+                </span>
+              )}
+
+              {!isAlive && (
+                <p className="mt-2 text-sm text-muted-foreground">Remembered with love 💕</p>
               )}
             </div>
-            <span className="absolute top-3 right-3 text-3xl bg-white/90 rounded-full p-2 shadow-md">
-              {config.emoji}
-            </span>
           </div>
-        ) : (
-          <div className={cn(
-            'relative w-full pt-8 pb-4 flex flex-col items-center',
-            'bg-gradient-to-b', config.gradientFrom, config.gradientTo
-          )}>
-            <Avatar className={cn('h-32 w-32 border-4 shadow-lg', config.borderColor)}>
-              <AvatarFallback className={cn('text-4xl font-bold', config.bgColor)}>
-                {name.charAt(0).toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-            <span className="absolute top-3 right-3 text-3xl bg-white/90 rounded-full p-2 shadow-md">
-              {config.emoji}
-            </span>
-            <h2 className="mt-4 text-2xl font-display font-bold text-center">
-              {name}
-            </h2>
-            {relationship && (
-              <p className="text-muted-foreground capitalize">{relationship}</p>
-            )}
-          </div>
-        )}
 
-        {!isAlive && (
-          <div className="px-6 pt-2">
-            <p className="text-sm text-muted-foreground text-center">
-              Remembered with love 💕
-            </p>
-          </div>
-        )}
+          {/* Details cards */}
+          {hasDetails && (
+            <div className="px-5 py-4 space-y-3">
 
-        {/* Details */}
-        <div className="px-6 space-y-4">
-          {/* Connection description */}
-          {connectionDescription && (
-            <div className="bg-white/60 rounded-xl p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Heart className="h-4 w-4 text-pink-500" />
-                <span className="text-sm font-medium text-muted-foreground">About</span>
-              </div>
-              <p className="text-foreground">{connectionDescription}</p>
-            </div>
-          )}
+              {/* Age & Gender (for siblings/self) */}
+              {age && (
+                <div className="flex items-center gap-3 bg-white rounded-2xl p-4 shadow-sm">
+                  <span className="text-2xl">🎂</span>
+                  <div>
+                    <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Age</p>
+                    <p className="text-sm font-medium text-foreground">
+                      {age} years old {gender === 'boy' ? '👦' : gender === 'girl' ? '👧' : ''}
+                    </p>
+                  </div>
+                </div>
+              )}
 
-          {/* Occupation */}
-          {occupation && (
-            <div className="bg-white/60 rounded-xl p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Briefcase className="h-4 w-4 text-blue-500" />
-                <span className="text-sm font-medium text-muted-foreground">Works as</span>
-              </div>
-              <p className="text-foreground">{occupation}</p>
-            </div>
-          )}
+              {/* Occupation */}
+              {occupation && (
+                <div className="flex items-center gap-3 bg-white rounded-2xl p-4 shadow-sm">
+                  <span className="text-2xl">💼</span>
+                  <div>
+                    <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Works as</p>
+                    <p className="text-sm font-medium text-foreground">{occupation}</p>
+                  </div>
+                </div>
+              )}
 
-          {/* Hobbies */}
-          {hobbies && hobbies.length > 0 && (
-            <div className="bg-white/60 rounded-xl p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Sparkles className="h-4 w-4 text-amber-500" />
-                <span className="text-sm font-medium text-muted-foreground">Likes</span>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {hobbies.map((hobby, index) => (
-                  <span
-                    key={index}
-                    className="px-3 py-1 bg-white/80 rounded-full text-sm text-foreground"
+              {/* Hobbies */}
+              {hobbies && hobbies.length > 0 && (
+                <div className="bg-white rounded-2xl p-4 shadow-sm">
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="text-2xl">🌟</span>
+                    <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Loves</p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {hobbies.map((hobby, i) => (
+                      <span
+                        key={i}
+                        className={cn(
+                          'px-3 py-1.5 rounded-full text-xs font-semibold',
+                          theme.badge
+                        )}
+                      >
+                        {hobby}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Fun facts */}
+              {funFacts && (
+                <div className="bg-white rounded-2xl p-4 shadow-sm">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-2xl">✨</span>
+                    <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Fun Fact</p>
+                  </div>
+                  <p className="text-sm text-foreground leading-relaxed">{funFacts}</p>
+                </div>
+              )}
+
+              {/* Video */}
+              {resolvedVideoUrl && (
+                <div className="bg-white rounded-2xl p-4 shadow-sm">
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="text-2xl">🎬</span>
+                    <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Video</p>
+                  </div>
+                  <video
+                    autoPlay
+                    loop
+                    muted
+                    controls
+                    playsInline
+                    className="w-full rounded-xl"
                   >
-                    {hobby}
-                  </span>
-                ))}
-              </div>
+                    <source src={resolvedVideoUrl} type="video/mp4" />
+                  </video>
+                </div>
+              )}
             </div>
           )}
 
-          {/* Fun facts */}
-          {funFacts && (
-            <div className="bg-white/60 rounded-xl p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-base">✨</span>
-                <span className="text-sm font-medium text-muted-foreground">Fun fact</span>
-              </div>
-              <p className="text-foreground">{funFacts}</p>
-            </div>
-          )}
-        </div>
-
-        {/* Close button */}
-        <div className="px-6 pb-6">
-          <Button
-            onClick={onClose}
-            className="w-full rounded-full h-12 bg-white hover:bg-white/90 text-foreground font-display font-bold"
-          >
-            <Heart className="mr-2 h-5 w-5 text-pink-500 fill-pink-500" />
-            Love it!
-          </Button>
+          {/* Close button */}
+          <div className="px-5 pb-5 pt-2">
+            <Button
+              onClick={onClose}
+              className={cn(
+                'w-full rounded-full h-12 font-display font-bold text-base shadow-md',
+                'bg-white hover:bg-white/90 text-foreground'
+              )}
+            >
+              {theme.emoji} Got it!
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

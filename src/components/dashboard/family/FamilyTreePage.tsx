@@ -17,6 +17,7 @@ import {
   useDeleteFamilyMember,
   useUpdateTreePositions,
 } from '@/hooks/queries/useFamily';
+import { useChildProfiles } from '@/hooks/queries/useChildProfiles';
 import { useAuth } from '@/contexts/AuthContext';
 import type { FamilyMemberRow } from '@/types/database';
 import { toast } from 'sonner';
@@ -26,6 +27,7 @@ type ViewMode = 'tree' | 'list';
 export function FamilyTreePage() {
   const { user } = useAuth();
   const { data: members = [], isLoading, refetch } = useFamilyMembers(user?.id);
+  const { data: childProfiles = [] } = useChildProfiles(user?.id);
   const deleteMember = useDeleteFamilyMember();
   const updatePositions = useUpdateTreePositions();
 
@@ -132,6 +134,7 @@ export function FamilyTreePage() {
         <TabsContent value="tree" className="mt-6">
           <FamilyTreeCanvas
             members={members}
+            childProfiles={childProfiles}
             onEditMember={handleEditMember}
             onDeleteMember={handleDeleteMember}
             onAddMember={handleAddMember}

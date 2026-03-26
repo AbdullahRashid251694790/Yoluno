@@ -9,34 +9,47 @@ import { useMemo, useCallback, useRef, useEffect, useState } from 'react';
 import { Plus, UserPlus } from 'lucide-react';
 import { FamilyMemberNode } from './FamilyMemberNode';
 import { Button } from '@/components/ui/button';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { getUploadUrl } from '@/integrations/api/client';
 import type { FamilyMemberRow } from '@/types/database';
 import { cn } from '@/lib/utils';
 
 // Generation levels and their labels
 const GENERATION_LABELS: Record<number, string> = {
-  2: 'Grandparents',
-  1: 'Parents & Aunts/Uncles',
-  0: 'Siblings & Cousins',
+  3: 'Grandparents',
+  2: 'Parents',
+  1: 'Aunts & Uncles',
+  0: 'Cousins',
   [-1]: 'Children',
 };
 
 // All possible generations in order
-const ALL_GENERATIONS = [2, 1, 0, -1];
+const ALL_GENERATIONS = [3, 2, 1, 0, -1];
 
 // Map relationship types to generation levels
 const RELATIONSHIP_TO_GENERATION: Record<string, number> = {
-  grandparent: 2,
-  parent: 1,
+  grandparent: 3,
+  parent: 2,
   aunt_uncle: 1,
   sibling: 0,
   cousin: 0,
-  spouse: 0,
+  spouse: 2,
   child: -1,
   other: 0,
 };
 
+interface ChildProfile {
+  id: string;
+  name: string;
+  avatar_url?: string | null;
+  custom_avatar_url?: string | null;
+  avatarUrl?: string;
+  age?: number;
+}
+
 interface FamilyTreeCanvasProps {
   members: FamilyMemberRow[];
+  childProfiles?: ChildProfile[];
   onEditMember: (member: FamilyMemberRow) => void;
   onDeleteMember: (memberId: string) => void;
   onAddMember?: () => void;
@@ -50,6 +63,7 @@ interface FamilyTreeCanvasProps {
 
 export function FamilyTreeCanvas({
   members,
+  childProfiles = [],
   onEditMember,
   onDeleteMember,
   onAddMember,
@@ -102,11 +116,10 @@ export function FamilyTreeCanvas({
 
   // Determine which generations to show (existing + adjacent empty ones)
   const generationsToShow = useMemo(() => {
-    if (members.length === 0) {
+    if (members.length === 0 && childProfiles.length === 0) {
       return [1]; // Start with parents if empty
     }
 
-    const existingGens = new Set(sortedGenerations);
     const toShow = new Set<number>();
 
     // Add all existing generations
@@ -114,12 +127,17 @@ export function FamilyTreeCanvas({
 
     // Add adjacent empty generations for context
     sortedGenerations.forEach(gen => {
-      if (gen < 2) toShow.add(gen + 1); // Add generation above
+      if (gen < 3) toShow.add(gen + 1); // Add generation above
       if (gen > -1) toShow.add(gen - 1); // Add generation below
     });
 
+    // Always show Children generation if child profiles exist
+    if (childProfiles.length > 0) {
+      toShow.add(-1);
+    }
+
     return Array.from(toShow).sort((a, b) => b - a);
-  }, [sortedGenerations, members.length]);
+  }, [sortedGenerations, members.length, childProfiles.length]);
 
   if (members.length === 0) {
     return (
@@ -201,7 +219,35 @@ export function FamilyTreeCanvas({
             </div>
 
             {/* Members Grid or Empty State */}
-            {isEmpty ? (
+            {generation === -1 && childProfiles.length > 0 ? (
+              /* Children generation: show child profiles automatically */
+              <div className="flex flex-wrap justify-center gap-8 py-2">
+                {childProfiles.map((child) => {
+                  const photoUrl = child.avatarUrl || child.custom_avatar_url || child.avatar_url;
+                  const resolved = photoUrl
+                    ? (photoUrl.startsWith('http') ? photoUrl : getUploadUrl(photoUrl))
+                    : undefined;
+                  return (
+                    <div key={child.id} className="flex flex-col items-center gap-2">
+                      <Avatar className="h-16 w-16 border-2 border-primary/30">
+                        {resolved ? (
+                          <AvatarImage src={resolved} alt={child.name} />
+                        ) : null}
+                        <AvatarFallback className="bg-primary/10 text-primary text-lg font-bold">
+                          {child.name.charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="text-center">
+                        <p className="text-sm font-medium">{child.name}</p>
+                        {child.age && (
+                          <p className="text-xs text-muted-foreground">{child.age} yrs</p>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : isEmpty ? (
               <div className="flex justify-center py-4">
                 <button
                   onClick={onAddMember}

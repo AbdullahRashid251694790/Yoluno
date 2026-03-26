@@ -9,7 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getUploadUrl } from '@/integrations/api/client';
 import { cn } from '@/lib/utils';
 import type { FamilyMemberRow } from '@/types/database';
-import type { ChildProfile } from '@/types/database';
+import type { ChildProfileRow as ChildProfile } from '@/types/database';
 
 export type RelationType = 'self' | 'parent' | 'sibling' | 'grandparent' | 'aunt_uncle' | 'cousin' | 'other';
 

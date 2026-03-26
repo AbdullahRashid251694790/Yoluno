@@ -18,12 +18,15 @@ const fileFilter = (
   file: Express.Multer.File,
   cb: multer.FileFilterCallback
 ) => {
-  // Allow images and audio
+  // Allow images, audio, and video
   const allowedMimes = [
     'image/jpeg',
     'image/png',
     'image/gif',
     'image/webp',
+    'video/mp4',
+    'video/webm',
+    'video/quicktime',
     'audio/webm',
     'audio/mp3',
     'audio/mpeg',
@@ -43,7 +46,7 @@ const upload = multer({
   storage,
   fileFilter,
   limits: {
-    fileSize: parseInt(process.env.MAX_FILE_SIZE || '10485760'), // 10MB default
+    fileSize: parseInt(process.env.MAX_FILE_SIZE || '52428800'), // 50MB default (for video uploads)
   },
 });
 

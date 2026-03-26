@@ -177,16 +177,33 @@ export type RelationshipType =
   | 'child'
   | 'other';
 
+export type SpecificRelationship =
+  | 'father' | 'mother'
+  | 'paternal_grandfather' | 'paternal_grandmother'
+  | 'maternal_grandfather' | 'maternal_grandmother'
+  | 'brother' | 'sister'
+  | 'paternal_uncle' | 'paternal_aunt'
+  | 'maternal_uncle' | 'maternal_aunt'
+  | 'cousin'
+  | 'step_parent' | 'step_sibling'
+  | 'other';
+
+export type FamilySide = 'paternal' | 'maternal' | 'direct';
+
 export interface FamilyMember {
   id: string;
   name: string;
   relationshipToChild: RelationshipType;
+  specificRelationship?: SpecificRelationship;
+  side?: FamilySide;
+  parentMemberId?: string;
   birthYear?: number;
   deathYear?: number;
   birthPlace?: string;
   occupation?: string;
   bio?: string;
   photoUrl?: string;
+  videoUrl?: string;
   isLiving: boolean;
   hobbies?: string[];
   funFacts?: string;

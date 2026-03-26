@@ -53,6 +53,7 @@ router.post('/members', async (req: Request, res: Response, next: NextFunction) 
       notes,
       is_alive = true,
       photo_url,
+      video_url,
       occupation,
       hobbies,
       fun_facts,
@@ -61,6 +62,9 @@ router.post('/members', async (req: Request, res: Response, next: NextFunction) 
       generation_level,
       position_x,
       position_y,
+      side = 'direct',
+      specific_relationship,
+      parent_member_id,
     } = req.body;
 
     // Use relationship_type if relationship is not provided
@@ -82,14 +86,16 @@ router.post('/members', async (req: Request, res: Response, next: NextFunction) 
     const result = await queryOne<FamilyMember>(
       `INSERT INTO family_members (
         id, user_id, name, relationship, birth_date, notes, is_alive,
-        photo_url, occupation, hobbies, fun_facts, connection_description,
-        photo_description, generation_level, position_x, position_y
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::text[], $11, $12, $13, $14, $15, $16)
+        photo_url, video_url, occupation, hobbies, fun_facts, connection_description,
+        photo_description, generation_level, position_x, position_y,
+        side, specific_relationship, parent_member_id
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::text[], $12, $13, $14, $15, $16, $17, $18, $19, $20)
       RETURNING *`,
       [
         id, req.user!.id, name, relationshipValue, birth_date || null, notes || null, is_alive,
-        photo_url || null, occupation || null, hobbiesArray, fun_facts || null, connection_description || null,
-        photo_description || null, generation_level || null, position_x || null, position_y || null,
+        photo_url || null, video_url || null, occupation || null, hobbiesArray, fun_facts || null,
+        connection_description || null, photo_description || null, generation_level || null,
+        position_x || null, position_y || null, side, specific_relationship || null, parent_member_id || null,
       ]
     );
 
@@ -113,8 +119,9 @@ router.put('/members/:id', async (req: Request, res: Response, next: NextFunctio
 
     const {
       name, relationship, relationship_type, birth_date, notes, is_alive, photo_url,
-      occupation, hobbies, fun_facts, connection_description,
+      video_url, occupation, hobbies, fun_facts, connection_description,
       photo_description, generation_level, position_x, position_y,
+      side, specific_relationship, parent_member_id,
     } = req.body;
 
     // Use relationship_type if relationship is not provided
@@ -133,21 +140,26 @@ router.put('/members/:id', async (req: Request, res: Response, next: NextFunctio
         notes = COALESCE($4, notes),
         is_alive = COALESCE($5, is_alive),
         photo_url = COALESCE($6, photo_url),
-        occupation = COALESCE($7, occupation),
-        hobbies = COALESCE($8::text[], hobbies),
-        fun_facts = COALESCE($9, fun_facts),
-        connection_description = COALESCE($10, connection_description),
-        photo_description = COALESCE($11, photo_description),
-        generation_level = COALESCE($12, generation_level),
-        position_x = COALESCE($13, position_x),
-        position_y = COALESCE($14, position_y),
+        video_url = COALESCE($7, video_url),
+        occupation = COALESCE($8, occupation),
+        hobbies = COALESCE($9::text[], hobbies),
+        fun_facts = COALESCE($10, fun_facts),
+        connection_description = COALESCE($11, connection_description),
+        photo_description = COALESCE($12, photo_description),
+        generation_level = COALESCE($13, generation_level),
+        position_x = COALESCE($14, position_x),
+        position_y = COALESCE($15, position_y),
+        side = COALESCE($16, side),
+        specific_relationship = COALESCE($17, specific_relationship),
+        parent_member_id = COALESCE($18, parent_member_id),
         updated_at = NOW()
-       WHERE id = $15
+       WHERE id = $19
        RETURNING *`,
       [
         name, relationshipValue, birth_date, notes, is_alive, photo_url,
-        occupation, hobbiesArray, fun_facts, connection_description,
+        video_url, occupation, hobbiesArray, fun_facts, connection_description,
         photo_description, generation_level, position_x, position_y,
+        side, specific_relationship, parent_member_id,
         req.params.id,
       ]
     );
@@ -251,6 +263,8 @@ router.post('/extract-from-description', async (req: Request, res: Response, nex
 The JSON should have these fields:
 - name: string (the person's full name)
 - relationship: string (one of: parent, grandparent, sibling, aunt_uncle, cousin, other)
+- specificRelationship: string (one of: father, mother, paternal_grandfather, paternal_grandmother, maternal_grandfather, maternal_grandmother, brother, sister, paternal_uncle, paternal_aunt, maternal_uncle, maternal_aunt, cousin, step_parent, step_sibling, other)
+- side: string (one of: "paternal" if from father's side, "maternal" if from mother's side, "direct" if parent/sibling/child)
 - occupation: string or null (their job/profession)
 - hobbies: array of strings (their hobbies/interests)
 - funFacts: string or null (interesting facts about them)
@@ -301,6 +315,8 @@ If a field is not mentioned, use null for strings or empty array for hobbies.`;
     res.json({
       name: extracted.name || '',
       relationship: extracted.relationship || 'other',
+      specificRelationship: extracted.specificRelationship || null,
+      side: extracted.side || 'direct',
       occupation: extracted.occupation || null,
       hobbies: Array.isArray(extracted.hobbies) ? extracted.hobbies : [],
       funFacts: extracted.funFacts || null,

@@ -2,7 +2,6 @@
  * Family Member Form
  *
  * Form for adding/editing family members with rich data fields.
- * Refactored to use smaller section components for KISS compliance.
  */
 
 import { useState } from 'react';
@@ -21,7 +20,7 @@ import { cn } from '@/lib/utils';
 
 interface FamilyMemberFormProps {
   member?: FamilyMemberRow;
-  onSubmit: (data: CreateFamilyMemberFormData, photoFile: File | null) => void;
+  onSubmit: (data: CreateFamilyMemberFormData, photoFile: File | null, videoFile: File | null) => void;
   isLoading?: boolean;
   className?: string;
 }
@@ -33,6 +32,7 @@ export function FamilyMemberForm({
   className,
 }: FamilyMemberFormProps) {
   const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [videoFile, setVideoFile] = useState<File | null>(null);
 
   const {
     register,
@@ -46,6 +46,8 @@ export function FamilyMemberForm({
     defaultValues: {
       name: member?.name || '',
       relationshipToChild: (member?.relationship as CreateFamilyMemberFormData['relationshipToChild']) || 'parent',
+      specificRelationship: (member as any)?.specific_relationship || undefined,
+      side: (member as any)?.side || 'direct',
       birthYear: member?.birth_date ? new Date(member.birth_date).getFullYear() : undefined,
       occupation: member?.occupation || '',
       bio: member?.notes || '',
@@ -65,7 +67,7 @@ export function FamilyMemberForm({
   };
 
   const handleFormSubmit = (data: CreateFamilyMemberFormData) => {
-    onSubmit(data, photoFile);
+    onSubmit(data, photoFile, videoFile);
   };
 
   return (
@@ -79,6 +81,7 @@ export function FamilyMemberForm({
         errors={errors}
         isLiving={isLiving}
         isLoading={isLoading}
+        setValue={setValue}
       />
 
       <DetailsSection
@@ -96,7 +99,10 @@ export function FamilyMemberForm({
       <MediaSection
         control={control}
         existingPhotoUrl={member?.photo_url}
+        existingVideoUrl={(member as any)?.video_url}
         onPhotoChange={setPhotoFile}
+        onVideoChange={setVideoFile}
+        videoFile={videoFile}
         isLoading={isLoading}
       />
 

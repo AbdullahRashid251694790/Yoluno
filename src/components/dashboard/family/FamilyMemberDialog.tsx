@@ -28,6 +28,34 @@ import type { CreateFamilyMemberFormData } from '@/types/forms';
 import type { ExtractedFamilyData } from '@/services/family';
 import { toast } from 'sonner';
 
+/** Auto-generate connection description from side + specific relationship */
+function buildConnectionDescription(data: CreateFamilyMemberFormData): string {
+  const labels: Record<string, string> = {
+    father: "Child's father",
+    mother: "Child's mother",
+    paternal_grandfather: "Dad's father",
+    paternal_grandmother: "Dad's mother",
+    maternal_grandfather: "Mom's father",
+    maternal_grandmother: "Mom's mother",
+    paternal_uncle: "Dad's brother",
+    paternal_aunt: "Dad's sister",
+    maternal_uncle: "Mom's brother",
+    maternal_aunt: "Mom's sister",
+    brother: "Child's brother",
+    sister: "Child's sister",
+    step_parent: "Step-parent",
+    step_sibling: "Step-sibling",
+    cousin: data.side === 'paternal' ? "Cousin (Dad's side)" : data.side === 'maternal' ? "Cousin (Mom's side)" : "Cousin",
+  };
+  if (data.specificRelationship && labels[data.specificRelationship]) {
+    return labels[data.specificRelationship];
+  }
+  const sideLabel = data.side === 'paternal' ? "Dad's side" : data.side === 'maternal' ? "Mom's side" : '';
+  const rel = data.relationshipToChild;
+  if (sideLabel) return `${rel.charAt(0).toUpperCase() + rel.slice(1).replace('_', '/')} (${sideLabel})`;
+  return rel.charAt(0).toUpperCase() + rel.slice(1).replace('_', '/');
+}
+
 interface FamilyMemberDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -65,15 +93,17 @@ export function FamilyMemberDialog({
 
   const handleSubmit = async (
     data: CreateFamilyMemberFormData,
-    photoFile: File | null
+    photoFile: File | null,
+    videoFile: File | null
   ) => {
     if (!user || isSubmitting) return;
 
     setIsSubmitting(true);
     try {
       let photoUrl = member?.photo_url || null;
+      let videoUrl = (member as any)?.video_url || null;
 
-      // Upload photo FIRST (before create) so the member record is created atomically with its photo
+      // Upload photo
       if (photoFile) {
         photoUrl = await uploadPhoto.mutateAsync({
           userId: user.id,
@@ -82,18 +112,30 @@ export function FamilyMemberDialog({
         });
       }
 
+      // Upload video
+      if (videoFile) {
+        videoUrl = await uploadPhoto.mutateAsync({
+          userId: user.id,
+          memberId: member?.id || 'new-video',
+          file: videoFile,
+        });
+      }
+
       const memberData = {
         name: data.name,
         relationship: data.relationshipToChild,
+        specific_relationship: data.specificRelationship || null,
+        side: data.side || 'direct',
         birth_date: data.birthYear ? `${data.birthYear}-01-01` : null,
         occupation: data.occupation || null,
         notes: data.bio || null,
         is_alive: data.isLiving,
         hobbies: data.hobbies || [],
         fun_facts: data.funFacts || null,
-        connection_description: data.connectionDescription || null,
+        connection_description: buildConnectionDescription(data),
         photo_description: data.photoDescription || null,
         photo_url: photoUrl,
+        video_url: videoUrl,
       };
 
       if (isEditing) {
