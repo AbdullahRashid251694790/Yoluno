@@ -4,38 +4,35 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 220 30% 24%;
+    /* Core palette — exact values from landing page index.css */
+    --background: 42 60% 98%;
+    --foreground: 232 24% 23%;
     --card: 0 0% 100%;
-    --card-foreground: 220 30% 24%;
+    --card-foreground: 232 24% 23%;
     --popover: 0 0% 100%;
-    --popover-foreground: 220 30% 24%;
-    --primary: 175 70% 50%;
+    --popover-foreground: 232 24% 23%;
+    --primary: 174 60% 51%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 220 30% 24%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 220 10% 50%;
-    --accent: 283 89% 68%;
-    --accent-foreground: 0 0% 100%;
+    --secondary: 38 40% 92%;
+    --secondary-foreground: 232 24% 23%;
+    --muted: 38 30% 92%;
+    --muted-foreground: 30 12% 48%;
+    --accent: 40 50% 55%;
+    --accent-foreground: 42 60% 98%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 175 70% 50%;
-    --radius: 0.75rem;
+    --border: 36 30% 88%;
+    --input: 36 30% 88%;
+    --ring: 174 60% 51%;
+    --radius: 1rem;
 
-    /* Child-friendly theme colors */
-    --child-primary: 175 70% 50%;
-    --child-secondary: 283 89% 68%;
-
-    /* Landing site character colors */
+    /* Character colors — landing page index.css lines 39-43 */
     --luno: 174 60% 51%;
     --lolo: 18 76% 60%;
     --lumi: 270 60% 70%;
     --lala: 45 78% 58%;
 
-    /* Landing site custom tokens */
+    /* Custom tokens — landing page index.css lines 46-52 */
     --gold: 40 55% 55%;
     --parchment: 42 60% 98%;
     --linen: 38 40% 92%;
@@ -44,11 +41,18 @@
     --navy: 232 24% 23%;
     --text-body: 30 12% 33%;
 
-    --font-heading-landing: 'Fraunces', 'Playfair Display', Georgia, serif;
-    --font-body-landing: 'Nunito', 'Segoe UI', sans-serif;
+    /* Shadows — landing page index.css lines 54-56 */
     --shadow-warm: 0 8px 32px rgba(45, 42, 38, 0.06);
     --shadow-warm-lg: 0 16px 48px rgba(45, 42, 38, 0.1);
     --shadow-warm-sm: 0 4px 16px rgba(45, 42, 38, 0.04);
+
+    /* Fonts — landing page index.css lines 58-59 */
+    --font-heading: 'Fraunces', 'Playfair Display', Georgia, serif;
+    --font-body: 'Nunito', 'Segoe UI', sans-serif;
+
+    /* App-specific tokens (kept for kids pages) */
+    --child-primary: 174 60% 51%;
+    --child-secondary: 270 60% 70%;
     --learning-primary: 45 100% 51%;
     --learning-secondary: 142 76% 45%;
     --story-primary: 271 76% 63%;
@@ -56,25 +60,25 @@
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 175 70% 50%;
+    --background: 232 24% 10%;
+    --foreground: 42 60% 98%;
+    --card: 232 24% 12%;
+    --card-foreground: 42 60% 98%;
+    --popover: 232 24% 12%;
+    --popover-foreground: 42 60% 98%;
+    --primary: 174 60% 51%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 283 89% 68%;
-    --accent-foreground: 0 0% 100%;
+    --secondary: 38 20% 18%;
+    --secondary-foreground: 42 60% 98%;
+    --muted: 38 15% 18%;
+    --muted-foreground: 30 12% 65%;
+    --accent: 40 50% 55%;
+    --accent-foreground: 42 60% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 175 70% 50%;
+    --border: 36 15% 20%;
+    --input: 36 15% 20%;
+    --ring: 174 60% 51%;
   }
 }
 
@@ -84,8 +88,50 @@
   }
 
   body {
-    @apply bg-background text-foreground;
-    font-feature-settings: 'rlig' 1, 'calt' 1;
+    @apply text-foreground;
+    font-family: var(--font-body);
+    /* Landing page body background — index.css lines 71-97 */
+    background:
+      repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 3px,
+        rgba(61, 214, 200, 0.018) 3px,
+        rgba(61, 214, 200, 0.018) 4px
+      ),
+      repeating-linear-gradient(
+        90deg,
+        transparent,
+        transparent 3px,
+        rgba(61, 214, 200, 0.018) 3px,
+        rgba(61, 214, 200, 0.018) 4px
+      ),
+      linear-gradient(
+        170deg,
+        hsl(174 55% 80%) 0%,
+        hsl(200 50% 84%) 15%,
+        hsl(260 40% 85%) 30%,
+        hsl(300 30% 86%) 45%,
+        hsl(340 35% 87%) 55%,
+        hsl(30 50% 85%) 70%,
+        hsl(45 55% 88%) 85%,
+        hsl(42 60% 96%) 100%
+      );
+    background-attachment: fixed;
+    min-height: 100vh;
+  }
+
+  /* Landing page global rules — index.css lines 101-111 */
+  section {
+    background-color: transparent !important;
+  }
+
+  main {
+    background-color: transparent;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
   }
 }
 
@@ -103,20 +149,7 @@
   }
 
   .gradient-text {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-cyan to-cyan-600;
-  }
-
-  .link-underline {
-    @apply relative;
-  }
-
-  .link-underline::after {
-    content: '';
-    @apply absolute bottom-0 left-0 w-0 h-0.5 bg-cyan transition-all duration-200;
-  }
-
-  .link-underline:hover::after {
-    @apply w-full;
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/70;
   }
 
   .card-hover {

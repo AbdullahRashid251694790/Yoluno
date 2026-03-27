@@ -1,7 +1,8 @@
 /**
  * Button Component
  *
- * shadcn/ui Button with variants.
+ * Matches landing page design system.
+ * Source: c:\Users\BiM\Desktop\yoluno build guide\src\components\ui\button.tsx
  */
 
 import * as React from 'react';
@@ -10,22 +11,33 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 
 const buttonVariants = cva(
-  'inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
+  'inline-flex items-center justify-center gap-2 whitespace-nowrap font-body font-bold text-[15px] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0',
   {
     variants: {
       variant: {
-        default: 'bg-cyan text-white shadow-md hover:bg-cyan-600 hover:shadow-lg active:scale-[0.98]',
-        destructive: 'bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90',
-        outline: 'border-2 border-cyan text-cyan bg-transparent hover:bg-cyan hover:text-white',
-        secondary: 'bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80',
-        ghost: 'hover:bg-accent hover:text-accent-foreground',
-        link: 'text-cyan underline-offset-4 hover:underline',
-        gold: 'bg-[hsl(var(--gold))] text-white shadow-md hover:brightness-110 hover:shadow-warm-lg hover:-translate-y-0.5 rounded-pill',
+        /* Landing: bg-primary, pill shape, lift on hover */
+        default: 'bg-primary text-primary-foreground hover:-translate-y-0.5 hover:shadow-warm-lg rounded-[40px]',
+        /* Landing: gold outline, fills on hover */
+        gold: 'border-2 border-gold text-gold bg-transparent hover:bg-gold hover:text-accent-foreground rounded-[40px]',
+        /* Kept conservative — no lift, just darkens */
+        destructive: 'bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-[40px]',
+        /* Landing: subtle border, fills secondary on hover */
+        outline: 'border-2 border-border bg-transparent text-foreground hover:bg-secondary rounded-[40px]',
+        /* Landing: secondary bg */
+        secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80 rounded-[40px]',
+        /* Ghost stays rounded-lg, no lift — used for icon buttons and subtle actions */
+        ghost: 'hover:bg-secondary hover:text-foreground rounded-lg',
+        /* Landing: primary color link */
+        link: 'text-primary underline-offset-4 hover:underline',
       },
       size: {
-        default: 'h-10 px-5 py-2',
-        sm: 'h-8 rounded-md px-3 text-xs',
-        lg: 'h-12 rounded-lg px-8 text-base',
+        /* Landing: h-12 px-8 py-3 */
+        default: 'h-12 px-8 py-3',
+        /* Landing: h-10 px-5 py-2 text-sm */
+        sm: 'h-10 px-5 py-2 text-sm',
+        /* Landing: h-14 px-10 py-4 */
+        lg: 'h-14 px-10 py-4 text-base',
+        /* Icon stays compact — used in toolbars, close buttons */
         icon: 'h-10 w-10',
       },
     },

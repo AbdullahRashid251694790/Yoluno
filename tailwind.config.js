@@ -58,42 +58,6 @@ export default {
           primary: 'hsl(var(--story-primary))',
           magic: 'hsl(var(--story-magic))',
         },
-        // Yoluno brand colors
-        yoluno: {
-          teal: '#2BD4D0',
-          'teal-dark': '#24B8B4',
-          navy: '#2a3853',
-          cream: '#FEF6E4',
-          'light-blue': '#EDF7FF',
-        },
-        cyan: {
-          DEFAULT: '#2BD4D0',
-          50: '#e6ffff',
-          100: '#ccfffe',
-          200: '#99fffd',
-          300: '#66fffc',
-          400: '#33f5f5',
-          500: '#2BD4D0',
-          600: '#24B8B4',
-          700: '#1d9894',
-          800: '#167875',
-          900: '#0f5856',
-        },
-        charcoal: {
-          DEFAULT: '#2a3853',
-          light: '#4d4d4d',
-          muted: '#6d6d6d',
-        },
-        pastel: {
-          pink: '#ffeef5',
-          blue: '#EDF7FF',
-          'blue-dark': '#c9e5ff',
-          purple: '#f7d9f5',
-          'purple-dark': '#eadcfb',
-          yellow: '#ffe888',
-          'yellow-dark': '#fcd635',
-          cream: '#FEF6E4',
-        },
         // Landing site character colors
         luno: 'hsl(var(--luno))',
         lolo: 'hsl(var(--lolo))',
@@ -122,12 +86,15 @@ export default {
         'warm-sm': '0 4px 16px rgba(45, 42, 38, 0.04)',
       },
       fontFamily: {
-        sans: ['Bricolage Grotesque', 'Inter', 'system-ui', 'sans-serif'],
-        display: ['Bricolage Grotesque', 'system-ui', 'sans-serif'],
-        playful: ['Fredoka', 'Bricolage Grotesque', 'system-ui', 'sans-serif'],
-        heading: ['Bricolage Grotesque', 'system-ui', 'sans-serif'],
-        'heading-landing': ['Fraunces', 'Playfair Display', 'Georgia', 'serif'],
+        /* From landing tailwind.config.ts lines 17-18 */
+        heading: ['Fraunces', 'Playfair Display', 'Georgia', 'serif'],
         body: ['Nunito', 'Segoe UI', 'sans-serif'],
+        sans: ['Nunito', 'Segoe UI', 'system-ui', 'sans-serif'],
+        display: ['Fraunces', 'Playfair Display', 'Georgia', 'serif'],
+        /* Kept for kids pages */
+        playful: ['Fredoka', 'Nunito', 'system-ui', 'sans-serif'],
+        /* Legacy alias — landing components use font-heading-landing */
+        'heading-landing': ['Fraunces', 'Playfair Display', 'Georgia', 'serif'],
       },
       keyframes: {
         'accordion-down': {
