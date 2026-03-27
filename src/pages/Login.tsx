@@ -15,7 +15,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { handleError } from '@/lib/errors';
 import { Loader2, Eye, EyeOff, Mail } from 'lucide-react';
 import { toast } from 'sonner';
-import yolunoLogo from '@/assets/yoluno-logo.svg';
+import yolunoLogo from '@/assets/landing/yoluno-logo.png';
 
 export function LoginPage() {
   const navigate = useNavigate();
@@ -65,26 +65,26 @@ export function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-pastel-blue to-white p-4">
+    <div className="flex min-h-screen items-center justify-center p-4">
       <Card className="w-full max-w-md shadow-xl border-0">
         <CardHeader className="text-center">
           <Link to="/" className="mx-auto mb-4 block">
             <img src={yolunoLogo} alt="Yoluno" className="h-12 mx-auto" />
           </Link>
-          <CardTitle className="text-2xl text-charcoal">Welcome back</CardTitle>
-          <CardDescription className="text-charcoal-muted">Sign in to your Yoluno account</CardDescription>
+          <CardTitle className="text-2xl text-foreground">Welcome back</CardTitle>
+          <CardDescription className="text-muted-foreground">Sign in to your Yoluno account</CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
             {showNotVerified && (
-              <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-center space-y-3">
-                <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-amber-100">
-                  <Mail className="h-5 w-5 text-amber-600" />
+              <div className="rounded-lg border border-gold/20 bg-gold/5 p-4 text-center space-y-3">
+                <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-gold/10">
+                  <Mail className="h-5 w-5 text-gold" />
                 </div>
-                <p className="text-sm text-amber-800 font-medium">
+                <p className="text-sm text-foreground/80 font-medium">
                   Please verify your email before signing in.
                 </p>
-                <p className="text-xs text-amber-700">
+                <p className="text-xs text-gold">
                   Check your inbox for the verification link we sent to{' '}
                   <span className="font-medium">{email}</span>.
                 </p>
@@ -94,7 +94,7 @@ export function LoginPage() {
                   size="sm"
                   onClick={handleResend}
                   disabled={isResending}
-                  className="border-amber-300 text-amber-800 hover:bg-amber-100"
+                  className="border-gold/30 text-foreground/80 hover:bg-gold/10"
                 >
                   {isResending ? (
                     <>
@@ -146,7 +146,7 @@ export function LoginPage() {
               </div>
             </div>
             <div className="text-right">
-              <Link to="/forgot-password" className="text-sm text-cyan hover:underline">
+              <Link to="/forgot-password" className="text-sm text-primary hover:underline">
                 Forgot password?
               </Link>
             </div>
@@ -162,9 +162,9 @@ export function LoginPage() {
                 'Sign In'
               )}
             </Button>
-            <p className="text-center text-sm text-charcoal-muted">
+            <p className="text-center text-sm text-muted-foreground">
               Don't have an account?{' '}
-              <Link to="/signup" className="text-cyan hover:underline font-medium">
+              <Link to="/signup" className="text-primary hover:underline font-medium">
                 Sign up
               </Link>
             </p>

@@ -14,7 +14,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Loader2, ArrowLeft, Mail } from 'lucide-react';
 import { Link as RouterLink } from 'react-router-dom';
 import { getErrorMessage } from '@/integrations/api/client';
-import yolunoLogo from '@/assets/yoluno-logo.svg';
+import yolunoLogo from '@/assets/landing/yoluno-logo.png';
 
 export function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
@@ -38,7 +38,7 @@ export function ForgotPasswordPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-pastel-blue to-white p-4">
+    <div className="flex min-h-screen items-center justify-center p-4">
       <Card className="w-full max-w-md shadow-xl border-0">
         <CardHeader className="text-center">
           <RouterLink to="/" className="mx-auto mb-4 block">
@@ -46,18 +46,18 @@ export function ForgotPasswordPage() {
           </RouterLink>
           {sent ? (
             <>
-              <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
-                <Mail className="h-6 w-6 text-green-600" />
+              <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+                <Mail className="h-6 w-6 text-primary" />
               </div>
-              <CardTitle className="text-2xl text-charcoal">Check your email</CardTitle>
-              <CardDescription className="text-charcoal-muted">
+              <CardTitle className="text-2xl text-foreground">Check your email</CardTitle>
+              <CardDescription className="text-muted-foreground">
                 If an account exists for <span className="font-medium">{email}</span>, we've sent a password reset link.
               </CardDescription>
             </>
           ) : (
             <>
-              <CardTitle className="text-2xl text-charcoal">Forgot password?</CardTitle>
-              <CardDescription className="text-charcoal-muted">
+              <CardTitle className="text-2xl text-foreground">Forgot password?</CardTitle>
+              <CardDescription className="text-muted-foreground">
                 Enter your email and we'll send you a reset link.
               </CardDescription>
             </>
@@ -106,7 +106,7 @@ export function ForgotPasswordPage() {
               </Button>
               <Link
                 to="/login"
-                className="text-center text-sm text-charcoal-muted hover:underline inline-flex items-center justify-center gap-1"
+                className="text-center text-sm text-muted-foreground hover:underline inline-flex items-center justify-center gap-1"
               >
                 <ArrowLeft className="h-3 w-3" />
                 Back to login

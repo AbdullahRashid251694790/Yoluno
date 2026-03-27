@@ -14,7 +14,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
-import yolunoLogo from '@/assets/yoluno-logo.svg';
+import yolunoLogo from '@/assets/landing/yoluno-logo.png';
 
 export function SignupPage() {
   const navigate = useNavigate();
@@ -60,14 +60,14 @@ export function SignupPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-pastel-blue to-white p-4">
+    <div className="flex min-h-screen items-center justify-center p-4">
       <Card className="w-full max-w-md shadow-xl border-0">
         <CardHeader className="text-center">
           <Link to="/" className="mx-auto mb-4 block">
             <img src={yolunoLogo} alt="Yoluno" className="h-12 mx-auto" />
           </Link>
-          <CardTitle className="text-2xl text-charcoal">Create account</CardTitle>
-          <CardDescription className="text-charcoal-muted">Start your family's learning journey</CardDescription>
+          <CardTitle className="text-2xl text-foreground">Create account</CardTitle>
+          <CardDescription className="text-muted-foreground">Start your family's learning journey</CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
@@ -150,9 +150,9 @@ export function SignupPage() {
                 'Create Account'
               )}
             </Button>
-            <p className="text-center text-sm text-charcoal-muted">
+            <p className="text-center text-sm text-muted-foreground">
               Already have an account?{' '}
-              <Link to="/login" className="text-cyan hover:underline font-medium">
+              <Link to="/login" className="text-primary hover:underline font-medium">
                 Sign in
               </Link>
             </p>

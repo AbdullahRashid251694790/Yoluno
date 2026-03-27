@@ -22,14 +22,14 @@ import {
 } from 'lucide-react';
 
 // Import assets
-import lunoLogo from '@/assets/yoluno-logo.svg';
+import lunoLogo from '@/assets/landing/yoluno-logo.png';
 import coppaBadge from '@/assets/coppa-certified-badge.png';
 import kidsafeBadge from '@/assets/kidsafe-certified-badge.png';
 import encryptedBadge from '@/assets/encrypted-secure-badge.png';
 
 export function LandingPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-violet-50 via-white to-pink-50">
+    <div className="min-h-screen bg-gradient-to-br from-lumi/5 via-white to-lolo/10">
       {/* Navigation */}
       <nav className="container mx-auto px-4 py-6 flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -83,15 +83,15 @@ export function LandingPage() {
             {/* Trust indicators */}
             <div className="flex items-center gap-6 pt-4">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Lock className="h-4 w-4 text-green-600" />
+                <Lock className="h-4 w-4 text-primary" />
                 <span>COPPA Compliant</span>
               </div>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Ban className="h-4 w-4 text-green-600" />
+                <Ban className="h-4 w-4 text-primary" />
                 <span>No Ads</span>
               </div>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Eye className="h-4 w-4 text-green-600" />
+                <Eye className="h-4 w-4 text-primary" />
                 <span>Parent Controlled</span>
               </div>
             </div>

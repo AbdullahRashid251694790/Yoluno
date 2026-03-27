@@ -43,7 +43,7 @@ import {
   Menu,
   X,
 } from 'lucide-react';
-import yolunoLogo from '@/assets/yoluno-logo.svg';
+import yolunoLogo from '@/assets/landing/yoluno-logo.png';
 
 const navItems = [
   { path: '/dashboard', label: 'Home', icon: Home },
@@ -68,15 +68,15 @@ export function DashboardPage() {
   const unreadAlerts = safetyReports.length;
 
   return (
-    <div className="flex min-h-screen bg-pastel-blue/30">
+    <div className="flex min-h-screen">
       {/* Real-time safety alerts */}
       <SafetyAlertNotification />
 
       {/* Mobile header */}
-      <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between border-b bg-white px-4 py-3 shadow-sm lg:hidden">
+      <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between border-b bg-card/95 backdrop-blur-md px-4 py-3 shadow-warm lg:hidden">
         <button
           onClick={() => setSidebarOpen(true)}
-          className="rounded-md p-2 hover:bg-gray-100"
+          className="rounded-md p-2 hover:bg-secondary"
           aria-label="Open menu"
         >
           <Menu className="h-6 w-6" />
@@ -98,7 +98,7 @@ export function DashboardPage() {
       {/* Sidebar */}
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-50 w-64 transform border-r bg-white shadow-sm transition-transform duration-200 ease-in-out',
+          'fixed inset-y-0 left-0 z-50 w-64 transform border-r bg-card/95 backdrop-blur-xl shadow-warm transition-transform duration-200 ease-in-out',
           'lg:translate-x-0',
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         )}
@@ -115,7 +115,7 @@ export function DashboardPage() {
               </span>
               <button
                 onClick={() => setSidebarOpen(false)}
-                className="rounded-md p-1 hover:bg-gray-100 lg:hidden"
+                className="rounded-md p-1 hover:bg-secondary lg:hidden"
                 aria-label="Close menu"
               >
                 <X className="h-5 w-5" />

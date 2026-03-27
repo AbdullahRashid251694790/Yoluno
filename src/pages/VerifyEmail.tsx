@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Loader2, CheckCircle2, XCircle, Mail } from 'lucide-react';
 import { toast } from 'sonner';
-import yolunoLogo from '@/assets/yoluno-logo.svg';
+import yolunoLogo from '@/assets/landing/yoluno-logo.png';
 
 export function VerifyEmailPage() {
   const [searchParams] = useSearchParams();
@@ -59,7 +59,7 @@ export function VerifyEmailPage() {
   const showResendActions = status === 'waiting' || status === 'error';
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-pastel-blue to-white p-4">
+    <div className="flex min-h-screen items-center justify-center p-4">
       <Card className="w-full max-w-md shadow-xl border-0">
         <CardHeader className="text-center">
           <Link to="/" className="mx-auto mb-4 block">
@@ -68,11 +68,11 @@ export function VerifyEmailPage() {
 
           {status === 'waiting' && (
             <>
-              <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-indigo-100">
-                <Mail className="h-6 w-6 text-indigo-600" />
+              <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+                <Mail className="h-6 w-6 text-primary" />
               </div>
-              <CardTitle className="text-2xl text-charcoal">Verify your email</CardTitle>
-              <CardDescription className="text-charcoal-muted">
+              <CardTitle className="text-2xl text-foreground">Verify your email</CardTitle>
+              <CardDescription className="text-muted-foreground">
                 We've sent a verification link to your email.
                 Please check your inbox and click the link to verify your account.
               </CardDescription>
@@ -84,8 +84,8 @@ export function VerifyEmailPage() {
               <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
               </div>
-              <CardTitle className="text-2xl text-charcoal">Verifying your email...</CardTitle>
-              <CardDescription className="text-charcoal-muted">
+              <CardTitle className="text-2xl text-foreground">Verifying your email...</CardTitle>
+              <CardDescription className="text-muted-foreground">
                 Please wait while we verify your email address.
               </CardDescription>
             </>
@@ -93,11 +93,11 @@ export function VerifyEmailPage() {
 
           {status === 'success' && (
             <>
-              <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
-                <CheckCircle2 className="h-6 w-6 text-green-600" />
+              <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+                <CheckCircle2 className="h-6 w-6 text-primary" />
               </div>
-              <CardTitle className="text-2xl text-charcoal">Email verified!</CardTitle>
-              <CardDescription className="text-charcoal-muted">
+              <CardTitle className="text-2xl text-foreground">Email verified!</CardTitle>
+              <CardDescription className="text-muted-foreground">
                 Your email has been verified successfully. You can now sign in to your account.
               </CardDescription>
             </>
@@ -105,11 +105,11 @@ export function VerifyEmailPage() {
 
           {status === 'error' && (
             <>
-              <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
-                <XCircle className="h-6 w-6 text-red-600" />
+              <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10">
+                <XCircle className="h-6 w-6 text-destructive" />
               </div>
-              <CardTitle className="text-2xl text-charcoal">Verification failed</CardTitle>
-              <CardDescription className="text-charcoal-muted">
+              <CardTitle className="text-2xl text-foreground">Verification failed</CardTitle>
+              <CardDescription className="text-muted-foreground">
                 {errorMessage || 'The verification link is invalid or has expired.'}
               </CardDescription>
             </>

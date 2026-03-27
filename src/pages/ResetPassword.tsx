@@ -67,7 +67,7 @@ export function ResetPasswordPage() {
       <div className="flex min-h-screen items-center justify-center p-4">
         <Card className="w-full max-w-md">
           <CardContent className="pt-6 text-center space-y-4">
-            <p className="text-green-600 font-medium">Password reset successfully!</p>
+            <p className="text-primary font-medium">Password reset successfully!</p>
             <Link to="/login">
               <Button>Go to login</Button>
             </Link>
