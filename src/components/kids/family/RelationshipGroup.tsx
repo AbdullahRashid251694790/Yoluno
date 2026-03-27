@@ -25,37 +25,37 @@ const GROUP_CONFIG: Record<GroupType, {
   self: {
     emoji: '💖',
     label: 'Me',
-    underlineColor: 'bg-pink-400',
+    underlineColor: 'bg-lolo/10',
   },
   parent: {
     emoji: '👑',
     label: 'Parent',
-    underlineColor: 'bg-amber-400',
+    underlineColor: 'bg-gold/10',
   },
   siblings: {
     emoji: '🎯',
     label: 'Brothers & Sisters',
-    underlineColor: 'bg-cyan-400',
+    underlineColor: 'bg-primary',
   },
   grandparents: {
     emoji: '🏠',
     label: 'Grandparents',
-    underlineColor: 'bg-purple-400',
+    underlineColor: 'bg-primary/10',
   },
   auntsUncles: {
     emoji: '🎁',
     label: 'Aunts & Uncles',
-    underlineColor: 'bg-blue-400',
+    underlineColor: 'bg-primary/10',
   },
   cousins: {
     emoji: '🎮',
     label: 'Cousins',
-    underlineColor: 'bg-green-400',
+    underlineColor: 'bg-primary/10',
   },
   other: {
     emoji: '⭐',
     label: 'Other Family',
-    underlineColor: 'bg-gray-400',
+    underlineColor: 'bg-muted-foreground/40',
   },
 };
 

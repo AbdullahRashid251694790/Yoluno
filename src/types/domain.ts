@@ -58,7 +58,7 @@ export const BUDDY_EXPRESSIONS: Record<AvatarExpression, BuddyExpressionConfig> 
   happy: { emoji: '😄', label: 'Happy', animation: 'animate-bounce-gentle', color: 'from-yellow-200 to-orange-100' },
   thinking: { emoji: '🤔', label: 'Thinking', animation: 'animate-pulse', color: 'from-blue-200 to-indigo-100' },
   excited: { emoji: '🎉', label: 'Excited', animation: 'animate-wiggle', color: 'from-pink-200 to-purple-100' },
-  curious: { emoji: '🧐', label: 'Curious', animation: 'animate-float', color: 'from-cyan-200 to-blue-100' },
+  curious: { emoji: '🧐', label: 'Curious', animation: 'animate-float', color: 'from-primary/20 to-primary/10' },
   caring: { emoji: '🤗', label: 'Caring', animation: 'animate-heartbeat', color: 'from-rose-200 to-pink-100' },
   teaching: { emoji: '📚', label: 'Teaching', animation: '', color: 'from-emerald-200 to-teal-100' },
   creative: { emoji: '🎨', label: 'Creative', animation: 'animate-sparkle', color: 'from-violet-200 to-fuchsia-100' },

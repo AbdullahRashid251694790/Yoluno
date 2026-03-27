@@ -160,7 +160,7 @@ export function ChildSelectPage() {
                     {/* Online indicator */}
                     {child.last_active_at &&
                       new Date(child.last_active_at).getTime() > Date.now() - 5 * 60 * 1000 && (
-                        <div className="absolute bottom-2 right-2 h-5 w-5 rounded-full bg-green-500 border-2 border-white" />
+                        <div className="absolute bottom-2 right-2 h-5 w-5 rounded-full bg-primary border-2 border-white" />
                       )}
                   </div>
 
@@ -174,7 +174,7 @@ export function ChildSelectPage() {
                     {[...Array(Math.min(child.age || 0, 5))].map((_, i) => (
                       <Star
                         key={i}
-                        className="h-4 w-4 text-yellow-400 fill-yellow-400"
+                        className="h-4 w-4 text-lala fill-lala"
                       />
                     ))}
                   </div>
@@ -187,15 +187,15 @@ export function ChildSelectPage() {
               onClick={handleParentLogin}
               className={cn(
                 'flex flex-col items-center justify-center p-6 rounded-3xl',
-                'bg-white/40 backdrop-blur-sm border-2 border-dashed border-gray-300',
+                'bg-white/40 backdrop-blur-sm border-2 border-dashed border-muted-foreground/30',
                 'hover:bg-white/60 hover:border-primary/30 transition-all duration-300',
                 'cursor-pointer min-w-[180px] min-h-[220px]'
               )}
             >
-              <div className="h-20 w-20 rounded-full bg-gray-200 flex items-center justify-center text-4xl">
+              <div className="h-20 w-20 rounded-full bg-muted flex items-center justify-center text-4xl">
                 ➕
               </div>
-              <p className="mt-4 text-gray-500 font-medium">Add Me!</p>
+              <p className="mt-4 text-muted-foreground font-medium">Add Me!</p>
             </div>
           </div>
         )}

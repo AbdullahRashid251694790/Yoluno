@@ -31,58 +31,58 @@ const RELATIONSHIP_CONFIG: Record<RelationType, {
 }> = {
   self: {
     emoji: '💖',
-    borderColor: 'border-pink-400',
-    bgColor: 'bg-pink-100',
-    textColor: 'text-pink-600',
-    gradientFrom: 'from-pink-50',
-    gradientTo: 'to-purple-50',
+    borderColor: 'border-lolo',
+    bgColor: 'bg-lolo/10',
+    textColor: 'text-lolo',
+    gradientFrom: 'from-lolo/10',
+    gradientTo: 'to-primary/10',
   },
   parent: {
     emoji: '👑',
-    borderColor: 'border-amber-400',
-    bgColor: 'bg-amber-100',
-    textColor: 'text-amber-600',
-    gradientFrom: 'from-amber-50',
-    gradientTo: 'to-orange-50',
+    borderColor: 'border-gold',
+    bgColor: 'bg-gold/10',
+    textColor: 'text-gold',
+    gradientFrom: 'from-gold/5',
+    gradientTo: 'to-gold/5',
   },
   sibling: {
     emoji: '🎯',
-    borderColor: 'border-cyan-400',
-    bgColor: 'bg-cyan-100',
-    textColor: 'text-cyan-600',
-    gradientFrom: 'from-cyan-50',
-    gradientTo: 'to-blue-50',
+    borderColor: 'border-primary',
+    bgColor: 'bg-primary/10',
+    textColor: 'text-primary',
+    gradientFrom: 'from-primary/5',
+    gradientTo: 'to-primary/5',
   },
   grandparent: {
     emoji: '🏠',
-    borderColor: 'border-purple-400',
-    bgColor: 'bg-purple-100',
-    textColor: 'text-purple-600',
-    gradientFrom: 'from-purple-50',
-    gradientTo: 'to-indigo-50',
+    borderColor: 'border-primary',
+    bgColor: 'bg-primary/10',
+    textColor: 'text-primary',
+    gradientFrom: 'from-primary/10',
+    gradientTo: 'to-primary/10',
   },
   aunt_uncle: {
     emoji: '🎁',
-    borderColor: 'border-blue-400',
-    bgColor: 'bg-blue-100',
-    textColor: 'text-blue-600',
-    gradientFrom: 'from-blue-50',
-    gradientTo: 'to-indigo-50',
+    borderColor: 'border-primary',
+    bgColor: 'bg-primary/10',
+    textColor: 'text-primary',
+    gradientFrom: 'from-primary/10',
+    gradientTo: 'to-primary/10',
   },
   cousin: {
     emoji: '🎮',
-    borderColor: 'border-green-400',
-    bgColor: 'bg-green-100',
-    textColor: 'text-green-600',
-    gradientFrom: 'from-green-50',
-    gradientTo: 'to-emerald-50',
+    borderColor: 'border-primary',
+    bgColor: 'bg-primary/10',
+    textColor: 'text-primary',
+    gradientFrom: 'from-primary',
+    gradientTo: 'to-primary',
   },
   other: {
     emoji: '⭐',
-    borderColor: 'border-gray-400',
-    bgColor: 'bg-gray-100',
-    textColor: 'text-gray-600',
-    gradientFrom: 'from-gray-50',
+    borderColor: 'border-muted-foreground/40',
+    bgColor: 'bg-muted',
+    textColor: 'text-muted-foreground',
+    gradientFrom: 'from-muted',
     gradientTo: 'to-slate-50',
   },
 };
@@ -129,7 +129,7 @@ export function FamilyMemberCard({ member, type, isSelf, onPress }: FamilyMember
         'w-full rounded-2xl bg-white/80 backdrop-blur-sm overflow-hidden',
         'shadow-md hover:shadow-lg transition-all duration-200',
         'active:scale-[0.98] hover:scale-[1.02]',
-        'focus:outline-none focus:ring-4 focus:ring-purple-200',
+        'focus:outline-none focus:ring-4 focus:ring-primary/20',
         'text-left'
       )}
     >
@@ -193,7 +193,7 @@ export function FamilyMemberCard({ member, type, isSelf, onPress }: FamilyMember
             {hobbies.slice(0, 3).map((hobby, i) => (
               <span
                 key={i}
-                className="px-2 py-0.5 bg-gray-100 rounded-full text-[10px] text-muted-foreground"
+                className="px-2 py-0.5 bg-muted rounded-full text-[10px] text-muted-foreground"
               >
                 {hobby}
               </span>

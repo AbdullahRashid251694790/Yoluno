@@ -201,9 +201,9 @@ export function BuddyChat({ childId, childName, sessionId, childAvatarUrl }: Bud
           </div>
         </div>
 
-        <div className="flex items-center gap-1.5 rounded-full bg-yellow-100 px-3 py-1.5">
-          <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
-          <span className="text-sm font-bold text-yellow-700">{starCount}</span>
+        <div className="flex items-center gap-1.5 rounded-full bg-lala/10 px-3 py-1.5">
+          <Star className="h-4 w-4 text-lala fill-lala" />
+          <span className="text-sm font-bold text-lala">{starCount}</span>
         </div>
       </div>
 

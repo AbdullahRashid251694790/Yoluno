@@ -65,7 +65,7 @@ export function PasswordChangeRequestButton({
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-xl">
-              <AlertTriangle className="h-6 w-6 text-amber-500" />
+              <AlertTriangle className="h-6 w-6 text-gold" />
               Tell a Grown-Up?
             </DialogTitle>
             <DialogDescription className="text-base pt-2">
@@ -92,7 +92,7 @@ export function PasswordChangeRequestButton({
             <Button
               onClick={handleRequest}
               disabled={requestPasswordChange.isPending}
-              className="w-full sm:w-auto bg-amber-500 hover:bg-amber-600"
+              className="w-full sm:w-auto bg-gold/50 hover:bg-gold/10"
             >
               {requestPasswordChange.isPending ? 'Sending...' : 'Yes, tell them!'}
             </Button>
@@ -105,8 +105,8 @@ export function PasswordChangeRequestButton({
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center justify-center gap-2 text-xl">
-              <div className="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center">
-                <Check className="h-6 w-6 text-green-600" />
+              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                <Check className="h-6 w-6 text-primary" />
               </div>
             </DialogTitle>
           </DialogHeader>

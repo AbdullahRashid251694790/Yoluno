@@ -118,9 +118,9 @@ export function KidsRewardGalleryPage() {
               {rewards.length} treasure{rewards.length !== 1 ? 's' : ''} earned
             </p>
           </div>
-          <div className="flex items-center gap-1.5 rounded-full bg-yellow-100 px-3 py-1.5">
-            <Trophy className="h-4 w-4 text-yellow-500" />
-            <span className="text-sm font-bold text-yellow-700">{rewards.length}</span>
+          <div className="flex items-center gap-1.5 rounded-full bg-lala/10 px-3 py-1.5">
+            <Trophy className="h-4 w-4 text-lala" />
+            <span className="text-sm font-bold text-lala">{rewards.length}</span>
           </div>
         </div>
       </div>
@@ -141,11 +141,11 @@ export function KidsRewardGalleryPage() {
                 key={reward.id}
                 className={cn(
                   'overflow-hidden cursor-pointer transition-all hover:shadow-lg hover:scale-105',
-                  !reward.viewed && 'ring-2 ring-yellow-400 ring-offset-2'
+                  !reward.viewed && 'ring-2 ring-lala ring-offset-2'
                 )}
                 onClick={() => handleRewardClick(reward)}
               >
-                <div className="relative aspect-square bg-gradient-to-br from-purple-100 to-pink-100">
+                <div className="relative aspect-square bg-gradient-to-br from-primary/10 to-lolo/10">
                   {reward.reward_image_url ? (
                     <img
                       src={reward.reward_image_url}
@@ -154,11 +154,11 @@ export function KidsRewardGalleryPage() {
                     />
                   ) : (
                     <div className="flex items-center justify-center h-full">
-                      <Trophy className="h-12 w-12 text-yellow-500" />
+                      <Trophy className="h-12 w-12 text-lala" />
                     </div>
                   )}
                   {!reward.viewed && (
-                    <Badge className="absolute top-2 right-2 bg-yellow-400 text-yellow-900">
+                    <Badge className="absolute top-2 right-2 bg-lala/10 text-lala">
                       <Sparkles className="h-3 w-3 mr-1" />
                       New!
                     </Badge>
@@ -183,15 +183,15 @@ export function KidsRewardGalleryPage() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-center text-2xl font-display flex items-center justify-center gap-2">
-              <Star className="h-6 w-6 text-yellow-500 fill-yellow-500" />
+              <Star className="h-6 w-6 text-lala fill-lala" />
               Journey Complete!
-              <Star className="h-6 w-6 text-yellow-500 fill-yellow-500" />
+              <Star className="h-6 w-6 text-lala fill-lala" />
             </DialogTitle>
           </DialogHeader>
 
           {celebratingReward && (
             <div className="space-y-4">
-              <div className="relative aspect-square rounded-lg overflow-hidden bg-gradient-to-br from-purple-100 to-pink-100">
+              <div className="relative aspect-square rounded-lg overflow-hidden bg-gradient-to-br from-primary/10 to-lolo/10">
                 {celebratingReward.reward_image_url ? (
                   <img
                     src={celebratingReward.reward_image_url}
@@ -200,7 +200,7 @@ export function KidsRewardGalleryPage() {
                   />
                 ) : (
                   <div className="flex items-center justify-center h-full">
-                    <Trophy className="h-24 w-24 text-yellow-500 animate-bounce" />
+                    <Trophy className="h-24 w-24 text-lala animate-bounce" />
                   </div>
                 )}
               </div>

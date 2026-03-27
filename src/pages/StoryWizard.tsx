@@ -367,8 +367,8 @@ export function StoryWizardPage() {
                   className={cn(
                     'px-3 py-1 rounded-full text-sm border-2 transition-all',
                     wizardState.customCharacterGender === 'boy'
-                      ? 'border-blue-500 bg-blue-50 text-blue-700'
-                      : 'border-muted hover:border-blue-300'
+                      ? 'border-primary bg-primary/5 text-primary'
+                      : 'border-muted hover:border-primary'
                   )}
                 >
                   👦 Boy
@@ -384,8 +384,8 @@ export function StoryWizardPage() {
                   className={cn(
                     'px-3 py-1 rounded-full text-sm border-2 transition-all',
                     wizardState.customCharacterGender === 'girl'
-                      ? 'border-pink-500 bg-pink-50 text-pink-700'
-                      : 'border-muted hover:border-pink-300'
+                      ? 'border-lolo bg-lolo/10 text-lolo'
+                      : 'border-muted hover:border-lolo'
                   )}
                 >
                   👧 Girl
@@ -402,8 +402,8 @@ export function StoryWizardPage() {
                     key={index}
                     className={cn(
                       'inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm',
-                      char.gender === 'boy' && 'bg-blue-100 text-blue-800',
-                      char.gender === 'girl' && 'bg-pink-100 text-pink-800',
+                      char.gender === 'boy' && 'bg-primary/10 text-primary',
+                      char.gender === 'girl' && 'bg-lolo/10 text-lolo',
                       !char.gender && 'bg-primary/10'
                     )}
                   >
@@ -542,7 +542,7 @@ export function StoryWizardPage() {
           <div className="space-y-6">
             {generatedStory ? (
               <div className="space-y-4">
-                <div className="rounded-xl bg-gradient-to-r from-pink-500/10 to-purple-500/10 p-4">
+                <div className="rounded-xl bg-gradient-to-r from-lolo/10/10 to-primary/10/10 p-4">
                   <h3 className="text-lg font-bold">{generatedStory.title}</h3>
                   {generatedStory.hasPages && generatedStory.pageCount && (
                     <p className="text-sm text-muted-foreground mt-1">
@@ -564,8 +564,8 @@ export function StoryWizardPage() {
                     {generatedStory.content}
                   </p>
                 </div>
-                <div className="rounded-lg bg-purple-100 p-3 text-center">
-                  <p className="text-sm text-purple-800">
+                <div className="rounded-lg bg-primary/10 p-3 text-center">
+                  <p className="text-sm text-primary">
                     Your storybook is ready! Illustrations are being created in the background.
                   </p>
                 </div>
@@ -632,11 +632,11 @@ export function StoryWizardPage() {
   const StepIcon = stepIcons[currentStep];
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-pastel-pink to-pastel-purple p-4">
+    <div className="min-h-screen bg-gradient-to-b  p-4">
       <div className="mx-auto max-w-2xl">
         {/* Header */}
         <div className="mb-8">
-          <Button variant="ghost" size="sm" onClick={handleBack} className="text-charcoal-muted">
+          <Button variant="ghost" size="sm" onClick={handleBack} className="text-muted-foreground">
             <ArrowLeft className="mr-2 h-4 w-4" />
             {currentStep > 0 ? 'Back' : 'Cancel'}
           </Button>
@@ -656,8 +656,8 @@ export function StoryWizardPage() {
         {/* Step content */}
         <Card className="border-0 shadow-xl bg-white">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-charcoal">
-              <StepIcon className="h-5 w-5 text-cyan" />
+            <CardTitle className="flex items-center gap-2 text-foreground">
+              <StepIcon className="h-5 w-5 text-primary" />
               Create a Story for {child.name}
             </CardTitle>
           </CardHeader>

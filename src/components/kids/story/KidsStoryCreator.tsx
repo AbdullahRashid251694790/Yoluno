@@ -69,7 +69,7 @@ const voiceOptions: { value: TTSVoice; label: string; emoji: string }[] = [
 ];
 
 const STEP_COLORS = [
-  'bg-orange-400', 'bg-blue-400', 'bg-purple-400', 'bg-pink-400', 'bg-green-400',
+  'bg-gold', 'bg-primary', 'bg-lumi', 'bg-lolo', 'bg-primary',
 ];
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -218,21 +218,22 @@ export function KidsStoryCreator({ childId, onClose, onSuccess }: KidsStoryCreat
       case 0:
         return (
           <div className="space-y-5">
-            <p className="text-center text-muted-foreground text-sm">What should your story be about?</p>
+            <p className="text-center text-muted-foreground text-sm font-body">What should your story be about?</p>
             <div className="grid grid-cols-3 gap-3">
               {themes.map((theme) => (
                 <button
                   key={theme}
                   onClick={() => setState((p) => ({ ...p, theme, customTheme: '' }))}
                   className={cn(
-                    'flex flex-col items-center gap-2 rounded-2xl border-2 p-4 transition-all active:scale-95',
+                    'flex flex-col items-center gap-2 rounded-3xl p-4 transition-all duration-300 active:scale-95',
+                    'backdrop-blur-md border',
                     state.theme === theme
-                      ? 'border-purple-400 bg-purple-100 shadow-lg scale-105'
-                      : 'border-gray-200 bg-white hover:border-purple-200 hover:bg-purple-50'
+                      ? 'bg-white/80 border-primary shadow-[0_4px_24px_rgba(61,214,200,0.15)]'
+                      : 'bg-white/45 border-white/60 shadow-warm-sm hover:bg-white/70 hover:shadow-warm'
                   )}
                 >
                   <span className="text-3xl">{themeEmojis[theme] || '📖'}</span>
-                  <span className="text-xs font-bold capitalize text-gray-700">{theme}</span>
+                  <span className={cn('text-xs font-bold capitalize', state.theme === theme ? 'text-primary' : 'text-foreground')}>{theme}</span>
                 </button>
               ))}
             </div>
@@ -242,7 +243,7 @@ export function KidsStoryCreator({ childId, onClose, onSuccess }: KidsStoryCreat
                 placeholder="e.g., robot friends, underwater adventure..."
                 value={state.customTheme}
                 onChange={(e) => setState((p) => ({ ...p, customTheme: e.target.value, theme: '' }))}
-                className="rounded-xl text-center"
+                className="rounded-[40px] text-center bg-white/60 backdrop-blur-md border-white/60"
               />
             </div>
           </div>
@@ -276,12 +277,12 @@ export function KidsStoryCreator({ childId, onClose, onSuccess }: KidsStoryCreat
                       }))
                     }
                     className={cn(
-                      'px-4 py-2 rounded-full text-sm font-bold border-2 transition-all',
+                      'px-5 py-2.5 rounded-[40px] text-sm font-bold transition-all duration-300 border backdrop-blur-md',
                       state.customCharacterGender === g
                         ? g === 'boy'
-                          ? 'border-blue-400 bg-blue-100 text-blue-700'
-                          : 'border-pink-400 bg-pink-100 text-pink-700'
-                        : 'border-gray-200 hover:border-gray-300'
+                          ? 'bg-primary text-white shadow-[0_4px_16px_rgba(61,214,200,0.25)]'
+                          : 'bg-lolo text-white shadow-[0_4px_16px_rgba(230,130,90,0.25)]'
+                        : 'bg-white/45 border-white/60 text-foreground shadow-warm-sm hover:bg-white/70'
                     )}
                   >
                     {g === 'boy' ? '👦 Boy' : '👧 Girl'}
@@ -299,9 +300,9 @@ export function KidsStoryCreator({ childId, onClose, onSuccess }: KidsStoryCreat
                     key={i}
                     className={cn(
                       'inline-flex items-center gap-1 rounded-full px-4 py-2 text-sm font-bold',
-                      char.gender === 'boy' && 'bg-blue-100 text-blue-800',
-                      char.gender === 'girl' && 'bg-pink-100 text-pink-800',
-                      !char.gender && 'bg-purple-100 text-purple-800'
+                      char.gender === 'boy' && 'bg-primary/10 text-primary',
+                      char.gender === 'girl' && 'bg-lolo/10 text-foreground',
+                      !char.gender && 'bg-primary/10 text-foreground'
                     )}
                   >
                     {char.gender === 'boy' && '👦 '}
@@ -316,10 +317,10 @@ export function KidsStoryCreator({ childId, onClose, onSuccess }: KidsStoryCreat
               type="button"
               onClick={() => setState((p) => ({ ...p, includeFamily: !p.includeFamily }))}
               className={cn(
-                'w-full flex items-center justify-center gap-3 rounded-2xl border-2 p-4 transition-all text-sm font-bold',
+                'w-full flex items-center justify-center gap-3 rounded-3xl p-4 transition-all duration-300 text-sm font-bold border backdrop-blur-md',
                 state.includeFamily
-                  ? 'border-orange-400 bg-orange-100 text-orange-700'
-                  : 'border-gray-200 bg-white text-gray-600 hover:border-orange-200'
+                  ? 'bg-white/80 border-gold text-gold shadow-[0_4px_16px_rgba(212,168,67,0.15)]'
+                  : 'bg-white/45 border-white/60 text-muted-foreground shadow-warm-sm hover:bg-white/70 hover:shadow-warm'
               )}
             >
               <span className="text-2xl">👨‍👩‍👧</span>
@@ -340,29 +341,30 @@ export function KidsStoryCreator({ childId, onClose, onSuccess }: KidsStoryCreat
                   key={mood}
                   onClick={() => setState((p) => ({ ...p, mood }))}
                   className={cn(
-                    'flex items-center gap-3 rounded-2xl border-2 p-4 transition-all active:scale-95',
+                    'flex items-center gap-3 rounded-3xl p-4 transition-all duration-300 active:scale-95',
+                    'backdrop-blur-md border',
                     state.mood === mood
-                      ? 'border-purple-400 bg-purple-100 shadow-md'
-                      : 'border-gray-200 bg-white hover:border-purple-200'
+                      ? 'bg-white/80 border-primary shadow-[0_4px_24px_rgba(61,214,200,0.15)]'
+                      : 'bg-white/45 border-white/60 shadow-warm-sm hover:bg-white/70 hover:shadow-warm'
                   )}
                 >
                   <span className="text-2xl">{moodEmojis[mood] || '📖'}</span>
-                  <span className="font-bold capitalize text-sm">{mood}</span>
+                  <span className={cn('font-bold capitalize text-sm', state.mood === mood ? 'text-primary' : 'text-foreground')}>{mood}</span>
                 </button>
               ))}
             </div>
             <div>
-              <p className="text-sm font-bold text-center mb-3 text-gray-700">How long?</p>
+              <p className="text-sm font-bold text-center mb-3 text-foreground">How long?</p>
               <div className="flex gap-2">
                 {(['short', 'medium', 'long'] as const).map((len) => (
                   <button
                     key={len}
                     onClick={() => setState((p) => ({ ...p, storyLength: len }))}
                     className={cn(
-                      'flex-1 rounded-2xl border-2 py-3 text-sm font-bold capitalize transition-all',
+                      'flex-1 rounded-[40px] py-3 text-sm font-bold capitalize transition-all duration-300 border backdrop-blur-md',
                       state.storyLength === len
-                        ? 'border-green-400 bg-green-100 text-green-700'
-                        : 'border-gray-200 bg-white text-gray-600 hover:border-green-200'
+                        ? 'bg-primary text-white shadow-[0_4px_16px_rgba(61,214,200,0.25)]'
+                        : 'bg-white/45 border-white/60 text-foreground shadow-warm-sm hover:bg-white/70 hover:shadow-warm'
                     )}
                   >
                     {len === 'short' ? '⚡ Short' : len === 'medium' ? '📖 Medium' : '📚 Long'}
@@ -371,7 +373,7 @@ export function KidsStoryCreator({ childId, onClose, onSuccess }: KidsStoryCreat
               </div>
             </div>
             <div>
-              <p className="text-sm font-bold text-center mb-3 text-gray-700 flex items-center justify-center gap-2">
+              <p className="text-sm font-bold text-center mb-3 text-foreground flex items-center justify-center gap-2">
                 <Volume2 className="h-4 w-4" /> Who reads the story?
               </p>
               <div className="grid grid-cols-3 gap-2">
@@ -380,14 +382,14 @@ export function KidsStoryCreator({ childId, onClose, onSuccess }: KidsStoryCreat
                     key={v.value}
                     onClick={() => setState((p) => ({ ...p, narratorVoice: v.value }))}
                     className={cn(
-                      'flex flex-col items-center gap-1 rounded-xl border-2 py-3 transition-all',
+                      'flex flex-col items-center gap-1 rounded-2xl py-3 transition-all duration-300 border backdrop-blur-md',
                       state.narratorVoice === v.value
-                        ? 'border-blue-400 bg-blue-100'
-                        : 'border-gray-200 bg-white hover:border-blue-200'
+                        ? 'bg-white/80 border-primary shadow-[0_4px_16px_rgba(61,214,200,0.15)]'
+                        : 'bg-white/45 border-white/60 shadow-warm-sm hover:bg-white/70 hover:shadow-warm'
                     )}
                   >
                     <span className="text-xl">{v.emoji}</span>
-                    <span className="text-xs font-bold">{v.label}</span>
+                    <span className={cn('text-xs font-bold', state.narratorVoice === v.value ? 'text-primary' : 'text-foreground')}>{v.label}</span>
                   </button>
                 ))}
               </div>
@@ -412,10 +414,10 @@ export function KidsStoryCreator({ childId, onClose, onSuccess }: KidsStoryCreat
                     onClick={() => toggleValue(value)}
                     disabled={disabled}
                     className={cn(
-                      'flex items-center gap-3 rounded-2xl border-2 p-3 transition-all text-sm font-bold',
+                      'flex items-center gap-3 rounded-3xl p-3 transition-all duration-300 text-sm font-bold border backdrop-blur-md',
                       selected
-                        ? 'border-pink-400 bg-pink-100 text-pink-800'
-                        : 'border-gray-200 bg-white text-gray-700 hover:border-pink-200',
+                        ? 'bg-white/80 border-lolo shadow-[0_4px_16px_rgba(230,130,90,0.15)] text-lolo'
+                        : 'bg-white/45 border-white/60 text-foreground shadow-warm-sm hover:bg-white/70 hover:shadow-warm',
                       disabled && 'opacity-40 cursor-not-allowed'
                     )}
                   >
@@ -435,19 +437,19 @@ export function KidsStoryCreator({ childId, onClose, onSuccess }: KidsStoryCreat
           return (
             <div className="flex flex-col items-center justify-center py-12 space-y-6">
               <div className="relative">
-                <div className="w-32 h-32 rounded-full bg-gradient-to-br from-purple-400 to-pink-500 flex items-center justify-center animate-pulse">
+                <div className="w-32 h-32 rounded-full bg-gradient-to-br from-primary to-lolo flex items-center justify-center animate-pulse">
                   <Wand2 className="h-16 w-16 text-white animate-bounce" />
                 </div>
-                <Sparkles className="absolute -top-2 -right-2 h-8 w-8 text-yellow-400 animate-spin" />
+                <Sparkles className="absolute -top-2 -right-2 h-8 w-8 text-lala animate-spin" />
                 <Sparkles
-                  className="absolute -bottom-2 -left-2 h-6 w-6 text-pink-400 animate-spin"
+                  className="absolute -bottom-2 -left-2 h-6 w-6 text-lolo animate-spin"
                   style={{ animationDirection: 'reverse' }}
                 />
               </div>
               <div className="text-center space-y-2">
-                <h2 className="text-xl font-display font-bold text-purple-800">Making your story...</h2>
+                <h2 className="text-xl font-display font-bold text-foreground">Making your story...</h2>
                 <p className="text-sm text-muted-foreground">A little magic is happening! ✨</p>
-                <Loader2 className="h-6 w-6 animate-spin mx-auto text-purple-500 mt-4" />
+                <Loader2 className="h-6 w-6 animate-spin mx-auto text-primary mt-4" />
               </div>
             </div>
           );
@@ -456,24 +458,24 @@ export function KidsStoryCreator({ childId, onClose, onSuccess }: KidsStoryCreat
         if (generatedStory) {
           return (
             <div className="space-y-4 text-center">
-              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center mx-auto">
+              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary to-primary flex items-center justify-center mx-auto">
                 <BookOpen className="h-10 w-10 text-white" />
               </div>
               <div>
-                <h2 className="text-xl font-display font-bold text-purple-800">{generatedStory.title}</h2>
+                <h2 className="text-xl font-display font-bold text-foreground">{generatedStory.title}</h2>
                 {generatedStory.hasPages && generatedStory.pageCount && (
                   <p className="text-sm text-muted-foreground mt-1">
                     {generatedStory.pageCount} pages · illustrations being created...
                   </p>
                 )}
               </div>
-              <div className="max-h-40 overflow-y-auto rounded-2xl bg-purple-50 p-4 text-left">
-                <p className="text-sm leading-relaxed whitespace-pre-wrap text-gray-700">
+              <div className="max-h-40 overflow-y-auto rounded-2xl bg-primary/5 p-4 text-left">
+                <p className="text-sm leading-relaxed whitespace-pre-wrap text-foreground/70">
                   {generatedStory.content}
                 </p>
               </div>
-              <div className="rounded-2xl bg-yellow-50 border border-yellow-200 p-3">
-                <p className="text-sm text-yellow-800 font-medium">
+              <div className="rounded-2xl bg-lala/10 border border-lala p-3">
+                <p className="text-sm text-lala font-medium">
                   🎨 Your storybook is ready! Pictures are being drawn in the background.
                 </p>
               </div>
@@ -484,7 +486,7 @@ export function KidsStoryCreator({ childId, onClose, onSuccess }: KidsStoryCreat
         return (
           <div className="space-y-4">
             <p className="text-center text-muted-foreground text-sm">Ready? Here's your story! 🎉</p>
-            <div className="rounded-2xl bg-gradient-to-br from-purple-50 to-pink-50 p-4 space-y-3">
+            <div className="rounded-3xl bg-white/50 backdrop-blur-md border border-white/60 shadow-warm p-5 space-y-3">
               <SummaryRow icon={<Palette className="h-4 w-4" />} label="Theme" value={state.customTheme || state.theme || 'Not set'} />
               {state.characters.length > 0 && (
                 <SummaryRow icon={<Users className="h-4 w-4" />} label="Characters" value={state.characters.map((c) => c.name).join(', ')} />
@@ -509,7 +511,7 @@ export function KidsStoryCreator({ childId, onClose, onSuccess }: KidsStoryCreat
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-gradient-to-b from-purple-100 via-pink-50 to-white overflow-hidden">
+    <div className="fixed inset-0 z-50 flex flex-col overflow-hidden" style={{ background: 'linear-gradient(180deg, hsl(270 60% 92%) 0%, hsl(340 50% 94%) 40%, hsl(42 60% 97%) 100%)' }}>
       {/* Header */}
       <header className="flex items-center gap-3 px-4 pt-4 pb-2 flex-shrink-0">
         <Button
@@ -529,23 +531,23 @@ export function KidsStoryCreator({ childId, onClose, onSuccess }: KidsStoryCreat
               className={cn(
                 'h-2 rounded-full transition-all',
                 i < currentStep
-                  ? 'bg-green-400 flex-1'
+                  ? 'bg-primary flex-1'
                   : i === currentStep
                     ? `${STEP_COLORS[i]} flex-[2]`
-                    : 'bg-gray-200 flex-1'
+                    : 'bg-muted flex-1'
               )}
             />
           ))}
         </div>
 
-        <span className="text-xs font-bold text-purple-700 shrink-0">
+        <span className="text-xs font-bold text-primary shrink-0">
           {currentStep + 1}/{STEPS.length}
         </span>
       </header>
 
       {/* Step title */}
       <div className="px-4 pb-3 flex-shrink-0">
-        <h1 className="text-2xl font-display font-bold text-purple-800">
+        <h1 className="text-2xl font-display font-bold text-foreground">
           {currentStep === 0 && '🎨 Pick a Theme!'}
           {currentStep === 1 && '👥 Add Characters'}
           {currentStep === 2 && '🌟 Choose the Mood'}
@@ -567,7 +569,7 @@ export function KidsStoryCreator({ childId, onClose, onSuccess }: KidsStoryCreat
               <Button
                 onClick={handleFinish}
                 size="lg"
-                className="w-full rounded-full bg-gradient-to-r from-green-400 to-emerald-500 hover:from-green-500 hover:to-emerald-600 text-white font-display font-bold text-lg h-14"
+                className="w-full rounded-full bg-primary hover:bg-primary/90 text-white font-display font-bold text-lg h-14"
               >
                 <BookOpen className="mr-2 h-5 w-5" />
                 Read My Story!
@@ -577,7 +579,7 @@ export function KidsStoryCreator({ childId, onClose, onSuccess }: KidsStoryCreat
                 onClick={handleGenerate}
                 disabled={isGenerating}
                 size="lg"
-                className="w-full rounded-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-display font-bold text-lg h-14"
+                className="w-full rounded-full bg-gradient-to-r from-primary to-lolo hover:from-primary/90 hover:to-lolo/90 text-white font-display font-bold text-lg h-14"
               >
                 <Sparkles className="mr-2 h-5 w-5" />
                 Create My Story! ✨
@@ -591,8 +593,8 @@ export function KidsStoryCreator({ childId, onClose, onSuccess }: KidsStoryCreat
               className={cn(
                 'w-full rounded-full font-display font-bold text-lg h-14',
                 canProceed()
-                  ? 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white'
-                  : 'bg-gray-200 text-gray-400'
+                  ? 'bg-gradient-to-r from-primary to-lolo hover:from-primary/90 hover:to-lolo/90 text-white'
+                  : 'bg-muted text-muted-foreground'
               )}
             >
               Next
@@ -608,9 +610,9 @@ export function KidsStoryCreator({ childId, onClose, onSuccess }: KidsStoryCreat
 function SummaryRow({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
     <div className="flex items-center gap-2 text-sm">
-      <span className="text-purple-500">{icon}</span>
-      <span className="font-bold text-gray-600 w-20 shrink-0">{label}:</span>
-      <span className="capitalize text-gray-800 truncate">{value}</span>
+      <span className="text-primary">{icon}</span>
+      <span className="font-bold text-muted-foreground w-20 shrink-0">{label}:</span>
+      <span className="capitalize text-foreground truncate">{value}</span>
     </div>
   );
 }

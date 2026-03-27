@@ -162,28 +162,14 @@ function GenRow({ title, emoji, color, delay = 0, children, split, leftTitle, ri
       <div style={{ animation: `fade-in-up 0.6s cubic-bezier(0.16,1,0.3,1) ${delay}s both` }}>
         <div className="flex gap-3">
           {leftChildren && (
-            <div
-              className="flex-1 rounded-[28px] p-4 backdrop-blur-xl border"
-              style={{
-                background: `linear-gradient(135deg, ${color}08, ${color}04)`,
-                borderColor: `${color}20`,
-                boxShadow: `0 8px 32px ${color}08, inset 0 1px 0 rgba(255,255,255,0.5)`,
-              }}
-            >
-              <p className="text-[9px] font-black uppercase tracking-[0.3em] text-center mb-3" style={{ color }}>{leftTitle}</p>
+            <div className="flex-1 glass-card rounded-3xl p-4">
+              <p className="text-[9px] font-black uppercase tracking-[0.3em] text-center mb-3 text-primary">{leftTitle}</p>
               <div className="flex justify-center gap-4 flex-wrap">{leftChildren}</div>
             </div>
           )}
           {rightChildren && (
-            <div
-              className="flex-1 rounded-[28px] p-4 backdrop-blur-xl border"
-              style={{
-                background: `linear-gradient(135deg, ${color}08, ${color}04)`,
-                borderColor: `${color}20`,
-                boxShadow: `0 8px 32px ${color}08, inset 0 1px 0 rgba(255,255,255,0.5)`,
-              }}
-            >
-              <p className="text-[9px] font-black uppercase tracking-[0.3em] text-center mb-3" style={{ color }}>{rightTitle}</p>
+            <div className="flex-1 glass-card rounded-3xl p-4">
+              <p className="text-[9px] font-black uppercase tracking-[0.3em] text-center mb-3 text-lolo">{rightTitle}</p>
               <div className="flex justify-center gap-4 flex-wrap">{rightChildren}</div>
             </div>
           )}
@@ -194,17 +180,10 @@ function GenRow({ title, emoji, color, delay = 0, children, split, leftTitle, ri
 
   return (
     <div style={{ animation: `fade-in-up 0.6s cubic-bezier(0.16,1,0.3,1) ${delay}s both` }}>
-      <div
-        className="rounded-[28px] p-5 backdrop-blur-xl border"
-        style={{
-          background: `linear-gradient(135deg, ${color}08, ${color}04)`,
-          borderColor: `${color}20`,
-          boxShadow: `0 8px 32px ${color}08, inset 0 1px 0 rgba(255,255,255,0.5)`,
-        }}
-      >
+      <div className="glass-card rounded-3xl p-5">
         <div className="flex items-center justify-center gap-2 mb-4">
           <span className="text-lg">{emoji}</span>
-          <p className="text-[10px] font-black uppercase tracking-[0.3em]" style={{ color }}>{title}</p>
+          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary">{title}</p>
           <span className="text-lg">{emoji}</span>
         </div>
         <div className="flex justify-center gap-5 flex-wrap">{children}</div>
@@ -279,64 +258,41 @@ export function KidsFamilyPage() {
   let d = 0;
   const nd = () => { d += 0.1; return d; };
 
-  const BLUE = '#4F8EF7';
-  const PINK = '#E966A0';
-  const GOLD = '#F5A623';
-  const TEAL = '#2BD4D0';
-  const GREEN = '#34C759';
-  const PURPLE = '#8B5CF6';
+  // Use CSS variable-based colors
+  const PRIMARY = 'hsl(174, 60%, 51%)';
+  const GOLD_C = 'hsl(40, 55%, 55%)';
+  const LOLO_C = 'hsl(18, 76%, 60%)';
+  const LUMI_C = 'hsl(270, 60%, 70%)';
 
   return (
     <div className="min-h-screen safe-area-inset relative overflow-hidden"
       style={{
         background: `
-          radial-gradient(ellipse at 20% 0%, rgba(79,142,247,0.08) 0%, transparent 50%),
-          radial-gradient(ellipse at 80% 0%, rgba(233,102,160,0.08) 0%, transparent 50%),
-          radial-gradient(ellipse at 50% 50%, rgba(43,212,208,0.05) 0%, transparent 60%),
-          radial-gradient(ellipse at 50% 100%, rgba(139,92,246,0.06) 0%, transparent 50%),
-          linear-gradient(180deg, #FAFBFF 0%, #F5F0FF 30%, #FFF5F8 50%, #F0FFFE 70%, #FAFBFF 100%)
+          repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(61, 214, 200, 0.018) 3px, rgba(61, 214, 200, 0.018) 4px),
+          repeating-linear-gradient(90deg, transparent, transparent 3px, rgba(61, 214, 200, 0.018) 3px, rgba(61, 214, 200, 0.018) 4px),
+          linear-gradient(170deg, hsl(174 55% 80%) 0%, hsl(200 50% 84%) 15%, hsl(260 40% 85%) 30%, hsl(300 30% 86%) 45%, hsl(340 35% 87%) 55%, hsl(30 50% 85%) 70%, hsl(45 55% 88%) 85%, hsl(42 60% 96%) 100%)
         `,
+        backgroundAttachment: 'fixed',
       }}
     >
-      {/* Background particles */}
-      <div className="fixed inset-0 pointer-events-none" aria-hidden="true">
-        {Array.from({ length: 20 }).map((_, i) => (
-          <div
-            key={i}
-            className="absolute rounded-full"
-            style={{
-              width: 4 + Math.random() * 6,
-              height: 4 + Math.random() * 6,
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              background: [TEAL, PINK, GOLD, BLUE, PURPLE][i % 5],
-              opacity: 0.08 + Math.random() * 0.06,
-              animation: `float ${6 + Math.random() * 8}s ease-in-out infinite ${Math.random() * 5}s`,
-            }}
-          />
-        ))}
-      </div>
-
       {/* Header */}
-      <header className="flex items-center gap-3 px-4 py-3 bg-white/60 backdrop-blur-xl sticky top-0 z-30 border-b border-white/40">
-        <Button variant="ghost" size="icon" onClick={handleBack} className="rounded-full bg-white/70 hover:bg-white shadow-sm">
+      <header className="flex items-center gap-3 px-4 py-3 bg-card/95 backdrop-blur-md sticky top-0 z-30 border-b border-border shadow-warm">
+        <Button variant="ghost" size="icon" onClick={handleBack} className="rounded-full">
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div className="flex-1">
-          <h1 className="text-lg font-display font-bold bg-gradient-to-r from-[#4F8EF7] via-[#8B5CF6] to-[#E966A0] bg-clip-text text-transparent">
-            My Family Tree
+          <h1 className="text-lg font-display font-bold text-foreground">
+            My Family Tree 🌳
           </h1>
           <p className="text-[11px] text-muted-foreground">{totalMembers} members</p>
         </div>
-        <div className="text-2xl" style={{ animation: 'float 3s ease-in-out infinite' }}>🌳</div>
       </header>
 
       {!hasFamily ? (
         <div className="relative z-10 px-6 pt-20 flex flex-col items-center">
-          <div className="rounded-[32px] p-14 text-center border border-white/40"
-            style={{ background: 'rgba(255,255,255,0.5)', backdropFilter: 'blur(24px)', boxShadow: '0 16px 64px rgba(0,0,0,0.04)' }}>
+          <div className="glass-card rounded-3xl p-14 text-center">
             <div className="text-7xl mb-5" style={{ animation: 'float 3s ease-in-out infinite' }}>🌱</div>
-            <p className="text-xl font-display font-bold bg-gradient-to-r from-[#34C759] to-[#2BD4D0] bg-clip-text text-transparent mb-2">Your tree is growing!</p>
+            <p className="text-xl font-display font-bold text-primary mb-2">Your tree is growing!</p>
             <p className="text-muted-foreground text-sm">Ask your parent to add family members</p>
           </div>
         </div>
@@ -350,30 +306,30 @@ export function KidsFamilyPage() {
                 leftTitle="Dad's Parents" rightTitle="Mom's Parents"
                 leftChildren={tree.pg.length > 0 ? tree.pg.map((m) => (
                   <Person key={m.id} name={m.name} label={getLabel(m)} photoUrl={m.photo_url}
-                    isDeceased={!m.is_alive} color={BLUE} glow={BLUE} delay={nd()}
+                    isDeceased={!m.is_alive} color={PRIMARY} glow={PRIMARY} delay={nd()}
                     onClick={() => setSelectedMember({ member: m, type: 'grandparent' })} />
                 )) : undefined}
                 rightChildren={tree.mg.length > 0 ? tree.mg.map((m) => (
                   <Person key={m.id} name={m.name} label={getLabel(m)} photoUrl={m.photo_url}
-                    isDeceased={!m.is_alive} color={PINK} glow={PINK} delay={nd()}
+                    isDeceased={!m.is_alive} color={LOLO_C} glow={LOLO_C} delay={nd()}
                     onClick={() => setSelectedMember({ member: m, type: 'grandparent' })} />
                 )) : undefined}
               />
-              <Connector color={GOLD} delay={nd()} />
+              <Connector color={GOLD_C} delay={nd()} />
             </>
           )}
 
           {/* Parents */}
           {tree.parents.length > 0 && (
             <>
-              <GenRow title="Parents" emoji="💛" color={GOLD} delay={nd()}>
+              <GenRow title="Parents" emoji="💛" color={GOLD_C} delay={nd()}>
                 {tree.parents.map((m) => (
                   <Person key={m.id} name={m.name} label={getLabel(m)} photoUrl={m.photo_url}
-                    isDeceased={!m.is_alive} color={GOLD} glow={GOLD} delay={nd()}
+                    isDeceased={!m.is_alive} color={GOLD_C} glow={GOLD_C} delay={nd()}
                     onClick={() => setSelectedMember({ member: m, type: 'parent' })} />
                 ))}
               </GenRow>
-              <Connector color={TEAL} delay={nd()} />
+              <Connector color={PRIMARY} delay={nd()} />
             </>
           )}
 
@@ -384,31 +340,31 @@ export function KidsFamilyPage() {
                 leftTitle="Dad's Side" rightTitle="Mom's Side"
                 leftChildren={tree.pe.length > 0 ? tree.pe.map((m) => (
                   <Person key={m.id} name={m.name} label={getLabel(m)} photoUrl={m.photo_url}
-                    isDeceased={!m.is_alive} color={BLUE} glow={BLUE} delay={nd()}
+                    isDeceased={!m.is_alive} color={PRIMARY} glow={PRIMARY} delay={nd()}
                     onClick={() => setSelectedMember({ member: m, type: 'aunt_uncle' })} />
                 )) : undefined}
                 rightChildren={tree.me.length > 0 ? tree.me.map((m) => (
                   <Person key={m.id} name={m.name} label={getLabel(m)} photoUrl={m.photo_url}
-                    isDeceased={!m.is_alive} color={PINK} glow={PINK} delay={nd()}
+                    isDeceased={!m.is_alive} color={LOLO_C} glow={LOLO_C} delay={nd()}
                     onClick={() => setSelectedMember({ member: m, type: 'aunt_uncle' })} />
                 )) : undefined}
               />
-              <Connector color={PURPLE} delay={nd()} />
+              <Connector color={LUMI_C} delay={nd()} />
             </>
           )}
 
           {/* Me + Siblings */}
-          <GenRow title="That's Us!" emoji="⭐" color={TEAL} delay={nd()}>
+          <GenRow title="That's Us!" emoji="⭐" color={PRIMARY} delay={nd()}>
             {tree.cs.map((sibling) => (
               <Person key={sibling.id} name={sibling.name} label="Sibling"
                 photoUrl={(sibling as any).avatarUrl || (sibling as any).custom_avatar_url}
-                color={PURPLE} glow={PURPLE} delay={nd()}
+                color={LUMI_C} glow={LUMI_C} delay={nd()}
                 onClick={() => setSelectedMember({ member: sibling, type: 'sibling' })} />
             ))}
             <Person
               name={child.name} label="That's Me!" isMe
               photoUrl={(child as any).avatarUrl || (child as any).custom_avatar_url}
-              color={GOLD} glow={GOLD} delay={nd()}
+              color={GOLD_C} glow={GOLD_C} delay={nd()}
               onClick={() => setSelectedMember({ member: child, type: 'self' })}
             />
           </GenRow>
@@ -416,11 +372,11 @@ export function KidsFamilyPage() {
           {/* Cousins */}
           {tree.cousins.length > 0 && (
             <>
-              <Connector color={GREEN} delay={nd()} />
-              <GenRow title="Cousins" emoji="🎮" color={GREEN} delay={nd()}>
+              <Connector color={PRIMARY} delay={nd()} />
+              <GenRow title="Cousins" emoji="🎮" color={PRIMARY} delay={nd()}>
                 {tree.cousins.map((m) => (
                   <Person key={m.id} name={m.name} label={getLabel(m)} photoUrl={m.photo_url}
-                    isDeceased={!m.is_alive} color={GREEN} glow={GREEN} delay={nd()}
+                    isDeceased={!m.is_alive} color={PRIMARY} glow={PRIMARY} delay={nd()}
                     onClick={() => setSelectedMember({ member: m, type: 'cousin' })} />
                 ))}
               </GenRow>
@@ -430,11 +386,11 @@ export function KidsFamilyPage() {
           {/* Other */}
           {tree.other.length > 0 && (
             <>
-              <Connector color="#94A3B8" delay={nd()} />
-              <GenRow title="Family" emoji="💜" color={PURPLE} delay={nd()}>
+              <Connector color={PRIMARY} delay={nd()} />
+              <GenRow title="Family" emoji="💜" color={LUMI_C} delay={nd()}>
                 {tree.other.map((m) => (
                   <Person key={m.id} name={m.name} label={getLabel(m)} photoUrl={m.photo_url}
-                    isDeceased={!m.is_alive} color={PURPLE} glow={PURPLE} delay={nd()}
+                    isDeceased={!m.is_alive} color={LUMI_C} glow={LUMI_C} delay={nd()}
                     onClick={() => setSelectedMember({ member: m, type: getRelType(m) })} />
                 ))}
               </GenRow>

@@ -31,7 +31,7 @@ const MODES: ModeConfig[] = [
     label: 'Home',
     icon: Home,
     path: '',
-    color: 'text-gray-500',
+    color: 'text-muted-foreground',
     activeColor: 'text-primary bg-primary/10',
   },
   {
@@ -39,32 +39,32 @@ const MODES: ModeConfig[] = [
     label: 'Chat',
     icon: MessageCircle,
     path: '/chat',
-    color: 'text-gray-500',
-    activeColor: 'text-blue-600 bg-blue-100',
+    color: 'text-muted-foreground',
+    activeColor: 'text-primary bg-primary/10',
   },
   {
     key: 'stories',
     label: 'Stories',
     icon: BookOpen,
     path: '/stories',
-    color: 'text-gray-500',
-    activeColor: 'text-purple-600 bg-purple-100',
+    color: 'text-muted-foreground',
+    activeColor: 'text-primary bg-primary/10',
   },
   {
     key: 'journeys',
     label: 'Journeys',
     icon: Map,
     path: '/journeys',
-    color: 'text-gray-500',
-    activeColor: 'text-green-600 bg-green-100',
+    color: 'text-muted-foreground',
+    activeColor: 'text-primary bg-primary/10',
   },
   {
     key: 'learning',
     label: 'Learn',
     icon: GraduationCap,
     path: '/learning',
-    color: 'text-gray-500',
-    activeColor: 'text-orange-600 bg-orange-100',
+    color: 'text-muted-foreground',
+    activeColor: 'text-gold bg-gold/10',
   },
 ];
 
@@ -111,7 +111,7 @@ export function BottomModeBar({ className }: BottomModeBarProps) {
     <nav
       className={cn(
         'fixed bottom-0 left-0 right-0 z-50',
-        'bg-white/95 backdrop-blur-lg border-t border-gray-200',
+        'bg-white/95 backdrop-blur-lg border-t border-border',
         'safe-area-inset-bottom',
         className
       )}
@@ -129,7 +129,7 @@ export function BottomModeBar({ className }: BottomModeBarProps) {
                 'flex flex-col items-center justify-center',
                 'w-14 h-14 rounded-2xl transition-all duration-200',
                 'touch-target-kids',
-                isActive ? mode.activeColor : 'text-gray-500 hover:bg-gray-100'
+                isActive ? mode.activeColor : 'text-muted-foreground hover:bg-muted'
               )}
             >
               <Icon

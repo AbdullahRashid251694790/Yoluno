@@ -156,19 +156,19 @@ export function FirstTimePrompt({ childId, childName, onComplete, onSkip }: Firs
                 and go on learning adventures with you!
               </p>
               <div className="grid grid-cols-2 gap-4 pt-4">
-                <div className="p-4 rounded-lg bg-blue-50 text-center">
+                <div className="p-4 rounded-lg bg-primary/10 text-center">
                   <span className="text-2xl">💬</span>
                   <p className="text-sm font-medium mt-2">Chat</p>
                 </div>
-                <div className="p-4 rounded-lg bg-purple-50 text-center">
+                <div className="p-4 rounded-lg bg-primary/5 text-center">
                   <span className="text-2xl">📖</span>
                   <p className="text-sm font-medium mt-2">Stories</p>
                 </div>
-                <div className="p-4 rounded-lg bg-green-50 text-center">
+                <div className="p-4 rounded-lg bg-primary/10 text-center">
                   <span className="text-2xl">🗺️</span>
                   <p className="text-sm font-medium mt-2">Journeys</p>
                 </div>
-                <div className="p-4 rounded-lg bg-orange-50 text-center">
+                <div className="p-4 rounded-lg bg-gold/10 text-center">
                   <span className="text-2xl">🎓</span>
                   <p className="text-sm font-medium mt-2">Learning</p>
                 </div>

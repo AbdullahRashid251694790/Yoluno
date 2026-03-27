@@ -78,8 +78,8 @@ export function KidsJourneysPage() {
         {!hasJourneys ? (
           <Card className="bg-white/70 backdrop-blur-sm">
             <CardContent className="py-12 text-center">
-              <div className="rounded-full bg-cyan-100 p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                <Map className="h-8 w-8 text-cyan-600" />
+              <div className="rounded-full bg-primary/10 p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                <Map className="h-8 w-8 text-primary" />
               </div>
               <h3 className="text-lg font-semibold mb-2">No Journeys Yet</h3>
               <p className="text-muted-foreground text-sm mb-4">
@@ -179,7 +179,7 @@ function JourneyCard({ journey, childId, isCompleted }: JourneyCardProps) {
       <Card
         className={cn(
           'bg-white/70 backdrop-blur-sm transition-all hover:shadow-md cursor-pointer',
-          isCompleted && 'bg-gradient-to-br from-yellow-50 to-orange-50'
+          isCompleted && 'bg-gradient-to-br from-lala/5 to-gold/5'
         )}
       >
         <CardContent className="p-4">
@@ -187,13 +187,13 @@ function JourneyCard({ journey, childId, isCompleted }: JourneyCardProps) {
             <div
               className={cn(
                 'rounded-xl p-2.5',
-                isCompleted ? 'bg-yellow-100' : 'bg-cyan-100'
+                isCompleted ? 'bg-lala/10' : 'bg-primary/10'
               )}
             >
               {isCompleted ? (
-                <Trophy className="h-6 w-6 text-yellow-600" />
+                <Trophy className="h-6 w-6 text-lala" />
               ) : (
-                <Map className="h-6 w-6 text-cyan-600" />
+                <Map className="h-6 w-6 text-primary" />
               )}
             </div>
 
@@ -201,7 +201,7 @@ function JourneyCard({ journey, childId, isCompleted }: JourneyCardProps) {
               <div className="flex items-center gap-2 mb-1">
                 <h3 className="font-semibold truncate">{journey.title}</h3>
                 {isCompleted && (
-                  <CheckCircle2 className="h-4 w-4 text-green-500 flex-shrink-0" />
+                  <CheckCircle2 className="h-4 w-4 text-primary flex-shrink-0" />
                 )}
               </div>
 
@@ -221,7 +221,7 @@ function JourneyCard({ journey, childId, isCompleted }: JourneyCardProps) {
                 </div>
                 <Progress
                   value={progress}
-                  className={cn('h-2', isCompleted && 'bg-yellow-200')}
+                  className={cn('h-2', isCompleted && 'bg-lala/20')}
                 />
               </div>
             </div>

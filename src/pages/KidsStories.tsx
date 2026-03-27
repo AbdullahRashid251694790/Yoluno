@@ -155,7 +155,7 @@ export function KidsStoriesPage() {
         <Button
           size="icon"
           onClick={() => setIsCreatorOpen(true)}
-          className="rounded-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 shadow-lg"
+          className="rounded-full bg-gradient-to-r from-primary/10 to-lolo/10 hover:from-primary/10 hover:to-lolo/10 shadow-lg"
         >
           <Sparkles className="h-5 w-5 text-white" />
         </Button>
@@ -188,7 +188,7 @@ export function KidsStoriesPage() {
                     <CardContent className="p-0">
                       <div className="flex">
                         {/* Cover thumbnail */}
-                        <div className="w-24 h-24 flex-shrink-0 bg-gradient-to-br from-purple-200 to-pink-200">
+                        <div className="w-24 h-24 flex-shrink-0 bg-gradient-to-br from-primary/20 to-lolo/20">
                           {coverUrl ? (
                             <img
                               src={getUploadUrl(coverUrl)}
@@ -197,7 +197,7 @@ export function KidsStoriesPage() {
                             />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center">
-                              <BookOpen className="h-8 w-8 text-purple-400" />
+                              <BookOpen className="h-8 w-8 text-primary" />
                             </div>
                           )}
                         </div>
@@ -209,7 +209,7 @@ export function KidsStoriesPage() {
                               {story.title}
                             </h3>
                             {story.is_favorite && (
-                              <Star className="h-4 w-4 text-yellow-500 fill-yellow-500 flex-shrink-0" />
+                              <Star className="h-4 w-4 text-lala fill-lala flex-shrink-0" />
                             )}
                           </div>
                           {story.theme && (
@@ -221,7 +221,7 @@ export function KidsStoriesPage() {
                             {new Date(story.created_at).toLocaleDateString()}
                           </p>
                           {hasPages && (
-                            <span className="inline-block mt-2 px-2 py-0.5 bg-purple-100 text-purple-700 text-xs rounded-full">
+                            <span className="inline-block mt-2 px-2 py-0.5 bg-primary/10 text-primary text-xs rounded-full">
                               Storybook
                             </span>
                           )}
@@ -254,7 +254,7 @@ export function KidsStoriesPage() {
 
       {/* Legacy Story Dialog - for old stories without pages */}
       <Dialog open={!!selectedStory && !isStorybookFormat} onOpenChange={(open) => !open && setSelectedStory(null)}>
-        <DialogContent className="max-w-lg max-h-[85vh] overflow-hidden flex flex-col bg-gradient-to-b from-pink-50 to-purple-50">
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-hidden flex flex-col bg-gradient-to-b from-lolo/10 to-primary/10">
           <DialogHeader className="flex-shrink-0">
             <DialogTitle className="text-xl font-display pr-8">
               {selectedStory?.title}
@@ -269,7 +269,7 @@ export function KidsStoriesPage() {
           <div className="flex-1 overflow-y-auto py-4 space-y-4">
             {/* Illustration */}
             {(selectedStory as { illustration_url?: string })?.illustration_url && (
-              <div className="rounded-xl overflow-hidden border-2 border-pink-200">
+              <div className="rounded-xl overflow-hidden border-2 border-lolo">
                 <img
                   src={getUploadUrl((selectedStory as { illustration_url?: string }).illustration_url!)}
                   alt={`Illustration for ${selectedStory?.title}`}

@@ -66,8 +66,8 @@ const activities = [
     title: 'Chat',
     description: "Let's talk!",
     icon: MessageCircle,
-    color: 'from-violet-500 to-purple-500',
-    bgColor: 'bg-violet-100',
+    color: 'from-lumi to-primary/10',
+    bgColor: 'bg-lumi/10',
     path: '/chat',
   },
   {
@@ -75,8 +75,8 @@ const activities = [
     title: 'Stories',
     description: 'Read & create',
     icon: BookOpen,
-    color: 'from-pink-500 to-rose-500',
-    bgColor: 'bg-pink-100',
+    color: 'from-lolo/10 to-lolo',
+    bgColor: 'bg-lolo/10',
     path: '/stories',
   },
   {
@@ -84,8 +84,8 @@ const activities = [
     title: 'Journeys',
     description: 'Goals & habits',
     icon: Map,
-    color: 'from-cyan-500 to-blue-500',
-    bgColor: 'bg-cyan-100',
+    color: 'from-primary to-primary',
+    bgColor: 'bg-primary/10',
     path: '/journeys',
   },
   {
@@ -93,8 +93,8 @@ const activities = [
     title: 'Family',
     description: 'Photo album',
     icon: Users,
-    color: 'from-amber-500 to-orange-500',
-    bgColor: 'bg-amber-100',
+    color: 'from-gold/50 to-gold/50',
+    bgColor: 'bg-gold/10',
     path: '/family',
   },
 ];
@@ -192,16 +192,16 @@ export function KidsHomePage() {
         <div className="flex items-center gap-3">
           {/* Streak counter */}
           {streakCount > 0 && (
-            <div className="flex items-center gap-1.5 rounded-full bg-orange-100 px-3 py-1.5">
-              <Flame className="h-4 w-4 text-orange-500" />
-              <span className="text-sm font-bold text-orange-700">{streakCount}</span>
+            <div className="flex items-center gap-1.5 rounded-full bg-gold/10 px-3 py-1.5">
+              <Flame className="h-4 w-4 text-gold" />
+              <span className="text-sm font-bold text-gold">{streakCount}</span>
             </div>
           )}
 
           {/* Star counter */}
-          <div className="flex items-center gap-1.5 rounded-full bg-yellow-100 px-3 py-1.5">
-            <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
-            <span className="text-sm font-bold text-yellow-700">{starCount}</span>
+          <div className="flex items-center gap-1.5 rounded-full bg-lala/10 px-3 py-1.5">
+            <Star className="h-4 w-4 text-lala fill-lala" />
+            <span className="text-sm font-bold text-lala">{starCount}</span>
           </div>
 
           {/* Password Change Request (Settings gear icon) */}
@@ -326,7 +326,7 @@ export function KidsHomePage() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <Trophy className="h-6 w-6 text-yellow-500" />
+                  <Trophy className="h-6 w-6 text-lala" />
                   <div>
                     <h3 className="font-display font-bold text-foreground">My Badges</h3>
                     <p className="text-xs text-muted-foreground">
@@ -344,15 +344,15 @@ export function KidsHomePage() {
                       {recentBadges.map((badge, i) => (
                         <div
                           key={badge.id}
-                          className="h-8 w-8 rounded-full flex items-center justify-center bg-yellow-100 border-2 border-white"
+                          className="h-8 w-8 rounded-full flex items-center justify-center bg-lala/10 border-2 border-white"
                         >
                           <span className="text-lg">
                             {badge.badge?.name ? (BADGE_EMOJIS[badge.badge.name] || '🏅') : '🏆'}
                           </span>
                         </div>
                       ))}
-                      <div className="h-8 w-8 rounded-full flex items-center justify-center bg-gray-200 border-2 border-white">
-                        <span className="text-sm font-medium text-gray-500">+</span>
+                      <div className="h-8 w-8 rounded-full flex items-center justify-center bg-muted border-2 border-white">
+                        <span className="text-sm font-medium text-muted-foreground">+</span>
                       </div>
                     </>
                   ) : (
@@ -361,7 +361,7 @@ export function KidsHomePage() {
                         <div
                           key={i}
                           className={`h-8 w-8 rounded-full flex items-center justify-center text-lg border-2 border-white ${
-                            i === 3 ? 'bg-gray-200' : 'bg-yellow-100'
+                            i === 3 ? 'bg-muted' : 'bg-lala/10'
                           }`}
                         >
                           {emoji}
@@ -377,11 +377,11 @@ export function KidsHomePage() {
 
         {/* Journey Rewards Teaser */}
         <Link to={`/kids/${childId}/rewards`}>
-          <Card className="overflow-hidden border-0 bg-gradient-to-r from-purple-50 to-pink-50 shadow-md hover:shadow-lg transition-shadow">
+          <Card className="overflow-hidden border-0 bg-gradient-to-r from-primary/10 to-lolo/10 shadow-md hover:shadow-lg transition-shadow">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <Gift className="h-6 w-6 text-purple-500" />
+                  <Gift className="h-6 w-6 text-primary" />
                   <div>
                     <h3 className="font-display font-bold text-foreground">My Rewards</h3>
                     <p className="text-xs text-muted-foreground">
@@ -395,11 +395,11 @@ export function KidsHomePage() {
                 </div>
                 <div className="flex items-center gap-2">
                   {rewardCountData?.unviewed && rewardCountData.unviewed > 0 && (
-                    <span className="flex items-center justify-center h-6 w-6 rounded-full bg-purple-500 text-white text-xs font-bold animate-pulse">
+                    <span className="flex items-center justify-center h-6 w-6 rounded-full bg-primary/50 text-white text-xs font-bold animate-pulse">
                       {rewardCountData.unviewed}
                     </span>
                   )}
-                  <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-purple-200 to-pink-200 flex items-center justify-center">
+                  <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-primary/20 to-lolo/20 flex items-center justify-center">
                     <span className="text-xl">🎁</span>
                   </div>
                 </div>

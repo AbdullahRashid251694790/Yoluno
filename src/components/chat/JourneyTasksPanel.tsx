@@ -48,33 +48,33 @@ export function JourneyTasksPanel({ childId }: JourneyTasksPanelProps) {
   const progress = totalSteps > 0 ? Math.round((completedSteps / totalSteps) * 100) : 0;
 
   return (
-    <div className="bg-gradient-to-r from-cyan-50 to-blue-50 border-b border-cyan-100">
+    <div className="bg-gradient-to-r from-primary/5 to-primary/5 border-b border-primary/10">
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
         <CollapsibleTrigger asChild>
           <button className="w-full px-4 py-2.5 flex items-center justify-between hover:bg-white/50 transition-colors">
             <div className="flex items-center gap-2">
-              <div className="rounded-lg bg-cyan-100 p-1.5">
-                <Map className="h-4 w-4 text-cyan-600" />
+              <div className="rounded-lg bg-primary/10 p-1.5">
+                <Map className="h-4 w-4 text-primary" />
               </div>
               <div className="text-left">
-                <p className="text-sm font-medium text-cyan-900">
+                <p className="text-sm font-medium text-foreground">
                   {currentJourney.title}
                 </p>
-                <p className="text-xs text-cyan-600">
+                <p className="text-xs text-primary">
                   {completedSteps}/{totalSteps} steps • {progress}%
                 </p>
               </div>
             </div>
             <div className="flex items-center gap-2">
               {journeys.length > 1 && (
-                <Badge variant="secondary" className="text-xs bg-cyan-100 text-cyan-700">
+                <Badge variant="secondary" className="text-xs bg-primary/10 text-primary">
                   +{journeys.length - 1} more
                 </Badge>
               )}
               {isOpen ? (
-                <ChevronUp className="h-4 w-4 text-cyan-500" />
+                <ChevronUp className="h-4 w-4 text-primary" />
               ) : (
-                <ChevronDown className="h-4 w-4 text-cyan-500" />
+                <ChevronDown className="h-4 w-4 text-primary" />
               )}
             </div>
           </button>
@@ -83,15 +83,15 @@ export function JourneyTasksPanel({ childId }: JourneyTasksPanelProps) {
         <CollapsibleContent>
           <div className="px-4 pb-3 space-y-3">
             {/* Progress bar */}
-            <Progress value={progress} className="h-2 bg-cyan-100" />
+            <Progress value={progress} className="h-2 bg-primary/10" />
 
             {/* Next task highlight */}
             {nextStep && (
-              <div className="rounded-lg bg-white/80 p-3 border border-cyan-200">
+              <div className="rounded-lg bg-white/80 p-3 border border-primary/20">
                 <div className="flex items-start gap-2">
-                  <Sparkles className="h-4 w-4 text-yellow-500 mt-0.5 flex-shrink-0" />
+                  <Sparkles className="h-4 w-4 text-lala mt-0.5 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium text-cyan-600 uppercase tracking-wide">
+                    <p className="text-xs font-medium text-primary uppercase tracking-wide">
                       Next Task
                     </p>
                     <p className="text-sm font-medium text-foreground mt-0.5">
@@ -102,7 +102,7 @@ export function JourneyTasksPanel({ childId }: JourneyTasksPanelProps) {
                         {nextStep.description}
                       </p>
                     )}
-                    <p className="text-xs text-cyan-600 mt-2">
+                    <p className="text-xs text-primary mt-2">
                       Say "done" when you finish!
                     </p>
                   </div>
@@ -117,7 +117,7 @@ export function JourneyTasksPanel({ childId }: JourneyTasksPanelProps) {
                   key={step.id}
                   className={cn(
                     'flex items-center gap-2 text-xs',
-                    step.isCompleted ? 'text-green-600' : 'text-muted-foreground'
+                    step.isCompleted ? 'text-primary' : 'text-muted-foreground'
                   )}
                 >
                   {step.isCompleted ? (
@@ -142,7 +142,7 @@ export function JourneyTasksPanel({ childId }: JourneyTasksPanelProps) {
               <Button
                 variant="ghost"
                 size="sm"
-                className="w-full text-cyan-600 hover:text-cyan-700 hover:bg-cyan-100"
+                className="w-full text-primary hover:text-primary hover:bg-primary/10"
               >
                 View Full Journey
                 <ArrowRight className="h-3.5 w-3.5 ml-1" />
@@ -151,7 +151,7 @@ export function JourneyTasksPanel({ childId }: JourneyTasksPanelProps) {
 
             {/* Show other journeys if any */}
             {journeys.length > 1 && (
-              <div className="pt-2 border-t border-cyan-100">
+              <div className="pt-2 border-t border-primary/10">
                 <p className="text-xs font-medium text-muted-foreground mb-2">
                   Other active journeys:
                 </p>
@@ -163,7 +163,7 @@ export function JourneyTasksPanel({ childId }: JourneyTasksPanelProps) {
                     >
                       <Badge
                         variant="outline"
-                        className="text-xs cursor-pointer hover:bg-cyan-50"
+                        className="text-xs cursor-pointer hover:bg-primary/5"
                       >
                         {j.title}
                       </Badge>

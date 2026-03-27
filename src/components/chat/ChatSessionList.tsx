@@ -67,12 +67,12 @@ export function ChatSessionList({
     >
       {/* Sidebar Header */}
       <div className="flex items-center justify-between p-3 border-b shrink-0">
-        <h2 className="font-semibold text-sm text-charcoal whitespace-nowrap">Chat History</h2>
+        <h2 className="font-semibold text-sm text-foreground whitespace-nowrap">Chat History</h2>
         <Button
           variant="ghost"
           size="icon"
           onClick={onToggleCollapse}
-          className="h-8 w-8 text-charcoal-muted shrink-0"
+          className="h-8 w-8 text-muted-foreground shrink-0"
         >
           <PanelLeftClose className="h-4 w-4" />
         </Button>
@@ -199,13 +199,13 @@ function SessionItem({ session, isActive, moodEmoji, onSelect, onRename, onDelet
         <div className="flex gap-1 mt-1.5">
           <button
             onClick={handleSaveRename}
-            className="p-1 rounded hover:bg-green-100 text-green-600"
+            className="p-1 rounded hover:bg-primary/10 text-primary"
           >
             <Check className="h-3.5 w-3.5" />
           </button>
           <button
             onClick={handleCancelRename}
-            className="p-1 rounded hover:bg-red-100 text-red-500"
+            className="p-1 rounded hover:bg-destructive/10 text-destructive"
           >
             <X className="h-3.5 w-3.5" />
           </button>
@@ -242,18 +242,18 @@ function SessionItem({ session, isActive, moodEmoji, onSelect, onRename, onDelet
 
       {/* Delete confirmation bar */}
       {isConfirmingDelete && (
-        <div className="absolute inset-0 z-10 flex items-center justify-between rounded-lg bg-red-50 border border-red-200 px-3">
-          <span className="text-xs font-medium text-red-700">Delete chat?</span>
+        <div className="absolute inset-0 z-10 flex items-center justify-between rounded-lg bg-destructive/5 border border-destructive/20 px-3">
+          <span className="text-xs font-medium text-destructive">Delete chat?</span>
           <div className="flex gap-1">
             <button
               onClick={(e) => { e.stopPropagation(); onDelete(); setIsConfirmingDelete(false); }}
-              className="px-2 py-1 text-xs font-medium rounded bg-red-600 text-white hover:bg-red-700"
+              className="px-2 py-1 text-xs font-medium rounded bg-destructive text-white hover:bg-destructive/90"
             >
               Delete
             </button>
             <button
               onClick={(e) => { e.stopPropagation(); setIsConfirmingDelete(false); }}
-              className="px-2 py-1 text-xs font-medium rounded bg-white text-charcoal border border-border hover:bg-muted"
+              className="px-2 py-1 text-xs font-medium rounded bg-white text-foreground border border-border hover:bg-muted"
             >
               Cancel
             </button>
@@ -266,14 +266,14 @@ function SessionItem({ session, isActive, moodEmoji, onSelect, onRename, onDelet
         <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
           <button
             onClick={(e) => { e.stopPropagation(); setIsEditing(true); }}
-            className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-charcoal"
+            className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground"
             title="Rename"
           >
             <Pencil className="h-3.5 w-3.5" />
           </button>
           <button
             onClick={(e) => { e.stopPropagation(); setIsConfirmingDelete(true); }}
-            className="p-1.5 rounded hover:bg-red-100 text-muted-foreground hover:text-red-600"
+            className="p-1.5 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive"
             title="Delete"
           >
             <Trash2 className="h-3.5 w-3.5" />
@@ -297,7 +297,7 @@ export function NewChatButton({ onClick, isLoading }: NewChatButtonProps) {
       size="icon"
       onClick={onClick}
       disabled={isLoading}
-      className="text-charcoal-muted"
+      className="text-muted-foreground"
     >
       {isLoading ? (
         <Loader2 className="h-5 w-5 animate-spin" />

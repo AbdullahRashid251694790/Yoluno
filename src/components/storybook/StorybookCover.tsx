@@ -35,7 +35,7 @@ export function StorybookCover({
           className="absolute inset-0 w-full h-full object-cover"
         />
       ) : (
-        <div className="absolute inset-0 bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400" />
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-lolo to-gold" />
       )}
 
       {/* Overlay gradient */}

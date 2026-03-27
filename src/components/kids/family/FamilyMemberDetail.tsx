@@ -25,13 +25,13 @@ interface FamilyMemberDetailProps {
 }
 
 const THEME: Record<RelationType, { emoji: string; bg: string; accent: string; badge: string }> = {
-  self:       { emoji: '💖', bg: 'from-pink-200 via-purple-100 to-pink-50',    accent: 'text-pink-600',   badge: 'bg-pink-100 text-pink-700' },
-  parent:     { emoji: '👑', bg: 'from-amber-200 via-orange-100 to-amber-50',  accent: 'text-amber-600',  badge: 'bg-amber-100 text-amber-700' },
-  sibling:    { emoji: '🎯', bg: 'from-cyan-200 via-blue-100 to-cyan-50',      accent: 'text-cyan-600',   badge: 'bg-cyan-100 text-cyan-700' },
-  grandparent:{ emoji: '🏠', bg: 'from-purple-200 via-indigo-100 to-purple-50',accent: 'text-purple-600', badge: 'bg-purple-100 text-purple-700' },
-  aunt_uncle: { emoji: '🎁', bg: 'from-blue-200 via-indigo-100 to-blue-50',    accent: 'text-blue-600',   badge: 'bg-blue-100 text-blue-700' },
-  cousin:     { emoji: '🎮', bg: 'from-green-200 via-emerald-100 to-green-50', accent: 'text-green-600',  badge: 'bg-green-100 text-green-700' },
-  other:      { emoji: '⭐', bg: 'from-gray-200 via-slate-100 to-gray-50',     accent: 'text-gray-600',   badge: 'bg-gray-100 text-gray-700' },
+  self:       { emoji: '💖', bg: 'from-lolo/10 via-primary/10 to-lolo/10',    accent: 'text-lolo',   badge: 'bg-lolo/10 text-lolo' },
+  parent:     { emoji: '👑', bg: 'from-gold/20 via-gold/10 to-gold/5',  accent: 'text-gold',  badge: 'bg-gold/10 text-gold' },
+  sibling:    { emoji: '🎯', bg: 'from-primary/20 via-primary/10 to-primary/5',      accent: 'text-primary',   badge: 'bg-primary/10 text-primary' },
+  grandparent:{ emoji: '🏠', bg: 'from-primary/20 via-primary/10 to-primary/10',accent: 'text-primary', badge: 'bg-primary/10 text-primary' },
+  aunt_uncle: { emoji: '🎁', bg: 'from-primary/10 via-primary/10 to-primary/10',    accent: 'text-primary',   badge: 'bg-primary/10 text-primary' },
+  cousin:     { emoji: '🎮', bg: 'from-primary via-primary/10 to-primary/5', accent: 'text-primary',  badge: 'bg-primary/10 text-primary' },
+  other:      { emoji: '⭐', bg: 'from-muted via-secondary to-muted',     accent: 'text-muted-foreground',   badge: 'bg-muted text-foreground/70' },
 };
 
 function isFamilyMember(member: FamilyMemberRow | ChildProfile): member is FamilyMemberRow {

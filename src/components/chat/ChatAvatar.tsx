@@ -9,11 +9,12 @@ import { cn } from '@/lib/utils';
 import type { AvatarExpression } from '@/types/domain';
 import { BUDDY_EXPRESSIONS } from '@/types/domain';
 
-// Default buddy avatar images
+// Default buddy avatar images (from landing page characters)
 const BUDDY_AVATARS: Record<string, string> = {
   Luno: '/avatars/Luno.png',
   Lumi: '/avatars/Lumi.png',
   Lolo: '/avatars/Lolo.png',
+  Lala: '/avatars/Lala.png',
 };
 
 // Mood-specific Luno face images
@@ -130,7 +131,7 @@ export function ChatAvatar({
 
         {/* Sleepy Zzz */}
         {expression === 'sleepy' && (
-          <div className="absolute -right-3 -top-3 flex flex-col text-indigo-400 font-bold">
+          <div className="absolute -right-3 -top-3 flex flex-col text-primary font-bold">
             <span className="text-xs animate-float" style={{ animationDelay: '0s' }}>z</span>
             <span className="text-sm animate-float -ml-1" style={{ animationDelay: '0.2s' }}>z</span>
             <span className="text-base animate-float -ml-2" style={{ animationDelay: '0.4s' }}>Z</span>
@@ -140,8 +141,8 @@ export function ChatAvatar({
         {/* Caring hearts */}
         {expression === 'caring' && (
           <>
-            <span className="absolute -right-2 top-0 text-pink-400 text-sm animate-float">💕</span>
-            <span className="absolute -left-1 -top-1 text-pink-300 text-xs animate-float" style={{ animationDelay: '0.5s' }}>💗</span>
+            <span className="absolute -right-2 top-0 text-lolo text-sm animate-float">💕</span>
+            <span className="absolute -left-1 -top-1 text-lolo text-xs animate-float" style={{ animationDelay: '0.5s' }}>💗</span>
           </>
         )}
       </div>

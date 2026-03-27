@@ -94,11 +94,11 @@ export function KidsJourneyDetailPage() {
             <Progress value={journey.progress} className="h-3" />
 
             {isCompleted && (
-              <div className="flex items-center gap-2 mt-4 p-3 bg-yellow-100 rounded-lg">
-                <Trophy className="h-6 w-6 text-yellow-500" />
+              <div className="flex items-center gap-2 mt-4 p-3 bg-lala/10 rounded-lg">
+                <Trophy className="h-6 w-6 text-lala" />
                 <div>
-                  <p className="font-semibold text-yellow-800">Journey Complete!</p>
-                  <p className="text-sm text-yellow-700">Great job finishing all steps!</p>
+                  <p className="font-semibold text-lala">Journey Complete!</p>
+                  <p className="text-sm text-lala">Great job finishing all steps!</p>
                 </div>
               </div>
             )}
@@ -144,14 +144,14 @@ export function KidsJourneyDetailPage() {
                   className={cn(
                     'transition-all',
                     isCurrentStep && 'ring-2 ring-primary',
-                    step.isCompleted && 'bg-green-50'
+                    step.isCompleted && 'bg-primary/10'
                   )}
                 >
                   <CardContent className="py-4">
                     <div className="flex items-start gap-3">
                       <div className="flex-shrink-0 mt-0.5">
                         {step.isCompleted ? (
-                          <CheckCircle2 className="h-6 w-6 text-green-500" />
+                          <CheckCircle2 className="h-6 w-6 text-primary" />
                         ) : isCurrentStep ? (
                           <div className="h-6 w-6 rounded-full border-2 border-primary flex items-center justify-center">
                             <div className="h-3 w-3 rounded-full bg-primary" />
@@ -167,12 +167,12 @@ export function KidsJourneyDetailPage() {
                             Step {step.stepNumber}
                           </span>
                           {step.isCompleted && (
-                            <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                            <Star className="h-4 w-4 text-lala fill-lala" />
                           )}
                         </div>
                         <p className={cn(
                           'font-medium',
-                          step.isCompleted && 'text-green-700'
+                          step.isCompleted && 'text-primary'
                         )}>
                           {step.title}
                         </p>

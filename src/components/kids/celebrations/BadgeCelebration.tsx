@@ -53,11 +53,11 @@ const CATEGORY_ICONS: Record<string, typeof Trophy> = {
 };
 
 const CATEGORY_COLORS: Record<string, string> = {
-  streak: 'from-orange-400 to-red-500',
-  learning: 'from-blue-400 to-indigo-500',
-  story: 'from-purple-400 to-pink-500',
-  journey: 'from-green-400 to-teal-500',
-  special: 'from-yellow-400 to-amber-500',
+  streak: 'from-gold to-destructive',
+  learning: 'from-primary/10 to-primary/10',
+  story: 'from-primary/10 to-lolo/10',
+  journey: 'from-primary to-primary',
+  special: 'from-lala/10 to-gold',
 };
 
 export function BadgeCelebration({
@@ -115,8 +115,8 @@ export function BadgeCelebration({
               )}
             </div>
             {/* Sparkle decorations */}
-            <Sparkles className="absolute -top-2 -right-2 w-6 h-6 text-yellow-400 animate-pulse" />
-            <Sparkles className="absolute -bottom-1 -left-2 w-5 h-5 text-yellow-400 animate-pulse delay-100" />
+            <Sparkles className="absolute -top-2 -right-2 w-6 h-6 text-lala animate-pulse" />
+            <Sparkles className="absolute -bottom-1 -left-2 w-5 h-5 text-lala animate-pulse delay-100" />
           </div>
 
           <DialogTitle className="text-2xl font-bold">

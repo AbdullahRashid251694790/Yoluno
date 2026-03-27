@@ -134,7 +134,7 @@ export function KidsChatPage() {
   }
 
   return (
-    <div className="flex h-screen bg-gradient-to-b from-pastel-blue to-white overflow-hidden">
+    <div className="flex h-screen bg-gradient-to-b  overflow-hidden">
       {/* Mobile backdrop overlay */}
       {isMobile && !sidebarCollapsed && (
         <div
@@ -167,7 +167,7 @@ export function KidsChatPage() {
         {/* Header */}
         <header className="flex items-center justify-between border-b bg-white/80 backdrop-blur-sm px-4 py-3 shadow-sm shrink-0">
           <div className="flex items-center gap-1">
-            <Button variant="ghost" size="sm" onClick={handleBack} className="text-charcoal-muted">
+            <Button variant="ghost" size="sm" onClick={handleBack} className="text-muted-foreground">
               <ArrowLeft className="mr-2 h-4 w-4" />
               Exit
             </Button>
@@ -176,13 +176,13 @@ export function KidsChatPage() {
                 variant="ghost"
                 size="icon"
                 onClick={toggleSidebar}
-                className="text-charcoal-muted"
+                className="text-muted-foreground"
               >
                 <PanelLeft className="h-5 w-5" />
               </Button>
             )}
           </div>
-          <h1 className="text-lg font-semibold text-charcoal">Hi, {child.name}!</h1>
+          <h1 className="text-lg font-semibold text-foreground">Hi, {child.name}!</h1>
           <NewChatButton
             onClick={handleNewSession}
             isLoading={createSession.isPending}

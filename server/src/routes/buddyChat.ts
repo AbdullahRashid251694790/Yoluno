@@ -622,7 +622,8 @@ Do NOT use emojis. Do NOT include your name at the start. Just write the message
         const data = (await response.json()) as { choices: { message: { content: string } }[] };
         greeting = data.choices[0]?.message?.content || getMoodFallbackGreeting(mood, child.name, buddyName);
       }
-    } catch {
+    } catch (error) {
+      console.error('Greeting generation error:', (error as Error).message);
       greeting = getMoodFallbackGreeting(mood, child.name, buddyName);
     }
 
