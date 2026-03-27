@@ -57,13 +57,13 @@ import { RecordVoiceClipDialog } from '@/components/dashboard/voice-vault';
 type VoiceCategory = 'all' | 'encouragement' | 'praise' | 'celebration' | 'story' | 'memory' | 'greeting' | 'other';
 
 const CATEGORY_INFO: Record<string, { label: string; color: string }> = {
-  encouragement: { label: 'Encouragement', color: 'text-pink-500' },
-  praise: { label: 'Praise', color: 'text-yellow-500' },
-  celebration: { label: 'Celebration', color: 'text-purple-500' },
-  story: { label: 'Story', color: 'text-blue-500' },
-  memory: { label: 'Memory', color: 'text-green-500' },
-  greeting: { label: 'Greeting', color: 'text-orange-500' },
-  other: { label: 'Other', color: 'text-gray-500' },
+  encouragement: { label: 'Encouragement', color: 'text-lolo' },
+  praise: { label: 'Praise', color: 'text-lala' },
+  celebration: { label: 'Celebration', color: 'text-primary' },
+  story: { label: 'Story', color: 'text-primary' },
+  memory: { label: 'Memory', color: 'text-primary' },
+  greeting: { label: 'Greeting', color: 'text-gold' },
+  other: { label: 'Other', color: 'text-muted-foreground' },
 };
 
 export function VoiceVaultPage() {
@@ -297,7 +297,7 @@ export function VoiceVaultPage() {
                           >
                             <Star
                               className={`h-4 w-4 ${
-                                clip.is_favorite ? 'fill-yellow-400 text-yellow-400' : ''
+                                clip.is_favorite ? 'fill-lala text-lala' : ''
                               }`}
                             />
                           </Button>

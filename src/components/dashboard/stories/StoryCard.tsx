@@ -33,7 +33,7 @@ export function StoryCard({ story, onRead, onToggleFavorite, onDelete }: StoryCa
             onClick={onToggleFavorite}
             className={cn(
               'shrink-0',
-              story.is_favorite && 'text-red-500'
+              story.is_favorite && 'text-destructive'
             )}
           >
             <Heart

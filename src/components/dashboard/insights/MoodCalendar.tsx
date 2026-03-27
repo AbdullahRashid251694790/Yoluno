@@ -18,11 +18,11 @@ interface MoodCalendarProps {
 
 // Mood to color mapping for calendar cells
 const moodColors: Record<string, string> = {
-  happy: 'bg-yellow-400 hover:bg-yellow-500',
-  sad: 'bg-blue-400 hover:bg-blue-500',
-  angry: 'bg-red-400 hover:bg-red-500',
-  scared: 'bg-purple-400 hover:bg-purple-500',
-  calm: 'bg-green-400 hover:bg-green-500',
+  happy: 'bg-lala/10 hover:bg-lala/10',
+  sad: 'bg-primary/10 hover:bg-primary/50',
+  angry: 'bg-destructive/10 hover:bg-destructive/50',
+  scared: 'bg-primary/10 hover:bg-primary/50',
+  calm: 'bg-primary/10 hover:bg-primary/50',
 };
 
 export function MoodCalendar({ childId, days = 28 }: MoodCalendarProps) {

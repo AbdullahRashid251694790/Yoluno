@@ -44,14 +44,14 @@ const RELATIONSHIP_LABELS: Record<string, string> = {
 
 // Relationship-based colors for avatars
 const RELATIONSHIP_COLORS: Record<string, { bg: string; text: string }> = {
-  parent: { bg: 'bg-blue-100', text: 'text-blue-600' },
-  grandparent: { bg: 'bg-purple-100', text: 'text-purple-600' },
-  sibling: { bg: 'bg-green-100', text: 'text-green-600' },
-  aunt_uncle: { bg: 'bg-orange-100', text: 'text-orange-600' },
-  cousin: { bg: 'bg-teal-100', text: 'text-teal-600' },
-  spouse: { bg: 'bg-pink-100', text: 'text-pink-600' },
-  child: { bg: 'bg-cyan-100', text: 'text-cyan-600' },
-  other: { bg: 'bg-gray-100', text: 'text-gray-600' },
+  parent: { bg: 'bg-primary/10', text: 'text-primary' },
+  grandparent: { bg: 'bg-primary/10', text: 'text-primary' },
+  sibling: { bg: 'bg-primary/10', text: 'text-primary' },
+  aunt_uncle: { bg: 'bg-gold/10', text: 'text-gold' },
+  cousin: { bg: 'bg-primary/10', text: 'text-primary' },
+  spouse: { bg: 'bg-lolo/10', text: 'text-lolo' },
+  child: { bg: 'bg-primary/10', text: 'text-primary' },
+  other: { bg: 'bg-muted', text: 'text-muted-foreground' },
 };
 
 // Calculate completeness score
@@ -229,7 +229,7 @@ export function FamilyMemberNode({
               {/* Completeness Indicator */}
               <div className="absolute top-1 left-1">
                 {completeness.score === completeness.total ? (
-                  <CheckCircle2 className="h-4 w-4 text-green-500" />
+                  <CheckCircle2 className="h-4 w-4 text-primary" />
                 ) : (
                   <div className="flex items-center gap-0.5">
                     {Array.from({ length: completeness.total }).map((_, i) => (
@@ -286,7 +286,7 @@ export function FamilyMemberNode({
               )}
               {member.hobbies && member.hobbies.length > 0 && (
                 <div className="flex items-start gap-1 text-sm">
-                  <Heart className="h-3 w-3 mt-0.5 text-pink-500 flex-shrink-0" />
+                  <Heart className="h-3 w-3 mt-0.5 text-lolo flex-shrink-0" />
                   <span>{member.hobbies.join(', ')}</span>
                 </div>
               )}
@@ -294,7 +294,7 @@ export function FamilyMemberNode({
                 <p className="text-sm italic text-muted-foreground">"{member.fun_facts}"</p>
               )}
               {completeness.score < completeness.total && (
-                <p className="text-xs text-amber-600">
+                <p className="text-xs text-gold">
                   Add more details to help Luno ({completeness.score}/{completeness.total})
                 </p>
               )}

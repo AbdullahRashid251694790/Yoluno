@@ -36,14 +36,14 @@ import {
 } from 'lucide-react';
 
 const MOOD_CONFIG: Record<string, { emoji: string; label: string; className: string }> = {
-  happy:   { emoji: '😊', label: 'Happy',   className: 'text-yellow-700 bg-yellow-50 border-yellow-200' },
-  sad:     { emoji: '😢', label: 'Sad',     className: 'text-blue-700 bg-blue-50 border-blue-200' },
-  angry:   { emoji: '😠', label: 'Angry',   className: 'text-red-700 bg-red-50 border-red-200' },
-  scared:  { emoji: '😨', label: 'Scared',  className: 'text-purple-700 bg-purple-50 border-purple-200' },
-  calm:    { emoji: '😌', label: 'Calm',    className: 'text-green-700 bg-green-50 border-green-200' },
-  worried: { emoji: '😟', label: 'Worried', className: 'text-orange-700 bg-orange-50 border-orange-200' },
-  tired:   { emoji: '😴', label: 'Tired',   className: 'text-gray-700 bg-gray-50 border-gray-200' },
-  excited: { emoji: '🤩', label: 'Excited', className: 'text-pink-700 bg-pink-50 border-pink-200' },
+  happy:   { emoji: '😊', label: 'Happy',   className: 'text-lala bg-lala/10 border-lala' },
+  sad:     { emoji: '😢', label: 'Sad',     className: 'text-primary bg-primary/5 border-primary' },
+  angry:   { emoji: '😠', label: 'Angry',   className: 'text-destructive bg-destructive/5 border-destructive/20' },
+  scared:  { emoji: '😨', label: 'Scared',  className: 'text-primary bg-primary/10 border-primary' },
+  calm:    { emoji: '😌', label: 'Calm',    className: 'text-primary bg-primary/5 border-primary/20' },
+  worried: { emoji: '😟', label: 'Worried', className: 'text-gold bg-gold/10 border-gold' },
+  tired:   { emoji: '😴', label: 'Tired',   className: 'text-foreground/70 bg-muted border-border' },
+  excited: { emoji: '🤩', label: 'Excited', className: 'text-lolo bg-lolo/10 border-lolo' },
 };
 
 function ChildMoodStatus({ childId, childName }: { childId: string; childName: string }) {
@@ -118,20 +118,20 @@ export function DashboardHome() {
       {/* Alert Banner */}
       {unreadAlerts > 0 && (
         <Link to="/dashboard/safety">
-          <Card className="border-amber-200 bg-amber-50 hover:bg-amber-100 transition-colors cursor-pointer">
+          <Card className="border-gold/20 bg-gold/5 hover:bg-gold/10 transition-colors cursor-pointer">
             <CardContent className="flex items-center justify-between py-4">
               <div className="flex items-center gap-3">
-                <div className="rounded-full bg-amber-100 p-2">
-                  <AlertTriangle className="h-5 w-5 text-amber-600" />
+                <div className="rounded-full bg-gold/10 p-2">
+                  <AlertTriangle className="h-5 w-5 text-gold" />
                 </div>
                 <div>
-                  <p className="font-medium text-amber-900">
+                  <p className="font-medium text-gold">
                     {unreadAlerts} item{unreadAlerts > 1 ? 's' : ''} need{unreadAlerts === 1 ? 's' : ''} your attention
                   </p>
-                  <p className="text-sm text-amber-700">Review safety alerts</p>
+                  <p className="text-sm text-gold">Review safety alerts</p>
                 </div>
               </div>
-              <ChevronRight className="h-5 w-5 text-amber-600" />
+              <ChevronRight className="h-5 w-5 text-gold" />
             </CardContent>
           </Card>
         </Link>
@@ -143,7 +143,7 @@ export function DashboardHome() {
           <h2 className="text-xl font-semibold">Children Overview</h2>
           <CreateChildDialog
             trigger={
-              <Button size="sm" variant="outline" className="gap-2">
+              <Button className="gap-2">
                 <Plus className="h-4 w-4" />
                 Add Child
               </Button>
@@ -191,7 +191,7 @@ export function DashboardHome() {
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="text-lg flex items-center gap-2">
-                  <Heart className="h-5 w-5 text-pink-500" />
+                  <Heart className="h-5 w-5 text-lolo" />
                   Today's Moods
                 </CardTitle>
                 <CardDescription>How your children are feeling today</CardDescription>
@@ -319,19 +319,19 @@ export function DashboardHome() {
                 <CardContent>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                     <div className="flex items-center gap-2">
-                      <MessageCircle className="h-4 w-4 text-blue-500" />
+                      <MessageCircle className="h-4 w-4 text-primary" />
                       <span>{childData.weekly_activity.messages} messages</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <BookOpen className="h-4 w-4 text-purple-500" />
+                      <BookOpen className="h-4 w-4 text-primary" />
                       <span>{childData.weekly_activity.stories} stories</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Flame className="h-4 w-4 text-orange-500" />
+                      <Flame className="h-4 w-4 text-gold" />
                       <span>{childData.stats.current_streak} day streak</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Map className="h-4 w-4 text-green-500" />
+                      <Map className="h-4 w-4 text-primary" />
                       <span>{childData.stats.total_journeys_completed} journeys</span>
                     </div>
                   </div>

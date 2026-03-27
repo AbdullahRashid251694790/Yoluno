@@ -52,11 +52,11 @@ import {
 } from 'lucide-react';
 
 const CONTENT_TYPE_INFO: Record<ContentType, { label: string; icon: typeof BookOpen; color: string }> = {
-  story: { label: 'Story', icon: BookOpen, color: 'text-purple-500' },
-  journey: { label: 'Journey', icon: Map, color: 'text-green-500' },
-  voice: { label: 'Voice', icon: Mic, color: 'text-orange-500' },
-  chat_snippet: { label: 'Chat', icon: MessageCircle, color: 'text-blue-500' },
-  note: { label: 'Note', icon: StickyNote, color: 'text-yellow-500' },
+  story: { label: 'Story', icon: BookOpen, color: 'text-primary' },
+  journey: { label: 'Journey', icon: Map, color: 'text-primary' },
+  voice: { label: 'Voice', icon: Mic, color: 'text-gold' },
+  chat_snippet: { label: 'Chat', icon: MessageCircle, color: 'text-primary' },
+  note: { label: 'Note', icon: StickyNote, color: 'text-lala' },
 };
 
 export function ContentLibraryPage() {
@@ -167,7 +167,7 @@ export function ContentLibraryPage() {
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {contentData.items.map((item) => {
-                const typeInfo = CONTENT_TYPE_INFO[item.content_type] ?? { label: item.content_type, icon: Library, color: 'text-gray-500' };
+                const typeInfo = CONTENT_TYPE_INFO[item.content_type] ?? { label: item.content_type, icon: Library, color: 'text-muted-foreground' };
                 const TypeIcon = typeInfo.icon;
 
                 return (
@@ -190,7 +190,7 @@ export function ContentLibraryPage() {
                           >
                             <Star
                               className={`h-4 w-4 ${
-                                item.is_favorite ? 'fill-yellow-400 text-yellow-400' : ''
+                                item.is_favorite ? 'fill-lala text-lala' : ''
                               }`}
                             />
                           </Button>

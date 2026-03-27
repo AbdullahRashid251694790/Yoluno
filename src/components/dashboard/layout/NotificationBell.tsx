@@ -68,9 +68,9 @@ export function NotificationBell() {
   const getNotificationIcon = (type: string) => {
     switch (type) {
       case 'password_change_request':
-        return <KeyRound className="h-4 w-4 text-amber-500" />;
+        return <KeyRound className="h-4 w-4 text-gold" />;
       default:
-        return <Bell className="h-4 w-4 text-blue-500" />;
+        return <Bell className="h-4 w-4 text-primary" />;
     }
   };
 

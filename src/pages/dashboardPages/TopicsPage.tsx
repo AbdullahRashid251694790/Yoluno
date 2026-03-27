@@ -179,11 +179,11 @@ export function TopicsPage() {
       </div>
 
       {/* Info Card */}
-      <Card className="bg-blue-50 border-blue-200">
+      <Card className="bg-primary/5 border-primary">
         <CardContent className="flex items-start gap-3 py-4">
-          <Info className="h-5 w-5 text-blue-600 mt-0.5" />
+          <Info className="h-5 w-5 text-primary mt-0.5" />
           <div>
-            <p className="text-sm text-blue-900">
+            <p className="text-sm text-primary">
               Topics shown are age-appropriate for {selectedChild?.name} (age {topicSettings?.child_age}).
               Add posts to topics to give Luno special knowledge for personalized conversations.
             </p>

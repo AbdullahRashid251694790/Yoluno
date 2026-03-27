@@ -32,18 +32,18 @@ const CATEGORY_ICONS: Record<string, typeof Sparkles> = {
 
 // Category colors
 const CATEGORY_COLORS: Record<string, string> = {
-  habit: 'bg-blue-100 text-blue-700 border-blue-200',
-  learning: 'bg-purple-100 text-purple-700 border-purple-200',
-  social: 'bg-green-100 text-green-700 border-green-200',
-  health: 'bg-red-100 text-red-700 border-red-200',
-  creativity: 'bg-orange-100 text-orange-700 border-orange-200',
+  habit: 'bg-primary/10 text-primary border-primary',
+  learning: 'bg-primary/10 text-primary border-primary',
+  social: 'bg-primary/10 text-primary border-primary',
+  health: 'bg-destructive/10 text-destructive border-destructive/20',
+  creativity: 'bg-gold/10 text-gold border-gold',
 };
 
 // Difficulty badges
 const DIFFICULTY_STYLES: Record<string, string> = {
-  easy: 'bg-green-100 text-green-700',
-  medium: 'bg-yellow-100 text-yellow-700',
-  hard: 'bg-red-100 text-red-700',
+  easy: 'bg-primary/10 text-primary',
+  medium: 'bg-lala/10 text-lala',
+  hard: 'bg-destructive/10 text-destructive',
 };
 
 interface JourneyTemplateCardProps {
@@ -60,7 +60,7 @@ export function JourneyTemplateCard({
   className,
 }: JourneyTemplateCardProps) {
   const CategoryIcon = CATEGORY_ICONS[template.category] || Lightbulb;
-  const categoryColor = CATEGORY_COLORS[template.category] || 'bg-gray-100 text-gray-700 border-gray-200';
+  const categoryColor = CATEGORY_COLORS[template.category] || 'bg-muted text-foreground/70 border-border';
 
   return (
     <Card
@@ -77,7 +77,7 @@ export function JourneyTemplateCard({
           </div>
           <div className="flex items-center gap-1">
             {template.is_featured && (
-              <Badge variant="secondary" className="bg-yellow-100 text-yellow-700">
+              <Badge variant="secondary" className="bg-lala/10 text-lala">
                 <Star className="h-3 w-3 mr-1 fill-current" />
                 Featured
               </Badge>

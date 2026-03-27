@@ -167,33 +167,33 @@ export function MoodAlerts({ childId, childName }: MoodAlertsProps) {
           <Alert
             key={alert.id}
             className={cn(
-              alert.type === 'warning' && 'border-orange-200 bg-orange-50 dark:bg-orange-950/20',
-              alert.type === 'positive' && 'border-green-200 bg-green-50 dark:bg-green-950/20',
-              alert.type === 'info' && 'border-blue-200 bg-blue-50 dark:bg-blue-950/20'
+              alert.type === 'warning' && 'border-gold bg-gold/10 dark:bg-gold/10/20',
+              alert.type === 'positive' && 'border-primary bg-primary/5 dark:bg-primary/10/20',
+              alert.type === 'info' && 'border-primary bg-primary/5 dark:bg-primary/10/20'
             )}
           >
             <Icon
               className={cn(
                 'h-4 w-4',
-                alert.type === 'warning' && 'text-orange-600',
-                alert.type === 'positive' && 'text-green-600',
-                alert.type === 'info' && 'text-blue-600'
+                alert.type === 'warning' && 'text-gold',
+                alert.type === 'positive' && 'text-primary',
+                alert.type === 'info' && 'text-primary'
               )}
             />
             <AlertTitle
               className={cn(
-                alert.type === 'warning' && 'text-orange-900 dark:text-orange-200',
-                alert.type === 'positive' && 'text-green-900 dark:text-green-200',
-                alert.type === 'info' && 'text-blue-900 dark:text-blue-200'
+                alert.type === 'warning' && 'text-gold dark:text-gold',
+                alert.type === 'positive' && 'text-primary dark:text-primary',
+                alert.type === 'info' && 'text-primary dark:text-primary'
               )}
             >
               {alert.title}
             </AlertTitle>
             <AlertDescription
               className={cn(
-                alert.type === 'warning' && 'text-orange-800 dark:text-orange-300',
-                alert.type === 'positive' && 'text-green-800 dark:text-green-300',
-                alert.type === 'info' && 'text-blue-800 dark:text-blue-300'
+                alert.type === 'warning' && 'text-gold dark:text-gold',
+                alert.type === 'positive' && 'text-primary dark:text-primary',
+                alert.type === 'info' && 'text-primary dark:text-primary'
               )}
             >
               {alert.description}

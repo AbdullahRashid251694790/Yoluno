@@ -227,8 +227,8 @@ export function EditChildDialog({
                       className={cn(
                         'flex-1 flex items-center justify-center gap-2 rounded-lg border-2 p-3 transition-all',
                         gender === 'boy'
-                          ? 'border-blue-500 bg-blue-50 text-blue-700'
-                          : 'border-muted hover:border-blue-300',
+                          ? 'border-primary bg-primary/5 text-primary'
+                          : 'border-muted hover:border-primary',
                         isPending && 'opacity-50 cursor-not-allowed'
                       )}
                     >
@@ -244,8 +244,8 @@ export function EditChildDialog({
                       className={cn(
                         'flex-1 flex items-center justify-center gap-2 rounded-lg border-2 p-3 transition-all',
                         gender === 'girl'
-                          ? 'border-pink-500 bg-pink-50 text-pink-700'
-                          : 'border-muted hover:border-pink-300',
+                          ? 'border-lolo bg-lolo/10 text-lolo'
+                          : 'border-muted hover:border-lolo',
                         isPending && 'opacity-50 cursor-not-allowed'
                       )}
                     >

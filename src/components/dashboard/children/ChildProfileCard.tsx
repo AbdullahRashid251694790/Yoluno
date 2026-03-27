@@ -57,8 +57,8 @@ export function ChildProfileCard({ child, avatarUrl, onEdit }: ChildProfileCardP
                 <Badge
                   variant="outline"
                   className={cn(
-                    child.gender === 'boy' && 'border-blue-300 bg-blue-50 text-blue-700',
-                    child.gender === 'girl' && 'border-pink-300 bg-pink-50 text-pink-700'
+                    child.gender === 'boy' && 'border-primary bg-primary/5 text-primary',
+                    child.gender === 'girl' && 'border-lolo bg-lolo/10 text-lolo'
                   )}
                 >
                   {child.gender === 'boy' ? '👦 Boy' : '👧 Girl'}

@@ -227,11 +227,11 @@ export function InsightsPage() {
                       </div>
                       <div className="flex-1 space-y-1">
                         <div className="flex items-center gap-2 text-sm">
-                          <MessageCircle className="h-3 w-3 text-blue-500" />
+                          <MessageCircle className="h-3 w-3 text-primary" />
                           <span>{day.message_count} messages</span>
-                          <BookOpen className="h-3 w-3 text-purple-500 ml-4" />
+                          <BookOpen className="h-3 w-3 text-primary ml-4" />
                           <span>{day.story_count} stories</span>
-                          <Map className="h-3 w-3 text-green-500 ml-4" />
+                          <Map className="h-3 w-3 text-primary ml-4" />
                           <span>{day.journey_steps_completed} steps</span>
                         </div>
                         <Progress
@@ -258,7 +258,7 @@ export function InsightsPage() {
               </CardHeader>
               <CardContent>
                 <div className="flex items-center gap-2">
-                  <Trophy className="h-5 w-5 text-yellow-500" />
+                  <Trophy className="h-5 w-5 text-lala" />
                   <span className="font-medium">
                     {new Date(weeklySummary.most_active_day).toLocaleDateString('en-US', {
                       weekday: 'long',

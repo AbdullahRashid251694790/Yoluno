@@ -195,9 +195,9 @@ export function EditJourneyDialog({
                 <Badge
                   variant="secondary"
                   className={cn(
-                    journeyDetails.status === 'completed' && 'bg-green-100 text-green-700',
-                    journeyDetails.status === 'active' && 'bg-blue-100 text-blue-700',
-                    journeyDetails.status === 'paused' && 'bg-yellow-100 text-yellow-700'
+                    journeyDetails.status === 'completed' && 'bg-primary/10 text-primary',
+                    journeyDetails.status === 'active' && 'bg-primary/10 text-primary',
+                    journeyDetails.status === 'paused' && 'bg-lala/10 text-lala'
                   )}
                 >
                   {journeyDetails.status}
@@ -222,14 +222,14 @@ export function EditJourneyDialog({
                           key={step.id}
                           className={cn(
                             'transition-all',
-                            step.isCompleted && 'bg-green-50 border-green-200'
+                            step.isCompleted && 'bg-primary/5 border-primary'
                           )}
                         >
                           <CardContent className="p-3 flex items-center gap-3">
                             <GripVertical className="h-4 w-4 text-muted-foreground/50 cursor-grab" />
 
                             {step.isCompleted ? (
-                              <CheckCircle2 className="h-5 w-5 text-green-600 shrink-0" />
+                              <CheckCircle2 className="h-5 w-5 text-primary shrink-0" />
                             ) : (
                               <Circle className="h-5 w-5 text-muted-foreground/40 shrink-0" />
                             )}
@@ -237,7 +237,7 @@ export function EditJourneyDialog({
                             <div className="flex-1 min-w-0">
                               <p className={cn(
                                 'text-sm font-medium truncate',
-                                step.isCompleted && 'text-green-700'
+                                step.isCompleted && 'text-primary'
                               )}>
                                 {step.title}
                               </p>

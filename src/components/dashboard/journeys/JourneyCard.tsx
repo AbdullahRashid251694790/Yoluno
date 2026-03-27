@@ -42,18 +42,18 @@ const CATEGORY_ICONS: Record<string, typeof Clock> = {
 };
 
 const CATEGORY_COLORS: Record<string, { bg: string; border: string; iconBg: string }> = {
-  habit: { bg: 'bg-blue-50', border: 'border-l-blue-500', iconBg: 'bg-blue-100' },
-  learning: { bg: 'bg-purple-50', border: 'border-l-purple-500', iconBg: 'bg-purple-100' },
-  social: { bg: 'bg-green-50', border: 'border-l-green-500', iconBg: 'bg-green-100' },
-  health: { bg: 'bg-red-50', border: 'border-l-red-500', iconBg: 'bg-red-100' },
-  creativity: { bg: 'bg-orange-50', border: 'border-l-orange-500', iconBg: 'bg-orange-100' },
+  habit: { bg: 'bg-primary/5', border: 'border-l-primary', iconBg: 'bg-primary/10' },
+  learning: { bg: 'bg-primary/5', border: 'border-l-lumi', iconBg: 'bg-primary/10' },
+  social: { bg: 'bg-primary/5', border: 'border-l-primary', iconBg: 'bg-primary/10' },
+  health: { bg: 'bg-destructive/5', border: 'border-l-destructive', iconBg: 'bg-destructive/10' },
+  creativity: { bg: 'bg-gold/10', border: 'border-l-gold', iconBg: 'bg-gold/10' },
 };
 
 // Status colors with ring for better definition
 const STATUS_STYLES: Record<string, { bg: string; text: string; icon: typeof Play; ring: string }> = {
-  active: { bg: 'bg-green-100', text: 'text-green-700', icon: Play, ring: 'ring-1 ring-green-200' },
-  paused: { bg: 'bg-amber-100', text: 'text-amber-700', icon: Pause, ring: 'ring-1 ring-amber-200' },
-  completed: { bg: 'bg-blue-100', text: 'text-blue-700', icon: CheckCircle2, ring: 'ring-1 ring-blue-200' },
+  active: { bg: 'bg-primary/10', text: 'text-primary', icon: Play, ring: 'ring-1 ring-primary/20' },
+  paused: { bg: 'bg-gold/10', text: 'text-gold', icon: Pause, ring: 'ring-1 ring-gold/20' },
+  completed: { bg: 'bg-primary/10', text: 'text-primary', icon: CheckCircle2, ring: 'ring-1 ring-primary/20' },
 };
 
 // Extended type with navigation compatibility
@@ -123,7 +123,7 @@ export function JourneyCard({
     <Card
       className={cn(
         'overflow-hidden transition-all hover:shadow-md cursor-pointer border-l-4 relative',
-        isCompleted && 'bg-gradient-to-br from-blue-50 to-indigo-50',
+        isCompleted && 'bg-gradient-to-br from-primary/10 to-primary/10',
         categoryStyle?.border || 'border-l-primary/50',
         className
       )}
@@ -132,7 +132,7 @@ export function JourneyCard({
       {/* Celebration badge for completed journeys */}
       {isCompleted && (
         <div className="absolute -top-2 -right-2 z-10">
-          <div className="bg-yellow-400 text-yellow-900 rounded-full p-1.5 shadow-lg animate-bounce">
+          <div className="bg-lala/10 text-lala rounded-full p-1.5 shadow-lg animate-bounce">
             <Trophy className="h-4 w-4" />
           </div>
         </div>
@@ -228,7 +228,7 @@ export function JourneyCard({
             </div>
             <span className={cn(
               'text-sm font-semibold',
-              isCompleted && 'text-green-600'
+              isCompleted && 'text-primary'
             )}>
               {progress}%
             </span>
@@ -239,7 +239,7 @@ export function JourneyCard({
             value={progress}
             className={cn(
               'h-2',
-              isCompleted && '[&>div]:bg-gradient-to-r [&>div]:from-green-400 [&>div]:to-emerald-500'
+              isCompleted && '[&>div]:bg-gradient-to-r [&>div]:from-primary [&>div]:to-primary'
             )}
           />
 
@@ -247,7 +247,7 @@ export function JourneyCard({
           {journey.totalSteps > 0 && (
             <p className="text-xs text-muted-foreground">
               {isCompleted ? (
-                <span className="flex items-center gap-1 text-green-600">
+                <span className="flex items-center gap-1 text-primary">
                   <CheckCircle2 className="h-3 w-3" />
                   All {journey.totalSteps} steps completed
                 </span>
@@ -267,7 +267,7 @@ export function JourneyCard({
               className="w-full group/btn"
               onClick={handleView}
             >
-              <Trophy className="h-4 w-4 mr-2 text-yellow-500 group-hover/btn:animate-bounce" />
+              <Trophy className="h-4 w-4 mr-2 text-lala group-hover/btn:animate-bounce" />
               View Achievement
             </Button>
           ) : (

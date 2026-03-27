@@ -273,7 +273,7 @@ export function JourneysPage() {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Sparkles className="h-5 w-5 text-yellow-500" />
+                    <Sparkles className="h-5 w-5 text-lala" />
                     Featured Journeys
                   </CardTitle>
                 </CardHeader>
@@ -300,7 +300,7 @@ export function JourneysPage() {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <CheckCircle2 className="h-5 w-5 text-green-500" />
+                    <CheckCircle2 className="h-5 w-5 text-primary" />
                     Recommended for{' '}
                     {children.find((c) => c.id === activeChildId)?.name || 'Your Child'}
                   </CardTitle>

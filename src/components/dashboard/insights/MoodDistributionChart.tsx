@@ -17,11 +17,11 @@ interface MoodDistributionChartProps {
 
 // Mood to bar color mapping
 const moodBarColors: Record<string, string> = {
-  happy: 'bg-yellow-400',
-  sad: 'bg-blue-400',
-  angry: 'bg-red-400',
-  scared: 'bg-purple-400',
-  calm: 'bg-green-400',
+  happy: 'bg-lala/10',
+  sad: 'bg-primary/10',
+  angry: 'bg-destructive/10',
+  scared: 'bg-primary/10',
+  calm: 'bg-primary/10',
 };
 
 export function MoodDistributionChart({

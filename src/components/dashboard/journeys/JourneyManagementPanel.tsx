@@ -133,12 +133,12 @@ export function JourneyManagementPanel() {
           {/* Status badge */}
           <div className="flex items-center gap-2 mb-3">
             {isCompleted ? (
-              <Badge className="bg-green-100 text-green-700">
+              <Badge className="bg-primary/10 text-primary">
                 <CheckCircle2 className="h-3 w-3 mr-1" />
                 Completed
               </Badge>
             ) : (
-              <Badge className="bg-blue-100 text-blue-700">
+              <Badge className="bg-primary/10 text-primary">
                 <Play className="h-3 w-3 mr-1" />
                 Active
               </Badge>

@@ -119,7 +119,7 @@ export function CreateJourneyDialog({
           {/* Template selection */}
           <div className="space-y-2">
             <Label>Select Journey Template</Label>
-            <ScrollArea className="h-64 rounded-md border p-2">
+            <ScrollArea className="h-64 rounded-md border p-3">
               {templatesLoading ? (
                 <div className="flex items-center justify-center h-full">
                   <Loader2 className="h-6 w-6 animate-spin" />
@@ -134,9 +134,9 @@ export function CreateJourneyDialog({
                     <Card
                       key={template.id}
                       className={cn(
-                        'cursor-pointer transition-all hover:shadow-sm',
+                        'cursor-pointer transition-all hover:shadow-warm border-2 border-transparent',
                         selectedTemplateId === template.id &&
-                          'ring-2 ring-primary bg-primary/5'
+                          'border-primary bg-primary/5'
                       )}
                       onClick={() => setSelectedTemplateId(template.id)}
                     >
