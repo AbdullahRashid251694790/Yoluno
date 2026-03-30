@@ -40,19 +40,19 @@ interface ChatAvatarProps {
 }
 
 const sizeClasses = {
-  sm: 'h-12 w-12 text-2xl',
-  md: 'h-20 w-20 text-4xl',
-  lg: 'h-28 w-28 text-5xl',
-  xl: 'h-36 w-36 text-6xl',
+  sm: 'h-12 w-12 text-h4',
+  md: 'h-20 w-20 text-h2',
+  lg: 'h-28 w-28 text-h1',
+  xl: 'h-36 w-36 text-h1',
   hero: 'h-44 w-44 text-7xl',
 };
 
 const nameSizeClasses = {
-  sm: 'text-xs',
-  md: 'text-sm',
-  lg: 'text-base',
-  xl: 'text-lg',
-  hero: 'text-xl',
+  sm: 'text-caption',
+  md: 'text-body-sm',
+  lg: 'text-body',
+  xl: 'text-body-lg',
+  hero: 'text-body-lg',
 };
 
 export function ChatAvatar({
@@ -118,9 +118,9 @@ export function ChatAvatar({
         {/* Excited sparkles */}
         {expression === 'excited' && (
           <>
-            <span className="absolute -right-2 -top-2 text-lg animate-sparkle">✨</span>
-            <span className="absolute -left-2 top-0 text-sm animate-sparkle" style={{ animationDelay: '0.3s' }}>⭐</span>
-            <span className="absolute -bottom-1 -right-1 text-sm animate-sparkle" style={{ animationDelay: '0.6s' }}>💫</span>
+            <span className="absolute -right-2 -top-2 text-body-lg animate-sparkle">✨</span>
+            <span className="absolute -left-2 top-0 text-body-sm animate-sparkle" style={{ animationDelay: '0.3s' }}>⭐</span>
+            <span className="absolute -bottom-1 -right-1 text-body-sm animate-sparkle" style={{ animationDelay: '0.6s' }}>💫</span>
           </>
         )}
 
@@ -132,17 +132,17 @@ export function ChatAvatar({
         {/* Sleepy Zzz */}
         {expression === 'sleepy' && (
           <div className="absolute -right-3 -top-3 flex flex-col text-primary font-bold">
-            <span className="text-xs animate-float" style={{ animationDelay: '0s' }}>z</span>
-            <span className="text-sm animate-float -ml-1" style={{ animationDelay: '0.2s' }}>z</span>
-            <span className="text-base animate-float -ml-2" style={{ animationDelay: '0.4s' }}>Z</span>
+            <span className="text-caption animate-float" style={{ animationDelay: '0s' }}>z</span>
+            <span className="text-body-sm animate-float -ml-1" style={{ animationDelay: '0.2s' }}>z</span>
+            <span className="text-body animate-float -ml-2" style={{ animationDelay: '0.4s' }}>Z</span>
           </div>
         )}
 
         {/* Caring hearts */}
         {expression === 'caring' && (
           <>
-            <span className="absolute -right-2 top-0 text-lolo text-sm animate-float">💕</span>
-            <span className="absolute -left-1 -top-1 text-lolo text-xs animate-float" style={{ animationDelay: '0.5s' }}>💗</span>
+            <span className="absolute -right-2 top-0 text-lolo text-body-sm animate-float">💕</span>
+            <span className="absolute -left-1 -top-1 text-lolo text-caption animate-float" style={{ animationDelay: '0.5s' }}>💗</span>
           </>
         )}
       </div>
@@ -159,7 +159,7 @@ export function ChatAvatar({
 
       {/* Expression label (for debugging/demo) */}
       {showExpression && (
-        <span className="text-xs text-muted-foreground capitalize">
+        <span className="text-caption text-muted-foreground capitalize">
           {config.label}
         </span>
       )}

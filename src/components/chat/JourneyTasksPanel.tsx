@@ -57,17 +57,17 @@ export function JourneyTasksPanel({ childId }: JourneyTasksPanelProps) {
                 <Map className="h-4 w-4 text-primary" />
               </div>
               <div className="text-left">
-                <p className="text-sm font-medium text-foreground">
+                <p className="text-body-sm font-medium text-foreground">
                   {currentJourney.title}
                 </p>
-                <p className="text-xs text-primary">
+                <p className="text-caption text-primary">
                   {completedSteps}/{totalSteps} steps • {progress}%
                 </p>
               </div>
             </div>
             <div className="flex items-center gap-2">
               {journeys.length > 1 && (
-                <Badge variant="secondary" className="text-xs bg-primary/10 text-primary">
+                <Badge variant="secondary" className="text-caption bg-primary/10 text-primary">
                   +{journeys.length - 1} more
                 </Badge>
               )}
@@ -91,18 +91,18 @@ export function JourneyTasksPanel({ childId }: JourneyTasksPanelProps) {
                 <div className="flex items-start gap-2">
                   <Sparkles className="h-4 w-4 text-lala mt-0.5 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium text-primary uppercase tracking-wide">
+                    <p className="text-caption font-medium text-primary uppercase tracking-wide">
                       Next Task
                     </p>
-                    <p className="text-sm font-medium text-foreground mt-0.5">
+                    <p className="text-body-sm font-medium text-foreground mt-0.5">
                       {nextStep.title}
                     </p>
                     {nextStep.description && (
-                      <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                      <p className="text-caption text-muted-foreground mt-1 line-clamp-2">
                         {nextStep.description}
                       </p>
                     )}
-                    <p className="text-xs text-primary mt-2">
+                    <p className="text-caption text-primary mt-2">
                       Say "done" when you finish!
                     </p>
                   </div>
@@ -116,7 +116,7 @@ export function JourneyTasksPanel({ childId }: JourneyTasksPanelProps) {
                 <div
                   key={step.id}
                   className={cn(
-                    'flex items-center gap-2 text-xs',
+                    'flex items-center gap-2 text-caption',
                     step.isCompleted ? 'text-primary' : 'text-muted-foreground'
                   )}
                 >
@@ -131,7 +131,7 @@ export function JourneyTasksPanel({ childId }: JourneyTasksPanelProps) {
                 </div>
               ))}
               {currentJourney.steps.length > 4 && (
-                <p className="text-xs text-muted-foreground pl-5">
+                <p className="text-caption text-muted-foreground pl-5">
                   +{currentJourney.steps.length - 4} more steps
                 </p>
               )}
@@ -152,7 +152,7 @@ export function JourneyTasksPanel({ childId }: JourneyTasksPanelProps) {
             {/* Show other journeys if any */}
             {journeys.length > 1 && (
               <div className="pt-2 border-t border-primary/10">
-                <p className="text-xs font-medium text-muted-foreground mb-2">
+                <p className="text-caption font-medium text-muted-foreground mb-2">
                   Other active journeys:
                 </p>
                 <div className="flex flex-wrap gap-1.5">
@@ -163,7 +163,7 @@ export function JourneyTasksPanel({ childId }: JourneyTasksPanelProps) {
                     >
                       <Badge
                         variant="outline"
-                        className="text-xs cursor-pointer hover:bg-primary/5"
+                        className="text-caption cursor-pointer hover:bg-primary/5"
                       >
                         {j.title}
                       </Badge>

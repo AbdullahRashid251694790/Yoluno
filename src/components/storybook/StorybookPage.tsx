@@ -35,7 +35,7 @@ export function StorybookPage({
       )}
     >
       {/* Page number badge */}
-      <div className="absolute top-4 right-4 bg-white/80 backdrop-blur-sm rounded-full px-3 py-1 text-sm font-medium text-foreground/70 z-10">
+      <div className="absolute top-4 right-4 bg-white/80 backdrop-blur-sm rounded-full px-3 py-1 text-body-sm font-medium text-foreground/70 z-10">
         {pageNumber} / {totalPages}
       </div>
 
@@ -52,14 +52,14 @@ export function StorybookPage({
           <div className="w-full aspect-square flex items-center justify-center bg-gradient-to-br from-primary/20 to-lolo/10">
             <div className="text-center text-primary">
               <Loader2 className="h-12 w-12 animate-spin mx-auto mb-2" />
-              <p className="text-sm">Creating illustration...</p>
+              <p className="text-body-sm">Creating illustration...</p>
             </div>
           </div>
         ) : (
           <div className="w-full aspect-square flex items-center justify-center bg-gradient-to-br from-muted to-muted-foreground/30">
             <div className="text-center text-muted-foreground">
               <ImageOff className="h-12 w-12 mx-auto mb-2" />
-              <p className="text-sm">Illustration unavailable</p>
+              <p className="text-body-sm">Illustration unavailable</p>
             </div>
           </div>
         )}
@@ -67,7 +67,7 @@ export function StorybookPage({
         {/* Text directly below image */}
         <div className="px-3 py-3 md:px-5 md:py-4">
           <div className="bg-black/40 backdrop-blur-md rounded-2xl p-3 md:p-4 max-w-prose mx-auto">
-            <p className="text-sm md:text-base lg:text-lg leading-relaxed text-white/90 font-serif text-center drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">
+            <p className="text-body-sm md:text-body lg:text-body-lg leading-relaxed text-white/90 font-serif text-center drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">
               {page.content}
             </p>
           </div>

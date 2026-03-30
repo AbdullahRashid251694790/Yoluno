@@ -73,8 +73,8 @@ export function KidsJourneyDetailPage() {
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div className="flex-1">
-          <h1 className="text-xl font-bold">{journey.title}</h1>
-          <p className="text-sm text-muted-foreground">
+          <h1 className="text-body-lg font-bold">{journey.title}</h1>
+          <p className="text-body-sm text-muted-foreground">
             {journey.currentStep} of {journey.totalSteps} steps
           </p>
         </div>
@@ -88,8 +88,8 @@ export function KidsJourneyDetailPage() {
         <Card className="bg-gradient-to-r from-primary/10 to-primary/5">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium">Your Progress</span>
-              <span className="text-2xl font-bold text-primary">{journey.progress}%</span>
+              <span className="text-body-sm font-medium">Your Progress</span>
+              <span className="text-h4 font-bold text-primary">{journey.progress}%</span>
             </div>
             <Progress value={journey.progress} className="h-3" />
 
@@ -98,7 +98,7 @@ export function KidsJourneyDetailPage() {
                 <Trophy className="h-6 w-6 text-lala" />
                 <div>
                   <p className="font-semibold text-lala">Journey Complete!</p>
-                  <p className="text-sm text-lala">Great job finishing all steps!</p>
+                  <p className="text-body-sm text-lala">Great job finishing all steps!</p>
                 </div>
               </div>
             )}
@@ -111,13 +111,13 @@ export function KidsJourneyDetailPage() {
             <CardHeader className="pb-2">
               <div className="flex items-center gap-2">
                 <Play className="h-5 w-5 text-primary" />
-                <CardTitle className="text-lg">Next Up</CardTitle>
+                <CardTitle className="text-body-lg">Next Up</CardTitle>
               </div>
             </CardHeader>
             <CardContent>
               <p className="font-medium mb-3">{nextStep.title}</p>
               {nextStep.description && (
-                <p className="text-sm text-muted-foreground mb-4">{nextStep.description}</p>
+                <p className="text-body-sm text-muted-foreground mb-4">{nextStep.description}</p>
               )}
               <Button
                 onClick={() => handleCompleteStep(nextStep.id)}
@@ -132,7 +132,7 @@ export function KidsJourneyDetailPage() {
 
         {/* All Steps */}
         <div>
-          <h2 className="text-lg font-semibold mb-3">All Steps</h2>
+          <h2 className="text-body-lg font-semibold mb-3">All Steps</h2>
           <div className="space-y-3">
             {journey.steps.map((step, index) => {
               const isCurrentStep = index === currentStepIndex;
@@ -163,7 +163,7 @@ export function KidsJourneyDetailPage() {
 
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <span className="text-sm text-muted-foreground">
+                          <span className="text-body-sm text-muted-foreground">
                             Step {step.stepNumber}
                           </span>
                           {step.isCompleted && (
@@ -177,12 +177,12 @@ export function KidsJourneyDetailPage() {
                           {step.title}
                         </p>
                         {step.description && (
-                          <p className="text-sm text-muted-foreground mt-1">
+                          <p className="text-body-sm text-muted-foreground mt-1">
                             {step.description}
                           </p>
                         )}
                         {step.completedAt && (
-                          <p className="text-xs text-muted-foreground mt-2">
+                          <p className="text-caption text-muted-foreground mt-2">
                             Completed {new Date(step.completedAt).toLocaleDateString()}
                           </p>
                         )}

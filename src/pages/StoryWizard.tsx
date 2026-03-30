@@ -302,7 +302,7 @@ export function StoryWizardPage() {
       case 0: // Theme
         return (
           <div className="space-y-4">
-            <p className="text-muted-foreground text-sm">
+            <p className="text-muted-foreground text-body-sm">
               What should the story be about?
             </p>
             <div className="grid grid-cols-3 gap-3">
@@ -317,8 +317,8 @@ export function StoryWizardPage() {
                       : 'border-muted hover:border-primary/50'
                   )}
                 >
-                  <span className="text-2xl">{themeEmojis[theme] || '📖'}</span>
-                  <span className="text-sm font-medium capitalize">{theme}</span>
+                  <span className="text-h4">{themeEmojis[theme] || '📖'}</span>
+                  <span className="text-body-sm font-medium capitalize">{theme}</span>
                 </button>
               ))}
             </div>
@@ -340,7 +340,7 @@ export function StoryWizardPage() {
       case 1: // Characters
         return (
           <div className="space-y-4">
-            <p className="text-muted-foreground text-sm">
+            <p className="text-muted-foreground text-body-sm">
               Who should be in the story? (Optional)
             </p>
             <div className="flex gap-2">
@@ -355,7 +355,7 @@ export function StoryWizardPage() {
             </div>
             {wizardState.customCharacter.trim() && (
               <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">Gender:</span>
+                <span className="text-body-sm text-muted-foreground">Gender:</span>
                 <button
                   type="button"
                   onClick={() =>
@@ -365,7 +365,7 @@ export function StoryWizardPage() {
                     }))
                   }
                   className={cn(
-                    'px-3 py-1 rounded-full text-sm border-2 transition-all',
+                    'px-3 py-1 rounded-full text-body-sm border-2 transition-all',
                     wizardState.customCharacterGender === 'boy'
                       ? 'border-primary bg-primary/5 text-primary'
                       : 'border-muted hover:border-primary'
@@ -382,7 +382,7 @@ export function StoryWizardPage() {
                     }))
                   }
                   className={cn(
-                    'px-3 py-1 rounded-full text-sm border-2 transition-all',
+                    'px-3 py-1 rounded-full text-body-sm border-2 transition-all',
                     wizardState.customCharacterGender === 'girl'
                       ? 'border-lolo bg-lolo/10 text-lolo'
                       : 'border-muted hover:border-lolo'
@@ -401,7 +401,7 @@ export function StoryWizardPage() {
                   <span
                     key={index}
                     className={cn(
-                      'inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm',
+                      'inline-flex items-center gap-1 rounded-full px-3 py-1 text-body-sm',
                       char.gender === 'boy' && 'bg-primary/10 text-primary',
                       char.gender === 'girl' && 'bg-lolo/10 text-lolo',
                       !char.gender && 'bg-primary/10'
@@ -428,7 +428,7 @@ export function StoryWizardPage() {
                   setWizardState((prev) => ({ ...prev, includeFamily: !!checked }))
                 }
               />
-              <Label htmlFor="includeFamily" className="text-sm">
+              <Label htmlFor="includeFamily" className="text-body-sm">
                 Include family members in the story
               </Label>
             </div>
@@ -438,7 +438,7 @@ export function StoryWizardPage() {
       case 2: // Mood
         return (
           <div className="space-y-4">
-            <p className="text-muted-foreground text-sm">
+            <p className="text-muted-foreground text-body-sm">
               What feeling should the story have?
             </p>
             <div className="grid grid-cols-2 gap-3">
@@ -453,7 +453,7 @@ export function StoryWizardPage() {
                       : 'border-muted hover:border-primary/50'
                   )}
                 >
-                  <span className="text-2xl">{moodEmojis[mood] || '📖'}</span>
+                  <span className="text-h4">{moodEmojis[mood] || '📖'}</span>
                   <span className="font-medium capitalize">{mood}</span>
                 </button>
               ))}
@@ -478,7 +478,7 @@ export function StoryWizardPage() {
                 <Volume2 className="h-4 w-4" />
                 Narrator Voice
               </Label>
-              <p className="text-muted-foreground text-xs mt-1 mb-2">
+              <p className="text-muted-foreground text-caption mt-1 mb-2">
                 Choose a voice for reading the story aloud
               </p>
               <div className="grid grid-cols-3 gap-2">
@@ -493,8 +493,8 @@ export function StoryWizardPage() {
                         : 'border-muted hover:border-primary/50'
                     )}
                   >
-                    <span className="text-sm font-medium">{voice.label}</span>
-                    <span className="text-xs text-muted-foreground">{voice.description}</span>
+                    <span className="text-body-sm font-medium">{voice.label}</span>
+                    <span className="text-caption text-muted-foreground">{voice.description}</span>
                   </button>
                 ))}
               </div>
@@ -505,7 +505,7 @@ export function StoryWizardPage() {
       case 3: // Values
         return (
           <div className="space-y-4">
-            <p className="text-muted-foreground text-sm">
+            <p className="text-muted-foreground text-body-sm">
               What lessons should the story teach? (Pick up to 3)
             </p>
             <div className="grid grid-cols-2 gap-3">
@@ -526,8 +526,8 @@ export function StoryWizardPage() {
                       'opacity-50 cursor-not-allowed'
                   )}
                 >
-                  <span className="text-xl">{valueEmojis[value] || '⭐'}</span>
-                  <span className="text-sm font-medium capitalize">{value}</span>
+                  <span className="text-body-lg">{valueEmojis[value] || '⭐'}</span>
+                  <span className="text-body-sm font-medium capitalize">{value}</span>
                   {wizardState.values.includes(value) && (
                     <Check className="ml-auto h-4 w-4 text-primary" />
                   )}
@@ -543,9 +543,9 @@ export function StoryWizardPage() {
             {generatedStory ? (
               <div className="space-y-4">
                 <div className="rounded-xl bg-gradient-to-r from-lolo/10/10 to-primary/10/10 p-4">
-                  <h3 className="text-lg font-bold">{generatedStory.title}</h3>
+                  <h3 className="text-body-lg font-bold">{generatedStory.title}</h3>
                   {generatedStory.hasPages && generatedStory.pageCount && (
-                    <p className="text-sm text-muted-foreground mt-1">
+                    <p className="text-body-sm text-muted-foreground mt-1">
                       {generatedStory.pageCount} pages with illustrations generating...
                     </p>
                   )}
@@ -560,25 +560,25 @@ export function StoryWizardPage() {
                   </div>
                 )}
                 <div className="max-h-[200px] overflow-y-auto rounded-lg bg-muted/50 p-4">
-                  <p className="whitespace-pre-wrap text-sm leading-relaxed">
+                  <p className="whitespace-pre-wrap text-body-sm leading-relaxed">
                     {generatedStory.content}
                   </p>
                 </div>
                 <div className="rounded-lg bg-primary/10 p-3 text-center">
-                  <p className="text-sm text-primary">
+                  <p className="text-body-sm text-primary">
                     Your storybook is ready! Illustrations are being created in the background.
                   </p>
                 </div>
               </div>
             ) : (
               <div className="space-y-4">
-                <p className="text-muted-foreground text-sm">
+                <p className="text-muted-foreground text-body-sm">
                   Ready to create the story! Here's what we'll make:
                 </p>
                 <div className="rounded-xl bg-muted/50 p-4 space-y-2">
                   <div className="flex items-center gap-2">
                     <Palette className="h-4 w-4 text-primary" />
-                    <span className="text-sm">
+                    <span className="text-body-sm">
                       <strong>Theme:</strong>{' '}
                       {wizardState.customTheme || wizardState.theme || 'Not selected'}
                     </span>
@@ -586,34 +586,34 @@ export function StoryWizardPage() {
                   {wizardState.characters.length > 0 && (
                     <div className="flex items-center gap-2">
                       <Users className="h-4 w-4 text-primary" />
-                      <span className="text-sm">
+                      <span className="text-body-sm">
                         <strong>Characters:</strong> {wizardState.characters.map(c => c.name).join(', ')}
                       </span>
                     </div>
                   )}
                   <div className="flex items-center gap-2">
                     <Wand2 className="h-4 w-4 text-primary" />
-                    <span className="text-sm">
+                    <span className="text-body-sm">
                       <strong>Mood:</strong> {wizardState.mood}
                     </span>
                   </div>
                   {wizardState.values.length > 0 && (
                     <div className="flex items-center gap-2">
                       <Heart className="h-4 w-4 text-primary" />
-                      <span className="text-sm">
+                      <span className="text-body-sm">
                         <strong>Values:</strong> {wizardState.values.join(', ')}
                       </span>
                     </div>
                   )}
                   <div className="flex items-center gap-2">
                     <BookOpen className="h-4 w-4 text-primary" />
-                    <span className="text-sm">
+                    <span className="text-body-sm">
                       <strong>Length:</strong> {wizardState.storyLength}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Volume2 className="h-4 w-4 text-primary" />
-                    <span className="text-sm">
+                    <span className="text-body-sm">
                       <strong>Narrator:</strong> {voiceOptions.find(v => v.value === wizardState.narratorVoice)?.label || wizardState.narratorVoice}
                     </span>
                   </div>
@@ -644,7 +644,7 @@ export function StoryWizardPage() {
 
         {/* Progress */}
         <div className="mb-8">
-          <div className="mb-2 flex justify-between text-sm">
+          <div className="mb-2 flex justify-between text-body-sm">
             <span>
               Step {currentStep + 1} of {STEPS.length}
             </span>

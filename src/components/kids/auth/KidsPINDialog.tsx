@@ -74,10 +74,10 @@ export function KidsPINDialog({
       >
         <DialogHeader className="text-center items-center">
           <ChatAvatar expression="curious" size="lg" className="mb-2" />
-          <DialogTitle className="text-2xl font-display">
+          <DialogTitle className="text-h4 font-display">
             Enter PIN
           </DialogTitle>
-          <DialogDescription className="text-base">
+          <DialogDescription className="text-body">
             Enter {childName}'s secret PIN to continue
           </DialogDescription>
         </DialogHeader>
@@ -91,7 +91,7 @@ export function KidsPINDialog({
         </div>
 
         {verifyPin.isPending && (
-          <div className="text-center text-sm text-muted-foreground">
+          <div className="text-center text-body-sm text-muted-foreground">
             Checking...
           </div>
         )}

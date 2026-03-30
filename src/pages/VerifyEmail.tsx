@@ -71,7 +71,7 @@ export function VerifyEmailPage() {
               <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
                 <Mail className="h-6 w-6 text-primary" />
               </div>
-              <CardTitle className="text-2xl text-foreground">Verify your email</CardTitle>
+              <CardTitle className="text-h4 text-foreground">Verify your email</CardTitle>
               <CardDescription className="text-muted-foreground">
                 We've sent a verification link to your email.
                 Please check your inbox and click the link to verify your account.
@@ -84,7 +84,7 @@ export function VerifyEmailPage() {
               <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
               </div>
-              <CardTitle className="text-2xl text-foreground">Verifying your email...</CardTitle>
+              <CardTitle className="text-h4 text-foreground">Verifying your email...</CardTitle>
               <CardDescription className="text-muted-foreground">
                 Please wait while we verify your email address.
               </CardDescription>
@@ -96,7 +96,7 @@ export function VerifyEmailPage() {
               <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
                 <CheckCircle2 className="h-6 w-6 text-primary" />
               </div>
-              <CardTitle className="text-2xl text-foreground">Email verified!</CardTitle>
+              <CardTitle className="text-h4 text-foreground">Email verified!</CardTitle>
               <CardDescription className="text-muted-foreground">
                 Your email has been verified successfully. You can now sign in to your account.
               </CardDescription>
@@ -108,7 +108,7 @@ export function VerifyEmailPage() {
               <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10">
                 <XCircle className="h-6 w-6 text-destructive" />
               </div>
-              <CardTitle className="text-2xl text-foreground">Verification failed</CardTitle>
+              <CardTitle className="text-h4 text-foreground">Verification failed</CardTitle>
               <CardDescription className="text-muted-foreground">
                 {errorMessage || 'The verification link is invalid or has expired.'}
               </CardDescription>
@@ -131,7 +131,7 @@ export function VerifyEmailPage() {
                   placeholder="Enter your email to resend"
                   value={resendEmail}
                   onChange={(e) => setResendEmail(e.target.value)}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-body-sm"
                 />
               )}
               <Button
@@ -150,7 +150,7 @@ export function VerifyEmailPage() {
                 )}
               </Button>
               {status === 'waiting' && (
-                <p className="text-center text-xs text-muted-foreground">
+                <p className="text-center text-caption text-muted-foreground">
                   Didn't receive the email? Check your spam folder or resend it.
                 </p>
               )}

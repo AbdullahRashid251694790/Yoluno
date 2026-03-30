@@ -87,10 +87,10 @@ export function ResetPasswordPage() {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
-              <p className="text-sm text-destructive">{error}</p>
+              <p className="text-body-sm text-destructive">{error}</p>
             )}
             <div>
-              <label className="text-sm font-medium" htmlFor="password">New Password</label>
+              <label className="text-body-sm font-medium" htmlFor="password">New Password</label>
               <Input
                 id="password"
                 type="password"
@@ -102,7 +102,7 @@ export function ResetPasswordPage() {
               />
             </div>
             <div>
-              <label className="text-sm font-medium" htmlFor="confirmPassword">Confirm Password</label>
+              <label className="text-body-sm font-medium" htmlFor="confirmPassword">Confirm Password</label>
               <Input
                 id="confirmPassword"
                 type="password"

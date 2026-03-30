@@ -98,7 +98,7 @@ export function FirstTimePrompt({ childId, childName, onComplete, onSkip }: Firs
       {/* Progress Bar */}
       <div className="mb-8">
         <Progress value={progressPercent} className="h-2" />
-        <p className="text-sm text-muted-foreground mt-2 text-center">
+        <p className="text-body-sm text-muted-foreground mt-2 text-center">
           Step {currentStepIndex + 1} of {ONBOARDING_STEPS.length}
         </p>
       </div>
@@ -112,8 +112,8 @@ export function FirstTimePrompt({ childId, childName, onComplete, onSkip }: Firs
 
           {currentStep === 'welcome' && (
             <>
-              <CardTitle className="text-2xl">Welcome, {childName}!</CardTitle>
-              <CardDescription className="text-lg">
+              <CardTitle className="text-h4">Welcome, {childName}!</CardTitle>
+              <CardDescription className="text-body-lg">
                 Let's get you set up to have fun with Luno!
               </CardDescription>
             </>
@@ -121,7 +121,7 @@ export function FirstTimePrompt({ childId, childName, onComplete, onSkip }: Firs
 
           {currentStep === 'personality' && (
             <>
-              <CardTitle className="text-2xl">Choose Luno's Personality</CardTitle>
+              <CardTitle className="text-h4">Choose Luno's Personality</CardTitle>
               <CardDescription>
                 Pick how you'd like Luno to talk with you
               </CardDescription>
@@ -130,7 +130,7 @@ export function FirstTimePrompt({ childId, childName, onComplete, onSkip }: Firs
 
           {currentStep === 'features' && (
             <>
-              <CardTitle className="text-2xl">What Can You Do?</CardTitle>
+              <CardTitle className="text-h4">What Can You Do?</CardTitle>
               <CardDescription>
                 Here's what you can explore with Luno
               </CardDescription>
@@ -139,7 +139,7 @@ export function FirstTimePrompt({ childId, childName, onComplete, onSkip }: Firs
 
           {currentStep === 'ready' && (
             <>
-              <CardTitle className="text-2xl">You're All Set!</CardTitle>
+              <CardTitle className="text-h4">You're All Set!</CardTitle>
               <CardDescription>
                 Ready to start your adventure?
               </CardDescription>
@@ -157,20 +157,20 @@ export function FirstTimePrompt({ childId, childName, onComplete, onSkip }: Firs
               </p>
               <div className="grid grid-cols-2 gap-4 pt-4">
                 <div className="p-4 rounded-lg bg-primary/10 text-center">
-                  <span className="text-2xl">💬</span>
-                  <p className="text-sm font-medium mt-2">Chat</p>
+                  <span className="text-h4">💬</span>
+                  <p className="text-body-sm font-medium mt-2">Chat</p>
                 </div>
                 <div className="p-4 rounded-lg bg-primary/5 text-center">
-                  <span className="text-2xl">📖</span>
-                  <p className="text-sm font-medium mt-2">Stories</p>
+                  <span className="text-h4">📖</span>
+                  <p className="text-body-sm font-medium mt-2">Stories</p>
                 </div>
                 <div className="p-4 rounded-lg bg-primary/10 text-center">
-                  <span className="text-2xl">🗺️</span>
-                  <p className="text-sm font-medium mt-2">Journeys</p>
+                  <span className="text-h4">🗺️</span>
+                  <p className="text-body-sm font-medium mt-2">Journeys</p>
                 </div>
                 <div className="p-4 rounded-lg bg-gold/10 text-center">
-                  <span className="text-2xl">🎓</span>
-                  <p className="text-sm font-medium mt-2">Learning</p>
+                  <span className="text-h4">🎓</span>
+                  <p className="text-body-sm font-medium mt-2">Learning</p>
                 </div>
               </div>
             </div>
@@ -190,10 +190,10 @@ export function FirstTimePrompt({ childId, childName, onComplete, onSkip }: Firs
                   }`}
                 >
                   <div className="flex items-start gap-3">
-                    <span className="text-2xl">{personality.emoji}</span>
+                    <span className="text-h4">{personality.emoji}</span>
                     <div className="flex-1">
                       <p className="font-medium">{personality.label}</p>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-body-sm text-muted-foreground">
                         {personality.description}
                       </p>
                     </div>
@@ -210,28 +210,28 @@ export function FirstTimePrompt({ childId, childName, onComplete, onSkip }: Firs
           {currentStep === 'features' && (
             <div className="space-y-4">
               <div className="flex items-start gap-3 p-3 rounded-lg bg-muted">
-                <span className="text-xl">💬</span>
+                <span className="text-body-lg">💬</span>
                 <div>
                   <p className="font-medium">Chat with Luno</p>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-body-sm text-muted-foreground">
                     Ask questions, share stories, or just talk about your day
                   </p>
                 </div>
               </div>
               <div className="flex items-start gap-3 p-3 rounded-lg bg-muted">
-                <span className="text-xl">📖</span>
+                <span className="text-body-lg">📖</span>
                 <div>
                   <p className="font-medium">Create Stories</p>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-body-sm text-muted-foreground">
                     Make up magical stories together with Luno
                   </p>
                 </div>
               </div>
               <div className="flex items-start gap-3 p-3 rounded-lg bg-muted">
-                <span className="text-xl">🗺️</span>
+                <span className="text-body-lg">🗺️</span>
                 <div>
                   <p className="font-medium">Go on Journeys</p>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-body-sm text-muted-foreground">
                     Learn new things through fun adventures
                   </p>
                 </div>
@@ -242,7 +242,7 @@ export function FirstTimePrompt({ childId, childName, onComplete, onSkip }: Firs
           {/* Ready Step */}
           {currentStep === 'ready' && (
             <div className="text-center space-y-6">
-              <div className="text-6xl">🎉</div>
+              <div className="text-h1">🎉</div>
               <p className="text-muted-foreground">
                 You're all set to start chatting with Luno! Have fun exploring
                 and learning together.

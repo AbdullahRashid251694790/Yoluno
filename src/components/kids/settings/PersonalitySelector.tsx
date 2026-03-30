@@ -46,7 +46,7 @@ export function PersonalitySelector({
             }`}
           >
             <span>{personality.emoji}</span>
-            <span className="text-sm font-medium">{personality.label}</span>
+            <span className="text-body-sm font-medium">{personality.label}</span>
             {selectedPersonality === personality.mode_key && (
               <Check className="h-4 w-4" />
             )}
@@ -79,22 +79,22 @@ export function PersonalitySelector({
             }`}
           >
             <div className="flex items-start gap-4">
-              <div className="text-3xl flex-shrink-0">{personality.emoji}</div>
+              <div className="text-h3 flex-shrink-0">{personality.emoji}</div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
                   <p className="font-semibold">{personality.label}</p>
                   {selectedPersonality === personality.mode_key && (
-                    <Badge variant="default" className="text-xs">
+                    <Badge variant="default" className="text-caption">
                       <Check className="h-3 w-3 mr-1" />
                       Selected
                     </Badge>
                   )}
                 </div>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-body-sm text-muted-foreground">
                   {personality.description}
                 </p>
                 {personality.example_greeting && (
-                  <p className="text-sm text-muted-foreground mt-2 italic border-l-2 border-primary/30 pl-3">
+                  <p className="text-body-sm text-muted-foreground mt-2 italic border-l-2 border-primary/30 pl-3">
                     "{personality.example_greeting}"
                   </p>
                 )}

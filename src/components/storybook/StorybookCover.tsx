@@ -46,26 +46,26 @@ export function StorybookCover({
         {/* Theme/Mood badges */}
         <div className="flex flex-wrap gap-2 mb-3">
           {theme && (
-            <span className="px-2 py-0.5 bg-white/20 backdrop-blur-sm rounded-full text-white text-xs capitalize">
+            <span className="px-2 py-0.5 bg-white/20 backdrop-blur-sm rounded-full text-white text-caption capitalize">
               {theme}
             </span>
           )}
           {mood && (
-            <span className="px-2 py-0.5 bg-white/20 backdrop-blur-sm rounded-full text-white text-xs capitalize">
+            <span className="px-2 py-0.5 bg-white/20 backdrop-blur-sm rounded-full text-white text-caption capitalize">
               {mood}
             </span>
           )}
         </div>
 
         {/* Title */}
-        <h1 className="text-2xl md:text-4xl font-display font-bold text-white leading-tight mb-4 drop-shadow-lg line-clamp-3">
+        <h1 className="text-h4 md:text-h2 font-display font-bold text-white leading-tight mb-4 drop-shadow-lg line-clamp-3">
           {title}
         </h1>
 
         {/* Tap to start prompt */}
         <div className="flex items-center gap-2 text-white/80 group-hover:text-white transition-colors">
           <Sparkles className="h-4 w-4 animate-pulse" />
-          <span className="text-sm md:text-base">Tap to begin reading</span>
+          <span className="text-body-sm md:text-body">Tap to begin reading</span>
         </div>
       </div>
 

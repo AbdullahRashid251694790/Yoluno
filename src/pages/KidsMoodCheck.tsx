@@ -148,7 +148,7 @@ export function KidsMoodCheckPage() {
       <div className="min-h-screen bg-kids-gradient flex items-center justify-center">
         <div className="text-center">
           <ChatAvatar expression="thinking" size="xl" />
-          <p className="mt-4 text-lg font-medium text-primary">Getting ready...</p>
+          <p className="mt-4 text-body-lg font-medium text-primary">Getting ready...</p>
         </div>
       </div>
     );
@@ -189,7 +189,7 @@ export function KidsMoodCheckPage() {
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <div className="text-sm font-medium text-muted-foreground">
+        <div className="text-body-sm font-medium text-muted-foreground">
           How are you feeling?
         </div>
         <div className="w-10" /> {/* Spacer for centering */}
@@ -207,16 +207,16 @@ export function KidsMoodCheckPage() {
             buddyName={buddyName}
           />
 
-          <h1 className="text-2xl font-display font-bold text-foreground mt-4">
+          <h1 className="text-h4 font-display font-bold text-foreground mt-4">
             Hey {child.name}!
           </h1>
 
           {!showResponse ? (
-            <p className="text-lg text-muted-foreground mt-2">
+            <p className="text-body-lg text-muted-foreground mt-2">
               How are you feeling today?
             </p>
           ) : (
-            <p className="text-lg text-foreground mt-2 max-w-sm animate-fade-in">
+            <p className="text-body-lg text-foreground mt-2 max-w-sm animate-fade-in">
               {lunoResponse}
             </p>
           )}
@@ -249,7 +249,7 @@ export function KidsMoodCheckPage() {
                     size="sm"
                     buddyName={buddyName}
                   />
-                  <span className={cn('text-xs font-medium mt-1', config.color)}>
+                  <span className={cn('text-caption font-medium mt-1', config.color)}>
                     {config.label}
                   </span>
                 </button>
@@ -261,7 +261,7 @@ export function KidsMoodCheckPage() {
         {/* Activity suggestions (shown after mood selection) */}
         {showResponse && activities.length > 0 && (
           <div className="space-y-4 animate-slide-up max-w-md mx-auto">
-            <h2 className="text-lg font-display font-semibold text-center text-foreground">
+            <h2 className="text-body-lg font-display font-semibold text-center text-foreground">
               What would you like to do?
             </h2>
 
@@ -274,13 +274,13 @@ export function KidsMoodCheckPage() {
                 >
                   <CardContent className="p-4 flex items-center gap-4">
                     <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary/20 to-child-secondary/20 flex items-center justify-center">
-                      <span className="text-2xl">{activity.emoji}</span>
+                      <span className="text-h4">{activity.emoji}</span>
                     </div>
                     <div className="flex-1">
                       <h3 className="font-display font-bold text-foreground">
                         {activity.title}
                       </h3>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-body-sm text-muted-foreground">
                         {activity.description}
                       </p>
                     </div>
@@ -305,7 +305,7 @@ export function KidsMoodCheckPage() {
         {/* Loading indicator while saving */}
         {logMoodMutation.isPending && (
           <div className="text-center mt-4">
-            <p className="text-sm text-muted-foreground animate-pulse">
+            <p className="text-body-sm text-muted-foreground animate-pulse">
               Saving...
             </p>
           </div>

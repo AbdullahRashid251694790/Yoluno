@@ -153,7 +153,7 @@ export function MoodAlerts({ childId, childName }: MoodAlertsProps) {
 
   if (alerts.length === 0) {
     return (
-      <div className="text-center py-4 text-sm text-muted-foreground">
+      <div className="text-center py-4 text-body-sm text-muted-foreground">
         No mood patterns to report this week
       </div>
     );

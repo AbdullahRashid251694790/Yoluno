@@ -94,30 +94,30 @@ export function FamilyMemberDetail({ member, type, isOpen, onClose }: FamilyMemb
                   {avatarUrl ? (
                     <img src={avatarUrl} alt={name} className="w-full h-full object-cover" />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-4xl font-bold text-muted-foreground/30">
+                    <div className="w-full h-full flex items-center justify-center text-h2 font-bold text-muted-foreground/30">
                       {name.charAt(0).toUpperCase()}
                     </div>
                   )}
                 </div>
-                <span className="absolute -bottom-1 -right-1 text-2xl bg-white rounded-full p-1.5 shadow-md">
+                <span className="absolute -bottom-1 -right-1 text-h4 bg-white rounded-full p-1.5 shadow-md">
                   {theme.emoji}
                 </span>
               </div>
 
               {/* Name */}
-              <h2 className="mt-4 text-2xl font-display font-bold text-center text-foreground">
+              <h2 className="mt-4 text-h4 font-display font-bold text-center text-foreground">
                 {name}
               </h2>
 
               {/* Relationship badge */}
               {(connectionDescription || relationship) && (
-                <span className={cn('mt-2 px-4 py-1 rounded-full text-sm font-semibold', theme.badge)}>
+                <span className={cn('mt-2 px-4 py-1 rounded-full text-body-sm font-semibold', theme.badge)}>
                   {connectionDescription || relationship}
                 </span>
               )}
 
               {!isAlive && (
-                <p className="mt-2 text-sm text-muted-foreground">Remembered with love 💕</p>
+                <p className="mt-2 text-body-sm text-muted-foreground">Remembered with love 💕</p>
               )}
             </div>
           </div>
@@ -129,10 +129,10 @@ export function FamilyMemberDetail({ member, type, isOpen, onClose }: FamilyMemb
               {/* Age & Gender (for siblings/self) */}
               {age && (
                 <div className="flex items-center gap-3 bg-white rounded-2xl p-4 shadow-sm">
-                  <span className="text-2xl">🎂</span>
+                  <span className="text-h4">🎂</span>
                   <div>
                     <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Age</p>
-                    <p className="text-sm font-medium text-foreground">
+                    <p className="text-body-sm font-medium text-foreground">
                       {age} years old {gender === 'boy' ? '👦' : gender === 'girl' ? '👧' : ''}
                     </p>
                   </div>
@@ -142,10 +142,10 @@ export function FamilyMemberDetail({ member, type, isOpen, onClose }: FamilyMemb
               {/* Occupation */}
               {occupation && (
                 <div className="flex items-center gap-3 bg-white rounded-2xl p-4 shadow-sm">
-                  <span className="text-2xl">💼</span>
+                  <span className="text-h4">💼</span>
                   <div>
                     <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Works as</p>
-                    <p className="text-sm font-medium text-foreground">{occupation}</p>
+                    <p className="text-body-sm font-medium text-foreground">{occupation}</p>
                   </div>
                 </div>
               )}
@@ -154,7 +154,7 @@ export function FamilyMemberDetail({ member, type, isOpen, onClose }: FamilyMemb
               {hobbies && hobbies.length > 0 && (
                 <div className="bg-white rounded-2xl p-4 shadow-sm">
                   <div className="flex items-center gap-2 mb-3">
-                    <span className="text-2xl">🌟</span>
+                    <span className="text-h4">🌟</span>
                     <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Loves</p>
                   </div>
                   <div className="flex flex-wrap gap-2">
@@ -162,7 +162,7 @@ export function FamilyMemberDetail({ member, type, isOpen, onClose }: FamilyMemb
                       <span
                         key={i}
                         className={cn(
-                          'px-3 py-1.5 rounded-full text-xs font-semibold',
+                          'px-3 py-1.5 rounded-full text-caption font-semibold',
                           theme.badge
                         )}
                       >
@@ -177,10 +177,10 @@ export function FamilyMemberDetail({ member, type, isOpen, onClose }: FamilyMemb
               {funFacts && (
                 <div className="bg-white rounded-2xl p-4 shadow-sm">
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="text-2xl">✨</span>
+                    <span className="text-h4">✨</span>
                     <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Fun Fact</p>
                   </div>
-                  <p className="text-sm text-foreground leading-relaxed">{funFacts}</p>
+                  <p className="text-body-sm text-foreground leading-relaxed">{funFacts}</p>
                 </div>
               )}
 
@@ -188,7 +188,7 @@ export function FamilyMemberDetail({ member, type, isOpen, onClose }: FamilyMemb
               {resolvedVideoUrl && (
                 <div className="bg-white rounded-2xl p-4 shadow-sm">
                   <div className="flex items-center gap-2 mb-3">
-                    <span className="text-2xl">🎬</span>
+                    <span className="text-h4">🎬</span>
                     <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Video</p>
                   </div>
                   <video
@@ -211,7 +211,7 @@ export function FamilyMemberDetail({ member, type, isOpen, onClose }: FamilyMemb
             <Button
               onClick={onClose}
               className={cn(
-                'w-full rounded-full h-12 font-display font-bold text-base shadow-md',
+                'w-full rounded-full h-12 font-display font-bold text-body shadow-md',
                 'bg-white hover:bg-white/90 text-foreground'
               )}
             >

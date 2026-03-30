@@ -178,7 +178,7 @@ export function ChatInput({
 
       {isNearLimit && (
         <span className={cn(
-          'text-xs text-right',
+          'text-caption text-right',
           remainingChars < 20 ? 'text-destructive' : 'text-muted-foreground'
         )}>
           {remainingChars} characters remaining

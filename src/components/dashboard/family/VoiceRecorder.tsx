@@ -117,7 +117,7 @@ export function VoiceRecorder({
         )}
 
         {isTranscribing && (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <div className="flex items-center gap-2 text-body-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
             Transcribing...
           </div>
@@ -141,13 +141,13 @@ export function VoiceRecorder({
       {isRecording && (
         <div className="flex items-center gap-2 p-3 bg-destructive/10 rounded-lg">
           <div className="h-3 w-3 bg-destructive rounded-full animate-pulse" />
-          <span className="text-sm font-medium">Recording... Speak now</span>
+          <span className="text-body-sm font-medium">Recording... Speak now</span>
         </div>
       )}
 
       {/* Error Display */}
       {recorderError && (
-        <p className="text-sm text-destructive">{recorderError}</p>
+        <p className="text-body-sm text-destructive">{recorderError}</p>
       )}
 
       {/* Text Area */}
@@ -161,7 +161,7 @@ export function VoiceRecorder({
       />
 
       {/* Helper Text */}
-      <p className="text-xs text-muted-foreground">
+      <p className="text-caption text-muted-foreground">
         You can type a description or record your voice (max 1 minute)
       </p>
     </div>

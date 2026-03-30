@@ -50,17 +50,17 @@ export function LandingPage() {
         <div className="grid md:grid-cols-2 gap-12 items-center">
           {/* Left - Content */}
           <div className="space-y-6">
-            <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 text-sm font-medium text-primary">
+            <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 text-body-sm font-medium text-primary">
               <Shield className="h-4 w-4" />
               Safe AI for Kids
             </div>
 
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-display font-bold text-foreground leading-tight">
+            <h1 className="text-h2 md:text-h1 lg:text-h1 font-display font-bold text-foreground leading-tight">
               The safe AI companion for{' '}
               <span className="text-primary">your children</span>
             </h1>
 
-            <p className="text-lg text-muted-foreground max-w-lg">
+            <p className="text-body-lg text-muted-foreground max-w-lg">
               Yoluno brings the magic of AI to children ages 2-10 with complete
               parental control. Interactive stories, learning journeys, and a
               caring AI friend - all in a safe, ad-free environment.
@@ -68,13 +68,13 @@ export function LandingPage() {
 
             <div className="flex flex-wrap gap-4">
               <Link to="/signup">
-                <Button size="lg" className="text-lg px-8">
+                <Button size="lg" className="text-body-lg px-8">
                   <Sparkles className="mr-2 h-5 w-5" />
                   Start Free Trial
                 </Button>
               </Link>
               <Link to="/login">
-                <Button size="lg" variant="outline" className="text-lg px-8">
+                <Button size="lg" variant="outline" className="text-body-lg px-8">
                   Sign In
                 </Button>
               </Link>
@@ -82,15 +82,15 @@ export function LandingPage() {
 
             {/* Trust indicators */}
             <div className="flex items-center gap-6 pt-4">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <div className="flex items-center gap-2 text-body-sm text-muted-foreground">
                 <Lock className="h-4 w-4 text-primary" />
                 <span>COPPA Compliant</span>
               </div>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <div className="flex items-center gap-2 text-body-sm text-muted-foreground">
                 <Ban className="h-4 w-4 text-primary" />
                 <span>No Ads</span>
               </div>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <div className="flex items-center gap-2 text-body-sm text-muted-foreground">
                 <Eye className="h-4 w-4 text-primary" />
                 <span>Parent Controlled</span>
               </div>
@@ -112,7 +112,7 @@ export function LandingPage() {
 
               {/* Speech bubble */}
               <div className="absolute -right-4 top-8 bg-white rounded-2xl rounded-br-none px-4 py-3 shadow-lg animate-bounce-gentle">
-                <p className="text-sm font-medium text-foreground">
+                <p className="text-body-sm font-medium text-foreground">
                   Hi! I'm Luno! 👋
                 </p>
               </div>
@@ -124,10 +124,10 @@ export function LandingPage() {
       {/* Value Propositions */}
       <section className="container mx-auto px-4 py-16">
         <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-display font-bold text-foreground mb-4">
+          <h2 className="text-h3 md:text-h2 font-display font-bold text-foreground mb-4">
             Built for families, loved by kids
           </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-body-lg text-muted-foreground max-w-2xl mx-auto">
             Everything your child needs to learn, explore, and grow - with
             everything you need to keep them safe.
           </p>
@@ -141,7 +141,7 @@ export function LandingPage() {
                 <div className="h-12 w-12 rounded-full bg-primary/20 flex items-center justify-center">
                   <Heart className="h-6 w-6 text-primary" />
                 </div>
-                <h3 className="text-2xl font-display font-bold text-foreground">
+                <h3 className="text-h4 font-display font-bold text-foreground">
                   For Children
                 </h3>
               </div>
@@ -178,7 +178,7 @@ export function LandingPage() {
                 <div className="h-12 w-12 rounded-full bg-child-secondary/20 flex items-center justify-center">
                   <Shield className="h-6 w-6 text-child-secondary" />
                 </div>
-                <h3 className="text-2xl font-display font-bold text-foreground">
+                <h3 className="text-h4 font-display font-bold text-foreground">
                   For Parents
                 </h3>
               </div>
@@ -218,10 +218,10 @@ export function LandingPage() {
       <section className="bg-white py-16">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-display font-bold text-foreground mb-4">
+            <h2 className="text-h3 md:text-h2 font-display font-bold text-foreground mb-4">
               Trust & Safety First
             </h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-body-lg text-muted-foreground max-w-2xl mx-auto">
               We take children's privacy and safety seriously. Yoluno is
               designed from the ground up with protection in mind.
             </p>
@@ -234,8 +234,8 @@ export function LandingPage() {
                 alt="COPPA Certified"
                 className="h-20 md:h-24 mb-3"
               />
-              <p className="text-sm font-medium text-foreground">COPPA Compliant</p>
-              <p className="text-xs text-muted-foreground">Children's Privacy</p>
+              <p className="text-body-sm font-medium text-foreground">COPPA Compliant</p>
+              <p className="text-caption text-muted-foreground">Children's Privacy</p>
             </div>
 
             <div className="flex flex-col items-center text-center">
@@ -244,8 +244,8 @@ export function LandingPage() {
                 alt="kidSAFE Certified"
                 className="h-20 md:h-24 mb-3"
               />
-              <p className="text-sm font-medium text-foreground">kidSAFE Certified</p>
-              <p className="text-xs text-muted-foreground">Safety Standard</p>
+              <p className="text-body-sm font-medium text-foreground">kidSAFE Certified</p>
+              <p className="text-caption text-muted-foreground">Safety Standard</p>
             </div>
 
             <div className="flex flex-col items-center text-center">
@@ -254,8 +254,8 @@ export function LandingPage() {
                 alt="Encrypted & Secure"
                 className="h-20 md:h-24 mb-3"
               />
-              <p className="text-sm font-medium text-foreground">Encrypted</p>
-              <p className="text-xs text-muted-foreground">Data Protection</p>
+              <p className="text-body-sm font-medium text-foreground">Encrypted</p>
+              <p className="text-caption text-muted-foreground">Data Protection</p>
             </div>
           </div>
 
@@ -276,15 +276,15 @@ export function LandingPage() {
       {/* CTA Section */}
       <section className="container mx-auto px-4 py-16">
         <div className="bg-gradient-to-r from-primary to-child-secondary rounded-3xl p-8 md:p-12 text-center text-white">
-          <h2 className="text-3xl md:text-4xl font-display font-bold mb-4">
+          <h2 className="text-h3 md:text-h2 font-display font-bold mb-4">
             Ready to meet Luno?
           </h2>
-          <p className="text-lg opacity-90 mb-8 max-w-lg mx-auto">
+          <p className="text-body-lg opacity-90 mb-8 max-w-lg mx-auto">
             Start your free 7-day trial today. No credit card required.
           </p>
           <div className="flex flex-wrap justify-center gap-4">
             <Link to="/signup">
-              <Button size="lg" variant="secondary" className="text-lg px-8">
+              <Button size="lg" variant="secondary" className="text-body-lg px-8">
                 Create Account
               </Button>
             </Link>
@@ -292,7 +292,7 @@ export function LandingPage() {
               <Button
                 size="lg"
                 variant="outline"
-                className="text-lg px-8 bg-transparent border-white text-white hover:bg-white/20"
+                className="text-body-lg px-8 bg-transparent border-white text-white hover:bg-white/20"
               >
                 Sign In
               </Button>
@@ -307,11 +307,11 @@ export function LandingPage() {
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2">
               <img src={lunoLogo} alt="Yoluno" className="h-8" />
-              <span className="text-sm text-muted-foreground">
+              <span className="text-body-sm text-muted-foreground">
                 © {new Date().getFullYear()} Yoluno. All rights reserved.
               </span>
             </div>
-            <div className="flex items-center gap-6 text-sm text-muted-foreground">
+            <div className="flex items-center gap-6 text-body-sm text-muted-foreground">
               <a href="#" className="hover:text-foreground">
                 Privacy Policy
               </a>
@@ -356,7 +356,7 @@ function FeatureItem({
       </div>
       <div>
         <h4 className="font-semibold text-foreground">{title}</h4>
-        <p className="text-sm text-muted-foreground">{description}</p>
+        <p className="text-body-sm text-muted-foreground">{description}</p>
       </div>
     </li>
   );

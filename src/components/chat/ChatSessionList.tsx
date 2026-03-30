@@ -67,7 +67,7 @@ export function ChatSessionList({
     >
       {/* Sidebar Header */}
       <div className="flex items-center justify-between p-3 border-b shrink-0">
-        <h2 className="font-semibold text-sm text-foreground whitespace-nowrap">Chat History</h2>
+        <h2 className="font-semibold text-body-sm text-foreground whitespace-nowrap">Chat History</h2>
         <Button
           variant="ghost"
           size="icon"
@@ -104,7 +104,7 @@ export function ChatSessionList({
         ) : sessions.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
             <MessageCircle className="h-12 w-12 text-muted-foreground/50 mb-3" />
-            <p className="text-sm text-muted-foreground">
+            <p className="text-body-sm text-muted-foreground">
               No chat history yet.
               <br />
               Start a new conversation!
@@ -193,7 +193,7 @@ function SessionItem({ session, isActive, moodEmoji, onSelect, onRename, onDelet
           onChange={(e) => setEditTitle(e.target.value)}
           onKeyDown={handleKeyDown}
           onBlur={handleSaveRename}
-          className="w-full text-sm font-medium bg-white border border-border rounded px-2 py-1 outline-none focus:ring-2 focus:ring-primary/30"
+          className="w-full text-body-sm font-medium bg-white border border-border rounded px-2 py-1 outline-none focus:ring-2 focus:ring-primary/30"
           maxLength={60}
         />
         <div className="flex gap-1 mt-1.5">
@@ -225,14 +225,14 @@ function SessionItem({ session, isActive, moodEmoji, onSelect, onRename, onDelet
       <button onClick={onSelect} className="w-full text-left">
         <div className="flex items-start gap-2">
           {moodEmoji && (
-            <span className="text-lg flex-shrink-0">{moodEmoji}</span>
+            <span className="text-body-lg flex-shrink-0">{moodEmoji}</span>
           )}
           <div className="flex-1 min-w-0 pr-12">
-            <p className="font-medium text-sm truncate">
+            <p className="font-medium text-body-sm truncate">
               {session.title}
             </p>
             <div className="flex items-center gap-2 mt-0.5">
-              <span className="text-xs text-muted-foreground">
+              <span className="text-caption text-muted-foreground">
                 {timeAgo}
               </span>
             </div>
@@ -243,17 +243,17 @@ function SessionItem({ session, isActive, moodEmoji, onSelect, onRename, onDelet
       {/* Delete confirmation bar */}
       {isConfirmingDelete && (
         <div className="absolute inset-0 z-10 flex items-center justify-between rounded-lg bg-destructive/5 border border-destructive/20 px-3">
-          <span className="text-xs font-medium text-destructive">Delete chat?</span>
+          <span className="text-caption font-medium text-destructive">Delete chat?</span>
           <div className="flex gap-1">
             <button
               onClick={(e) => { e.stopPropagation(); onDelete(); setIsConfirmingDelete(false); }}
-              className="px-2 py-1 text-xs font-medium rounded bg-destructive text-white hover:bg-destructive/90"
+              className="px-2 py-1 text-caption font-medium rounded bg-destructive text-white hover:bg-destructive/90"
             >
               Delete
             </button>
             <button
               onClick={(e) => { e.stopPropagation(); setIsConfirmingDelete(false); }}
-              className="px-2 py-1 text-xs font-medium rounded bg-white text-foreground border border-border hover:bg-muted"
+              className="px-2 py-1 text-caption font-medium rounded bg-white text-foreground border border-border hover:bg-muted"
             >
               Cancel
             </button>

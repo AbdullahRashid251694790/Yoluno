@@ -247,16 +247,16 @@ export function FamilyMemberNode({
 
               <Avatar className="h-16 w-16 mb-2">
                 <AvatarImage src={getUploadUrl(member.photo_url)} alt={member.name} />
-                <AvatarFallback className={cn(colors.bg, colors.text, 'text-lg font-semibold')}>
+                <AvatarFallback className={cn(colors.bg, colors.text, 'text-body-lg font-semibold')}>
                   {initials}
                 </AvatarFallback>
               </Avatar>
 
-              <h4 className="font-semibold text-sm truncate w-full">{member.name}</h4>
+              <h4 className="font-semibold text-body-sm truncate w-full">{member.name}</h4>
 
               {/* Age/Birth Year */}
               {(age !== null || birthYear) && (
-                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                <p className="text-caption text-muted-foreground flex items-center gap-1">
                   <Calendar className="h-3 w-3" />
                   {member.is_alive && age !== null ? `${age} yrs` : birthYear}
                   {!member.is_alive && ' - In Memory'}
@@ -265,13 +265,13 @@ export function FamilyMemberNode({
 
               <Badge
                 variant={member.is_alive ? 'secondary' : 'outline'}
-                className="mt-1 text-xs"
+                className="mt-1 text-caption"
               >
                 {relationshipLabel}
               </Badge>
 
               {member.occupation && (
-                <p className="text-xs text-muted-foreground mt-1 truncate w-full flex items-center justify-center gap-1">
+                <p className="text-caption text-muted-foreground mt-1 truncate w-full flex items-center justify-center gap-1">
                   <Briefcase className="h-3 w-3 flex-shrink-0" />
                   <span className="truncate">{member.occupation}</span>
                 </p>
@@ -282,19 +282,19 @@ export function FamilyMemberNode({
             <div className="space-y-2">
               <p className="font-semibold">{member.name}</p>
               {member.connection_description && (
-                <p className="text-sm text-muted-foreground">{member.connection_description}</p>
+                <p className="text-body-sm text-muted-foreground">{member.connection_description}</p>
               )}
               {member.hobbies && member.hobbies.length > 0 && (
-                <div className="flex items-start gap-1 text-sm">
+                <div className="flex items-start gap-1 text-body-sm">
                   <Heart className="h-3 w-3 mt-0.5 text-lolo flex-shrink-0" />
                   <span>{member.hobbies.join(', ')}</span>
                 </div>
               )}
               {member.fun_facts && (
-                <p className="text-sm italic text-muted-foreground">"{member.fun_facts}"</p>
+                <p className="text-body-sm italic text-muted-foreground">"{member.fun_facts}"</p>
               )}
               {completeness.score < completeness.total && (
-                <p className="text-xs text-gold">
+                <p className="text-caption text-gold">
                   Add more details to help Luno ({completeness.score}/{completeness.total})
                 </p>
               )}

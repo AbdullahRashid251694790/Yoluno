@@ -44,7 +44,7 @@ export function MoodDistributionChart({
 
   if (isError) {
     return (
-      <div className="text-center py-4 text-sm text-muted-foreground">
+      <div className="text-center py-4 text-body-sm text-muted-foreground">
         Unable to load mood distribution
       </div>
     );
@@ -67,7 +67,7 @@ export function MoodDistributionChart({
 
   if (totalCheckins === 0) {
     return (
-      <div className="text-center py-4 text-sm text-muted-foreground">
+      <div className="text-center py-4 text-body-sm text-muted-foreground">
         No mood check-ins in the last {days} days
       </div>
     );
@@ -76,7 +76,7 @@ export function MoodDistributionChart({
   return (
     <div className="space-y-4">
       {/* Summary */}
-      <div className="text-sm text-muted-foreground">
+      <div className="text-body-sm text-muted-foreground">
         {totalCheckins} check-in{totalCheckins !== 1 ? 's' : ''} in the last {days} days
       </div>
 
@@ -91,7 +91,7 @@ export function MoodDistributionChart({
 
           return (
             <div key={mood} className="space-y-1">
-              <div className="flex items-center justify-between text-sm">
+              <div className="flex items-center justify-between text-body-sm">
                 <div className="flex items-center gap-2">
                   <span>{config.emoji}</span>
                   <span className="font-medium">{config.label}</span>
@@ -117,7 +117,7 @@ export function MoodDistributionChart({
       {/* Most Common Mood */}
       {summary?.most_common_mood && (
         <div className="pt-2 border-t">
-          <div className="flex items-center gap-2 text-sm">
+          <div className="flex items-center gap-2 text-body-sm">
             <span className="text-muted-foreground">Most common mood:</span>
             <span className="font-medium flex items-center gap-1">
               {moodConfigs[summary.most_common_mood].emoji}

@@ -144,7 +144,7 @@ export function TopicPostDialog({
               placeholder="e.g., Ouroboros dragons"
               maxLength={100}
             />
-            <p className="text-xs text-muted-foreground">
+            <p className="text-caption text-muted-foreground">
               A short label for this piece of information
             </p>
           </div>
@@ -159,7 +159,7 @@ export function TopicPostDialog({
               rows={4}
               maxLength={1000}
             />
-            <p className="text-xs text-muted-foreground">
+            <p className="text-caption text-muted-foreground">
               The information Luno should know. Max 1000 characters.
             </p>
           </div>

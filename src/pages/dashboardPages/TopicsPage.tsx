@@ -155,7 +155,7 @@ export function TopicsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Content Topics</h1>
+          <h1 className="text-h3 font-bold">Content Topics</h1>
           <p className="text-muted-foreground mt-1">
             Control what topics Luno can discuss with your children.
           </p>
@@ -183,7 +183,7 @@ export function TopicsPage() {
         <CardContent className="flex items-start gap-3 py-4">
           <Info className="h-5 w-5 text-primary mt-0.5" />
           <div>
-            <p className="text-sm text-primary">
+            <p className="text-body-sm text-primary">
               Topics shown are age-appropriate for {selectedChild?.name} (age {topicSettings?.child_age}).
               Add posts to topics to give Luno special knowledge for personalized conversations.
             </p>
@@ -224,7 +224,7 @@ export function TopicsPage() {
             <div className="text-center py-8 text-muted-foreground">
               <Sparkles className="h-12 w-12 mx-auto mb-3 opacity-30" />
               <p>No custom topics yet.</p>
-              <p className="text-sm">Create a topic to add personalized content for Luno.</p>
+              <p className="text-body-sm">Create a topic to add personalized content for Luno.</p>
             </div>
           ) : (
             <Accordion type="multiple" className="w-full">
@@ -235,7 +235,7 @@ export function TopicsPage() {
                     <AccordionTrigger className="hover:no-underline">
                       <div className="flex items-center gap-3 flex-1">
                         {customTopic.icon && (
-                          <span className="text-lg">{customTopic.icon}</span>
+                          <span className="text-body-lg">{customTopic.icon}</span>
                         )}
                         <span className="font-medium">{customTopic.name}</span>
                         <Badge variant="secondary">
@@ -267,7 +267,7 @@ export function TopicsPage() {
                         </div>
 
                         {customTopic.description && (
-                          <p className="text-sm text-muted-foreground">
+                          <p className="text-body-sm text-muted-foreground">
                             {customTopic.description}
                           </p>
                         )}
@@ -341,12 +341,12 @@ export function TopicsPage() {
                                 <div className="space-y-0.5">
                                   <Label
                                     htmlFor={topic.id}
-                                    className="text-sm font-medium cursor-pointer"
+                                    className="text-body-sm font-medium cursor-pointer"
                                   >
                                     {topic.name}
                                   </Label>
                                   {posts.length > 0 && (
-                                    <Badge variant="outline" className="text-xs mt-1">
+                                    <Badge variant="outline" className="text-caption mt-1">
                                       {posts.length} custom {posts.length === 1 ? 'post' : 'posts'}
                                     </Badge>
                                   )}

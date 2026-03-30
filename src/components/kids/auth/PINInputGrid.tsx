@@ -89,7 +89,7 @@ export function PINInputGrid({
 
       {/* Error Message */}
       {error && (
-        <p className="text-sm text-destructive font-medium animate-in fade-in">
+        <p className="text-body-sm text-destructive font-medium animate-in fade-in">
           {error}
         </p>
       )}
@@ -123,7 +123,7 @@ export function PINInputGrid({
               variant="outline"
               size="lg"
               className={cn(
-                'w-16 h-16 rounded-full text-2xl font-bold',
+                'w-16 h-16 rounded-full text-h4 font-bold',
                 'hover:bg-primary hover:text-primary-foreground hover:scale-105',
                 'active:scale-95 transition-all duration-150',
                 'touch-target-kids'

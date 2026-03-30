@@ -195,7 +195,7 @@ export function VoiceVaultPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Voice Vault</h1>
+          <h1 className="text-h3 font-bold">Voice Vault</h1>
           <p className="text-muted-foreground mt-1">
             Saved voice recordings from family members.
           </p>
@@ -283,7 +283,7 @@ export function VoiceVaultPage() {
                     <CardHeader className="pb-2">
                       <div className="flex items-start justify-between">
                         <div className="flex items-center gap-2">
-                          <Badge variant="secondary" className={`text-xs ${categoryInfo?.color}`}>
+                          <Badge variant="secondary" className={`text-caption ${categoryInfo?.color}`}>
                             {categoryInfo?.label || clip.category}
                           </Badge>
                         </div>
@@ -332,11 +332,11 @@ export function VoiceVaultPage() {
                           </AlertDialog>
                         </div>
                       </div>
-                      <CardTitle className="text-base mt-2 line-clamp-1">
+                      <CardTitle className="text-body mt-2 line-clamp-1">
                         {clip.title}
                       </CardTitle>
                       {clip.family_member_name && (
-                        <CardDescription className="text-xs flex items-center gap-1">
+                        <CardDescription className="text-caption flex items-center gap-1">
                           <User className="h-3 w-3" />
                           {clip.family_member_name}
                         </CardDescription>
@@ -368,7 +368,7 @@ export function VoiceVaultPage() {
                             />
                           </div>
                         </div>
-                        <span className="text-xs text-muted-foreground tabular-nums">
+                        <span className="text-caption text-muted-foreground tabular-nums">
                           {isPlaying
                             ? `${formatDuration(currentTime)} / ${formatDuration(clip.duration_seconds)}`
                             : formatDuration(clip.duration_seconds)}
@@ -376,7 +376,7 @@ export function VoiceVaultPage() {
                       </div>
 
                       {clip.description && (
-                        <p className="text-sm text-muted-foreground mt-3 line-clamp-2">
+                        <p className="text-body-sm text-muted-foreground mt-3 line-clamp-2">
                           {clip.description}
                         </p>
                       )}
@@ -384,19 +384,19 @@ export function VoiceVaultPage() {
                       {clip.tags && clip.tags.length > 0 && (
                         <div className="flex flex-wrap gap-1 mt-3">
                           {clip.tags.slice(0, 3).map((tag) => (
-                            <Badge key={tag} variant="outline" className="text-xs">
+                            <Badge key={tag} variant="outline" className="text-caption">
                               {tag}
                             </Badge>
                           ))}
                           {clip.tags.length > 3 && (
-                            <Badge variant="outline" className="text-xs">
+                            <Badge variant="outline" className="text-caption">
                               +{clip.tags.length - 3}
                             </Badge>
                           )}
                         </div>
                       )}
 
-                      <div className="flex items-center justify-between text-xs text-muted-foreground mt-3">
+                      <div className="flex items-center justify-between text-caption text-muted-foreground mt-3">
                         <span className="flex items-center gap-1">
                           <Clock className="h-3 w-3" />
                           {new Date(clip.created_at).toLocaleDateString()}

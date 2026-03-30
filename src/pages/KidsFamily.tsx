@@ -32,6 +32,16 @@ const LABELS: Record<string, string> = {
 function getLabel(m: FamilyMemberRow): string {
   const s = (m as any).specific_relationship;
   if (s && LABELS[s]) return LABELS[s];
+  // Fallback: try to detect from connection_description
+  const desc = (m.connection_description || '').toLowerCase();
+  if (desc.includes('uncle') || desc.includes('brother')) {
+    const r = m.relationship?.toLowerCase() || '';
+    if (r.includes('aunt') || r.includes('uncle')) return 'Uncle';
+  }
+  if (desc.includes('aunt') || desc.includes('sister')) {
+    const r = m.relationship?.toLowerCase() || '';
+    if (r.includes('aunt') || r.includes('uncle')) return 'Aunty';
+  }
   const r = m.relationship?.toLowerCase() || '';
   if (r.includes('grand')) return 'Grandparent';
   if (r.includes('parent')) return 'Parent';
@@ -104,7 +114,7 @@ function Person({ name, label, photoUrl, isMe, isDeceased, color, glow, delay = 
           {resolved ? (
             <img src={resolved} alt={name} className="w-full h-full object-cover" />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-xl font-black"
+            <div className="w-full h-full flex items-center justify-center text-body-lg font-black"
               style={{ background: `linear-gradient(135deg, ${color}30, ${color}10)`, color }}>
               {name.charAt(0).toUpperCase()}
             </div>
@@ -113,7 +123,7 @@ function Person({ name, label, photoUrl, isMe, isDeceased, color, glow, delay = 
 
         {/* Me crown */}
         {isMe && (
-          <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-20 text-2xl drop-shadow-lg"
+          <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-20 text-h4 drop-shadow-lg"
             style={{ animation: 'float 2.5s ease-in-out infinite' }}>
             👑
           </div>
@@ -124,7 +134,7 @@ function Person({ name, label, photoUrl, isMe, isDeceased, color, glow, delay = 
       <div className="text-center">
         <p className={cn(
           'font-bold leading-tight',
-          isMe ? 'text-sm' : 'text-xs',
+          isMe ? 'text-body-sm' : 'text-caption',
         )} style={{ color: isMe ? color : undefined }}>
           {name}
         </p>
@@ -182,9 +192,9 @@ function GenRow({ title, emoji, color, delay = 0, children, split, leftTitle, ri
     <div style={{ animation: `fade-in-up 0.6s cubic-bezier(0.16,1,0.3,1) ${delay}s both` }}>
       <div className="glass-card rounded-3xl p-5">
         <div className="flex items-center justify-center gap-2 mb-4">
-          <span className="text-lg">{emoji}</span>
+          <span className="text-body-lg">{emoji}</span>
           <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary">{title}</p>
-          <span className="text-lg">{emoji}</span>
+          <span className="text-body-lg">{emoji}</span>
         </div>
         <div className="flex justify-center gap-5 flex-wrap">{children}</div>
       </div>
@@ -281,7 +291,7 @@ export function KidsFamilyPage() {
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div className="flex-1">
-          <h1 className="text-lg font-display font-bold text-foreground">
+          <h1 className="text-body-lg font-display font-bold text-foreground">
             My Family Tree 🌳
           </h1>
           <p className="text-[11px] text-muted-foreground">{totalMembers} members</p>
@@ -292,8 +302,8 @@ export function KidsFamilyPage() {
         <div className="relative z-10 px-6 pt-20 flex flex-col items-center">
           <div className="glass-card rounded-3xl p-14 text-center">
             <div className="text-7xl mb-5" style={{ animation: 'float 3s ease-in-out infinite' }}>🌱</div>
-            <p className="text-xl font-display font-bold text-primary mb-2">Your tree is growing!</p>
-            <p className="text-muted-foreground text-sm">Ask your parent to add family members</p>
+            <p className="text-body-lg font-display font-bold text-primary mb-2">Your tree is growing!</p>
+            <p className="text-muted-foreground text-body-sm">Ask your parent to add family members</p>
           </div>
         </div>
       ) : (

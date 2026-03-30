@@ -21,7 +21,7 @@ export function DashboardHeader({ title }: DashboardHeaderProps) {
   return (
     <header className="flex items-center justify-between border-b bg-card px-6 py-4">
       <div>
-        {title && <h1 className="text-2xl font-bold">{title}</h1>}
+        {title && <h1 className="text-h4 font-bold">{title}</h1>}
       </div>
 
       <div className="flex items-center gap-4">

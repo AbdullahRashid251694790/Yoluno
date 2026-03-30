@@ -113,14 +113,14 @@ export function KidsRewardGalleryPage() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div className="flex-1">
-            <h1 className="text-xl font-display font-bold">My Rewards</h1>
-            <p className="text-sm text-muted-foreground">
+            <h1 className="text-body-lg font-display font-bold">My Rewards</h1>
+            <p className="text-body-sm text-muted-foreground">
               {rewards.length} treasure{rewards.length !== 1 ? 's' : ''} earned
             </p>
           </div>
           <div className="flex items-center gap-1.5 rounded-full bg-lala/10 px-3 py-1.5">
             <Trophy className="h-4 w-4 text-lala" />
-            <span className="text-sm font-bold text-lala">{rewards.length}</span>
+            <span className="text-body-sm font-bold text-lala">{rewards.length}</span>
           </div>
         </div>
       </div>
@@ -165,10 +165,10 @@ export function KidsRewardGalleryPage() {
                   )}
                 </div>
                 <CardContent className="p-3">
-                  <h3 className="font-medium text-sm line-clamp-1">
+                  <h3 className="font-medium text-body-sm line-clamp-1">
                     {reward.reward_title}
                   </h3>
-                  <p className="text-xs text-muted-foreground mt-1">
+                  <p className="text-caption text-muted-foreground mt-1">
                     {new Date(reward.earned_at).toLocaleDateString()}
                   </p>
                 </CardContent>
@@ -182,7 +182,7 @@ export function KidsRewardGalleryPage() {
       <Dialog open={!!celebratingReward} onOpenChange={closeCelebration}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-center text-2xl font-display flex items-center justify-center gap-2">
+            <DialogTitle className="text-center text-h4 font-display flex items-center justify-center gap-2">
               <Star className="h-6 w-6 text-lala fill-lala" />
               Journey Complete!
               <Star className="h-6 w-6 text-lala fill-lala" />
@@ -206,7 +206,7 @@ export function KidsRewardGalleryPage() {
               </div>
 
               <div className="text-center space-y-2">
-                <h3 className="text-xl font-bold">
+                <h3 className="text-body-lg font-bold">
                   {celebratingReward.reward_title}
                 </h3>
                 <p className="text-muted-foreground">

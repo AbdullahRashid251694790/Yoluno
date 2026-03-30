@@ -52,21 +52,21 @@ function ChildMoodStatus({ childId, childName }: { childId: string; childName: s
 
   return (
     <div className="flex items-center justify-between py-2">
-      <span className="font-medium text-sm">{childName}</span>
+      <span className="font-medium text-body-sm">{childName}</span>
       {isLoading ? (
-        <span className="text-xs text-muted-foreground">Loading...</span>
+        <span className="text-caption text-muted-foreground">Loading...</span>
       ) : config ? (
-        <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm font-medium ${config.className}`}>
+        <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-body-sm font-medium ${config.className}`}>
           <span>{config.emoji}</span>
           {config.label}
           {todayMood?.created_at && (
-            <span className="ml-1 opacity-60 text-xs">
+            <span className="ml-1 opacity-60 text-caption">
               {new Date(todayMood.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </span>
           )}
         </span>
       ) : (
-        <span className="text-sm text-muted-foreground italic">Not checked in yet</span>
+        <span className="text-body-sm text-muted-foreground italic">Not checked in yet</span>
       )}
     </div>
   );
@@ -109,7 +109,7 @@ export function DashboardHome() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">Welcome back</h1>
+        <h1 className="text-body-lg sm:text-h4 lg:text-h3 font-bold">Welcome back</h1>
         <p className="text-muted-foreground mt-1">
           Here's what's happening with your children's learning today.
         </p>
@@ -128,7 +128,7 @@ export function DashboardHome() {
                   <p className="font-medium text-gold">
                     {unreadAlerts} item{unreadAlerts > 1 ? 's' : ''} need{unreadAlerts === 1 ? 's' : ''} your attention
                   </p>
-                  <p className="text-sm text-gold">Review safety alerts</p>
+                  <p className="text-body-sm text-gold">Review safety alerts</p>
                 </div>
               </div>
               <ChevronRight className="h-5 w-5 text-gold" />
@@ -140,7 +140,7 @@ export function DashboardHome() {
       {/* Children Overview */}
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold">Children Overview</h2>
+          <h2 className="text-body-lg font-semibold">Children Overview</h2>
           <CreateChildDialog
             trigger={
               <Button className="gap-2">
@@ -190,14 +190,14 @@ export function DashboardHome() {
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="text-lg flex items-center gap-2">
+                <CardTitle className="text-body-lg flex items-center gap-2">
                   <Heart className="h-5 w-5 text-lolo" />
                   Today's Moods
                 </CardTitle>
                 <CardDescription>How your children are feeling today</CardDescription>
               </div>
               <Link to="/dashboard/insights">
-                <Button variant="ghost" size="sm" className="text-xs gap-1">
+                <Button variant="ghost" size="sm" className="text-caption gap-1">
                   View history
                   <ChevronRight className="h-3 w-3" />
                 </Button>
@@ -219,16 +219,16 @@ export function DashboardHome() {
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <CardTitle className="text-body-sm font-medium text-muted-foreground flex items-center gap-2">
                 <MessageCircle className="h-4 w-4" />
                 Weekly Messages
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
+              <div className="text-h4 font-bold">
                 {analyticsLoading ? '...' : totalStats.messages}
               </div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-caption text-muted-foreground">
                 across all children
               </p>
             </CardContent>
@@ -236,16 +236,16 @@ export function DashboardHome() {
 
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <CardTitle className="text-body-sm font-medium text-muted-foreground flex items-center gap-2">
                 <BookOpen className="h-4 w-4" />
                 Stories This Week
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
+              <div className="text-h4 font-bold">
                 {analyticsLoading ? '...' : totalStats.stories}
               </div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-caption text-muted-foreground">
                 created together
               </p>
             </CardContent>
@@ -253,16 +253,16 @@ export function DashboardHome() {
 
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <CardTitle className="text-body-sm font-medium text-muted-foreground flex items-center gap-2">
                 <Flame className="h-4 w-4" />
                 Best Streak
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
+              <div className="text-h4 font-bold">
                 {analyticsLoading ? '...' : `${totalStats.streak} days`}
               </div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-caption text-muted-foreground">
                 current streak
               </p>
             </CardContent>
@@ -270,16 +270,16 @@ export function DashboardHome() {
 
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <CardTitle className="text-body-sm font-medium text-muted-foreground flex items-center gap-2">
                 <Trophy className="h-4 w-4" />
                 Total Points
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
+              <div className="text-h4 font-bold">
                 {analyticsLoading ? '...' : totalStats.points.toLocaleString()}
               </div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-caption text-muted-foreground">
                 earned by all children
               </p>
             </CardContent>
@@ -291,7 +291,7 @@ export function DashboardHome() {
       {children.length > 0 && analyticsOverview && (
         <div>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold">This Week's Progress</h2>
+            <h2 className="text-body-lg font-semibold">This Week's Progress</h2>
             <Link to="/dashboard/insights">
               <Button variant="ghost" size="sm" className="gap-2">
                 <BarChart3 className="h-4 w-4" />
@@ -304,7 +304,7 @@ export function DashboardHome() {
             {analyticsOverview.children.map((childData) => (
               <Card key={childData.child.id}>
                 <CardHeader>
-                  <CardTitle className="text-lg flex items-center gap-2">
+                  <CardTitle className="text-body-lg flex items-center gap-2">
                     {childData.child.avatar_url && (
                       <img
                         src={childData.child.avatar_url}
@@ -317,7 +317,7 @@ export function DashboardHome() {
                   <CardDescription>Age {childData.child.age}</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-body-sm">
                     <div className="flex items-center gap-2">
                       <MessageCircle className="h-4 w-4 text-primary" />
                       <span>{childData.weekly_activity.messages} messages</span>
@@ -345,7 +345,7 @@ export function DashboardHome() {
       {/* Quick Actions */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Quick Actions</CardTitle>
+          <CardTitle className="text-body-lg">Quick Actions</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-2">

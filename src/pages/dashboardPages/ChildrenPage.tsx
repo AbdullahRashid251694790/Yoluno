@@ -29,7 +29,7 @@ export function ChildrenPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">Children</h1>
+          <h1 className="text-body-lg sm:text-h4 lg:text-h3 font-bold">Children</h1>
           <p className="text-muted-foreground mt-1">
             Manage your child profiles and settings.
           </p>

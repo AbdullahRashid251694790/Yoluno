@@ -42,7 +42,7 @@ export function SafetyDashboardPage() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold">Safety & Luno Chat</h1>
+          <h1 className="text-h3 font-bold">Safety & Luno Chat</h1>
           <p className="mt-2 text-muted-foreground">
             Monitor conversations and customize your children's AI companion Luno
           </p>
@@ -62,7 +62,7 @@ export function SafetyDashboardPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold">Safety & Luno Chat</h1>
+        <h1 className="text-h3 font-bold">Safety & Luno Chat</h1>
         <p className="mt-2 text-muted-foreground">
           Monitor conversations and customize your children's AI companion Luno
         </p>
@@ -74,7 +74,7 @@ export function SafetyDashboardPage() {
           <div className="flex items-center gap-4">
             <Shield className="h-5 w-5 text-muted-foreground" />
             <div className="flex-1">
-              <label className="text-sm font-medium">Select Child</label>
+              <label className="text-body-sm font-medium">Select Child</label>
               <Select
                 value={selectedChildId || undefined}
                 onValueChange={setSelectedChildId}

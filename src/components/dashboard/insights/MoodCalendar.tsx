@@ -69,7 +69,7 @@ export function MoodCalendar({ childId, days = 28 }: MoodCalendarProps) {
 
   if (isError) {
     return (
-      <div className="text-center py-4 text-sm text-muted-foreground">
+      <div className="text-center py-4 text-body-sm text-muted-foreground">
         Unable to load mood calendar
       </div>
     );
@@ -81,7 +81,7 @@ export function MoodCalendar({ childId, days = 28 }: MoodCalendarProps) {
   return (
     <div className="space-y-4">
       {/* Legend */}
-      <div className="flex flex-wrap items-center gap-4 text-sm">
+      <div className="flex flex-wrap items-center gap-4 text-body-sm">
         {Object.entries(moodConfigs).map(([mood, config]) => (
           <div key={mood} className="flex items-center gap-1.5">
             <div
@@ -106,7 +106,7 @@ export function MoodCalendar({ childId, days = 28 }: MoodCalendarProps) {
           {dayLabels.map((label) => (
             <div
               key={label}
-              className="text-xs text-center text-muted-foreground font-medium"
+              className="text-caption text-center text-muted-foreground font-medium"
             >
               {label}
             </div>
@@ -131,7 +131,7 @@ export function MoodCalendar({ childId, days = 28 }: MoodCalendarProps) {
               <div
                 key={dateStr}
                 className={cn(
-                  'aspect-square rounded-sm transition-colors cursor-default flex items-center justify-center text-xs relative group',
+                  'aspect-square rounded-sm transition-colors cursor-default flex items-center justify-center text-caption relative group',
                   mood ? moodColors[mood] : 'bg-muted/50',
                   isToday && 'ring-2 ring-primary ring-offset-1'
                 )}
@@ -144,7 +144,7 @@ export function MoodCalendar({ childId, days = 28 }: MoodCalendarProps) {
                 {/* Day number on hover or for today */}
                 <span
                   className={cn(
-                    'absolute inset-0 flex items-center justify-center text-xs font-medium transition-opacity',
+                    'absolute inset-0 flex items-center justify-center text-caption font-medium transition-opacity',
                     mood ? 'text-white/80' : 'text-muted-foreground',
                     !isToday && 'opacity-0 group-hover:opacity-100'
                   )}

@@ -23,7 +23,7 @@ export function DetailsSection({
 }: DetailsSectionProps) {
   return (
     <div className="space-y-4">
-      <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
+      <h3 className="text-body-sm font-medium text-muted-foreground uppercase tracking-wide">
         Fun Facts & Stories
       </h3>
 
@@ -36,7 +36,7 @@ export function DetailsSection({
           disabled={isLoading}
           rows={3}
         />
-        <p className="text-xs text-muted-foreground">
+        <p className="text-caption text-muted-foreground">
           Fun facts that Luno can share with kids
         </p>
       </div>

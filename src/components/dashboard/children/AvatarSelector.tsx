@@ -37,7 +37,7 @@ export function AvatarSelector({
 
   if (isError || !avatars || avatars.length === 0) {
     return (
-      <div className="text-center py-4 text-sm text-muted-foreground">
+      <div className="text-center py-4 text-body-sm text-muted-foreground">
         No avatars available
       </div>
     );
@@ -83,7 +83,7 @@ export function AvatarSelector({
             >
               <Avatar className="h-10 w-10 sm:h-12 sm:w-12">
                 <AvatarImage src={avatar.imageUrl} alt={avatar.name} />
-                <AvatarFallback className="text-lg">
+                <AvatarFallback className="text-body-lg">
                   {avatar.name.charAt(0)}
                 </AvatarFallback>
               </Avatar>

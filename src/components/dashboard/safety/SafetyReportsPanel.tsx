@@ -170,19 +170,19 @@ export function SafetyReportsPanel() {
                                 {report.message_excerpt && (
                                   <Alert>
                                     <MessageSquare className="h-4 w-4" />
-                                    <AlertDescription className="text-sm">
+                                    <AlertDescription className="text-body-sm">
                                       "{report.message_excerpt}"
                                     </AlertDescription>
                                   </Alert>
                                 )}
 
                                 {report.ai_analysis && (
-                                  <p className="text-sm text-muted-foreground">
+                                  <p className="text-body-sm text-muted-foreground">
                                     {report.ai_analysis}
                                   </p>
                                 )}
 
-                                <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                                <div className="flex items-center gap-4 text-caption text-muted-foreground">
                                   <span>
                                     {formatRelativeTime(report.created_at)}
                                   </span>
@@ -196,7 +196,7 @@ export function SafetyReportsPanel() {
 
                                 {report.parent_notes && (
                                   <div className="mt-2 rounded-md bg-muted p-2">
-                                    <p className="text-sm">
+                                    <p className="text-body-sm">
                                       <strong>Your notes:</strong> {report.parent_notes}
                                     </p>
                                   </div>
@@ -248,15 +248,15 @@ export function SafetyReportsPanel() {
 
               {selectedReport.message_excerpt && (
                 <div>
-                  <label className="text-sm font-medium">Message:</label>
-                  <p className="mt-1 rounded-md bg-muted p-3 text-sm">
+                  <label className="text-body-sm font-medium">Message:</label>
+                  <p className="mt-1 rounded-md bg-muted p-3 text-body-sm">
                     "{selectedReport.message_excerpt}"
                   </p>
                 </div>
               )}
 
               <div>
-                <label htmlFor="notes" className="text-sm font-medium">
+                <label htmlFor="notes" className="text-body-sm font-medium">
                   Notes (optional):
                 </label>
                 <Textarea

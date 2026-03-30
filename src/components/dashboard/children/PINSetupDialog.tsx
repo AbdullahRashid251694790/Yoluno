@@ -116,12 +116,12 @@ export function PINSetupDialog({
                 pattern="[0-9]*"
                 maxLength={4}
                 placeholder="****"
-                className="text-center text-2xl tracking-widest"
+                className="text-center text-h4 tracking-widest"
                 disabled={isSubmitting}
                 {...register('pin')}
               />
               {errors.pin && (
-                <p className="text-sm text-destructive">{errors.pin.message}</p>
+                <p className="text-body-sm text-destructive">{errors.pin.message}</p>
               )}
             </div>
 
@@ -134,12 +134,12 @@ export function PINSetupDialog({
                 pattern="[0-9]*"
                 maxLength={4}
                 placeholder="****"
-                className="text-center text-2xl tracking-widest"
+                className="text-center text-h4 tracking-widest"
                 disabled={isSubmitting}
                 {...register('confirmPin')}
               />
               {errors.confirmPin && (
-                <p className="text-sm text-destructive">{errors.confirmPin.message}</p>
+                <p className="text-body-sm text-destructive">{errors.confirmPin.message}</p>
               )}
             </div>
           </div>

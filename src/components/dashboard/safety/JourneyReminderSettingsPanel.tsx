@@ -97,7 +97,7 @@ export function JourneyReminderSettingsPanel({
             <div className="flex items-center gap-3">
               <Bell className="h-5 w-5 text-primary" />
               <div>
-                <CardTitle className="text-base">Journey Reminders</CardTitle>
+                <CardTitle className="text-body">Journey Reminders</CardTitle>
                 <CardDescription>
                   Remind {childName} about pending journey tasks
                 </CardDescription>
@@ -125,7 +125,7 @@ export function JourneyReminderSettingsPanel({
               <div className="flex items-center gap-3">
                 <Clock className="h-5 w-5 text-muted-foreground" />
                 <div>
-                  <CardTitle className="text-base">Reminder Interval</CardTitle>
+                  <CardTitle className="text-body">Reminder Interval</CardTitle>
                   <CardDescription>
                     How often to remind about pending tasks
                   </CardDescription>
@@ -160,7 +160,7 @@ export function JourneyReminderSettingsPanel({
           {/* Max Reminders */}
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base">Maximum Reminders Per Day</CardTitle>
+              <CardTitle className="text-body">Maximum Reminders Per Day</CardTitle>
               <CardDescription>
                 Limit the number of reminders sent each day
               </CardDescription>
@@ -178,7 +178,7 @@ export function JourneyReminderSettingsPanel({
                       max={5}
                       step={1}
                     />
-                    <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center justify-between text-body-sm">
                       <span className="text-muted-foreground">1</span>
                       <Badge variant="secondary">{field.value} per day</Badge>
                       <span className="text-muted-foreground">5</span>
@@ -195,7 +195,7 @@ export function JourneyReminderSettingsPanel({
               <div className="flex items-center gap-3">
                 <MessageCircle className="h-5 w-5 text-muted-foreground" />
                 <div>
-                  <CardTitle className="text-base">Reminder Tone</CardTitle>
+                  <CardTitle className="text-body">Reminder Tone</CardTitle>
                   <CardDescription>
                     How Luno should phrase reminders
                   </CardDescription>
@@ -219,8 +219,8 @@ export function JourneyReminderSettingsPanel({
                             : 'border-muted hover:border-muted-foreground/50'
                         }`}
                       >
-                        <p className="font-medium text-sm">{tone.label}</p>
-                        <p className="text-xs text-muted-foreground mt-1">
+                        <p className="font-medium text-body-sm">{tone.label}</p>
+                        <p className="text-caption text-muted-foreground mt-1">
                           {tone.description}
                         </p>
                       </button>
@@ -234,7 +234,7 @@ export function JourneyReminderSettingsPanel({
           {/* Quiet Hours */}
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base">Quiet Hours</CardTitle>
+              <CardTitle className="text-body">Quiet Hours</CardTitle>
               <CardDescription>
                 Don't send reminders during these hours
               </CardDescription>
@@ -242,7 +242,7 @@ export function JourneyReminderSettingsPanel({
             <CardContent>
               <div className="flex items-center gap-4">
                 <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">Start</Label>
+                  <Label className="text-caption text-muted-foreground">Start</Label>
                   <Controller
                     control={control}
                     name="quiet_hours_start"
@@ -251,14 +251,14 @@ export function JourneyReminderSettingsPanel({
                         type="time"
                         value={field.value}
                         onChange={(e) => field.onChange(e.target.value)}
-                        className="px-3 py-2 border rounded-md text-sm"
+                        className="px-3 py-2 border rounded-md text-body-sm"
                       />
                     )}
                   />
                 </div>
                 <span className="text-muted-foreground mt-5">to</span>
                 <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">End</Label>
+                  <Label className="text-caption text-muted-foreground">End</Label>
                   <Controller
                     control={control}
                     name="quiet_hours_end"
@@ -267,7 +267,7 @@ export function JourneyReminderSettingsPanel({
                         type="time"
                         value={field.value}
                         onChange={(e) => field.onChange(e.target.value)}
-                        className="px-3 py-2 border rounded-md text-sm"
+                        className="px-3 py-2 border rounded-md text-body-sm"
                       />
                     )}
                   />

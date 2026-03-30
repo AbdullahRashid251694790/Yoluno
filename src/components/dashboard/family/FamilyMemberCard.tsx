@@ -69,7 +69,7 @@ export function FamilyMemberCard({
             <div className="flex items-center gap-2">
               <h4 className="font-semibold truncate">{member.name}</h4>
               {!member.is_alive && (
-                <Badge variant="outline" className="text-xs">
+                <Badge variant="outline" className="text-caption">
                   In Memory
                 </Badge>
               )}
@@ -80,12 +80,12 @@ export function FamilyMemberCard({
             </Badge>
 
             {member.connection_description && (
-              <p className="text-xs text-muted-foreground mt-1 truncate">
+              <p className="text-caption text-muted-foreground mt-1 truncate">
                 {member.connection_description}
               </p>
             )}
 
-            <div className="flex flex-wrap gap-2 mt-2 text-xs text-muted-foreground">
+            <div className="flex flex-wrap gap-2 mt-2 text-caption text-muted-foreground">
               {member.occupation && (
                 <span className="flex items-center gap-1">
                   <Briefcase className="h-3 w-3" />

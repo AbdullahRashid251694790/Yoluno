@@ -109,7 +109,7 @@ export function BadgeCelebration({
               className={`w-24 h-24 rounded-full bg-gradient-to-br ${gradientClass} flex items-center justify-center shadow-lg animate-bounce`}
             >
               {badge.name ? (
-                <span className="text-5xl">{BADGE_EMOJIS[badge.name] || '🏅'}</span>
+                <span className="text-h1">{BADGE_EMOJIS[badge.name] || '🏅'}</span>
               ) : (
                 <CategoryIcon className="w-12 h-12 text-white" />
               )}
@@ -119,7 +119,7 @@ export function BadgeCelebration({
             <Sparkles className="absolute -bottom-1 -left-2 w-5 h-5 text-lala animate-pulse delay-100" />
           </div>
 
-          <DialogTitle className="text-2xl font-bold">
+          <DialogTitle className="text-h4 font-bold">
             🎉 Badge Earned! 🎉
           </DialogTitle>
 
@@ -127,16 +127,16 @@ export function BadgeCelebration({
             <div className="space-y-4 pt-2">
               <Badge
                 variant="secondary"
-                className={`text-lg px-4 py-1 bg-gradient-to-r ${gradientClass} text-white border-0`}
+                className={`text-body-lg px-4 py-1 bg-gradient-to-r ${gradientClass} text-white border-0`}
               >
                 {badge.display_name}
               </Badge>
 
-              <p className="text-muted-foreground text-base">
+              <p className="text-muted-foreground text-body">
                 {badge.description}
               </p>
 
-              <p className="text-sm text-muted-foreground italic">
+              <p className="text-body-sm text-muted-foreground italic">
                 Keep up the great work!
               </p>
             </div>

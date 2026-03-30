@@ -36,7 +36,7 @@ export function MediaSection({
 
   return (
     <div className="space-y-4">
-      <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
+      <h3 className="text-body-sm font-medium text-muted-foreground uppercase tracking-wide">
         Photo & Video
       </h3>
 
@@ -63,7 +63,7 @@ export function MediaSection({
         {videoFile ? (
           <div className="flex items-center gap-2 rounded-lg border p-3 bg-muted/30">
             <Video className="h-4 w-4 text-primary" />
-            <span className="text-sm flex-1 truncate">{videoFile.name}</span>
+            <span className="text-body-sm flex-1 truncate">{videoFile.name}</span>
             <Button
               type="button"
               variant="ghost"
@@ -77,7 +77,7 @@ export function MediaSection({
         ) : existingVideoUrl ? (
           <div className="flex items-center gap-2 rounded-lg border p-3 bg-muted/30">
             <Video className="h-4 w-4 text-primary" />
-            <span className="text-sm flex-1 text-muted-foreground">Video uploaded</span>
+            <span className="text-body-sm flex-1 text-muted-foreground">Video uploaded</span>
             <Button
               type="button"
               variant="outline"

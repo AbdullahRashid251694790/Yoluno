@@ -194,10 +194,10 @@ export function RecordVoiceClipDialog({ open, onOpenChange }: RecordVoiceClipDia
           <div className="flex flex-col items-center gap-4 p-6 bg-muted rounded-lg">
             {/* Recording State Display */}
             <div className="text-center">
-              <div className="text-3xl font-mono font-bold">
+              <div className="text-h3 font-mono font-bold">
                 {formatDuration(duration)}
               </div>
-              <div className="text-sm text-muted-foreground mt-1">
+              <div className="text-body-sm text-muted-foreground mt-1">
                 {recordingState === 'idle' && 'Ready to record'}
                 {recordingState === 'recording' && 'Recording...'}
                 {recordingState === 'stopped' && 'Recording complete'}
@@ -254,7 +254,7 @@ export function RecordVoiceClipDialog({ open, onOpenChange }: RecordVoiceClipDia
             </div>
 
             {recordingError && (
-              <p className="text-sm text-destructive">{recordingError}</p>
+              <p className="text-body-sm text-destructive">{recordingError}</p>
             )}
           </div>
 

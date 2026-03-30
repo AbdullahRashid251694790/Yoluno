@@ -211,7 +211,7 @@ export function StorybookReader({
       <div className="fixed inset-0 z-50 bg-black flex items-center justify-center">
         <div className="text-white text-center">
           <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4" />
-          <p className="text-lg">Loading storybook...</p>
+          <p className="text-body-lg">Loading storybook...</p>
         </div>
       </div>
     );
@@ -273,7 +273,7 @@ export function StorybookReader({
 
       {/* Illustration progress indicator */}
       {illustrationProgress && illustrationProgress.completed < illustrationProgress.total && (
-        <div className="absolute top-4 left-4 z-10 bg-black/50 rounded-lg px-3 py-2 text-white text-sm">
+        <div className="absolute top-4 left-4 z-10 bg-black/50 rounded-lg px-3 py-2 text-white text-body-sm">
           <Loader2 className="h-4 w-4 animate-spin inline mr-2" />
           Generating illustrations: {illustrationProgress.completed}/{illustrationProgress.total}
         </div>

@@ -149,29 +149,29 @@ export function FamilyMemberCard({ member, type, isSelf, onPress }: FamilyMember
             'w-full h-full flex items-center justify-center',
             config.bgColor
           )}>
-            <span className={cn('text-5xl font-bold', config.textColor)}>
+            <span className={cn('text-h1 font-bold', config.textColor)}>
               {name.charAt(0).toUpperCase()}
             </span>
           </div>
         )}
         {/* Emoji badge */}
-        <span className="absolute top-2 right-2 text-2xl bg-white/90 rounded-full p-1.5 shadow-md">
+        <span className="absolute top-2 right-2 text-h4 bg-white/90 rounded-full p-1.5 shadow-md">
           {config.emoji}
         </span>
       </div>
 
       {/* Info section */}
       <div className="p-3">
-        <h3 className="font-display font-bold text-base text-foreground truncate">
+        <h3 className="font-display font-bold text-body text-foreground truncate">
           {name}
         </h3>
-        <p className={cn('text-xs font-medium capitalize', config.textColor)}>
+        <p className={cn('text-caption font-medium capitalize', config.textColor)}>
           {subtitle}
         </p>
 
         {/* Connection description */}
         {connectionDesc && (
-          <p className="text-xs text-muted-foreground mt-1.5 line-clamp-1">
+          <p className="text-caption text-muted-foreground mt-1.5 line-clamp-1">
             {connectionDesc}
           </p>
         )}
@@ -179,7 +179,7 @@ export function FamilyMemberCard({ member, type, isSelf, onPress }: FamilyMember
         {/* Fun fact - prominently displayed */}
         {funFact && (
           <div className={cn(
-            'mt-2 px-2.5 py-1.5 rounded-lg text-xs',
+            'mt-2 px-2.5 py-1.5 rounded-lg text-caption',
             config.bgColor, config.textColor
           )}>
             <span className="font-medium">Fun fact: </span>

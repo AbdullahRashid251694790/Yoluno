@@ -85,6 +85,18 @@ export default {
         'warm-lg': '0 16px 48px rgba(45, 42, 38, 0.1)',
         'warm-sm': '0 4px 16px rgba(45, 42, 38, 0.04)',
       },
+      fontSize: {
+        /* Typography tokens — exact values from landing page */
+        'display': ['56px', { lineHeight: '1.25' }],   /* HeroSection h1: text-[56px] leading-tight */
+        'h1':      ['48px', { lineHeight: '1.2' }],     /* FeaturesPage h1: text-5xl */
+        'h2':      ['38px', { lineHeight: '1.3' }],     /* Section h2: text-[38px] */
+        'h3':      ['30px', { lineHeight: '1.3' }],     /* Section h2 small: text-3xl */
+        'h4':      ['24px', { lineHeight: '1.3' }],     /* Card h3: text-2xl */
+        'body-lg': ['18px', { lineHeight: '1.625' }],   /* Section descriptions: text-lg leading-relaxed */
+        'body':    ['15px', { lineHeight: '1.7' }],      /* SpacesSection body: text-[15px] leading-[1.7] */
+        'body-sm': ['14px', { lineHeight: '1.625' }],   /* Captions, small text: text-sm leading-relaxed */
+        'caption': ['12px', { lineHeight: '1.5' }],      /* Labels, tiny text: text-xs */
+      },
       fontFamily: {
         /* From landing tailwind.config.ts lines 17-18 */
         heading: ['Fraunces', 'Playfair Display', 'Georgia', 'serif'],

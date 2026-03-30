@@ -153,7 +153,7 @@ export function JourneyCard({
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <h3 className="font-semibold text-lg line-clamp-1 cursor-default">
+                  <h3 className="font-semibold text-body-lg line-clamp-1 cursor-default">
                     {journey.title}
                   </h3>
                 </TooltipTrigger>
@@ -176,7 +176,7 @@ export function JourneyCard({
             )}
             <Badge
               variant="secondary"
-              className={cn('capitalize text-xs', statusStyle.bg, statusStyle.text, statusStyle.ring)}
+              className={cn('capitalize text-caption', statusStyle.bg, statusStyle.text, statusStyle.ring)}
             >
               <StatusIcon className="h-3 w-3 mr-1" />
               {journey.status}
@@ -188,7 +188,7 @@ export function JourneyCard({
       <CardContent>
         {/* Child indicator */}
         {childName && (
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2">
+          <div className="flex items-center gap-1.5 text-caption text-muted-foreground mb-2">
             <Avatar className="h-5 w-5">
               <AvatarFallback className="text-[10px] bg-primary/10 text-primary">
                 {childName.charAt(0).toUpperCase()}
@@ -199,7 +199,7 @@ export function JourneyCard({
         )}
 
         {journey.description && (
-          <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+          <p className="text-body-sm text-muted-foreground line-clamp-2 mb-3">
             {journey.description}
           </p>
         )}
@@ -221,13 +221,13 @@ export function JourneyCard({
                     />
                   ))}
                   {journey.totalSteps > 7 && (
-                    <span className="text-xs text-muted-foreground ml-1">+{journey.totalSteps - 7}</span>
+                    <span className="text-caption text-muted-foreground ml-1">+{journey.totalSteps - 7}</span>
                   )}
                 </div>
               )}
             </div>
             <span className={cn(
-              'text-sm font-semibold',
+              'text-body-sm font-semibold',
               isCompleted && 'text-primary'
             )}>
               {progress}%
@@ -245,7 +245,7 @@ export function JourneyCard({
 
           {/* Step counter */}
           {journey.totalSteps > 0 && (
-            <p className="text-xs text-muted-foreground">
+            <p className="text-caption text-muted-foreground">
               {isCompleted ? (
                 <span className="flex items-center gap-1 text-primary">
                   <CheckCircle2 className="h-3 w-3" />

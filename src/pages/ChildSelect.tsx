@@ -60,8 +60,8 @@ export function ChildSelectPage() {
     return (
       <div className="min-h-screen bg-kids-gradient flex items-center justify-center">
         <div className="text-center">
-          <div className="text-6xl animate-bounce-gentle mb-4">✨</div>
-          <p className="text-xl font-display font-semibold text-primary">
+          <div className="text-h1 animate-bounce-gentle mb-4">✨</div>
+          <p className="text-body-lg font-display font-semibold text-primary">
             Loading...
           </p>
         </div>
@@ -75,7 +75,7 @@ export function ChildSelectPage() {
       <header className="p-6 flex justify-between items-center">
         <div className="flex items-center gap-2">
           <Sparkles className="h-8 w-8 text-primary" />
-          <span className="text-2xl font-display font-bold text-primary">Yoluno</span>
+          <span className="text-h4 font-display font-bold text-primary">Yoluno</span>
         </div>
         <Button
           variant="ghost"
@@ -92,12 +92,12 @@ export function ChildSelectPage() {
       <main className="flex-1 flex flex-col items-center justify-center px-4 py-8">
         {/* Welcome message */}
         <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-display font-bold text-foreground mb-2">
+          <h1 className="text-h2 md:text-h1 font-display font-bold text-foreground mb-2">
             <span className="mr-2">🌈</span>
             Welcome back!
             <span className="ml-2">🌈</span>
           </h1>
-          <p className="text-xl text-muted-foreground mt-4">
+          <p className="text-body-lg text-muted-foreground mt-4">
             Tap your picture to start playing!
           </p>
         </div>
@@ -105,8 +105,8 @@ export function ChildSelectPage() {
         {/* Child profiles */}
         {children.length === 0 ? (
           <div className="text-center max-w-md">
-            <div className="text-6xl mb-4">👋</div>
-            <h2 className="text-2xl font-display font-bold mb-2">No profiles yet!</h2>
+            <div className="text-h1 mb-4">👋</div>
+            <h2 className="text-h4 font-display font-bold mb-2">No profiles yet!</h2>
             <p className="text-muted-foreground mb-6">
               Ask a parent to create your profile.
             </p>
@@ -145,7 +145,7 @@ export function ChildSelectPage() {
                   <div className="relative">
                     <Avatar className="h-32 w-32 border-4 border-white shadow-md group-hover:animate-wiggle">
                       <AvatarImage src={getUploadUrl(child.avatarUrl) || undefined} alt={child.name} />
-                      <AvatarFallback className="bg-gradient-to-br from-primary to-child-secondary text-4xl text-white font-display">
+                      <AvatarFallback className="bg-gradient-to-br from-primary to-child-secondary text-h2 text-white font-display">
                         {getInitials(child.name)}
                       </AvatarFallback>
                     </Avatar>
@@ -165,7 +165,7 @@ export function ChildSelectPage() {
                   </div>
 
                   {/* Name */}
-                  <h3 className="mt-4 text-2xl font-display font-bold text-foreground">
+                  <h3 className="mt-4 text-h4 font-display font-bold text-foreground">
                     {child.name}
                   </h3>
 
@@ -192,7 +192,7 @@ export function ChildSelectPage() {
                 'cursor-pointer min-w-[180px] min-h-[220px]'
               )}
             >
-              <div className="h-20 w-20 rounded-full bg-muted flex items-center justify-center text-4xl">
+              <div className="h-20 w-20 rounded-full bg-muted flex items-center justify-center text-h2">
                 ➕
               </div>
               <p className="mt-4 text-muted-foreground font-medium">Add Me!</p>
@@ -203,7 +203,7 @@ export function ChildSelectPage() {
 
       {/* Footer */}
       <footer className="p-6 text-center">
-        <p className="text-sm text-muted-foreground">
+        <p className="text-body-sm text-muted-foreground">
           Made with ❤️ for curious minds
         </p>
       </footer>

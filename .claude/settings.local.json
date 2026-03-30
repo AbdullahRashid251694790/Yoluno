@@ -118,7 +118,12 @@
       "Read(//f/yulono/yoluno/**)",
       "Bash(git -C \"F:/yulono/yoluno\" status --short)",
       "Bash(git -C \"F:/yulono/yoluno\" add src/index.css tailwind.config.js index.html public/favicon.svg src/components/ui/button.tsx src/components/ui/card.tsx src/components/ui/input.tsx src/components/ui/select.tsx src/components/ui/alert.tsx src/components/ui/toast.tsx src/components/ui/dropdown-menu.tsx)",
-      "Bash(git -C:*)"
+      "Bash(git -C:*)",
+      "Bash(sed -i -e 's/className=\"\"text-2xl text-foreground\"\"/className=\"\"text-h4 text-foreground\"\"/g' -e 's/className=\"\"text-sm text-foreground\\\\/80/className=\"\"text-body-sm text-foreground\\\\/80/g' -e 's/\"\"text-xs text-gold\"\"/\"\"text-caption text-gold\"\"/g' -e 's/\"\"text-sm text-primary/\"\"text-body-sm text-primary/g' -e 's/text-center text-sm text-muted-foreground/text-center text-body-sm text-muted-foreground/g' src/pages/Login.tsx)",
+      "Bash(sed -i -e 's/className=\"\"text-2xl text-foreground\"\"/className=\"\"text-h4 text-foreground\"\"/g' -e 's/\"\"text-xs text-muted-foreground\"\"/\"\"text-caption text-muted-foreground\"\"/g' -e 's/text-center text-sm text-muted-foreground/text-center text-body-sm text-muted-foreground/g' src/pages/Signup.tsx)",
+      "Bash(sed -i -e 's/className=\"\"text-2xl text-foreground\"\"/className=\"\"text-h4 text-foreground\"\"/g' -e 's/\"\"text-sm text-destructive/\"\"text-body-sm text-destructive/g' -e 's/text-center text-sm text-muted-foreground/text-center text-body-sm text-muted-foreground/g' src/pages/ForgotPassword.tsx)",
+      "Bash(sed -i -e 's/\"\"text-sm text-destructive\"\"/\"\"text-body-sm text-destructive\"\"/g' -e 's/\"\"text-sm font-medium\"\"/\"\"text-body-sm font-medium\"\"/g' src/pages/ResetPassword.tsx)",
+      "Bash(sed -i -e 's/className=\"\"text-2xl text-foreground\"\"/className=\"\"text-h4 text-foreground\"\"/g' -e 's/py-2 text-sm\"\"/py-2 text-body-sm\"\"/g' -e 's/text-center text-xs text-muted-foreground/text-center text-caption text-muted-foreground/g' src/pages/VerifyEmail.tsx)"
     ]
   }
 }

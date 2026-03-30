@@ -55,7 +55,7 @@ export function HobbiesSection({
 
   return (
     <div className="space-y-4">
-      <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
+      <h3 className="text-body-sm font-medium text-muted-foreground uppercase tracking-wide">
         Hobbies & Interests
       </h3>
 

@@ -71,7 +71,7 @@ export function ChatContainer({ avatarUrl }: ChatContainerProps) {
                   <span className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground delay-100" />
                   <span className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground delay-200" />
                 </div>
-                <span className="text-sm">Thinking...</span>
+                <span className="text-body-sm">Thinking...</span>
               </div>
             )}
           </div>

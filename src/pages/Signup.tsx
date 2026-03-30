@@ -66,7 +66,7 @@ export function SignupPage() {
           <Link to="/" className="mx-auto mb-4 block">
             <img src={yolunoLogo} alt="Yoluno" className="h-12 mx-auto" />
           </Link>
-          <CardTitle className="text-2xl text-foreground">Create account</CardTitle>
+          <CardTitle className="text-h4 text-foreground">Create account</CardTitle>
           <CardDescription className="text-muted-foreground">Start your family's learning journey</CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
@@ -108,7 +108,7 @@ export function SignupPage() {
                   )}
                 </button>
               </div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-caption text-muted-foreground">
                 Must be 8+ characters with uppercase, lowercase, number, and special character.
               </p>
             </div>
@@ -150,7 +150,7 @@ export function SignupPage() {
                 'Create Account'
               )}
             </Button>
-            <p className="text-center text-sm text-muted-foreground">
+            <p className="text-center text-body-sm text-muted-foreground">
               Already have an account?{' '}
               <Link to="/login" className="text-primary hover:underline font-medium">
                 Sign in

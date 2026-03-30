@@ -83,7 +83,7 @@ export function FamilyTreePage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Family Tree</h1>
+          <h1 className="text-h4 font-bold">Family Tree</h1>
           <p className="text-muted-foreground">
             Add family members so Luno can answer questions about your family
           </p>
@@ -107,7 +107,7 @@ export function FamilyTreePage() {
       </div>
 
       {/* Stats */}
-      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+      <div className="flex items-center gap-4 text-body-sm text-muted-foreground">
         <div className="flex items-center gap-2">
           <Users className="h-4 w-4" />
           <span>{members.length} family members</span>
@@ -147,7 +147,7 @@ export function FamilyTreePage() {
             <div className="flex flex-col items-center justify-center h-64 text-center">
               <Users className="h-12 w-12 text-muted-foreground/50 mb-4" />
               <h3 className="font-medium">No family members yet</h3>
-              <p className="text-sm text-muted-foreground mt-1">
+              <p className="text-body-sm text-muted-foreground mt-1">
                 Add family members to help Luno answer questions
               </p>
               <Button onClick={handleAddMember} className="mt-4">
@@ -170,7 +170,7 @@ export function FamilyTreePage() {
       </Tabs>
 
       {/* Info Box */}
-      <div className="bg-muted/50 rounded-lg p-4 text-sm">
+      <div className="bg-muted/50 rounded-lg p-4 text-body-sm">
         <h4 className="font-medium mb-2">How the Family Tree helps your child</h4>
         <ul className="list-disc list-inside space-y-1 text-muted-foreground">
           <li>

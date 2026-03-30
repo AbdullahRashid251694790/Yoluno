@@ -202,7 +202,7 @@ export function EditJourneyDialog({
                 >
                   {journeyDetails.status}
                 </Badge>
-                <span className="text-sm text-muted-foreground">
+                <span className="text-body-sm text-muted-foreground">
                   {journeyDetails.currentStep} of {journeyDetails.totalSteps} steps completed
                 </span>
               </div>
@@ -213,7 +213,7 @@ export function EditJourneyDialog({
                 <ScrollArea className="h-48 rounded-md border">
                   <div className="p-2 space-y-2">
                     {journeyDetails.steps.length === 0 ? (
-                      <p className="text-center text-muted-foreground py-4 text-sm">
+                      <p className="text-center text-muted-foreground py-4 text-body-sm">
                         No tasks yet. Add one below.
                       </p>
                     ) : (
@@ -236,12 +236,12 @@ export function EditJourneyDialog({
 
                             <div className="flex-1 min-w-0">
                               <p className={cn(
-                                'text-sm font-medium truncate',
+                                'text-body-sm font-medium truncate',
                                 step.isCompleted && 'text-primary'
                               )}>
                                 {step.title}
                               </p>
-                              <p className="text-xs text-muted-foreground">
+                              <p className="text-caption text-muted-foreground">
                                 Step {index + 1}
                               </p>
                             </div>

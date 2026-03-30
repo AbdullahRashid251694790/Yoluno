@@ -173,7 +173,7 @@ export function BuddyChat({ childId, childName, sessionId, childAvatarUrl }: Bud
       <div className="flex h-full items-center justify-center bg-kids-gradient">
         <div className="flex flex-col items-center gap-4">
           <ChatAvatar expression="thinking" size="xl" />
-          <p className="text-lg font-medium text-primary animate-pulse">
+          <p className="text-body-lg font-medium text-primary animate-pulse">
             Getting ready to chat...
           </p>
         </div>
@@ -195,7 +195,7 @@ export function BuddyChat({ childId, childName, sessionId, childAvatarUrl }: Bud
           />
           <div>
             <h3 className="font-display font-semibold text-foreground">{buddyName}</h3>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-caption text-muted-foreground">
               {isSending ? 'Thinking...' : 'Online'}
             </p>
           </div>
@@ -203,7 +203,7 @@ export function BuddyChat({ childId, childName, sessionId, childAvatarUrl }: Bud
 
         <div className="flex items-center gap-1.5 rounded-full bg-lala/10 px-3 py-1.5">
           <Star className="h-4 w-4 text-lala fill-lala" />
-          <span className="text-sm font-bold text-lala">{starCount}</span>
+          <span className="text-body-sm font-bold text-lala">{starCount}</span>
         </div>
       </div>
 
@@ -214,7 +214,7 @@ export function BuddyChat({ childId, childName, sessionId, childAvatarUrl }: Bud
       {hasRedFlag && (
         <Alert variant="destructive" className="mx-4 mt-2 rounded-xl">
           <AlertTriangle className="h-4 w-4" />
-          <AlertDescription className="text-xs">
+          <AlertDescription className="text-caption">
             A parent has been notified about your recent conversation.
           </AlertDescription>
         </Alert>
@@ -225,7 +225,7 @@ export function BuddyChat({ childId, childName, sessionId, childAvatarUrl }: Bud
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12">
             <ChatAvatar expression="excited" size="hero" showName buddyName={buddyName} />
-            <p className="mt-6 text-lg text-center text-muted-foreground max-w-xs">
+            <p className="mt-6 text-body-lg text-center text-muted-foreground max-w-xs">
               Hi {childName}! I'm {buddyName}, your AI friend!
               What would you like to talk about today?
             </p>

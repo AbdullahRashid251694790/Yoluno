@@ -21,9 +21,9 @@ const sizeClasses = {
 };
 
 const textClasses = {
-  sm: 'text-sm',
-  md: 'text-base',
-  lg: 'text-lg',
+  sm: 'text-body-sm',
+  md: 'text-body',
+  lg: 'text-body-lg',
 };
 
 export function LoadingState({

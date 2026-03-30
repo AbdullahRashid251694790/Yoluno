@@ -71,7 +71,7 @@ export function LoginPage() {
           <Link to="/" className="mx-auto mb-4 block">
             <img src={yolunoLogo} alt="Yoluno" className="h-12 mx-auto" />
           </Link>
-          <CardTitle className="text-2xl text-foreground">Welcome back</CardTitle>
+          <CardTitle className="text-h4 text-foreground">Welcome back</CardTitle>
           <CardDescription className="text-muted-foreground">Sign in to your Yoluno account</CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
@@ -81,10 +81,10 @@ export function LoginPage() {
                 <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-gold/10">
                   <Mail className="h-5 w-5 text-gold" />
                 </div>
-                <p className="text-sm text-foreground/80 font-medium">
+                <p className="text-body-sm text-foreground/80 font-medium">
                   Please verify your email before signing in.
                 </p>
-                <p className="text-xs text-gold">
+                <p className="text-caption text-gold">
                   Check your inbox for the verification link we sent to{' '}
                   <span className="font-medium">{email}</span>.
                 </p>
@@ -146,7 +146,7 @@ export function LoginPage() {
               </div>
             </div>
             <div className="text-right">
-              <Link to="/forgot-password" className="text-sm text-primary hover:underline">
+              <Link to="/forgot-password" className="text-body-sm text-primary hover:underline">
                 Forgot password?
               </Link>
             </div>
@@ -162,7 +162,7 @@ export function LoginPage() {
                 'Sign In'
               )}
             </Button>
-            <p className="text-center text-sm text-muted-foreground">
+            <p className="text-center text-body-sm text-muted-foreground">
               Don't have an account?{' '}
               <Link to="/signup" className="text-primary hover:underline font-medium">
                 Sign up

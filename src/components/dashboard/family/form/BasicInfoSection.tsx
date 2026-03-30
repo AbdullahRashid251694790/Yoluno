@@ -59,12 +59,12 @@ const SPECIFIC_RELATIONSHIP_OPTIONS: Record<string, Record<string, { value: stri
   },
   aunt_uncle: {
     paternal: [
-      { value: 'paternal_uncle', label: 'Paternal Uncle' },
-      { value: 'paternal_aunt', label: 'Paternal Aunt' },
+      { value: 'paternal_uncle', label: 'Uncle (Dad\'s Brother)' },
+      { value: 'paternal_aunt', label: 'Aunt (Dad\'s Sister)' },
     ],
     maternal: [
-      { value: 'maternal_uncle', label: 'Maternal Uncle' },
-      { value: 'maternal_aunt', label: 'Maternal Aunt' },
+      { value: 'maternal_uncle', label: 'Uncle (Mom\'s Brother)' },
+      { value: 'maternal_aunt', label: 'Aunt (Mom\'s Sister)' },
     ],
   },
   cousin: {
@@ -112,7 +112,7 @@ export function BasicInfoSection({
 
   return (
     <div className="space-y-4">
-      <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
+      <h3 className="text-body-sm font-medium text-muted-foreground uppercase tracking-wide">
         Basic Information
       </h3>
 
@@ -126,7 +126,7 @@ export function BasicInfoSection({
             disabled={isLoading}
           />
           {errors.name && (
-            <p className="text-sm text-destructive">{errors.name.message}</p>
+            <p className="text-body-sm text-destructive">{errors.name.message}</p>
           )}
         </div>
 
@@ -165,7 +165,7 @@ export function BasicInfoSection({
             )}
           />
           {errors.relationshipToChild && (
-            <p className="text-sm text-destructive">
+            <p className="text-body-sm text-destructive">
               {errors.relationshipToChild.message}
             </p>
           )}
@@ -246,7 +246,7 @@ export function BasicInfoSection({
             disabled={isLoading}
           />
           {errors.birthYear && (
-            <p className="text-sm text-destructive">{errors.birthYear.message}</p>
+            <p className="text-body-sm text-destructive">{errors.birthYear.message}</p>
           )}
         </div>
 
@@ -259,7 +259,7 @@ export function BasicInfoSection({
             disabled={isLoading}
           />
           {errors.occupation && (
-            <p className="text-sm text-destructive">{errors.occupation.message}</p>
+            <p className="text-body-sm text-destructive">{errors.occupation.message}</p>
           )}
         </div>
       </div>

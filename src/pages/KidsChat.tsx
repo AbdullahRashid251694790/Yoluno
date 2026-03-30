@@ -182,7 +182,7 @@ export function KidsChatPage() {
               </Button>
             )}
           </div>
-          <h1 className="text-lg font-semibold text-foreground">Hi, {child.name}!</h1>
+          <h1 className="text-body-lg font-semibold text-foreground">Hi, {child.name}!</h1>
           <NewChatButton
             onClick={handleNewSession}
             isLoading={createSession.isPending}

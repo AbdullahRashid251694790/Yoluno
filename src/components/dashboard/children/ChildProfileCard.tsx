@@ -37,7 +37,7 @@ export function ChildProfileCard({ child, avatarUrl, onEdit }: ChildProfileCardP
             <div className="relative">
               <Avatar className="h-20 w-20">
                 <AvatarImage src={getUploadUrl(avatarUrl || child.custom_avatar_url) || undefined} alt={child.name} />
-                <AvatarFallback className="bg-child-primary/20 text-2xl text-child-primary">
+                <AvatarFallback className="bg-child-primary/20 text-h4 text-child-primary">
                   {getInitials(child.name)}
                 </AvatarFallback>
               </Avatar>
@@ -49,7 +49,7 @@ export function ChildProfileCard({ child, avatarUrl, onEdit }: ChildProfileCardP
               )}
             </div>
 
-            <h3 className="mt-4 text-xl font-semibold">{child.name}</h3>
+            <h3 className="mt-4 text-body-lg font-semibold">{child.name}</h3>
 
             <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
               <Badge variant="secondary">{child.age} years old</Badge>
@@ -67,7 +67,7 @@ export function ChildProfileCard({ child, avatarUrl, onEdit }: ChildProfileCardP
             </div>
 
             {child.last_active_at && (
-              <p className="mt-2 text-sm text-muted-foreground">
+              <p className="mt-2 text-body-sm text-muted-foreground">
                 Active {formatRelativeTime(child.last_active_at)}
               </p>
             )}

@@ -49,14 +49,14 @@ export function ForgotPasswordPage() {
               <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
                 <Mail className="h-6 w-6 text-primary" />
               </div>
-              <CardTitle className="text-2xl text-foreground">Check your email</CardTitle>
+              <CardTitle className="text-h4 text-foreground">Check your email</CardTitle>
               <CardDescription className="text-muted-foreground">
                 If an account exists for <span className="font-medium">{email}</span>, we've sent a password reset link.
               </CardDescription>
             </>
           ) : (
             <>
-              <CardTitle className="text-2xl text-foreground">Forgot password?</CardTitle>
+              <CardTitle className="text-h4 text-foreground">Forgot password?</CardTitle>
               <CardDescription className="text-muted-foreground">
                 Enter your email and we'll send you a reset link.
               </CardDescription>
@@ -77,7 +77,7 @@ export function ForgotPasswordPage() {
           <form onSubmit={handleSubmit}>
             <CardContent className="space-y-4">
               {error && (
-                <p className="text-sm text-destructive text-center">{error}</p>
+                <p className="text-body-sm text-destructive text-center">{error}</p>
               )}
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
@@ -106,7 +106,7 @@ export function ForgotPasswordPage() {
               </Button>
               <Link
                 to="/login"
-                className="text-center text-sm text-muted-foreground hover:underline inline-flex items-center justify-center gap-1"
+                className="text-center text-body-sm text-muted-foreground hover:underline inline-flex items-center justify-center gap-1"
               >
                 <ArrowLeft className="h-3 w-3" />
                 Back to login

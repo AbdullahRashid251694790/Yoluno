@@ -174,7 +174,7 @@ export function VoiceDescriptionWizard({
           {/* Voice Recording */}
           <div className="space-y-3">
             <Label>Describe this person</Label>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-body-sm text-muted-foreground">
               Tell us about this family member: their name, how they're related to your child,
               what they do, their hobbies, and any fun facts.
             </p>
@@ -205,7 +205,7 @@ export function VoiceDescriptionWizard({
               )}
 
               {isTranscribing && (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <div className="flex items-center gap-2 text-body-sm text-muted-foreground">
                   <Loader2 className="h-4 w-4 animate-spin" />
                   Transcribing...
                 </div>
@@ -229,20 +229,20 @@ export function VoiceDescriptionWizard({
             {isRecording && (
               <div className="flex items-center gap-2 p-3 bg-destructive/10 rounded-lg">
                 <div className="h-3 w-3 bg-destructive rounded-full animate-pulse" />
-                <span className="text-sm font-medium">Recording... Speak now</span>
+                <span className="text-body-sm font-medium">Recording... Speak now</span>
               </div>
             )}
 
             {/* Transcription Display */}
             {transcription && (
               <div className="p-3 bg-muted rounded-lg">
-                <p className="text-sm">{transcription}</p>
+                <p className="text-body-sm">{transcription}</p>
               </div>
             )}
 
             {!transcription && !isRecording && (
               <div className="p-4 border-2 border-dashed border-muted-foreground/25 rounded-lg text-center text-muted-foreground">
-                <p className="text-sm">
+                <p className="text-body-sm">
                   Example: "This is my dad, John. He's a software engineer who loves fishing
                   and hiking. He makes the best pancakes on weekends!"
                 </p>

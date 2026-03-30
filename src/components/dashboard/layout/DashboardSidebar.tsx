@@ -45,7 +45,7 @@ export function DashboardSidebar() {
         {/* Logo */}
         <div className="flex items-center gap-2 border-b px-6 py-4">
           <Sparkles className="h-8 w-8 text-primary" />
-          <span className="text-xl font-bold">Yoluno</span>
+          <span className="text-body-lg font-bold">Yoluno</span>
         </div>
 
         {/* Navigation */}

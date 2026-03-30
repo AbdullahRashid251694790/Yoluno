@@ -87,7 +87,7 @@ export function NotificationBell() {
           {unreadCount > 0 && (
             <Badge
               variant="destructive"
-              className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
+              className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-caption"
             >
               {unreadCount > 9 ? '9+' : unreadCount}
             </Badge>
@@ -103,7 +103,7 @@ export function NotificationBell() {
             <Button
               variant="ghost"
               size="sm"
-              className="text-xs h-auto py-1 px-2"
+              className="text-caption h-auto py-1 px-2"
               onClick={handleMarkAllAsRead}
               disabled={markAllAsRead.isPending}
             >
@@ -117,12 +117,12 @@ export function NotificationBell() {
         <ScrollArea className="h-[300px]">
           {isLoading ? (
             <div className="flex items-center justify-center h-20">
-              <p className="text-sm text-muted-foreground">Loading...</p>
+              <p className="text-body-sm text-muted-foreground">Loading...</p>
             </div>
           ) : notifications.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-20 text-center">
               <Bell className="h-8 w-8 text-muted-foreground/50 mb-2" />
-              <p className="text-sm text-muted-foreground">No notifications</p>
+              <p className="text-body-sm text-muted-foreground">No notifications</p>
             </div>
           ) : (
             <div className="divide-y">
@@ -142,24 +142,24 @@ export function NotificationBell() {
                       <div className="flex items-start justify-between gap-2">
                         <div>
                           <p className={cn(
-                            'text-sm',
+                            'text-body-sm',
                             !notification.is_read && 'font-medium'
                           )}>
                             {notification.title}
                           </p>
                           {notification.child_name && (
-                            <p className="text-xs text-muted-foreground">
+                            <p className="text-caption text-muted-foreground">
                               From: {notification.child_name}
                             </p>
                           )}
                         </div>
-                        <p className="text-xs text-muted-foreground whitespace-nowrap">
+                        <p className="text-caption text-muted-foreground whitespace-nowrap">
                           {formatDistanceToNow(new Date(notification.created_at), {
                             addSuffix: true,
                           })}
                         </p>
                       </div>
-                      <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                      <p className="text-body-sm text-muted-foreground mt-1 line-clamp-2">
                         {notification.message}
                       </p>
                       <div className="flex items-center gap-2 mt-2">
@@ -167,7 +167,7 @@ export function NotificationBell() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-auto py-1 px-2 text-xs"
+                            className="h-auto py-1 px-2 text-caption"
                             onClick={() => handleMarkAsRead(notification.id)}
                             disabled={markAsRead.isPending}
                           >
@@ -178,7 +178,7 @@ export function NotificationBell() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-auto py-1 px-2 text-xs text-destructive hover:text-destructive"
+                          className="h-auto py-1 px-2 text-caption text-destructive hover:text-destructive"
                           onClick={() => handleDelete(notification.id)}
                           disabled={deleteNotification.isPending}
                         >

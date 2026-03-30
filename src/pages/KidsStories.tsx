@@ -149,7 +149,7 @@ export function KidsStoriesPage() {
           <ArrowLeft className="h-5 w-5" />
         </Button>
 
-        <h1 className="text-xl font-display font-bold">My Stories</h1>
+        <h1 className="text-body-lg font-display font-bold">My Stories</h1>
 
         {/* Create Story Button */}
         <Button
@@ -213,15 +213,15 @@ export function KidsStoriesPage() {
                             )}
                           </div>
                           {story.theme && (
-                            <p className="text-sm text-muted-foreground mt-0.5 capitalize">
+                            <p className="text-body-sm text-muted-foreground mt-0.5 capitalize">
                               {story.theme}
                             </p>
                           )}
-                          <p className="text-xs text-muted-foreground mt-1">
+                          <p className="text-caption text-muted-foreground mt-1">
                             {new Date(story.created_at).toLocaleDateString()}
                           </p>
                           {hasPages && (
-                            <span className="inline-block mt-2 px-2 py-0.5 bg-primary/10 text-primary text-xs rounded-full">
+                            <span className="inline-block mt-2 px-2 py-0.5 bg-primary/10 text-primary text-caption rounded-full">
                               Storybook
                             </span>
                           )}
@@ -256,11 +256,11 @@ export function KidsStoriesPage() {
       <Dialog open={!!selectedStory && !isStorybookFormat} onOpenChange={(open) => !open && setSelectedStory(null)}>
         <DialogContent className="max-w-lg max-h-[85vh] overflow-hidden flex flex-col bg-gradient-to-b from-lolo/10 to-primary/10">
           <DialogHeader className="flex-shrink-0">
-            <DialogTitle className="text-xl font-display pr-8">
+            <DialogTitle className="text-body-lg font-display pr-8">
               {selectedStory?.title}
             </DialogTitle>
             {selectedStory?.theme && (
-              <p className="text-sm text-muted-foreground">
+              <p className="text-body-sm text-muted-foreground">
                 Theme: {selectedStory.theme}
               </p>
             )}
@@ -330,7 +330,7 @@ export function KidsStoriesPage() {
 
               {/* Mood */}
               {(selectedStory as { mood?: string })?.mood && (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <div className="flex items-center gap-2 text-body-sm text-muted-foreground">
                   <span className="font-medium">Mood:</span>
                   <span className="capitalize">{(selectedStory as { mood?: string }).mood}</span>
                 </div>

@@ -109,8 +109,8 @@ export function TopicPostsList({
         <div className="flex items-start gap-3 rounded-lg border p-3 bg-primary/5 border-primary/20">
           <Sparkles className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
           <div className="flex-1 min-w-0">
-            <p className="font-medium text-sm text-primary">About {topicName}</p>
-            <p className="text-xs text-muted-foreground mt-1">
+            <p className="font-medium text-body-sm text-primary">About {topicName}</p>
+            <p className="text-caption text-muted-foreground mt-1">
               {topicDescription}
             </p>
           </div>
@@ -126,8 +126,8 @@ export function TopicPostsList({
               className="flex items-start justify-between gap-3 rounded-lg border p-3 bg-muted/30"
             >
               <div className="flex-1 min-w-0">
-                <p className="font-medium text-sm">{post.title}</p>
-                <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                <p className="font-medium text-body-sm">{post.title}</p>
+                <p className="text-caption text-muted-foreground mt-1 line-clamp-2">
                   {post.content}
                 </p>
               </div>

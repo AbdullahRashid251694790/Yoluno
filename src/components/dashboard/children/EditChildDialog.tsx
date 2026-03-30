@@ -232,7 +232,7 @@ export function EditChildDialog({
                         isPending && 'opacity-50 cursor-not-allowed'
                       )}
                     >
-                      <span className="text-xl">👦</span>
+                      <span className="text-body-lg">👦</span>
                       <span className="font-medium">Boy</span>
                     </button>
                     <button
@@ -249,7 +249,7 @@ export function EditChildDialog({
                         isPending && 'opacity-50 cursor-not-allowed'
                       )}
                     >
-                      <span className="text-xl">👧</span>
+                      <span className="text-body-lg">👧</span>
                       <span className="font-medium">Girl</span>
                     </button>
                   </div>
@@ -258,7 +258,7 @@ export function EditChildDialog({
                     onClick={() => setGender('prefer_not_to_say')}
                     disabled={isPending}
                     className={cn(
-                      'w-full text-sm text-muted-foreground hover:text-foreground transition-colors',
+                      'w-full text-body-sm text-muted-foreground hover:text-foreground transition-colors',
                       gender === 'prefer_not_to_say' &&
                         'text-foreground font-medium',
                       isPending && 'opacity-50 cursor-not-allowed'

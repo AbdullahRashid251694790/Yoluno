@@ -86,10 +86,10 @@ export function ChatMessage({ message, childId, avatarUrl, childName }: ChatMess
           </div>
         )}
 
-        <p className="whitespace-pre-wrap text-sm">{message.content}</p>
+        <p className="whitespace-pre-wrap text-body-sm">{message.content}</p>
         <span
           className={cn(
-            'mt-1 block text-xs',
+            'mt-1 block text-caption',
             isUser ? 'text-white/70' : 'text-muted-foreground'
           )}
         >

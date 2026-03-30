@@ -32,7 +32,7 @@ export function ErrorState({
       </div>
       <div className="space-y-1">
         <h3 className="font-semibold text-foreground">{title}</h3>
-        <p className="text-sm text-muted-foreground">{message}</p>
+        <p className="text-body-sm text-muted-foreground">{message}</p>
       </div>
       {onRetry && (
         <Button variant="outline" onClick={onRetry} className="gap-2">

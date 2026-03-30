@@ -146,7 +146,7 @@ export function DashboardPage() {
                     <item.icon className="h-5 w-5" />
                     <span className="flex-1 text-left">{item.label}</span>
                     {showBadge && (
-                      <Badge variant="destructive" className="h-5 w-5 p-0 flex items-center justify-center text-xs">
+                      <Badge variant="destructive" className="h-5 w-5 p-0 flex items-center justify-center text-caption">
                         {unreadAlerts}
                       </Badge>
                     )}
@@ -158,7 +158,7 @@ export function DashboardPage() {
 
           {/* User & Sign out */}
           <div className="border-t p-3 space-y-2">
-            <div className="px-3 py-2 text-sm text-muted-foreground truncate">
+            <div className="px-3 py-2 text-body-sm text-muted-foreground truncate">
               {user?.email}
             </div>
             <Button

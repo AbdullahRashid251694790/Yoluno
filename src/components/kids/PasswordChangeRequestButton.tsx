@@ -64,17 +64,17 @@ export function PasswordChangeRequestButton({
       <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-xl">
+            <DialogTitle className="flex items-center gap-2 text-body-lg">
               <AlertTriangle className="h-6 w-6 text-gold" />
               Tell a Grown-Up?
             </DialogTitle>
-            <DialogDescription className="text-base pt-2">
+            <DialogDescription className="text-body pt-2">
               This will send a message to your parent asking them to check their password.
             </DialogDescription>
           </DialogHeader>
 
           <div className="py-4">
-            <p className="text-center text-lg">
+            <p className="text-center text-body-lg">
               Do you want to tell{' '}
               <span className="font-semibold text-primary">Mom or Dad</span>{' '}
               to check the password?
@@ -104,7 +104,7 @@ export function PasswordChangeRequestButton({
       <Dialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center justify-center gap-2 text-xl">
+            <DialogTitle className="flex items-center justify-center gap-2 text-body-lg">
               <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
                 <Check className="h-6 w-6 text-primary" />
               </div>
@@ -112,7 +112,7 @@ export function PasswordChangeRequestButton({
           </DialogHeader>
 
           <div className="py-4 text-center">
-            <h3 className="text-xl font-semibold mb-2">Message Sent!</h3>
+            <h3 className="text-body-lg font-semibold mb-2">Message Sent!</h3>
             <p className="text-muted-foreground">
               Your parent will see a notification to check the password.
             </p>

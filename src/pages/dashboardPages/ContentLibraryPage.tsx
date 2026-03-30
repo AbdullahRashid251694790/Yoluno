@@ -91,7 +91,7 @@ export function ContentLibraryPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Content Library</h1>
+          <h1 className="text-h3 font-bold">Content Library</h1>
           <p className="text-muted-foreground mt-1">
             Stories, journeys, voice recordings, and saved notes.
           </p>
@@ -176,7 +176,7 @@ export function ContentLibraryPage() {
                       <div className="flex items-start justify-between">
                         <div className="flex items-center gap-2">
                           <TypeIcon className={`h-4 w-4 ${typeInfo.color}`} />
-                          <Badge variant="secondary" className="text-xs">
+                          <Badge variant="secondary" className="text-caption">
                             {typeInfo.label}
                           </Badge>
                         </div>
@@ -225,17 +225,17 @@ export function ContentLibraryPage() {
                           </AlertDialog>
                         </div>
                       </div>
-                      <CardTitle className="text-base mt-2 line-clamp-1">
+                      <CardTitle className="text-body mt-2 line-clamp-1">
                         {item.title}
                       </CardTitle>
                       {item.child_name && (
-                        <CardDescription className="text-xs">
+                        <CardDescription className="text-caption">
                           For {item.child_name}
                         </CardDescription>
                       )}
                     </CardHeader>
                     <CardContent>
-                      <p className="text-sm text-muted-foreground line-clamp-3">
+                      <p className="text-body-sm text-muted-foreground line-clamp-3">
                         {item.content}
                       </p>
                       {/* Extra metadata for specific types */}
@@ -243,12 +243,12 @@ export function ContentLibraryPage() {
                         <div className="flex items-center gap-2 mt-2">
                           <Badge
                             variant={item.metadata.status === 'completed' ? 'default' : 'secondary'}
-                            className="text-xs"
+                            className="text-caption"
                           >
                             {item.metadata.status === 'completed' ? 'Completed' : item.metadata.status === 'active' ? 'Active' : String(item.metadata.status)}
                           </Badge>
                           {typeof item.metadata.step_count === 'number' && item.metadata.step_count > 0 && (
-                            <span className="text-xs text-muted-foreground">
+                            <span className="text-caption text-muted-foreground">
                               {item.metadata.step_count} steps
                             </span>
                           )}
@@ -257,12 +257,12 @@ export function ContentLibraryPage() {
                       {item.content_type === 'voice' && (
                         <div className="flex items-center gap-2 mt-2">
                           {item.metadata?.category && (
-                            <Badge variant="outline" className="text-xs capitalize">
+                            <Badge variant="outline" className="text-caption capitalize">
                               {String(item.metadata.category)}
                             </Badge>
                           )}
                           {typeof item.metadata?.duration_seconds === 'number' && (
-                            <span className="text-xs text-muted-foreground">
+                            <span className="text-caption text-muted-foreground">
                               {Math.floor(Number(item.metadata.duration_seconds) / 60)}:{String(Number(item.metadata.duration_seconds) % 60).padStart(2, '0')}
                             </span>
                           )}
@@ -270,17 +270,17 @@ export function ContentLibraryPage() {
                       )}
                       {item.content_type === 'story' && item.metadata?.theme && (
                         <div className="flex items-center gap-2 mt-2">
-                          <Badge variant="outline" className="text-xs capitalize">
+                          <Badge variant="outline" className="text-caption capitalize">
                             {String(item.metadata.theme)}
                           </Badge>
                           {typeof item.metadata?.word_count === 'number' && (
-                            <span className="text-xs text-muted-foreground">
+                            <span className="text-caption text-muted-foreground">
                               {item.metadata.word_count} words
                             </span>
                           )}
                         </div>
                       )}
-                      <p className="text-xs text-muted-foreground mt-3">
+                      <p className="text-caption text-muted-foreground mt-3">
                         {new Date(item.created_at).toLocaleDateString()}
                       </p>
                     </CardContent>

@@ -162,13 +162,13 @@ export function PhotoUpload({
             {isDragging ? (
               <>
                 <ImageIcon className="h-10 w-10" />
-                <p className="text-sm font-medium">Drop image here</p>
+                <p className="text-body-sm font-medium">Drop image here</p>
               </>
             ) : (
               <>
                 <Upload className="h-10 w-10" />
-                <p className="text-sm font-medium">Click or drag to upload</p>
-                <p className="text-xs">PNG, JPG up to 5MB</p>
+                <p className="text-body-sm font-medium">Click or drag to upload</p>
+                <p className="text-caption">PNG, JPG up to 5MB</p>
               </>
             )}
           </div>

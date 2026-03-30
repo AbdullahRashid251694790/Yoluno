@@ -139,7 +139,7 @@ export function BuddySettingsPanel({ childId, childName }: BuddySettingsPanelPro
         <div className="flex items-center gap-4">
           <Avatar className="h-16 w-16">
             <AvatarImage src={buddy.buddy_avatar_url || undefined} />
-            <AvatarFallback className="bg-primary/20 text-primary text-xl">
+            <AvatarFallback className="bg-primary/20 text-primary text-body-lg">
               {buddyName[0]}
             </AvatarFallback>
           </Avatar>
@@ -158,31 +158,31 @@ export function BuddySettingsPanel({ childId, childName }: BuddySettingsPanelPro
         {/* Stats */}
         <div className="grid grid-cols-3 gap-4 rounded-lg bg-muted p-4">
           <div className="text-center">
-            <p className="text-2xl font-bold">{buddy.total_messages}</p>
-            <p className="text-xs text-muted-foreground">Total Messages</p>
+            <p className="text-h4 font-bold">{buddy.total_messages}</p>
+            <p className="text-caption text-muted-foreground">Total Messages</p>
           </div>
           <div className="text-center">
-            <p className="text-2xl font-bold">
+            <p className="text-h4 font-bold">
               {Array.isArray(buddy.conversation_context)
                 ? buddy.conversation_context.length
                 : 0}
             </p>
-            <p className="text-xs text-muted-foreground">Context Messages</p>
+            <p className="text-caption text-muted-foreground">Context Messages</p>
           </div>
           <div className="text-center">
-            <p className="text-2xl font-bold">
+            <p className="text-h4 font-bold">
               {buddy.last_interaction_at
                 ? new Date(buddy.last_interaction_at).toLocaleDateString()
                 : 'Never'}
             </p>
-            <p className="text-xs text-muted-foreground">Last Chat</p>
+            <p className="text-caption text-muted-foreground">Last Chat</p>
           </div>
         </div>
 
         {/* Personality Traits */}
         <div className="space-y-4">
           <h3 className="font-semibold">Personality Traits</h3>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-body-sm text-muted-foreground">
             Adjust the sliders to customize how Luno interacts with {childName}.
           </p>
 
@@ -192,7 +192,7 @@ export function BuddySettingsPanel({ childId, childName }: BuddySettingsPanelPro
                 <Label htmlFor={trait} className="capitalize">
                   {trait}
                 </Label>
-                <span className="text-sm font-medium">{value}/10</span>
+                <span className="text-body-sm font-medium">{value}/10</span>
               </div>
               <Slider
                 id={trait}
@@ -205,7 +205,7 @@ export function BuddySettingsPanel({ childId, childName }: BuddySettingsPanelPro
                 step={1}
                 className="w-full"
               />
-              <p className="text-xs text-muted-foreground">
+              <p className="text-caption text-muted-foreground">
                 {traitDescriptions[trait as keyof typeof traits]}
               </p>
             </div>

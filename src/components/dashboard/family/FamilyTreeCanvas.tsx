@@ -149,8 +149,8 @@ export function FamilyTreeCanvas({
       >
         <div className="text-center text-muted-foreground">
           <UserPlus className="h-12 w-12 mx-auto mb-4 opacity-50" />
-          <p className="text-lg font-medium">No family members yet</p>
-          <p className="text-sm mt-1 mb-4">
+          <p className="text-body-lg font-medium">No family members yet</p>
+          <p className="text-body-sm mt-1 mb-4">
             Add family members to build your family tree
           </p>
           {onAddMember && (
@@ -203,14 +203,14 @@ export function FamilyTreeCanvas({
             <div className="flex items-center gap-3">
               <div className="h-px flex-1 bg-border" />
               <span className={cn(
-                'text-sm font-medium px-3 py-1 rounded-full',
+                'text-body-sm font-medium px-3 py-1 rounded-full',
                 isEmpty
                   ? 'text-muted-foreground/50 bg-muted/30'
                   : 'text-muted-foreground bg-muted/50'
               )}>
                 {label}
                 {!isEmpty && (
-                  <span className="ml-2 text-xs opacity-70">
+                  <span className="ml-2 text-caption opacity-70">
                     ({generationMembers.length})
                   </span>
                 )}
@@ -233,14 +233,14 @@ export function FamilyTreeCanvas({
                         {resolved ? (
                           <AvatarImage src={resolved} alt={child.name} />
                         ) : null}
-                        <AvatarFallback className="bg-primary/10 text-primary text-lg font-bold">
+                        <AvatarFallback className="bg-primary/10 text-primary text-body-lg font-bold">
                           {child.name.charAt(0).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
                       <div className="text-center">
-                        <p className="text-sm font-medium">{child.name}</p>
+                        <p className="text-body-sm font-medium">{child.name}</p>
                         {child.age && (
-                          <p className="text-xs text-muted-foreground">{child.age} yrs</p>
+                          <p className="text-caption text-muted-foreground">{child.age} yrs</p>
                         )}
                       </div>
                     </div>
@@ -256,7 +256,7 @@ export function FamilyTreeCanvas({
                   <div className="h-12 w-12 rounded-full bg-muted/50 flex items-center justify-center group-hover:bg-primary/10 transition-colors">
                     <Plus className="h-6 w-6 text-muted-foreground/50 group-hover:text-primary transition-colors" />
                   </div>
-                  <span className="text-xs text-muted-foreground/50 group-hover:text-muted-foreground transition-colors">
+                  <span className="text-caption text-muted-foreground/50 group-hover:text-muted-foreground transition-colors">
                     Add {label.split(' ')[0]}
                   </span>
                 </button>

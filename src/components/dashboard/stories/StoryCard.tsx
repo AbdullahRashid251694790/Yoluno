@@ -26,7 +26,7 @@ export function StoryCard({ story, onRead, onToggleFavorite, onDelete }: StoryCa
     <Card className="flex flex-col overflow-hidden transition-shadow hover:shadow-lg">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
-          <CardTitle className="line-clamp-2 text-lg">{story.title}</CardTitle>
+          <CardTitle className="line-clamp-2 text-body-lg">{story.title}</CardTitle>
           <Button
             variant="ghost"
             size="icon"
@@ -48,7 +48,7 @@ export function StoryCard({ story, onRead, onToggleFavorite, onDelete }: StoryCa
 
       <CardContent className="flex-1">
         {story.content && (
-          <p className="text-sm text-muted-foreground">
+          <p className="text-body-sm text-muted-foreground">
             {truncate(story.content, 150)}
           </p>
         )}
@@ -60,7 +60,7 @@ export function StoryCard({ story, onRead, onToggleFavorite, onDelete }: StoryCa
       </CardContent>
 
       <CardFooter className="flex items-center justify-between border-t bg-muted/50 px-6 py-3">
-        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+        <div className="flex items-center gap-4 text-body-sm text-muted-foreground">
           <span className="flex items-center gap-1">
             <Clock className="h-4 w-4" />
             {readingTime} min

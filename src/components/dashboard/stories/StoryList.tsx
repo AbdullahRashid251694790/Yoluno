@@ -31,7 +31,7 @@ export function StoryList() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Stories</h2>
+        <h2 className="text-h4 font-bold">Stories</h2>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>

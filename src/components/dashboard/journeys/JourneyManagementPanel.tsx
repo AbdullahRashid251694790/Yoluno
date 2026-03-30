@@ -102,11 +102,11 @@ export function JourneyManagementPanel() {
         <CardHeader className="pb-2">
           <div className="flex items-start justify-between">
             <div className="flex-1">
-              <CardTitle className="text-base font-medium">
+              <CardTitle className="text-body font-medium">
                 {journey.title}
               </CardTitle>
               {selectedChildId === 'all' && childName && (
-                <Badge variant="outline" className="mt-1 text-xs">
+                <Badge variant="outline" className="mt-1 text-caption">
                   {childName}
                 </Badge>
               )}
@@ -144,7 +144,7 @@ export function JourneyManagementPanel() {
               </Badge>
             )}
             {journey.templateId && (
-              <Badge variant="secondary" className="text-xs">
+              <Badge variant="secondary" className="text-caption">
                 <ImageIcon className="h-3 w-3 mr-1" />
                 Has Reward
               </Badge>
@@ -153,7 +153,7 @@ export function JourneyManagementPanel() {
 
           {/* Progress */}
           <div className="space-y-1">
-            <div className="flex items-center justify-between text-xs">
+            <div className="flex items-center justify-between text-caption">
               <span className="text-muted-foreground">Progress</span>
               <span className="font-medium">{progress}%</span>
             </div>
@@ -161,7 +161,7 @@ export function JourneyManagementPanel() {
           </div>
 
           {/* Steps info */}
-          <div className="flex items-center gap-1 mt-2 text-xs text-muted-foreground">
+          <div className="flex items-center gap-1 mt-2 text-caption text-muted-foreground">
             <Clock className="h-3.5 w-3.5" />
             <span>
               {journey.currentStep || 0} of {journey.totalSteps} steps
@@ -179,7 +179,7 @@ export function JourneyManagementPanel() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <h2 className="text-lg font-semibold">Journey Management</h2>
+          <h2 className="text-body-lg font-semibold">Journey Management</h2>
           {children.length > 1 && (
             <Select value={selectedChildId} onValueChange={setSelectedChildId}>
               <SelectTrigger className="w-40">

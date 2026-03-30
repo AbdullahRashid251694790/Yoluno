@@ -153,7 +153,7 @@ export function JourneysPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">Learning Journeys</h1>
+          <h1 className="text-body-lg sm:text-h4 lg:text-h3 font-bold">Learning Journeys</h1>
           <p className="text-muted-foreground mt-1">
             Track progress and discover new learning adventures.
           </p>
@@ -335,7 +335,7 @@ export function JourneysPage() {
                       <Badge
                         key={cat.category}
                         variant="outline"
-                        className="px-3 py-1.5 text-sm cursor-pointer hover:bg-accent"
+                        className="px-3 py-1.5 text-body-sm cursor-pointer hover:bg-accent"
                       >
                         {cat.category}
                         <span className="ml-1.5 text-muted-foreground">
@@ -404,7 +404,7 @@ export function JourneysPage() {
               >
                 <div className="text-left">
                   <div className="font-medium">{child.name}</div>
-                  <div className="text-xs text-muted-foreground">
+                  <div className="text-caption text-muted-foreground">
                     Age {child.age}
                   </div>
                 </div>

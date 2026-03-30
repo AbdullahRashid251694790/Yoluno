@@ -41,7 +41,7 @@ export function EmptyState({
       </div>
       <div className="space-y-1">
         <h3 className="font-semibold text-foreground">{title}</h3>
-        {description && <p className="text-sm text-muted-foreground">{description}</p>}
+        {description && <p className="text-body-sm text-muted-foreground">{description}</p>}
       </div>
       {action && (
         isActionConfig(action) ? (

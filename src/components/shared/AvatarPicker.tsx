@@ -142,7 +142,7 @@ export function AvatarPicker({
 
       {/* Library Avatars */}
       <div className="space-y-2">
-        <p className="text-sm font-medium text-muted-foreground">
+        <p className="text-body-sm font-medium text-muted-foreground">
           Choose an avatar
         </p>
         <div className="flex items-center gap-2">
@@ -166,7 +166,7 @@ export function AvatarPicker({
                 ))}
               </>
             ) : displayAvatars.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-2">No avatars available</p>
+              <p className="text-body-sm text-muted-foreground py-2">No avatars available</p>
             ) : (
               displayAvatars.map((avatar) => {
                 const isSelected =
@@ -186,7 +186,7 @@ export function AvatarPicker({
                   >
                     <Avatar className="h-16 w-16 border-2 border-white shadow-md">
                       <AvatarImage src={avatar.imageUrl} alt={avatar.name} />
-                      <AvatarFallback className="bg-gradient-to-br from-primary to-child-secondary text-xl text-white">
+                      <AvatarFallback className="bg-gradient-to-br from-primary to-child-secondary text-body-lg text-white">
                         {avatar.name.charAt(0)}
                       </AvatarFallback>
                     </Avatar>
@@ -220,14 +220,14 @@ export function AvatarPicker({
         <div className="absolute inset-0 flex items-center">
           <span className="w-full border-t" />
         </div>
-        <div className="relative flex justify-center text-xs uppercase">
+        <div className="relative flex justify-center text-caption uppercase">
           <span className="bg-background px-2 text-muted-foreground">Or</span>
         </div>
       </div>
 
       {/* Custom Upload */}
       <div className="space-y-2">
-        <p className="text-sm font-medium text-muted-foreground text-center">
+        <p className="text-body-sm font-medium text-muted-foreground text-center">
           Upload a photo
         </p>
         <div className="flex justify-center">

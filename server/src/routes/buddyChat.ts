@@ -947,7 +947,7 @@ async function generateBuddyResponse(
 
   // Get family members for context
   const familyResult = await query<FamilyMember>(
-    `SELECT name, relationship, occupation, hobbies, fun_facts,
+    `SELECT name, relationship, specific_relationship, occupation, hobbies, fun_facts,
             connection_description, photo_description, is_alive
      FROM family_members WHERE user_id = $1`,
     [child.user_id]
@@ -1170,7 +1170,11 @@ ${persona.examples.map(e => `- ${e}`).join('\n')}`;
     prompt += `\n\nFAMILY CONTEXT (share with warmth when asked):`;
     for (const member of familyMembers) {
       const details: string[] = [];
-      details.push(`\n${member.name} (${member.relationship})`);
+      const specificRole = (member as any).specific_relationship;
+      const roleLabel = specificRole
+        ? specificRole.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase())
+        : member.relationship;
+      details.push(`\n${member.name} (${roleLabel})`);
       if (member.connection_description) details.push(`  - ${member.connection_description}`);
       if (member.occupation) details.push(`  - Works as: ${member.occupation}`);
       if (member.hobbies && member.hobbies.length > 0) details.push(`  - Enjoys: ${member.hobbies.join(', ')}`);

@@ -186,7 +186,7 @@ export function CreateChildDialog({ open: controlledOpen, onOpenChange, trigger 
               {...register('name')}
             />
             {errors.name && (
-              <p className="text-sm text-destructive">{errors.name.message}</p>
+              <p className="text-body-sm text-destructive">{errors.name.message}</p>
             )}
           </div>
 
@@ -201,7 +201,7 @@ export function CreateChildDialog({ open: controlledOpen, onOpenChange, trigger 
               {...register('age', { valueAsNumber: true })}
             />
             {errors.age && (
-              <p className="text-sm text-destructive">{errors.age.message}</p>
+              <p className="text-body-sm text-destructive">{errors.age.message}</p>
             )}
           </div>
 
@@ -219,7 +219,7 @@ export function CreateChildDialog({ open: controlledOpen, onOpenChange, trigger 
                     : 'border-muted hover:border-primary'
                 )}
               >
-                <span className="text-xl">👦</span>
+                <span className="text-body-lg">👦</span>
                 <span className="font-medium">Boy</span>
               </button>
               <button
@@ -232,7 +232,7 @@ export function CreateChildDialog({ open: controlledOpen, onOpenChange, trigger 
                     : 'border-muted hover:border-lolo'
                 )}
               >
-                <span className="text-xl">👧</span>
+                <span className="text-body-lg">👧</span>
                 <span className="font-medium">Girl</span>
               </button>
             </div>
@@ -240,7 +240,7 @@ export function CreateChildDialog({ open: controlledOpen, onOpenChange, trigger 
               type="button"
               onClick={() => setValue('gender', 'prefer_not_to_say')}
               className={cn(
-                'w-full text-sm text-muted-foreground hover:text-foreground transition-colors',
+                'w-full text-body-sm text-muted-foreground hover:text-foreground transition-colors',
                 selectedGender === 'prefer_not_to_say' && 'text-foreground font-medium'
               )}
             >
@@ -264,7 +264,7 @@ export function CreateChildDialog({ open: controlledOpen, onOpenChange, trigger 
               )}
             />
             {errors.avatar && (
-              <p className="text-sm text-destructive text-center">
+              <p className="text-body-sm text-destructive text-center">
                 {errors.avatar.message || 'Please select an avatar or upload a photo'}
               </p>
             )}
@@ -273,8 +273,8 @@ export function CreateChildDialog({ open: controlledOpen, onOpenChange, trigger 
           {/* PIN Setup */}
           <div className="space-y-4 border-t pt-4">
             <div>
-              <Label className="text-base font-semibold">Set a 4-digit PIN <span className="text-destructive">*</span></Label>
-              <p className="text-sm text-muted-foreground mt-1">
+              <Label className="text-body font-semibold">Set a 4-digit PIN <span className="text-destructive">*</span></Label>
+              <p className="text-body-sm text-muted-foreground mt-1">
                 Your child will use this PIN to access their profile in Kids Mode.
               </p>
             </div>
@@ -289,11 +289,11 @@ export function CreateChildDialog({ open: controlledOpen, onOpenChange, trigger 
                   pattern="[0-9]*"
                   maxLength={4}
                   placeholder="****"
-                  className="text-center text-2xl tracking-widest"
+                  className="text-center text-h4 tracking-widest"
                   {...register('pin')}
                 />
                 {errors.pin && (
-                  <p className="text-sm text-destructive">{errors.pin.message}</p>
+                  <p className="text-body-sm text-destructive">{errors.pin.message}</p>
                 )}
               </div>
 
@@ -306,11 +306,11 @@ export function CreateChildDialog({ open: controlledOpen, onOpenChange, trigger 
                   pattern="[0-9]*"
                   maxLength={4}
                   placeholder="****"
-                  className="text-center text-2xl tracking-widest"
+                  className="text-center text-h4 tracking-widest"
                   {...register('confirmPin')}
                 />
                 {errors.confirmPin && (
-                  <p className="text-sm text-destructive">{errors.confirmPin.message}</p>
+                  <p className="text-body-sm text-destructive">{errors.confirmPin.message}</p>
                 )}
               </div>
             </div>

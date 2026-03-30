@@ -33,10 +33,10 @@ const buttonVariants = cva(
       size: {
         /* Landing: h-12 px-8 py-3 */
         default: 'h-12 px-8 py-3',
-        /* Landing: h-10 px-5 py-2 text-sm */
-        sm: 'h-10 px-5 py-2 text-sm',
+        /* Landing: h-10 px-5 py-2 text-body-sm */
+        sm: 'h-10 px-5 py-2 text-body-sm',
         /* Landing: h-14 px-10 py-4 */
-        lg: 'h-14 px-10 py-4 text-base',
+        lg: 'h-14 px-10 py-4 text-body',
         /* Icon stays compact — used in toolbars, close buttons */
         icon: 'h-10 w-10',
       },

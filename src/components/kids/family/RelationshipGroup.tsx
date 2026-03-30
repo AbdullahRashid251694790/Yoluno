@@ -66,14 +66,14 @@ export function RelationshipGroup({ type, children, count, horizontal }: Relatio
     <div className="space-y-3">
       {/* Header */}
       <div className="flex items-center gap-2 px-1">
-        <span className="text-xl">{config.emoji}</span>
+        <span className="text-body-lg">{config.emoji}</span>
         <div className="flex-1">
           <div className="flex items-center gap-2">
             <h3 className="font-display font-bold text-foreground">
               {config.label}
             </h3>
             {count !== undefined && count > 0 && (
-              <span className="text-xs bg-white/70 px-2 py-0.5 rounded-full text-muted-foreground">
+              <span className="text-caption bg-white/70 px-2 py-0.5 rounded-full text-muted-foreground">
                 {count}
               </span>
             )}

@@ -90,7 +90,7 @@ export function InsightsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">Insights & Analytics</h1>
+          <h1 className="text-body-lg sm:text-h4 lg:text-h3 font-bold">Insights & Analytics</h1>
           <p className="text-muted-foreground mt-1">
             Track your children's learning progress and activities.
           </p>
@@ -118,14 +118,14 @@ export function InsightsPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+            <CardTitle className="text-body-sm font-medium text-muted-foreground flex items-center gap-2">
               <MessageCircle className="h-4 w-4" />
               Weekly Messages
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{weeklySummary?.total_messages || 0}</div>
-            <p className="text-xs text-muted-foreground">
+            <div className="text-h4 font-bold">{weeklySummary?.total_messages || 0}</div>
+            <p className="text-caption text-muted-foreground">
               ~{weeklySummary?.average_daily_messages || 0} per day
             </p>
           </CardContent>
@@ -133,42 +133,42 @@ export function InsightsPage() {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+            <CardTitle className="text-body-sm font-medium text-muted-foreground flex items-center gap-2">
               <BookOpen className="h-4 w-4" />
               Stories Created
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{weeklySummary?.total_stories || 0}</div>
-            <p className="text-xs text-muted-foreground">this week</p>
+            <div className="text-h4 font-bold">{weeklySummary?.total_stories || 0}</div>
+            <p className="text-caption text-muted-foreground">this week</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+            <CardTitle className="text-body-sm font-medium text-muted-foreground flex items-center gap-2">
               <Map className="h-4 w-4" />
               Journey Steps
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{weeklySummary?.total_journey_steps || 0}</div>
-            <p className="text-xs text-muted-foreground">completed this week</p>
+            <div className="text-h4 font-bold">{weeklySummary?.total_journey_steps || 0}</div>
+            <p className="text-caption text-muted-foreground">completed this week</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+            <CardTitle className="text-body-sm font-medium text-muted-foreground flex items-center gap-2">
               <Flame className="h-4 w-4" />
               Current Streak
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
+            <div className="text-h4 font-bold">
               {childOverview?.stats.current_streak || 0} days
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-caption text-muted-foreground">
               {childOverview?.stats.total_points || 0} total points
             </p>
           </CardContent>
@@ -218,7 +218,7 @@ export function InsightsPage() {
                 <div className="space-y-4">
                   {activityTimeline.map((day) => (
                     <div key={day.date} className="flex items-center gap-4">
-                      <div className="w-24 text-sm text-muted-foreground">
+                      <div className="w-24 text-body-sm text-muted-foreground">
                         {new Date(day.date).toLocaleDateString('en-US', {
                           weekday: 'short',
                           month: 'short',
@@ -226,7 +226,7 @@ export function InsightsPage() {
                         })}
                       </div>
                       <div className="flex-1 space-y-1">
-                        <div className="flex items-center gap-2 text-sm">
+                        <div className="flex items-center gap-2 text-body-sm">
                           <MessageCircle className="h-3 w-3 text-primary" />
                           <span>{day.message_count} messages</span>
                           <BookOpen className="h-3 w-3 text-primary ml-4" />
@@ -254,7 +254,7 @@ export function InsightsPage() {
           {weeklySummary?.most_active_day && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-sm font-medium">Most Active Day</CardTitle>
+                <CardTitle className="text-body-sm font-medium">Most Active Day</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="flex items-center gap-2">
@@ -374,7 +374,7 @@ export function InsightsPage() {
                     <Badge
                       key={topic.topic}
                       variant="secondary"
-                      className="px-3 py-1.5 text-sm"
+                      className="px-3 py-1.5 text-body-sm"
                     >
                       {topic.topic}
                       <span className="ml-2 text-muted-foreground">({topic.mention_count})</span>
@@ -388,7 +388,7 @@ export function InsightsPage() {
           {weeklySummary?.topics_explored && weeklySummary.topics_explored.length > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-sm font-medium">This Week's Discoveries</CardTitle>
+                <CardTitle className="text-body-sm font-medium">This Week's Discoveries</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="flex flex-wrap gap-2">
@@ -438,7 +438,7 @@ export function InsightsPage() {
                             {journey.status}
                           </Badge>
                         </div>
-                        <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-2 mt-2 text-body-sm text-muted-foreground">
                           <span>
                             {journey.steps_completed} of {journey.total_steps} steps
                           </span>
@@ -456,12 +456,12 @@ export function InsightsPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
+                <CardTitle className="text-body-sm font-medium text-muted-foreground">
                   Active Journeys
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">
+                <div className="text-h4 font-bold">
                   {journeyProgress.filter((j) => j.status === 'active').length}
                 </div>
               </CardContent>
@@ -469,12 +469,12 @@ export function InsightsPage() {
 
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
+                <CardTitle className="text-body-sm font-medium text-muted-foreground">
                   Completed Journeys
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">
+                <div className="text-h4 font-bold">
                   {childOverview?.stats.total_journeys_completed || 0}
                 </div>
               </CardContent>

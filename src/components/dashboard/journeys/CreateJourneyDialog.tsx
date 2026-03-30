@@ -142,7 +142,7 @@ export function CreateJourneyDialog({
                     >
                       <CardHeader className="py-3">
                         <div className="flex items-center justify-between">
-                          <CardTitle className="text-sm font-medium">
+                          <CardTitle className="text-body-sm font-medium">
                             {template.title}
                           </CardTitle>
                           {selectedTemplateId === template.id && (
@@ -151,14 +151,14 @@ export function CreateJourneyDialog({
                         </div>
                       </CardHeader>
                       <CardContent className="py-2">
-                        <p className="text-xs text-muted-foreground line-clamp-2">
+                        <p className="text-caption text-muted-foreground line-clamp-2">
                           {template.description}
                         </p>
                         <div className="flex items-center gap-2 mt-2">
-                          <Badge variant="secondary" className="text-xs">
+                          <Badge variant="secondary" className="text-caption">
                             {template.category}
                           </Badge>
-                          <span className="text-xs text-muted-foreground">
+                          <span className="text-caption text-muted-foreground">
                             {template.duration_days} days
                           </span>
                         </div>
@@ -173,14 +173,14 @@ export function CreateJourneyDialog({
           {/* Preview selected template */}
           {selectedTemplateDetail && (
             <div className="rounded-lg border p-4 bg-muted/50">
-              <h4 className="font-medium text-sm mb-2">Journey Preview</h4>
-              <p className="text-xs text-muted-foreground mb-2">
+              <h4 className="font-medium text-body-sm mb-2">Journey Preview</h4>
+              <p className="text-caption text-muted-foreground mb-2">
                 {selectedTemplateDetail.description}
               </p>
               {selectedTemplateDetail.steps && selectedTemplateDetail.steps.length > 0 && (
                 <div className="space-y-1">
-                  <p className="text-xs font-medium">{selectedTemplateDetail.steps.length} Steps:</p>
-                  <ul className="text-xs text-muted-foreground space-y-1">
+                  <p className="text-caption font-medium">{selectedTemplateDetail.steps.length} Steps:</p>
+                  <ul className="text-caption text-muted-foreground space-y-1">
                     {selectedTemplateDetail.steps.slice(0, 3).map((step, i) => (
                       <li key={step.id || i}>• {step.title}</li>
                     ))}

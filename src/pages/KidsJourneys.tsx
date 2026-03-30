@@ -66,8 +66,8 @@ export function KidsJourneysPage() {
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div className="flex-1">
-          <h1 className="text-xl font-bold">My Journeys</h1>
-          <p className="text-sm text-muted-foreground">
+          <h1 className="text-body-lg font-bold">My Journeys</h1>
+          <p className="text-body-sm text-muted-foreground">
             {activeJourneys.length} active, {completedJourneys.length} completed
           </p>
         </div>
@@ -81,8 +81,8 @@ export function KidsJourneysPage() {
               <div className="rounded-full bg-primary/10 p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
                 <Map className="h-8 w-8 text-primary" />
               </div>
-              <h3 className="text-lg font-semibold mb-2">No Journeys Yet</h3>
-              <p className="text-muted-foreground text-sm mb-4">
+              <h3 className="text-body-lg font-semibold mb-2">No Journeys Yet</h3>
+              <p className="text-muted-foreground text-body-sm mb-4">
                 Ask your parent to create a learning journey for you!
               </p>
               <Button variant="outline" onClick={handleBack}>
@@ -206,14 +206,14 @@ function JourneyCard({ journey, childId, isCompleted }: JourneyCardProps) {
               </div>
 
               {!isCompleted && nextStep && (
-                <p className="text-sm text-muted-foreground mb-2 line-clamp-1">
+                <p className="text-body-sm text-muted-foreground mb-2 line-clamp-1">
                   Next: {nextStep.title}
                 </p>
               )}
 
               {/* Progress bar */}
               <div className="space-y-1">
-                <div className="flex items-center justify-between text-xs">
+                <div className="flex items-center justify-between text-caption">
                   <span className="text-muted-foreground">
                     {journey.currentStep || 0} of {journey.totalSteps} steps
                   </span>

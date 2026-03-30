@@ -24,7 +24,7 @@ export function ChildProfileList() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Children</h2>
+        <h2 className="text-h4 font-bold">Children</h2>
         <Button onClick={() => setShowCreateDialog(true)} className="gap-2">
           <Plus className="h-4 w-4" />
           Add Child

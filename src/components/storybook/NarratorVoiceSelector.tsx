@@ -111,7 +111,7 @@ export function NarratorVoiceSelector({
             <SelectItem key={voice.id} value={`ai:${voice.id}`}>
               <div className="flex flex-col">
                 <span>{voice.name}</span>
-                <span className="text-xs text-muted-foreground">
+                <span className="text-caption text-muted-foreground">
                   {voice.description}
                 </span>
               </div>
@@ -135,7 +135,7 @@ export function NarratorVoiceSelector({
                       {clip.family_member_name || clip.title}
                     </span>
                     {clip.description && (
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-caption text-muted-foreground">
                         {clip.description}
                       </span>
                     )}

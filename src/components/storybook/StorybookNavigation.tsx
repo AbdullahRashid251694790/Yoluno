@@ -78,7 +78,7 @@ export function StorybookNavigation({
               aria-label="Go to cover"
             />
             {visibleDots[0] > 1 && (
-              <span className="text-white/40 text-xs">...</span>
+              <span className="text-white/40 text-caption">...</span>
             )}
           </>
         )}
@@ -100,7 +100,7 @@ export function StorybookNavigation({
         {visibleDots[visibleDots.length - 1] < totalPages - 1 && (
           <>
             {visibleDots[visibleDots.length - 1] < totalPages - 2 && (
-              <span className="text-white/40 text-xs">...</span>
+              <span className="text-white/40 text-caption">...</span>
             )}
             <button
               onClick={() => onGoToPage(totalPages - 1)}

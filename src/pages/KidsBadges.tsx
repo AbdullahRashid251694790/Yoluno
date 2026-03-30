@@ -178,14 +178,14 @@ export function KidsBadgesPage() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div className="flex-1">
-            <h1 className="text-xl font-display font-bold">My Badges</h1>
-            <p className="text-sm text-muted-foreground">
+            <h1 className="text-body-lg font-display font-bold">My Badges</h1>
+            <p className="text-body-sm text-muted-foreground">
               {earned.length} of {available.length} earned
             </p>
           </div>
           <div className="flex items-center gap-1.5 rounded-full bg-lala/10 px-3 py-1.5">
             <Award className="h-4 w-4 text-lala" />
-            <span className="text-sm font-bold text-lala">{earned.length}</span>
+            <span className="text-body-sm font-bold text-lala">{earned.length}</span>
           </div>
         </div>
       </div>
@@ -204,7 +204,7 @@ export function KidsBadgesPage() {
             const catInfo = CATEGORY_LABELS[category] || { label: category, emoji: '🏅' };
             return (
               <div key={category}>
-                <h2 className="text-lg font-display font-bold mb-3 flex items-center gap-2">
+                <h2 className="text-body-lg font-display font-bold mb-3 flex items-center gap-2">
                   <span>{catInfo.emoji}</span>
                   {catInfo.label}
                 </h2>
@@ -230,12 +230,12 @@ export function KidsBadgesPage() {
                       >
                         <CardContent className="p-3 text-center">
                           <div className="relative mx-auto w-16 h-16 mb-2 flex items-center justify-center rounded-full bg-gradient-to-br from-lala/10 to-gold/10">
-                            <span className="text-3xl leading-none">{getBadgeEmoji(badge)}</span>
+                            <span className="text-h3 leading-none">{getBadgeEmoji(badge)}</span>
                             {!isEarned && (
                               <Lock className="absolute bottom-0 right-0 h-4 w-4 text-muted-foreground bg-white rounded-full p-0.5" />
                             )}
                           </div>
-                          <h3 className="font-medium text-xs line-clamp-2">
+                          <h3 className="font-medium text-caption line-clamp-2">
                             {badge.display_name}
                           </h3>
                           {isEarned && earnedData && (
@@ -258,7 +258,7 @@ export function KidsBadgesPage() {
       <Dialog open={!!celebratingBadge} onOpenChange={() => setCelebratingBadge(null)}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle className="text-center text-2xl font-display flex items-center justify-center gap-2">
+            <DialogTitle className="text-center text-h4 font-display flex items-center justify-center gap-2">
               <Star className="h-6 w-6 text-lala fill-lala" />
               Badge Earned!
               <Star className="h-6 w-6 text-lala fill-lala" />
@@ -268,10 +268,10 @@ export function KidsBadgesPage() {
           {celebratingBadge && (
             <div className="space-y-4 text-center">
               <div className="mx-auto w-24 h-24 flex items-center justify-center rounded-full bg-gradient-to-br from-lala/10 to-gold/10">
-                <span className="text-5xl leading-none">{getBadgeEmoji(celebratingBadge)}</span>
+                <span className="text-h1 leading-none">{getBadgeEmoji(celebratingBadge)}</span>
               </div>
               <div>
-                <h3 className="text-xl font-bold">{celebratingBadge.display_name}</h3>
+                <h3 className="text-body-lg font-bold">{celebratingBadge.display_name}</h3>
                 <p className="text-muted-foreground mt-1">{celebratingBadge.description}</p>
               </div>
               <Button onClick={() => setCelebratingBadge(null)} className="w-full" size="lg">
@@ -287,7 +287,7 @@ export function KidsBadgesPage() {
       <Dialog open={!!lockedBadge} onOpenChange={() => setLockedBadge(null)}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle className="text-center text-2xl font-display flex items-center justify-center gap-2">
+            <DialogTitle className="text-center text-h4 font-display flex items-center justify-center gap-2">
               <Lock className="h-6 w-6 text-muted-foreground" />
               Locked Badge
             </DialogTitle>
@@ -296,15 +296,15 @@ export function KidsBadgesPage() {
           {lockedBadge && (
             <div className="space-y-4 text-center">
               <div className="mx-auto w-24 h-24 flex items-center justify-center rounded-full bg-gradient-to-br from-muted to-muted opacity-60 grayscale">
-                <span className="text-5xl leading-none">{getBadgeEmoji(lockedBadge)}</span>
+                <span className="text-h1 leading-none">{getBadgeEmoji(lockedBadge)}</span>
               </div>
               <div>
-                <h3 className="text-xl font-bold">{lockedBadge.display_name}</h3>
+                <h3 className="text-body-lg font-bold">{lockedBadge.display_name}</h3>
                 <p className="text-muted-foreground mt-1">{lockedBadge.description}</p>
               </div>
               <div className="rounded-xl bg-primary/5 border border-primary/20 p-4">
-                <p className="text-sm font-semibold text-primary mb-1">How to unlock:</p>
-                <p className="text-sm text-muted-foreground">{getRequirementHint(lockedBadge)}</p>
+                <p className="text-body-sm font-semibold text-primary mb-1">How to unlock:</p>
+                <p className="text-body-sm text-muted-foreground">{getRequirementHint(lockedBadge)}</p>
               </div>
               <Button onClick={() => setLockedBadge(null)} variant="secondary" className="w-full" size="lg">
                 Got it!

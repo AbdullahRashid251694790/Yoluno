@@ -158,7 +158,7 @@ export function KidsHomePage() {
       <div className="min-h-screen bg-kids-gradient flex items-center justify-center">
         <div className="text-center">
           <ChatAvatar expression="thinking" size="xl" />
-          <p className="mt-4 text-lg font-medium text-primary">Getting ready...</p>
+          <p className="mt-4 text-body-lg font-medium text-primary">Getting ready...</p>
         </div>
       </div>
     );
@@ -194,14 +194,14 @@ export function KidsHomePage() {
           {streakCount > 0 && (
             <div className="flex items-center gap-1.5 rounded-full bg-gold/10 px-3 py-1.5">
               <Flame className="h-4 w-4 text-gold" />
-              <span className="text-sm font-bold text-gold">{streakCount}</span>
+              <span className="text-body-sm font-bold text-gold">{streakCount}</span>
             </div>
           )}
 
           {/* Star counter */}
           <div className="flex items-center gap-1.5 rounded-full bg-lala/10 px-3 py-1.5">
             <Star className="h-4 w-4 text-lala fill-lala" />
-            <span className="text-sm font-bold text-lala">{starCount}</span>
+            <span className="text-body-sm font-bold text-lala">{starCount}</span>
           </div>
 
           {/* Password Change Request (Settings gear icon) */}
@@ -217,10 +217,10 @@ export function KidsHomePage() {
       <main className="px-4 pb-8">
         {/* Greeting */}
         <div className="text-center mb-6">
-          <p className="text-lg text-muted-foreground">
+          <p className="text-body-lg text-muted-foreground">
             {greeting.emoji} {greeting.text}
           </p>
-          <h1 className="text-3xl font-display font-bold text-foreground mt-1">
+          <h1 className="text-h3 font-display font-bold text-foreground mt-1">
             {child.name}!
           </h1>
         </div>
@@ -236,14 +236,14 @@ export function KidsHomePage() {
                 buddyName={buddyName}
               />
 
-              <p className="mt-4 text-lg text-muted-foreground">
+              <p className="mt-4 text-body-lg text-muted-foreground">
                 "Ready for an adventure today?"
               </p>
 
               <Link to={`/kids/${childId}/chat`} className="w-full mt-4">
                 <Button
                   size="lg"
-                  className="w-full text-lg font-semibold rounded-full bg-gradient-to-r from-primary to-child-secondary hover:opacity-90 transition-opacity touch-target-kids"
+                  className="w-full text-body-lg font-semibold rounded-full bg-gradient-to-r from-primary to-child-secondary hover:opacity-90 transition-opacity touch-target-kids"
                 >
                   <Sparkles className="mr-2 h-5 w-5" />
                   Let's Chat!
@@ -282,7 +282,7 @@ export function KidsHomePage() {
                     <h3 className="font-display font-bold text-foreground">
                       {activity.title}
                     </h3>
-                    <p className="text-xs text-muted-foreground mt-0.5">
+                    <p className="text-caption text-muted-foreground mt-0.5">
                       {activity.description}
                     </p>
                   </CardContent>
@@ -297,13 +297,13 @@ export function KidsHomePage() {
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="rounded-full bg-white/80 p-2.5">
-                <span className="text-2xl">{dailyChallenge.emoji}</span>
+                <span className="text-h4">{dailyChallenge.emoji}</span>
               </div>
               <div className="flex-1">
-                <p className="text-xs font-medium text-primary uppercase tracking-wide">
+                <p className="text-caption font-medium text-primary uppercase tracking-wide">
                   Today's Challenge
                 </p>
-                <p className="text-sm font-medium text-foreground mt-0.5">
+                <p className="text-body-sm font-medium text-foreground mt-0.5">
                   {dailyChallenge.text}
                 </p>
               </div>
@@ -329,7 +329,7 @@ export function KidsHomePage() {
                   <Trophy className="h-6 w-6 text-lala" />
                   <div>
                     <h3 className="font-display font-bold text-foreground">My Badges</h3>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-caption text-muted-foreground">
                       {unnotifiedBadgeCount > 0
                         ? `${unnotifiedBadgeCount} new to collect!`
                         : earnedBadges.length > 0
@@ -346,13 +346,13 @@ export function KidsHomePage() {
                           key={badge.id}
                           className="h-8 w-8 rounded-full flex items-center justify-center bg-lala/10 border-2 border-white"
                         >
-                          <span className="text-lg">
+                          <span className="text-body-lg">
                             {badge.badge?.name ? (BADGE_EMOJIS[badge.badge.name] || '🏅') : '🏆'}
                           </span>
                         </div>
                       ))}
                       <div className="h-8 w-8 rounded-full flex items-center justify-center bg-muted border-2 border-white">
-                        <span className="text-sm font-medium text-muted-foreground">+</span>
+                        <span className="text-body-sm font-medium text-muted-foreground">+</span>
                       </div>
                     </>
                   ) : (
@@ -360,7 +360,7 @@ export function KidsHomePage() {
                       {['🎯', '⭐', '🏅', '?'].map((emoji, i) => (
                         <div
                           key={i}
-                          className={`h-8 w-8 rounded-full flex items-center justify-center text-lg border-2 border-white ${
+                          className={`h-8 w-8 rounded-full flex items-center justify-center text-body-lg border-2 border-white ${
                             i === 3 ? 'bg-muted' : 'bg-lala/10'
                           }`}
                         >
@@ -384,7 +384,7 @@ export function KidsHomePage() {
                   <Gift className="h-6 w-6 text-primary" />
                   <div>
                     <h3 className="font-display font-bold text-foreground">My Rewards</h3>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-caption text-muted-foreground">
                       {rewardCountData?.unviewed && rewardCountData.unviewed > 0
                         ? `${rewardCountData.unviewed} new to see!`
                         : rewardCountData?.total && rewardCountData.total > 0
@@ -395,12 +395,12 @@ export function KidsHomePage() {
                 </div>
                 <div className="flex items-center gap-2">
                   {rewardCountData?.unviewed && rewardCountData.unviewed > 0 && (
-                    <span className="flex items-center justify-center h-6 w-6 rounded-full bg-primary/50 text-white text-xs font-bold animate-pulse">
+                    <span className="flex items-center justify-center h-6 w-6 rounded-full bg-primary/50 text-white text-caption font-bold animate-pulse">
                       {rewardCountData.unviewed}
                     </span>
                   )}
                   <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-primary/20 to-lolo/20 flex items-center justify-center">
-                    <span className="text-xl">🎁</span>
+                    <span className="text-body-lg">🎁</span>
                   </div>
                 </div>
               </div>

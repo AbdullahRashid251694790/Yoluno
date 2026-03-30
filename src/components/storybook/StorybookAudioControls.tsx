@@ -227,7 +227,7 @@ export function StorybookAudioControls({
         variant="ghost"
         size="sm"
         onClick={toggleMode}
-        className="text-white/80 hover:text-white hover:bg-white/20 text-xs"
+        className="text-white/80 hover:text-white hover:bg-white/20 text-caption"
       >
         {mode === 'page' ? 'Page Mode' : 'Full Story'}
       </Button>
@@ -271,7 +271,7 @@ export function StorybookAudioControls({
           size="sm"
           onClick={toggleAutoAdvance}
           className={cn(
-            'text-xs gap-1',
+            'text-caption gap-1',
             autoAdvance
               ? 'text-white hover:text-white/80 hover:bg-white/20'
               : 'text-white/50 hover:text-white/70 hover:bg-white/10'

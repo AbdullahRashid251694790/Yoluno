@@ -92,19 +92,19 @@ export function JourneyTemplateCard({
             )}
           </div>
         </div>
-        <h3 className="font-semibold text-lg mt-3 group-hover:text-primary transition-colors">
+        <h3 className="font-semibold text-body-lg mt-3 group-hover:text-primary transition-colors">
           {template.title}
         </h3>
       </CardHeader>
 
       <CardContent className="pb-3">
         {template.description && (
-          <p className="text-sm text-muted-foreground line-clamp-2">
+          <p className="text-body-sm text-muted-foreground line-clamp-2">
             {template.description}
           </p>
         )}
 
-        <div className="flex items-center gap-4 mt-4 text-xs text-muted-foreground">
+        <div className="flex items-center gap-4 mt-4 text-caption text-muted-foreground">
           <div className="flex items-center gap-1">
             <Clock className="h-3.5 w-3.5" />
             <span>{template.duration_days} days</span>

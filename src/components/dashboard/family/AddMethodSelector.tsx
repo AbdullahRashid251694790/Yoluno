@@ -27,8 +27,8 @@ export function AddMethodSelector({ onSelect, className }: AddMethodSelectorProp
           <FileText className="h-8 w-8 text-muted-foreground group-hover:text-primary transition-colors" />
         </div>
         <div>
-          <h3 className="font-semibold text-lg">Fill in manually</h3>
-          <p className="text-sm text-muted-foreground mt-1">
+          <h3 className="font-semibold text-body-lg">Fill in manually</h3>
+          <p className="text-body-sm text-muted-foreground mt-1">
             Enter details using a form
           </p>
         </div>
@@ -43,8 +43,8 @@ export function AddMethodSelector({ onSelect, className }: AddMethodSelectorProp
           <Mic className="h-8 w-8 text-muted-foreground group-hover:text-primary transition-colors" />
         </div>
         <div>
-          <h3 className="font-semibold text-lg">Describe with voice</h3>
-          <p className="text-sm text-muted-foreground mt-1">
+          <h3 className="font-semibold text-body-lg">Describe with voice</h3>
+          <p className="text-body-sm text-muted-foreground mt-1">
             Record a description and we'll fill in the details
           </p>
         </div>

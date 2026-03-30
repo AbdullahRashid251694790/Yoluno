@@ -101,7 +101,7 @@ export function SettingsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">Settings</h1>
+        <h1 className="text-body-lg sm:text-h4 lg:text-h3 font-bold">Settings</h1>
         <p className="text-muted-foreground mt-1">
           Manage your account and preferences.
         </p>
@@ -116,12 +116,12 @@ export function SettingsPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <label className="text-sm font-medium text-muted-foreground">Email</label>
+              <label className="text-body-sm font-medium text-muted-foreground">Email</label>
               <p className="mt-1">{user?.email}</p>
             </div>
             <div>
-              <label className="text-sm font-medium text-muted-foreground">Account ID</label>
-              <p className="mt-1 font-mono text-sm">{user?.id}</p>
+              <label className="text-body-sm font-medium text-muted-foreground">Account ID</label>
+              <p className="mt-1 font-mono text-body-sm">{user?.id}</p>
             </div>
           </CardContent>
         </Card>
@@ -138,7 +138,7 @@ export function SettingsPage() {
           <CardContent>
             <form onSubmit={handlePasswordChange} className="space-y-4">
               <div>
-                <label className="text-sm font-medium" htmlFor="currentPassword">Current Password</label>
+                <label className="text-body-sm font-medium" htmlFor="currentPassword">Current Password</label>
                 <Input
                   id="currentPassword"
                   type="password"
@@ -148,7 +148,7 @@ export function SettingsPage() {
                 />
               </div>
               <div>
-                <label className="text-sm font-medium" htmlFor="newPassword">New Password</label>
+                <label className="text-body-sm font-medium" htmlFor="newPassword">New Password</label>
                 <Input
                   id="newPassword"
                   type="password"
@@ -158,12 +158,12 @@ export function SettingsPage() {
                   required
                   minLength={8}
                 />
-                <p className="text-xs text-muted-foreground mt-1">
+                <p className="text-caption text-muted-foreground mt-1">
                   Must include uppercase, lowercase, number, and special character.
                 </p>
               </div>
               <div>
-                <label className="text-sm font-medium" htmlFor="confirmNewPassword">Confirm New Password</label>
+                <label className="text-body-sm font-medium" htmlFor="confirmNewPassword">Confirm New Password</label>
                 <Input
                   id="confirmNewPassword"
                   type="password"
@@ -189,7 +189,7 @@ export function SettingsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="font-medium">Safety Alerts</p>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-body-sm text-muted-foreground">
                   Get notified when content is flagged
                 </p>
               </div>
@@ -231,7 +231,7 @@ export function SettingsPage() {
                 <Trash2 className="h-4 w-4 mr-2" />
                 Delete Account
               </Button>
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className="text-caption text-muted-foreground mt-1">
                 This will permanently delete your account and all associated data.
               </p>
             </div>
@@ -250,7 +250,7 @@ export function SettingsPage() {
             </DialogDescription>
           </DialogHeader>
           <div>
-            <label className="text-sm font-medium" htmlFor="deletePassword">
+            <label className="text-body-sm font-medium" htmlFor="deletePassword">
               Enter your password to confirm
             </label>
             <Input
