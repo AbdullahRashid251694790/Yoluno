@@ -65,9 +65,9 @@ export function StorybookPage({
         )}
 
         {/* Text directly below image */}
-        <div className="px-4 py-3 md:px-6 md:py-4">
-          <div className="bg-white/90 backdrop-blur-sm rounded-xl p-3 md:p-4 shadow-lg max-w-prose mx-auto">
-            <p className="text-sm md:text-base lg:text-lg leading-relaxed text-foreground font-serif text-center">
+        <div className="px-3 py-3 md:px-5 md:py-4">
+          <div className="bg-black/40 backdrop-blur-md rounded-2xl p-3 md:p-4 max-w-prose mx-auto">
+            <p className="text-sm md:text-base lg:text-lg leading-relaxed text-white/90 font-serif text-center drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">
               {page.content}
             </p>
           </div>

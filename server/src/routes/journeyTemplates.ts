@@ -125,6 +125,9 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
       params.push(filters.featured);
     }
 
+    // Exclude auto-assigned templates (already on children's dashboards)
+    queryText += ' AND (is_auto_assign = false OR is_auto_assign IS NULL)';
+
     queryText += ' ORDER BY is_featured DESC, usage_count DESC, title ASC';
 
     if (filters.limit) {
@@ -166,7 +169,7 @@ router.get('/featured', async (req: Request, res: Response, next: NextFunction) 
 
     const result = await query<JourneyTemplate>(
       `SELECT * FROM journey_templates
-       WHERE is_featured = true
+       WHERE is_featured = true AND (is_auto_assign = false OR is_auto_assign IS NULL)
        ORDER BY usage_count DESC
        LIMIT $1`,
       [limit]
@@ -185,6 +188,7 @@ router.get('/for-child/:childId', async (req: Request, res: Response, next: Next
     const result = await query<JourneyTemplate>(
       `SELECT * FROM journey_templates
        WHERE age_range_min <= $1 AND age_range_max >= $1
+         AND (is_auto_assign = false OR is_auto_assign IS NULL)
        ORDER BY is_featured DESC, usage_count DESC
        LIMIT 20`,
       [child.age]

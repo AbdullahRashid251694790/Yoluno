@@ -131,7 +131,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
       await apiRegister(email, password);
       // No login — user must verify email first
     } catch (error) {
-      console.error('Signup error:', error);
+      // Pass through server error message for duplicate email
+      if (isApiError(error) && error.response?.status === 409) {
+        throw { message: error.response.data?.message || 'An account with this email already exists' };
+      }
       throw handleError(error, {
         context: 'AuthContext.signUp',
         strategy: 'throw',

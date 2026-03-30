@@ -101,9 +101,15 @@ app.get('/', (req, res) => {
   });
 });
 
-// Health check
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+// Health check — verifies DB is reachable
+app.get('/api/health', async (req, res) => {
+  try {
+    await pool.query('SELECT 1');
+    res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  } catch (err) {
+    console.error('Health check DB fail:', (err as Error).message);
+    res.status(503).json({ status: 'error', message: 'Database unavailable' });
+  }
 });
 
 // Rate limiting for auth endpoints

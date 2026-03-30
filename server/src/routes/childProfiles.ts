@@ -11,6 +11,49 @@ import type { ChildProfile, ParentNotification } from '../types/index.js';
 import type { Server } from 'socket.io';
 import { getFileUrl } from '../utils/storage.js';
 
+/** Auto-assign featured journey templates to a new child */
+async function assignDefaultJourneys(childId: string, childAge: number): Promise<void> {
+  try {
+    const templates = await query<{ id: string; title: string; badge_emoji: string | null }>(
+      `SELECT id, title, badge_emoji FROM journey_templates
+       WHERE is_auto_assign = true AND age_range_min <= $1 AND age_range_max >= $1`,
+      [childAge]
+    );
+
+    for (const template of templates.rows) {
+      // Check if already assigned
+      const existing = await queryOne<{ id: string }>(
+        'SELECT id FROM journeys WHERE child_profile_id = $1 AND template_id = $2',
+        [childId, template.id]
+      );
+      if (existing) continue;
+
+      const journeyId = uuidv4();
+      await query(
+        `INSERT INTO journeys (id, child_profile_id, template_id, title, status, progress, badge_emoji)
+         VALUES ($1, $2, $3, $4, 'active', 0, $5)`,
+        [journeyId, childId, template.id, template.title, template.badge_emoji || '🏅']
+      );
+
+      // Copy template steps
+      const steps = await query<{ step_order: number; title: string; description: string | null; type: string | null; content: Record<string, unknown> }>(
+        'SELECT step_order, title, description, type, content FROM journey_template_steps WHERE template_id = $1 ORDER BY step_order',
+        [template.id]
+      );
+
+      for (const step of steps.rows) {
+        await query(
+          `INSERT INTO journey_steps (id, journey_id, step_order, title, description, type, content, progress)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, 0)`,
+          [uuidv4(), journeyId, step.step_order, step.title, step.description, step.type, step.content]
+        );
+      }
+    }
+  } catch (error) {
+    console.error('Failed to assign default journeys:', (error as Error).message);
+  }
+}
+
 // PIN validation schemas
 const setPinSchema = z.object({
   pin: z.string().length(4).regex(/^\d{4}$/, 'PIN must be exactly 4 digits'),
@@ -82,6 +125,15 @@ router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
 // POST /api/child-profiles
 router.post('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
+    // Enforce max 5 children per account
+    const childCount = await queryOne<{ count: string }>(
+      'SELECT COUNT(*) as count FROM child_profiles WHERE user_id = $1',
+      [req.user!.id]
+    );
+    if (childCount && parseInt(childCount.count, 10) >= 5) {
+      throw new AppError(400, 'Maximum of 5 children allowed per account.');
+    }
+
     const { name, age, gender, avatar_id, custom_avatar_url, interests, learning_style, pin_hash } = req.body;
     const id = uuidv4();
 
@@ -91,6 +143,11 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
        RETURNING *`,
       [id, req.user!.id, name, age, gender, avatar_id, custom_avatar_url, interests, learning_style, pin_hash]
     );
+
+    // Auto-assign featured journeys to the new child
+    assignDefaultJourneys(id, age).catch((err) => {
+      console.error('Default journey assignment failed:', err.message);
+    });
 
     res.status(201).json(result);
   } catch (error) {

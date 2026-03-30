@@ -34,18 +34,6 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
       throw new AppError(403, 'Access denied to child profile');
     }
 
-    // Enforce 3 stories per month per child
-    const monthlyCount = await queryOne<{ count: string }>(
-      `SELECT COUNT(*) as count FROM stories
-       WHERE child_profile_id = $1
-       AND created_at >= date_trunc('month', CURRENT_DATE)`,
-      [child_profile_id]
-    );
-
-    if (monthlyCount && parseInt(monthlyCount.count, 10) >= 3) {
-      throw new AppError(429, 'Story limit reached. You can create 3 stories per month.');
-    }
-
     // Get family members if requested
     let familyMembers: FamilyMember[] = [];
     if (includeFamily) {

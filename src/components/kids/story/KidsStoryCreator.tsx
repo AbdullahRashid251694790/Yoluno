@@ -48,15 +48,60 @@ const themeEmojis: Record<string, string> = {
   history: '📜', invention: '💡', courage: '🦁',
 };
 
+const themeColors: Record<string, { bg: string; border: string; activeBg: string }> = {
+  friendship: { bg: 'bg-lolo/8', border: 'border-lolo/20', activeBg: 'bg-lolo/15' },
+  kindness: { bg: 'bg-lolo/8', border: 'border-lolo/20', activeBg: 'bg-lolo/15' },
+  adventure: { bg: 'bg-gold/8', border: 'border-gold/20', activeBg: 'bg-gold/15' },
+  animals: { bg: 'bg-primary/8', border: 'border-primary/20', activeBg: 'bg-primary/15' },
+  nature: { bg: 'bg-primary/8', border: 'border-primary/20', activeBg: 'bg-primary/15' },
+  bedtime: { bg: 'bg-lumi/8', border: 'border-lumi/20', activeBg: 'bg-lumi/15' },
+  colors: { bg: 'bg-lala/8', border: 'border-lala/20', activeBg: 'bg-lala/15' },
+  shapes: { bg: 'bg-primary/8', border: 'border-primary/20', activeBg: 'bg-primary/15' },
+  family: { bg: 'bg-gold/8', border: 'border-gold/20', activeBg: 'bg-gold/15' },
+  space: { bg: 'bg-lumi/8', border: 'border-lumi/20', activeBg: 'bg-lumi/15' },
+  dinosaurs: { bg: 'bg-primary/8', border: 'border-primary/20', activeBg: 'bg-primary/15' },
+  magic: { bg: 'bg-lumi/8', border: 'border-lumi/20', activeBg: 'bg-lumi/15' },
+  sports: { bg: 'bg-primary/8', border: 'border-primary/20', activeBg: 'bg-primary/15' },
+  science: { bg: 'bg-primary/8', border: 'border-primary/20', activeBg: 'bg-primary/15' },
+  mystery: { bg: 'bg-lumi/8', border: 'border-lumi/20', activeBg: 'bg-lumi/15' },
+  fantasy: { bg: 'bg-lumi/8', border: 'border-lumi/20', activeBg: 'bg-lumi/15' },
+  history: { bg: 'bg-gold/8', border: 'border-gold/20', activeBg: 'bg-gold/15' },
+  invention: { bg: 'bg-gold/8', border: 'border-gold/20', activeBg: 'bg-gold/15' },
+  courage: { bg: 'bg-lolo/8', border: 'border-lolo/20', activeBg: 'bg-lolo/15' },
+};
+
 const moodEmojis: Record<string, string> = {
   adventurous: '🌟', calm: '😌', funny: '😄',
   magical: '✨', exciting: '🎉', peaceful: '🕊️', mysterious: '🔮',
+};
+
+const moodColors: Record<string, { bg: string; border: string; activeBg: string }> = {
+  adventurous: { bg: 'bg-gold/8', border: 'border-gold/20', activeBg: 'bg-gold/15' },
+  calm: { bg: 'bg-primary/8', border: 'border-primary/20', activeBg: 'bg-primary/15' },
+  funny: { bg: 'bg-lala/8', border: 'border-lala/20', activeBg: 'bg-lala/15' },
+  magical: { bg: 'bg-lumi/8', border: 'border-lumi/20', activeBg: 'bg-lumi/15' },
+  exciting: { bg: 'bg-lolo/8', border: 'border-lolo/20', activeBg: 'bg-lolo/15' },
+  peaceful: { bg: 'bg-primary/8', border: 'border-primary/20', activeBg: 'bg-primary/15' },
+  mysterious: { bg: 'bg-lumi/8', border: 'border-lumi/20', activeBg: 'bg-lumi/15' },
 };
 
 const valueEmojis: Record<string, string> = {
   kindness: '💕', honesty: '💎', courage: '🦁', friendship: '🤝',
   perseverance: '💪', respect: '🙏', responsibility: '⭐',
   gratitude: '🙏', empathy: '❤️', creativity: '🎨',
+};
+
+const valueColors: Record<string, { bg: string; border: string; activeBg: string }> = {
+  kindness: { bg: 'bg-lolo/8', border: 'border-lolo/20', activeBg: 'bg-lolo/15' },
+  honesty: { bg: 'bg-primary/8', border: 'border-primary/20', activeBg: 'bg-primary/15' },
+  courage: { bg: 'bg-gold/8', border: 'border-gold/20', activeBg: 'bg-gold/15' },
+  friendship: { bg: 'bg-primary/8', border: 'border-primary/20', activeBg: 'bg-primary/15' },
+  perseverance: { bg: 'bg-lolo/8', border: 'border-lolo/20', activeBg: 'bg-lolo/15' },
+  respect: { bg: 'bg-lumi/8', border: 'border-lumi/20', activeBg: 'bg-lumi/15' },
+  responsibility: { bg: 'bg-gold/8', border: 'border-gold/20', activeBg: 'bg-gold/15' },
+  gratitude: { bg: 'bg-primary/8', border: 'border-primary/20', activeBg: 'bg-primary/15' },
+  empathy: { bg: 'bg-lolo/8', border: 'border-lolo/20', activeBg: 'bg-lolo/15' },
+  creativity: { bg: 'bg-lumi/8', border: 'border-lumi/20', activeBg: 'bg-lumi/15' },
 };
 
 const voiceOptions: { value: TTSVoice; label: string; emoji: string }[] = [
@@ -220,22 +265,25 @@ export function KidsStoryCreator({ childId, onClose, onSuccess }: KidsStoryCreat
           <div className="space-y-5">
             <p className="text-center text-muted-foreground text-sm font-body">What should your story be about?</p>
             <div className="grid grid-cols-3 gap-3">
-              {themes.map((theme) => (
-                <button
-                  key={theme}
-                  onClick={() => setState((p) => ({ ...p, theme, customTheme: '' }))}
-                  className={cn(
-                    'flex flex-col items-center gap-2 rounded-3xl p-4 transition-all duration-300 active:scale-95',
-                    'backdrop-blur-md border',
-                    state.theme === theme
-                      ? 'bg-white/80 border-primary shadow-[0_4px_24px_rgba(61,214,200,0.15)]'
-                      : 'bg-white/45 border-white/60 shadow-warm-sm hover:bg-white/70 hover:shadow-warm'
-                  )}
-                >
-                  <span className="text-3xl">{themeEmojis[theme] || '📖'}</span>
-                  <span className={cn('text-xs font-bold capitalize', state.theme === theme ? 'text-primary' : 'text-foreground')}>{theme}</span>
-                </button>
-              ))}
+              {themes.map((theme) => {
+                const colors = themeColors[theme] || { bg: 'bg-primary/8', border: 'border-primary/20', activeBg: 'bg-primary/15' };
+                return (
+                  <button
+                    key={theme}
+                    onClick={() => setState((p) => ({ ...p, theme, customTheme: '' }))}
+                    className={cn(
+                      'flex flex-col items-center gap-2 rounded-3xl p-4 transition-all duration-300 active:scale-95',
+                      'border-2',
+                      state.theme === theme
+                        ? `${colors.activeBg} border-primary shadow-[0_4px_24px_rgba(61,214,200,0.15)]`
+                        : `${colors.bg} ${colors.border} hover:shadow-warm`
+                    )}
+                  >
+                    <span className="text-3xl">{themeEmojis[theme] || '📖'}</span>
+                    <span className={cn('text-xs font-bold capitalize', state.theme === theme ? 'text-primary' : 'text-foreground')}>{theme}</span>
+                  </button>
+                );
+              })}
             </div>
             <div className="pt-2">
               <p className="text-xs text-muted-foreground mb-2 text-center">Or make up your own!</p>
@@ -277,12 +325,14 @@ export function KidsStoryCreator({ childId, onClose, onSuccess }: KidsStoryCreat
                       }))
                     }
                     className={cn(
-                      'px-5 py-2.5 rounded-[40px] text-sm font-bold transition-all duration-300 border backdrop-blur-md',
+                      'px-5 py-2.5 rounded-[40px] text-sm font-bold transition-all duration-300 border-2',
                       state.customCharacterGender === g
                         ? g === 'boy'
                           ? 'bg-primary text-white shadow-[0_4px_16px_rgba(61,214,200,0.25)]'
                           : 'bg-lolo text-white shadow-[0_4px_16px_rgba(230,130,90,0.25)]'
-                        : 'bg-white/45 border-white/60 text-foreground shadow-warm-sm hover:bg-white/70'
+                        : g === 'boy'
+                          ? 'bg-primary/8 border-primary/20 text-foreground hover:shadow-warm'
+                          : 'bg-lolo/8 border-lolo/20 text-foreground hover:shadow-warm'
                     )}
                   >
                     {g === 'boy' ? '👦 Boy' : '👧 Girl'}
@@ -317,10 +367,10 @@ export function KidsStoryCreator({ childId, onClose, onSuccess }: KidsStoryCreat
               type="button"
               onClick={() => setState((p) => ({ ...p, includeFamily: !p.includeFamily }))}
               className={cn(
-                'w-full flex items-center justify-center gap-3 rounded-3xl p-4 transition-all duration-300 text-sm font-bold border backdrop-blur-md',
+                'w-full flex items-center justify-center gap-3 rounded-3xl p-4 transition-all duration-300 text-sm font-bold border-2',
                 state.includeFamily
-                  ? 'bg-white/80 border-gold text-gold shadow-[0_4px_16px_rgba(212,168,67,0.15)]'
-                  : 'bg-white/45 border-white/60 text-muted-foreground shadow-warm-sm hover:bg-white/70 hover:shadow-warm'
+                  ? 'bg-gold/15 border-gold text-gold shadow-[0_4px_16px_rgba(212,168,67,0.15)]'
+                  : 'bg-gold/8 border-gold/20 text-muted-foreground hover:shadow-warm'
               )}
             >
               <span className="text-2xl">👨‍👩‍👧</span>
@@ -336,40 +386,46 @@ export function KidsStoryCreator({ childId, onClose, onSuccess }: KidsStoryCreat
           <div className="space-y-5">
             <p className="text-center text-muted-foreground text-sm">What feeling should the story have?</p>
             <div className="grid grid-cols-2 gap-3">
-              {storyMoods.map((mood) => (
-                <button
-                  key={mood}
-                  onClick={() => setState((p) => ({ ...p, mood }))}
-                  className={cn(
-                    'flex items-center gap-3 rounded-3xl p-4 transition-all duration-300 active:scale-95',
-                    'backdrop-blur-md border',
-                    state.mood === mood
-                      ? 'bg-white/80 border-primary shadow-[0_4px_24px_rgba(61,214,200,0.15)]'
-                      : 'bg-white/45 border-white/60 shadow-warm-sm hover:bg-white/70 hover:shadow-warm'
-                  )}
-                >
-                  <span className="text-2xl">{moodEmojis[mood] || '📖'}</span>
-                  <span className={cn('font-bold capitalize text-sm', state.mood === mood ? 'text-primary' : 'text-foreground')}>{mood}</span>
-                </button>
-              ))}
+              {storyMoods.map((mood) => {
+                const colors = moodColors[mood] || { bg: 'bg-primary/8', border: 'border-primary/20', activeBg: 'bg-primary/15' };
+                return (
+                  <button
+                    key={mood}
+                    onClick={() => setState((p) => ({ ...p, mood }))}
+                    className={cn(
+                      'flex items-center gap-3 rounded-3xl p-4 transition-all duration-300 active:scale-95',
+                      'border-2',
+                      state.mood === mood
+                        ? `${colors.activeBg} border-primary shadow-[0_4px_24px_rgba(61,214,200,0.15)]`
+                        : `${colors.bg} ${colors.border} hover:shadow-warm`
+                    )}
+                  >
+                    <span className="text-2xl">{moodEmojis[mood] || '📖'}</span>
+                    <span className={cn('font-bold capitalize text-sm', state.mood === mood ? 'text-primary' : 'text-foreground')}>{mood}</span>
+                  </button>
+                );
+              })}
             </div>
             <div>
               <p className="text-sm font-bold text-center mb-3 text-foreground">How long?</p>
               <div className="flex gap-2">
-                {(['short', 'medium', 'long'] as const).map((len) => (
-                  <button
-                    key={len}
-                    onClick={() => setState((p) => ({ ...p, storyLength: len }))}
-                    className={cn(
-                      'flex-1 rounded-[40px] py-3 text-sm font-bold capitalize transition-all duration-300 border backdrop-blur-md',
-                      state.storyLength === len
-                        ? 'bg-primary text-white shadow-[0_4px_16px_rgba(61,214,200,0.25)]'
-                        : 'bg-white/45 border-white/60 text-foreground shadow-warm-sm hover:bg-white/70 hover:shadow-warm'
-                    )}
-                  >
-                    {len === 'short' ? '⚡ Short' : len === 'medium' ? '📖 Medium' : '📚 Long'}
-                  </button>
-                ))}
+                {(['short', 'medium', 'long'] as const).map((len) => {
+                  const lenColors: Record<string, string> = { short: 'bg-lala/8 border-lala/20', medium: 'bg-primary/8 border-primary/20', long: 'bg-lumi/8 border-lumi/20' };
+                  return (
+                    <button
+                      key={len}
+                      onClick={() => setState((p) => ({ ...p, storyLength: len }))}
+                      className={cn(
+                        'flex-1 rounded-[40px] py-3 text-sm font-bold capitalize transition-all duration-300 border-2',
+                        state.storyLength === len
+                          ? 'bg-primary text-white shadow-[0_4px_16px_rgba(61,214,200,0.25)]'
+                          : `${lenColors[len]} text-foreground hover:shadow-warm`
+                      )}
+                    >
+                      {len === 'short' ? '⚡ Short' : len === 'medium' ? '📖 Medium' : '📚 Long'}
+                    </button>
+                  );
+                })}
               </div>
             </div>
             <div>
@@ -377,21 +433,24 @@ export function KidsStoryCreator({ childId, onClose, onSuccess }: KidsStoryCreat
                 <Volume2 className="h-4 w-4" /> Who reads the story?
               </p>
               <div className="grid grid-cols-3 gap-2">
-                {voiceOptions.map((v) => (
-                  <button
-                    key={v.value}
-                    onClick={() => setState((p) => ({ ...p, narratorVoice: v.value }))}
-                    className={cn(
-                      'flex flex-col items-center gap-1 rounded-2xl py-3 transition-all duration-300 border backdrop-blur-md',
-                      state.narratorVoice === v.value
-                        ? 'bg-white/80 border-primary shadow-[0_4px_16px_rgba(61,214,200,0.15)]'
-                        : 'bg-white/45 border-white/60 shadow-warm-sm hover:bg-white/70 hover:shadow-warm'
-                    )}
-                  >
-                    <span className="text-xl">{v.emoji}</span>
-                    <span className={cn('text-xs font-bold', state.narratorVoice === v.value ? 'text-primary' : 'text-foreground')}>{v.label}</span>
-                  </button>
-                ))}
+                {voiceOptions.map((v, i) => {
+                  const voiceColors = ['bg-lolo/8 border-lolo/20', 'bg-lala/8 border-lala/20', 'bg-lumi/8 border-lumi/20', 'bg-primary/8 border-primary/20', 'bg-gold/8 border-gold/20', 'bg-lolo/8 border-lolo/20'];
+                  return (
+                    <button
+                      key={v.value}
+                      onClick={() => setState((p) => ({ ...p, narratorVoice: v.value }))}
+                      className={cn(
+                        'flex flex-col items-center gap-1 rounded-2xl py-3 transition-all duration-300 border-2',
+                        state.narratorVoice === v.value
+                          ? 'bg-primary/15 border-primary shadow-[0_4px_16px_rgba(61,214,200,0.15)]'
+                          : `${voiceColors[i % voiceColors.length]} hover:shadow-warm`
+                      )}
+                    >
+                      <span className="text-xl">{v.emoji}</span>
+                      <span className={cn('text-xs font-bold', state.narratorVoice === v.value ? 'text-primary' : 'text-foreground')}>{v.label}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -414,10 +473,13 @@ export function KidsStoryCreator({ childId, onClose, onSuccess }: KidsStoryCreat
                     onClick={() => toggleValue(value)}
                     disabled={disabled}
                     className={cn(
-                      'flex items-center gap-3 rounded-3xl p-3 transition-all duration-300 text-sm font-bold border backdrop-blur-md',
-                      selected
-                        ? 'bg-white/80 border-lolo shadow-[0_4px_16px_rgba(230,130,90,0.15)] text-lolo'
-                        : 'bg-white/45 border-white/60 text-foreground shadow-warm-sm hover:bg-white/70 hover:shadow-warm',
+                      'flex items-center gap-3 rounded-3xl p-3 transition-all duration-300 text-sm font-bold border-2',
+                      (() => {
+                        const c = valueColors[value] || { bg: 'bg-lolo/8', border: 'border-lolo/20', activeBg: 'bg-lolo/15' };
+                        return selected
+                          ? `${c.activeBg} border-lolo shadow-[0_4px_16px_rgba(230,130,90,0.15)] text-lolo`
+                          : `${c.bg} ${c.border} text-foreground hover:shadow-warm`;
+                      })(),
                       disabled && 'opacity-40 cursor-not-allowed'
                     )}
                   >
