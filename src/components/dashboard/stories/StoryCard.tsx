@@ -53,9 +53,9 @@ export function StoryCard({ story, onRead, onToggleFavorite, onDelete }: StoryCa
           </p>
         )}
 
-        <div className="mt-4 flex flex-wrap gap-2">
-          {story.theme && <Badge variant="secondary">{story.theme}</Badge>}
-          {story.mood && <Badge variant="outline">{story.mood}</Badge>}
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          {story.theme && <Badge variant="secondary" className="!text-caption !px-2.5 !py-0.5">{story.theme}</Badge>}
+          {story.mood && <Badge variant="outline" className="!text-caption !px-2.5 !py-0.5">{story.mood}</Badge>}
         </div>
       </CardContent>
 

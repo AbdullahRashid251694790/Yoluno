@@ -49,14 +49,15 @@ export function ChildProfileCard({ child, avatarUrl, onEdit }: ChildProfileCardP
               )}
             </div>
 
-            <h3 className="mt-4 text-body-lg font-semibold">{child.name}</h3>
+            <h3 className="mt-3 text-body font-semibold">{child.name}</h3>
 
-            <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
-              <Badge variant="secondary">{child.age} years old</Badge>
+            <div className="mt-1.5 flex flex-wrap items-center justify-center gap-1.5">
+              <Badge variant="secondary" className="text-caption px-2.5 py-0.5">{child.age} years old</Badge>
               {child.gender && child.gender !== 'prefer_not_to_say' && (
                 <Badge
                   variant="outline"
                   className={cn(
+                    '!text-caption !px-2.5 !py-0.5',
                     child.gender === 'boy' && 'border-primary bg-primary/5 text-primary',
                     child.gender === 'girl' && 'border-lolo bg-lolo/10 text-lolo'
                   )}
@@ -74,30 +75,31 @@ export function ChildProfileCard({ child, avatarUrl, onEdit }: ChildProfileCardP
           </div>
         </CardContent>
 
-        <CardFooter className="flex justify-center gap-2 border-t bg-muted/50 px-6 py-4">
+        <CardFooter className="flex items-center justify-center gap-2 border-t bg-muted/50 px-4 py-3">
           <Link to={`/kids/${child.id}/mood`}>
-            <Button size="sm" className="gap-2">
-              <Play className="h-4 w-4" />
+            <Button size="sm" className="gap-1.5 !h-8 !px-3 !text-caption text-white/85">
+              <Play className="h-3.5 w-3.5" />
               Play
             </Button>
           </Link>
           <Link to="/dashboard/stories">
-            <Button size="sm" variant="outline" className="gap-2">
-              <BookOpen className="h-4 w-4" />
+            <Button size="sm" variant="outline" className="gap-1.5 !h-8 !px-3 !text-caption">
+              <BookOpen className="h-3.5 w-3.5" />
               Story
             </Button>
           </Link>
           <Button
-            size="sm"
+            size="icon"
             variant="outline"
+            className="!h-8 !w-8"
             onClick={() => setShowPinDialog(true)}
             title={hasPin ? 'Reset PIN' : 'Set PIN'}
           >
-            <KeyRound className="h-4 w-4" />
+            <KeyRound className="h-3.5 w-3.5" />
           </Button>
           {onEdit && (
-            <Button size="sm" variant="ghost" onClick={onEdit}>
-              <Settings className="h-4 w-4" />
+            <Button size="icon" variant="ghost" className="!h-8 !w-8" onClick={onEdit}>
+              <Settings className="h-3.5 w-3.5" />
             </Button>
           )}
         </CardFooter>
