@@ -238,7 +238,7 @@ export function TopicsPage() {
                           <span className="text-body-lg">{customTopic.icon}</span>
                         )}
                         <span className="font-medium">{customTopic.name}</span>
-                        <Badge variant="secondary">
+                        <Badge variant="secondary" className="!text-caption !px-2.5 !py-0.5">
                           {posts.length} {posts.length === 1 ? 'post' : 'posts'}
                         </Badge>
                       </div>
@@ -326,7 +326,7 @@ export function TopicsPage() {
                     <AccordionTrigger className="hover:no-underline">
                       <div className="flex items-center gap-3">
                         <span className="font-medium">{category}</span>
-                        <Badge variant="secondary">
+                        <Badge variant="secondary" className="!text-caption !px-2.5 !py-0.5">
                           {allowedCount}/{topics.length} allowed
                         </Badge>
                       </div>
