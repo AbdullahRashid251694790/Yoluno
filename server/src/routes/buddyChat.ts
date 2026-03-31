@@ -36,14 +36,44 @@ const COMPLETION_KEYWORDS = ['done', 'finished', 'completed', 'i did it', 'all d
 
 router.use(requireAuth);
 
-// Safety keywords
-const RED_FLAG_KEYWORDS = ['kill', 'hurt', 'hate', 'die', 'blood', 'gun', 'weapon', 'suicide', 'murder'];
-const YELLOW_FLAG_KEYWORDS = ['stupid', 'dumb', 'shut up', 'angry', 'scared', 'fight', 'bully'];
+// Safety keywords — comprehensive child safety detection
+const RED_FLAG_KEYWORDS = [
+  // Violence
+  'kill', 'murder', 'stab', 'shoot', 'gun', 'weapon', 'knife', 'blood',
+  // Self-harm / suicidal
+  'suicide', 'kill myself', 'hurt myself', 'want to die', 'don\'t want to live',
+  'don\'t want to be here', 'end my life', 'cut myself',
+  // Abuse indicators
+  'touched me', 'makes me undress', 'secret touching', 'don\'t tell anyone',
+  'hits me', 'beats me', 'molest',
+  // Explicit content
+  'sex', 'porn', 'naked', 'nude',
+];
+
+const YELLOW_FLAG_KEYWORDS = [
+  // Profanity / bad language
+  'fuck', 'shit', 'ass', 'bitch', 'damn', 'hell', 'crap', 'dick', 'bastard',
+  'wtf', 'stfu', 'idiot', 'retard',
+  // Bullying (being bullied or bullying)
+  'bully', 'bullied', 'bullying', 'picked on', 'made fun of', 'laughed at me',
+  'pushed me', 'hit me', 'punched', 'kicked me', 'nobody likes me',
+  'no friends', 'left out', 'excluded',
+  // Emotional distress
+  'hate myself', 'i\'m worthless', 'i\'m ugly', 'i\'m stupid', 'i\'m dumb',
+  'nobody cares', 'nobody loves me', 'want to run away', 'scared of',
+  'afraid of', 'having nightmares', 'can\'t sleep',
+  // Anger / conflict
+  'stupid', 'dumb', 'shut up', 'i hate', 'angry', 'fight', 'fighting',
+  // General concerning
+  'scared', 'lonely', 'alone', 'crying', 'depressed', 'anxious', 'worried',
+  'hurt', 'pain', 'mean to me',
+];
 
 function analyzeSafety(message: string): { level: 'green' | 'yellow' | 'red'; flags: string[] } {
   const lowerMessage = message.toLowerCase();
   const flags: string[] = [];
 
+  // Check red flags first (most serious)
   for (const keyword of RED_FLAG_KEYWORDS) {
     if (lowerMessage.includes(keyword)) {
       flags.push(keyword);
@@ -54,6 +84,7 @@ function analyzeSafety(message: string): { level: 'green' | 'yellow' | 'red'; fl
     return { level: 'red', flags };
   }
 
+  // Check yellow flags
   for (const keyword of YELLOW_FLAG_KEYWORDS) {
     if (lowerMessage.includes(keyword)) {
       flags.push(keyword);

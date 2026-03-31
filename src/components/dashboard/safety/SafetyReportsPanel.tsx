@@ -26,6 +26,7 @@ import { EmptyState } from '@/components/shared/feedback/EmptyState';
 import { LoadingSpinner } from '@/components/shared/feedback/LoadingState';
 import { formatRelativeTime } from '@/lib/utils';
 import { AlertTriangle, CheckCircle, Clock, MessageSquare } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import type { SafetyReport } from '@/services/buddyChat';
 
 interface SafetyReportsPanelProps {
@@ -109,7 +110,7 @@ export function SafetyReportsPanel({ childId }: SafetyReportsPanelProps) {
               <CardTitle className="flex items-center gap-2">
                 Safety Reports
                 {unreadCount > 0 && (
-                  <Badge variant="destructive" className="ml-2">
+                  <Badge variant="destructive" className="ml-2 !text-caption !px-2 !py-0">
                     {unreadCount} new
                   </Badge>
                 )}
@@ -154,23 +155,31 @@ export function SafetyReportsPanel({ childId }: SafetyReportsPanelProps) {
                       return (
                         <Card
                           key={report.id}
-                          className={
-                            !report.reviewed ? 'border-l-4 border-l-destructive' : ''
-                          }
+                          className={cn(
+                            !report.reviewed && 'border-l-4',
+                            !report.reviewed && report.severity === 'red' && 'border-l-destructive',
+                            !report.reviewed && report.severity === 'yellow' && 'border-l-lala'
+                          )}
                         >
-                          <CardContent className="p-4">
-                            <div className="flex items-start justify-between gap-4">
-                              <div className="flex-1 space-y-2">
+                          <CardContent className="p-3">
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="flex-1 space-y-1.5">
                                 <div className="flex items-center gap-2">
-                                  <SeverityIcon className="h-4 w-4 text-destructive" />
-                                  <Badge variant={getSeverityColor(report.severity)}>
+                                  <SeverityIcon className={cn('h-4 w-4', report.severity === 'red' ? 'text-destructive' : 'text-lala')} />
+                                  <Badge
+                                    variant={report.severity === 'red' ? 'destructive' : 'default'}
+                                    className={cn(
+                                      '!text-[11px] !px-2 !py-0.5 !rounded-full !leading-none',
+                                      report.severity === 'yellow' && '!bg-lala !text-white !border-lala'
+                                    )}
+                                  >
                                     {report.severity.toUpperCase()}
                                   </Badge>
                                   {report.report_type === 'real_time' && (
-                                    <Badge variant="outline">Real-time Alert</Badge>
+                                    <Badge variant="outline" className="!text-caption !px-2 !py-0">Real-time Alert</Badge>
                                   )}
                                   {!report.reviewed && (
-                                    <Badge variant="secondary">Unread</Badge>
+                                    <Badge variant="secondary" className="!text-caption !px-2 !py-0">Unread</Badge>
                                   )}
                                 </div>
 
@@ -179,7 +188,7 @@ export function SafetyReportsPanel({ childId }: SafetyReportsPanelProps) {
                                     {(report as any).child_name}
                                   </p>
                                 )}
-                                <h4 className="font-semibold">{report.issue_summary}</h4>
+                                <h4 className="text-body-sm font-semibold">{report.issue_summary}</h4>
 
                                 {report.message_excerpt && (
                                   <Alert>
@@ -220,6 +229,7 @@ export function SafetyReportsPanel({ childId }: SafetyReportsPanelProps) {
                               {!report.reviewed && (
                                 <Button
                                   size="sm"
+                                  className="!h-7 !px-3 !text-caption"
                                   onClick={() => handleReview(report)}
                                 >
                                   Review
