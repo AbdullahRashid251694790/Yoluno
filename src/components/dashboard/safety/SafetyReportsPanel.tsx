@@ -28,17 +28,26 @@ import { formatRelativeTime } from '@/lib/utils';
 import { AlertTriangle, CheckCircle, Clock, MessageSquare } from 'lucide-react';
 import type { SafetyReport } from '@/services/buddyChat';
 
-export function SafetyReportsPanel() {
+interface SafetyReportsPanelProps {
+  childId?: string;
+}
+
+export function SafetyReportsPanel({ childId }: SafetyReportsPanelProps) {
   const { user } = useAuth();
   const [selectedReport, setSelectedReport] = useState<SafetyReport | null>(null);
   const [notes, setNotes] = useState('');
   const [filter, setFilter] = useState<'all' | 'unread'>('unread');
 
   // Fetch reports based on filter
-  const { data: reports = [], isLoading } = useSafetyReports(
+  const { data: allReports = [], isLoading } = useSafetyReports(
     user?.id,
     filter === 'unread'
   );
+
+  // Filter by selected child
+  const reports = childId
+    ? allReports.filter((r) => r.child_profile_id === childId)
+    : allReports;
 
   // Mark as reviewed mutation
   const { mutate: markReviewed, isPending: isMarking } = useMarkSafetyReportReviewed();
@@ -165,6 +174,11 @@ export function SafetyReportsPanel() {
                                   )}
                                 </div>
 
+                                {(report as any).child_name && (
+                                  <p className="text-body-sm font-bold text-foreground">
+                                    {(report as any).child_name}
+                                  </p>
+                                )}
                                 <h4 className="font-semibold">{report.issue_summary}</h4>
 
                                 {report.message_excerpt && (
@@ -239,6 +253,11 @@ export function SafetyReportsPanel() {
 
           {selectedReport && (
             <div className="space-y-4">
+              {(selectedReport as any).child_name && (
+                <p className="text-body font-bold text-foreground">
+                  Child: {(selectedReport as any).child_name}
+                </p>
+              )}
               <Alert>
                 <AlertTriangle className="h-4 w-4" />
                 <AlertDescription>

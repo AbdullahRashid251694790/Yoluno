@@ -1294,14 +1294,21 @@ router.get('/safety-reports', async (req: Request, res: Response, next: NextFunc
   try {
     const { unreviewed } = req.query;
 
-    let queryText = 'SELECT * FROM safety_reports WHERE user_id = $1';
+    let queryText = `
+      SELECT sr.*,
+        cp.name as child_name,
+        bm.content as message_excerpt
+      FROM safety_reports sr
+      LEFT JOIN child_profiles cp ON sr.child_profile_id = cp.id
+      LEFT JOIN buddy_messages bm ON sr.message_id = bm.id
+      WHERE sr.user_id = $1`;
     const params: unknown[] = [req.user!.id];
 
     if (unreviewed === 'true') {
-      queryText += ' AND reviewed = false';
+      queryText += ' AND sr.reviewed = false';
     }
 
-    queryText += ' ORDER BY created_at DESC';
+    queryText += ' ORDER BY sr.created_at DESC';
 
     const result = await query<SafetyReport>(queryText, params);
     res.json(result.rows);

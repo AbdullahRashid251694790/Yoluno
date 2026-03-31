@@ -117,7 +117,7 @@ export function SafetyDashboardPage() {
               </AlertDescription>
             </Alert>
 
-            <SafetyReportsPanel />
+            <SafetyReportsPanel childId={selectedChild.id} />
           </TabsContent>
 
           <TabsContent value="buddy" className="space-y-4">
