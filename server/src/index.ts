@@ -51,6 +51,7 @@ import journeyRewardsRoutes from './routes/journeyRewards.js';
 import notificationsRoutes from './routes/notifications.js';
 import moodCheckinRoutes from './routes/moodCheckin.js';
 import dataExportRoutes from './routes/dataExport.js';
+import dailyMissionsRoutes from './routes/dailyMissions.js';
 
 const app = express();
 const httpServer = createServer(app);
@@ -163,6 +164,7 @@ app.use('/api/journey-rewards', journeyRewardsRoutes);
 app.use('/api/notifications', notificationsRoutes);
 app.use('/api/mood-checkin', moodCheckinRoutes);
 app.use('/api/data-export', dataExportRoutes);
+app.use('/api/daily-missions', dailyMissionsRoutes);
 
 // Error handler
 app.use(errorHandler);

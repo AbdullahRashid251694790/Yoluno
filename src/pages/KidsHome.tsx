@@ -7,11 +7,13 @@
 
 import { useEffect, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
+import { cn } from '@/lib/utils';
 import { useChild } from '@/contexts/ChildContext';
 import { useChildProfile } from '@/hooks/queries';
 import { useGamificationStats, useChildBadges } from '@/hooks/queries/useGamification';
 import { useRewardCount } from '@/hooks/queries/useJourneyRewards';
 import { useChatBuddy } from '@/hooks/queries/useBuddyChat';
+import { useDailyMissions, useClaimMissionBonus } from '@/hooks/queries/useDailyMissions';
 import { ErrorState } from '@/components/shared';
 import { ChatAvatar } from '@/components/chat/ChatAvatar';
 import { Button } from '@/components/ui/button';
@@ -99,22 +101,13 @@ const activities = [
   },
 ];
 
-// Daily challenges
-const dailyChallenges = [
-  { text: 'Ask Luno about dinosaurs!', emoji: '🦖' },
-  { text: 'Learn something new about space!', emoji: '🚀' },
-  { text: 'Tell Luno about your day!', emoji: '📝' },
-  { text: "Ask 'Why?' about something!", emoji: '🤔' },
-  { text: 'Create a fun story together!', emoji: '📖' },
-  { text: 'Learn about an animal!', emoji: '🐾' },
-  { text: 'Talk about your favorite things!', emoji: '⭐' },
-];
-
-function getDailyChallenge() {
-  const today = new Date().toDateString();
-  const index = today.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  return dailyChallenges[index % dailyChallenges.length];
-}
+// Mission type to route mapping
+const MISSION_ROUTES: Record<string, string> = {
+  chat: '/chat',
+  story: '/stories',
+  journey_step: '/journeys',
+  family: '/family',
+};
 
 export function KidsHomePage() {
   const { childId } = useParams<{ childId: string }>();
@@ -129,9 +122,11 @@ export function KidsHomePage() {
   const { data: buddy } = useChatBuddy(childId);
   const buddyName = buddy?.buddy_name || 'Luno';
 
+  const { data: missionsData, isError: missionsError } = useDailyMissions(childId);
+  const claimBonus = useClaimMissionBonus();
+
   const greeting = useMemo(() => getGreeting(), []);
   const buddyExpression = useMemo(() => getBuddyExpression(), []);
-  const dailyChallenge = useMemo(() => getDailyChallenge(), []);
 
   // Extract real stats from API response
   const streakCount = gamificationData?.stats?.current_streak ?? 0;
@@ -292,33 +287,77 @@ export function KidsHomePage() {
           })}
         </div>
 
-        {/* Daily Challenge */}
-        <Card className="mb-6 overflow-hidden border-0 bg-gradient-to-r from-primary/10 to-child-secondary/10 shadow-md">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="rounded-full bg-white/80 p-2.5">
-                <span className="text-h4">{dailyChallenge.emoji}</span>
-              </div>
-              <div className="flex-1">
-                <p className="text-caption font-medium text-primary uppercase tracking-wide">
-                  Today's Challenge
+        {/* Daily Missions */}
+        {missionsData ? (
+          <Card className="mb-6 overflow-hidden border-0 shadow-warm">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-caption font-bold text-primary uppercase tracking-wide">
+                  Today's Missions
                 </p>
-                <p className="text-body-sm font-medium text-foreground mt-0.5">
-                  {dailyChallenge.text}
+                <p className="text-caption text-muted-foreground">
+                  {missionsData.missions.filter((m) => m.completed).length}/{missionsData.missions.length} done
                 </p>
               </div>
-              <Link to={`/kids/${childId}/chat`}>
+
+              <div className="space-y-2">
+                {missionsData.missions.map((mission, i) => (
+                  <Link
+                    key={i}
+                    to={`/kids/${childId}${MISSION_ROUTES[mission.type] || '/chat'}`}
+                    className="block"
+                  >
+                    <div className={cn(
+                      'flex items-center gap-3 rounded-2xl p-3 border-2',
+                      mission.completed
+                        ? 'bg-primary/10 border-primary/20'
+                        : 'bg-card border-border hover:border-primary/30'
+                    )}>
+                      <span className="text-body-lg">{mission.emoji}</span>
+                      <p className={cn(
+                        'flex-1 text-body-sm font-medium',
+                        mission.completed ? 'text-primary line-through' : 'text-foreground'
+                      )}>
+                        {mission.title}
+                      </p>
+                      {mission.completed ? (
+                        <span className="text-primary text-body-lg">✓</span>
+                      ) : (
+                        <span className="text-caption text-muted-foreground">Go →</span>
+                      )}
+                    </div>
+                  </Link>
+                ))}
+              </div>
+
+              {missionsData.allCompleted && !missionsData.bonusAwarded && (
                 <Button
+                  className="w-full mt-3"
                   size="sm"
-                  variant="secondary"
-                  className="rounded-full bg-white hover:bg-white/80"
+                  onClick={() => childId && claimBonus.mutate(childId)}
+                  disabled={claimBonus.isPending}
                 >
-                  Go!
+                  {claimBonus.isPending ? 'Claiming...' : '🎉 Claim 15 Bonus Points!'}
                 </Button>
-              </Link>
-            </div>
-          </CardContent>
-        </Card>
+              )}
+
+              {missionsData.bonusAwarded && (
+                <p className="text-center text-caption text-primary font-bold mt-3">
+                  ⭐ Daily Champion! All missions complete!
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        ) : (
+          <Card className="mb-6 overflow-hidden border-0 shadow-warm">
+            <CardContent className="p-4">
+              <p className="text-caption font-bold text-primary uppercase tracking-wide mb-2">
+                Today's Missions
+              </p>
+              <p className="text-body-sm text-muted-foreground">Loading your missions...</p>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Badges Teaser */}
         <Link to={`/kids/${childId}/badges`}>
