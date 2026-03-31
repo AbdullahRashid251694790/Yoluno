@@ -73,18 +73,25 @@ router.get(
         throw new AppError(404, 'Child profile not found');
       }
 
-      // Get activity data from daily_analytics table
+      // Get activity data from source tables directly
       const activities = await query<ActivityTimelineEntry>(
         `SELECT
-          date::text,
-          COALESCE(message_count, 0) as message_count,
-          COALESCE(story_count, 0) as story_count,
-          COALESCE(journey_steps_completed, 0) as journey_steps_completed,
-          COALESCE(session_duration_minutes, 0) as session_duration_minutes
-        FROM daily_analytics
-        WHERE child_profile_id = $1
-          AND date >= CURRENT_DATE - INTERVAL '${daysNum} days'
-        ORDER BY date DESC`,
+          d::text as date,
+          COALESCE((SELECT COUNT(*) FROM buddy_messages WHERE child_profile_id = $1 AND role = 'child' AND created_at::date = d), 0)::int as message_count,
+          COALESCE((SELECT COUNT(*) FROM stories WHERE child_profile_id = $1 AND created_at::date = d), 0)::int as story_count,
+          COALESCE((SELECT COUNT(*) FROM journey_steps js JOIN journeys j ON js.journey_id = j.id WHERE j.child_profile_id = $1 AND js.completed_at IS NOT NULL AND js.completed_at::date = d), 0)::int as journey_steps_completed,
+          0 as session_duration_minutes
+        FROM generate_series(CURRENT_DATE - INTERVAL '${daysNum} days', CURRENT_DATE, '1 day') d
+        WHERE EXISTS (
+          SELECT 1 FROM buddy_messages WHERE child_profile_id = $1 AND created_at::date = d
+          UNION ALL
+          SELECT 1 FROM stories WHERE child_profile_id = $1 AND created_at::date = d
+          UNION ALL
+          SELECT 1 FROM journey_steps js JOIN journeys j ON js.journey_id = j.id WHERE j.child_profile_id = $1 AND js.completed_at IS NOT NULL AND js.completed_at::date = d
+          UNION ALL
+          SELECT 1 FROM child_activities WHERE child_profile_id = $1 AND created_at::date = d
+        )
+        ORDER BY d DESC`,
         [childId]
       );
 
@@ -115,45 +122,55 @@ router.get(
         throw new AppError(404, 'Child profile not found');
       }
 
-      // Get weekly summary from daily_analytics
-      const summary = await queryOne<{
-        total_messages: string;
-        total_stories: string;
-        total_journey_steps: string;
-        total_session_minutes: string;
-      }>(
-        `SELECT
-          COALESCE(SUM(message_count), 0) as total_messages,
-          COALESCE(SUM(story_count), 0) as total_stories,
-          COALESCE(SUM(journey_steps_completed), 0) as total_journey_steps,
-          COALESCE(SUM(session_duration_minutes), 0) as total_session_minutes
-        FROM daily_analytics
-        WHERE child_profile_id = $1
-          AND date >= CURRENT_DATE - INTERVAL '7 days'`,
+      // Get weekly summary from source tables
+      const msgCount = await queryOne<{ count: string }>(
+        `SELECT COUNT(*) as count FROM buddy_messages
+         WHERE child_profile_id = $1 AND role = 'child'
+         AND created_at >= CURRENT_DATE - INTERVAL '7 days'`,
+        [childId]
+      );
+      const storyCount = await queryOne<{ count: string }>(
+        `SELECT COUNT(*) as count FROM stories
+         WHERE child_profile_id = $1
+         AND created_at >= CURRENT_DATE - INTERVAL '7 days'`,
+        [childId]
+      );
+      const stepCount = await queryOne<{ count: string }>(
+        `SELECT COUNT(*) as count FROM journey_steps js
+         JOIN journeys j ON js.journey_id = j.id
+         WHERE j.child_profile_id = $1
+         AND js.completed_at IS NOT NULL
+         AND js.completed_at >= CURRENT_DATE - INTERVAL '7 days'`,
         [childId]
       );
 
-      // Get most active day
-      const mostActiveDay = await queryOne<{ date: string; activity_score: string }>(
-        `SELECT
-          date::text,
-          (message_count + story_count * 10 + journey_steps_completed * 5) as activity_score
-        FROM daily_analytics
-        WHERE child_profile_id = $1
-          AND date >= CURRENT_DATE - INTERVAL '7 days'
-        ORDER BY activity_score DESC
-        LIMIT 1`,
+      const summary = {
+        total_messages: msgCount?.count || '0',
+        total_stories: storyCount?.count || '0',
+        total_journey_steps: stepCount?.count || '0',
+        total_session_minutes: '0',
+      };
+
+      // Get most active day from child_activities
+      const mostActiveDay = await queryOne<{ date: string }>(
+        `SELECT created_at::date::text as date
+         FROM child_activities
+         WHERE child_profile_id = $1
+         AND created_at >= CURRENT_DATE - INTERVAL '7 days'
+         GROUP BY created_at::date
+         ORDER BY COUNT(*) DESC
+         LIMIT 1`,
         [childId]
       );
 
-      // Get topics explored this week
+      // Get topics explored this week (enabled topics)
       const topicsResult = await query<{ topic: string }>(
-        `SELECT DISTINCT topic
-        FROM topic_analytics
-        WHERE child_profile_id = $1
-          AND last_mentioned_at >= CURRENT_TIMESTAMP - INTERVAL '7 days'
-        ORDER BY mention_count DESC
-        LIMIT 10`,
+        `SELECT t.name as topic
+         FROM child_topic_settings cts
+         JOIN topics t ON cts.topic_id = t.id
+         WHERE cts.child_profile_id = $1 AND cts.is_allowed = true
+         ORDER BY t.name
+         LIMIT 10`,
         [childId]
       );
 
@@ -198,15 +215,16 @@ router.get(
         throw new AppError(404, 'Child profile not found');
       }
 
-      // Get topic analytics
+      // Get topics from enabled child topic settings
       const topics = await query<ChatTopicEntry>(
         `SELECT
-          topic,
-          mention_count,
-          last_mentioned_at::text
-        FROM topic_analytics
-        WHERE child_profile_id = $1
-        ORDER BY mention_count DESC
+          t.name as topic,
+          1 as mention_count,
+          cts.updated_at::text as last_mentioned_at
+        FROM child_topic_settings cts
+        JOIN topics t ON cts.topic_id = t.id
+        WHERE cts.child_profile_id = $1 AND cts.is_allowed = true
+        ORDER BY t.name
         LIMIT $2`,
         [childId, limitNum]
       );
