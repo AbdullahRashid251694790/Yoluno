@@ -38,24 +38,16 @@ export function KidsRewardGalleryPage() {
 
   const [celebratingReward, setCelebratingReward] = useState<JourneyReward | null>(null);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [autoShown, setAutoShown] = useState(false);
 
-  // Auto-show celebration for first unviewed reward
+  // Auto-show celebration for first unviewed reward (once only)
   useEffect(() => {
-    if (unviewedRewards.length > 0 && !celebratingReward) {
+    if (unviewedRewards.length > 0 && !celebratingReward && !autoShown) {
+      setAutoShown(true);
       setCelebratingReward(unviewedRewards[0]);
       setShowConfetti(true);
-
-      // Mark as viewed after showing
-      const timer = setTimeout(() => {
-        markViewed.mutate({
-          rewardId: unviewedRewards[0].id,
-          childId: effectiveChildId!,
-        });
-      }, 1500);
-
-      return () => clearTimeout(timer);
     }
-  }, [unviewedRewards, celebratingReward, effectiveChildId, markViewed]);
+  }, [unviewedRewards, celebratingReward, autoShown]);
 
   // Stop confetti after delay
   useEffect(() => {
@@ -77,6 +69,13 @@ export function KidsRewardGalleryPage() {
   };
 
   const closeCelebration = () => {
+    // Mark as viewed when closing
+    if (celebratingReward && !celebratingReward.viewed && effectiveChildId) {
+      markViewed.mutate({
+        rewardId: celebratingReward.id,
+        childId: effectiveChildId,
+      });
+    }
     setCelebratingReward(null);
     setShowConfetti(false);
   };
@@ -135,44 +134,29 @@ export function KidsRewardGalleryPage() {
             className="py-12"
           />
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
             {rewards.map((reward) => (
-              <Card
+              <button
                 key={reward.id}
                 className={cn(
-                  'overflow-hidden cursor-pointer transition-all hover:shadow-lg hover:scale-105',
-                  !reward.viewed && 'ring-2 ring-lala ring-offset-2'
+                  'flex flex-col items-center gap-1.5 p-3 rounded-2xl transition-all',
+                  'bg-card border-2 hover:shadow-warm',
+                  !reward.viewed ? 'border-lala shadow-warm-sm' : 'border-border'
                 )}
                 onClick={() => handleRewardClick(reward)}
               >
-                <div className="relative aspect-square bg-gradient-to-br from-primary/10 to-lolo/10">
-                  {reward.reward_image_url ? (
-                    <img
-                      src={reward.reward_image_url}
-                      alt={reward.reward_title}
-                      className="w-full h-full object-cover"
-                    />
+                <div className="relative w-14 h-14 rounded-xl bg-gradient-to-br from-lala/10 to-gold/10 flex items-center justify-center">
+                  {reward.reward_image_url && reward.reward_image_url.startsWith('http') ? (
+                    <img src={reward.reward_image_url} alt={reward.reward_title} className="w-full h-full object-cover rounded-xl" />
                   ) : (
-                    <div className="flex items-center justify-center h-full">
-                      <Trophy className="h-12 w-12 text-lala" />
-                    </div>
+                    <span className="text-h3">{(reward as any).badge_emoji || '🏆'}</span>
                   )}
                   {!reward.viewed && (
-                    <Badge className="absolute top-2 right-2 bg-lala/10 text-lala">
-                      <Sparkles className="h-3 w-3 mr-1" />
-                      New!
-                    </Badge>
+                    <span className="absolute -top-1 -right-1 w-3 h-3 bg-lala rounded-full border-2 border-card" />
                   )}
                 </div>
-                <CardContent className="p-3">
-                  <h3 className="font-medium text-body-sm line-clamp-1">
-                    {reward.reward_title}
-                  </h3>
-                  <p className="text-caption text-muted-foreground mt-1">
-                    {new Date(reward.earned_at).toLocaleDateString()}
-                  </p>
-                </CardContent>
-              </Card>
+                <p className="text-caption font-medium text-center line-clamp-1 w-full">{reward.reward_title}</p>
+              </button>
             ))}
           </div>
         )}
@@ -180,43 +164,32 @@ export function KidsRewardGalleryPage() {
 
       {/* Celebration Dialog */}
       <Dialog open={!!celebratingReward} onOpenChange={closeCelebration}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-xs">
           <DialogHeader>
-            <DialogTitle className="text-center text-h4 font-display flex items-center justify-center gap-2">
-              <Star className="h-6 w-6 text-lala fill-lala" />
-              Journey Complete!
-              <Star className="h-6 w-6 text-lala fill-lala" />
+            <DialogTitle className="text-center text-body-lg font-display flex items-center justify-center gap-2">
+              ⭐ Journey Complete! ⭐
             </DialogTitle>
           </DialogHeader>
 
           {celebratingReward && (
-            <div className="space-y-4">
-              <div className="relative aspect-square rounded-lg overflow-hidden bg-gradient-to-br from-primary/10 to-lolo/10">
-                {celebratingReward.reward_image_url ? (
-                  <img
-                    src={celebratingReward.reward_image_url}
-                    alt={celebratingReward.reward_title}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="flex items-center justify-center h-full">
-                    <Trophy className="h-24 w-24 text-lala animate-bounce" />
-                  </div>
-                )}
+            <div className="space-y-3">
+              <div className="flex justify-center">
+                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-lala/10 to-gold/10 flex items-center justify-center">
+                  {celebratingReward.reward_image_url && celebratingReward.reward_image_url.startsWith('http') ? (
+                    <img src={celebratingReward.reward_image_url} alt={celebratingReward.reward_title} className="w-full h-full object-cover rounded-2xl" />
+                  ) : (
+                    <span className="text-h1 animate-bounce">{(celebratingReward as any).badge_emoji || '🏆'}</span>
+                  )}
+                </div>
               </div>
 
-              <div className="text-center space-y-2">
-                <h3 className="text-body-lg font-bold">
-                  {celebratingReward.reward_title}
-                </h3>
-                <p className="text-muted-foreground">
-                  You did an amazing job completing this journey!
-                </p>
+              <div className="text-center space-y-1">
+                <h3 className="text-body font-bold">{celebratingReward.reward_title}</h3>
+                <p className="text-caption text-muted-foreground">Amazing job!</p>
               </div>
 
-              <Button onClick={closeCelebration} className="w-full" size="lg">
-                <Trophy className="h-5 w-5 mr-2" />
-                Add to Collection
+              <Button onClick={closeCelebration} className="w-full" size="sm">
+                🎉 Awesome!
               </Button>
             </div>
           )}

@@ -65,7 +65,7 @@ export function ChatMessage({ message, childId, avatarUrl, childName }: ChatMess
           'max-w-[80%] rounded-2xl px-4 py-2',
           isUser
             ? 'bg-child-primary text-white'
-            : 'bg-muted'
+            : 'bg-primary/20'
         )}
       >
         {/* Image display */}
@@ -89,8 +89,8 @@ export function ChatMessage({ message, childId, avatarUrl, childName }: ChatMess
         <p className="whitespace-pre-wrap text-body-sm">{message.content}</p>
         <span
           className={cn(
-            'mt-1 block text-caption',
-            isUser ? 'text-white/70' : 'text-muted-foreground'
+            'mt-1 block text-[10px] leading-tight',
+            isUser ? 'text-white/60' : 'text-muted-foreground/60'
           )}
         >
           {formatMessageTime(message.timestamp)}

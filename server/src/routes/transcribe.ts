@@ -6,7 +6,7 @@ const router = Router();
 
 router.use(requireAuth);
 
-// POST /api/transcribe
+// POST /api/transcribe — transcribe audio using Gemini via OpenRouter
 router.post('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { audio, mimeType = 'audio/webm' } = req.body;
@@ -15,57 +15,82 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
       throw new AppError(400, 'Audio data is required');
     }
 
-    if (!process.env.OPENAI_API_KEY) {
-      console.error('OPENAI_API_KEY is not set');
+    if (!process.env.OPENROUTER_API_KEY) {
       throw new AppError(500, 'Transcription service not configured');
     }
 
     // Decode base64 audio
     const audioBuffer = Buffer.from(audio, 'base64');
-    console.log('Audio buffer size:', audioBuffer.length, 'bytes, mimeType:', mimeType);
 
-    // Determine file extension from mime type
-    const extensionMap: Record<string, string> = {
-      'audio/webm': 'webm',
-      'audio/mp3': 'mp3',
-      'audio/mpeg': 'mp3',
-      'audio/wav': 'wav',
-      'audio/m4a': 'm4a',
-      'audio/ogg': 'ogg',
-    };
-    const extension = extensionMap[mimeType] || 'webm';
+    // Reject very short/empty recordings (likely silence)
+    if (audioBuffer.length < 5000) {
+      res.json({ text: '', duration: 0 });
+      return;
+    }
 
-    // Create form data for OpenAI using File API (Node 20+)
-    const file = new File([audioBuffer], `audio.${extension}`, { type: mimeType });
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('model', 'whisper-1');
-
-    console.log('Sending to OpenAI Whisper API...');
-
-    const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+    // Use Gemini Flash via OpenRouter for transcription
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+        'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': process.env.FRONTEND_URL || 'http://localhost:5173',
       },
-      body: formData,
+      body: JSON.stringify({
+        model: 'google/gemini-2.5-flash',
+        messages: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'input_audio',
+                input_audio: {
+                  data: audio,
+                  format: mimeType.replace('audio/', ''),
+                },
+              },
+              {
+                type: 'text',
+                text: 'Transcribe this audio recording exactly as spoken. If the audio is silent or contains no speech, respond with exactly "EMPTY". Do not add any commentary, just the transcription.',
+              },
+            ],
+          },
+        ],
+        max_tokens: 500,
+        temperature: 0.1,
+      }),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('OpenAI Whisper error:', response.status, errorText);
+      console.error('OpenRouter transcription error:', response.status, errorText);
       throw new AppError(500, 'Failed to transcribe audio');
     }
 
-    const data = (await response.json()) as { text: string; duration?: number };
-    console.log('Transcription successful, length:', data.text.length);
+    const data = (await response.json()) as {
+      choices: Array<{ message: { content: string } }>;
+    };
+
+    let text = data.choices?.[0]?.message?.content?.trim() || '';
+
+    // Filter out empty/hallucination responses
+    const hallucinations = [
+      'empty', 'thank you', 'thanks for watching', 'subscribe',
+      'like and subscribe', 'see you next time', 'bye', 'goodbye',
+      'thank you for watching', 'thanks for listening',
+      'no speech detected', 'silence', 'inaudible',
+    ];
+    const lowerText = text.toLowerCase().replace(/[.!?]/g, '').trim();
+    if (hallucinations.includes(lowerText) || text.length < 3) {
+      text = '';
+    }
 
     res.json({
-      text: data.text,
-      duration: data.duration,
+      text,
+      duration: 0,
     });
   } catch (error) {
-    console.error('Transcription error:', error);
+    console.error('Transcription error:', (error as Error).message);
     next(error);
   }
 });

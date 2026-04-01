@@ -34,8 +34,8 @@ router.get('/:childId', async (req: Request, res: Response, next: NextFunction) 
   try {
     await verifyChildAccess(req.params.childId, req.user!.id);
 
-    const result = await query<JourneyReward & { journey_title: string }>(
-      `SELECT jr.*, j.title as journey_title
+    const result = await query<JourneyReward & { journey_title: string; badge_emoji: string }>(
+      `SELECT jr.*, j.title as journey_title, COALESCE(j.badge_emoji, '🏆') as badge_emoji
        FROM journey_rewards jr
        LEFT JOIN journeys j ON jr.journey_id = j.id
        WHERE jr.child_profile_id = $1
@@ -54,8 +54,8 @@ router.get('/:childId/unviewed', async (req: Request, res: Response, next: NextF
   try {
     await verifyChildAccess(req.params.childId, req.user!.id);
 
-    const result = await query<JourneyReward & { journey_title: string }>(
-      `SELECT jr.*, j.title as journey_title
+    const result = await query<JourneyReward & { journey_title: string; badge_emoji: string }>(
+      `SELECT jr.*, j.title as journey_title, COALESCE(j.badge_emoji, '🏆') as badge_emoji
        FROM journey_rewards jr
        LEFT JOIN journeys j ON jr.journey_id = j.id
        WHERE jr.child_profile_id = $1 AND jr.viewed = false

@@ -242,20 +242,20 @@ function SessionItem({ session, isActive, moodEmoji, onSelect, onRename, onDelet
 
       {/* Delete confirmation bar */}
       {isConfirmingDelete && (
-        <div className="absolute inset-0 z-10 flex items-center justify-between rounded-lg bg-destructive/5 border border-destructive/20 px-3">
-          <span className="text-caption font-medium text-destructive">Delete chat?</span>
-          <div className="flex gap-1">
+        <div className="absolute inset-0 z-10 flex items-center justify-between rounded-lg bg-card border border-destructive/30 px-3 shadow-warm-sm">
+          <span className="text-caption font-medium text-destructive">Delete?</span>
+          <div className="flex gap-1.5">
             <button
               onClick={(e) => { e.stopPropagation(); onDelete(); setIsConfirmingDelete(false); }}
-              className="px-2 py-1 text-caption font-medium rounded bg-destructive text-white hover:bg-destructive/90"
+              className="px-2.5 py-1 text-caption font-bold rounded-full bg-destructive text-white hover:bg-destructive/90"
             >
-              Delete
+              Yes
             </button>
             <button
               onClick={(e) => { e.stopPropagation(); setIsConfirmingDelete(false); }}
-              className="px-2 py-1 text-caption font-medium rounded bg-white text-foreground border border-border hover:bg-muted"
+              className="px-2.5 py-1 text-caption font-bold rounded-full bg-muted text-foreground hover:bg-muted/80"
             >
-              Cancel
+              No
             </button>
           </div>
         </div>

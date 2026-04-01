@@ -213,12 +213,40 @@ router.put('/:journeyId/steps/:stepId', async (req: Request, res: Response, next
            WHERE id = $1`,
           [req.params.journeyId]
         );
-        // Fire-and-forget: award points + generic badges + journey-specific badge
+        // Fire-and-forget: award points + generic badges + journey-specific badge + reward
         logActivityForChild(journey.child_profile_id, 'journey_completed', {
           journeyId: req.params.journeyId,
         }).catch((err) => console.error('Error logging journey completion:', err));
         awardJourneyCompletionBadge(journey.child_profile_id, req.params.journeyId)
           .catch((err) => console.error('Error awarding journey badge:', err));
+
+        // Create journey reward
+        (async () => {
+          try {
+            const existing = await queryOne<{ id: string }>(
+              'SELECT id FROM journey_rewards WHERE child_profile_id = $1 AND journey_id = $2',
+              [journey.child_profile_id, req.params.journeyId]
+            );
+            if (existing) return; // Already awarded
+
+            let rewardImageUrl = '/images/default-reward.png';
+            if (journey.template_id) {
+              const template = await queryOne<{ reward_image_url: string | null }>(
+                'SELECT reward_image_url FROM journey_templates WHERE id = $1',
+                [journey.template_id]
+              );
+              if (template?.reward_image_url) rewardImageUrl = template.reward_image_url;
+            }
+
+            await query(
+              `INSERT INTO journey_rewards (id, child_profile_id, journey_id, reward_image_url, reward_title, viewed)
+               VALUES ($1, $2, $3, $4, $5, false)`,
+              [uuidv4(), journey.child_profile_id, req.params.journeyId, rewardImageUrl, journey.title]
+            );
+          } catch (err) {
+            console.error('Error creating journey reward:', (err as Error).message);
+          }
+        })();
       }
     }
 
