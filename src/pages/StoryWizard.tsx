@@ -638,10 +638,12 @@ export function StoryWizardPage() {
       <div className="mx-auto max-w-2xl">
         {/* Header */}
         <div className="mb-8">
-          <Button variant="ghost" size="sm" onClick={handleBack} className="text-muted-foreground">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            {currentStep > 0 ? 'Back' : 'Cancel'}
-          </Button>
+          {!generatedStory && (
+            <Button variant="ghost" size="sm" onClick={handleBack} className="text-muted-foreground">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              {currentStep > 0 ? 'Back' : 'Cancel'}
+            </Button>
+          )}
         </div>
 
         {/* Progress */}

@@ -12,7 +12,8 @@ export function useDailyMissions(childId: string | undefined) {
     queryKey: [...DAILY_MISSIONS_KEY, childId],
     queryFn: () => dailyMissionsService.get(childId!),
     enabled: !!childId,
-    staleTime: 5 * 60 * 1000, // 5 minutes — refreshes on page focus
+    staleTime: 10 * 1000, // 10 seconds — short so returning to home refetches
+    refetchOnWindowFocus: true, // Override global setting — refetch when tab regains focus
   });
 }
 

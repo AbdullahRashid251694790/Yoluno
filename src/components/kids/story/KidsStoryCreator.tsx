@@ -577,14 +577,16 @@ export function KidsStoryCreator({ childId, onClose, onSuccess }: KidsStoryCreat
     <div className="fixed inset-0 z-50 flex flex-col overflow-hidden" style={{ background: 'linear-gradient(180deg, hsl(270 60% 92%) 0%, hsl(340 50% 94%) 40%, hsl(42 60% 97%) 100%)' }}>
       {/* Header */}
       <header className="flex items-center gap-3 px-4 pt-4 pb-2 flex-shrink-0">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={handleBack}
-          className="rounded-full bg-white/60 backdrop-blur-sm shrink-0"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
+        {!generatedStory && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleBack}
+            className="rounded-full bg-white/60 backdrop-blur-sm shrink-0"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+        )}
 
         {/* Step progress bars */}
         <div className="flex-1 flex items-center gap-1.5 overflow-hidden">
@@ -629,14 +631,25 @@ export function KidsStoryCreator({ childId, onClose, onSuccess }: KidsStoryCreat
         <footer className="px-4 py-4 flex-shrink-0 border-t border-white/50 bg-white/30 backdrop-blur-sm">
           {isLastStep ? (
             generatedStory ? (
-              <Button
-                onClick={handleFinish}
-                size="lg"
-                className="w-full rounded-full bg-primary hover:bg-primary/90 text-white font-display font-bold text-body-lg h-14"
-              >
-                <BookOpen className="mr-2 h-5 w-5" />
-                Read My Story!
-              </Button>
+              <div className="flex gap-3">
+                <Button
+                  onClick={onClose}
+                  size="lg"
+                  variant="outline"
+                  className="flex-1 rounded-full font-display font-bold h-14"
+                >
+                  <ArrowLeft className="mr-2 h-5 w-5" />
+                  Home
+                </Button>
+                <Button
+                  onClick={handleFinish}
+                  size="lg"
+                  className="flex-1 rounded-full bg-primary hover:bg-primary/90 text-white font-display font-bold h-14"
+                >
+                  <BookOpen className="mr-2 h-5 w-5" />
+                  Read Story
+                </Button>
+              </div>
             ) : (
               <Button
                 onClick={handleGenerate}
