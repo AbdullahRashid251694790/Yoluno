@@ -2,17 +2,18 @@
  * Family Member Detail Modal
  *
  * Kid-friendly, scrollable detail card for family members.
- * Shows photo, name, relationship, fun facts, hobbies, and video.
+ * Shows photo, name, relationship, multiple stories, hobbies, and video carousel.
  */
 
+import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { getUploadUrl } from '@/integrations/api/client';
+import { apiClient, getUploadUrl } from '@/integrations/api/client';
 import { cn } from '@/lib/utils';
-import { X } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { FamilyMemberRow } from '@/types/database';
 import type { ChildProfileRow as ChildProfile } from '@/types/database';
 import type { RelationType } from './FamilyMemberCard';
@@ -58,16 +59,38 @@ export function FamilyMemberDetail({ member, type, isOpen, onClose }: FamilyMemb
   const connectionDescription = isFamilyMember(member) ? member.connection_description : null;
   const occupation = isFamilyMember(member) ? member.occupation : null;
   const hobbies = isFamilyMember(member) ? (member.hobbies || []) : ((member as any).interests || []);
-  const funFacts = isFamilyMember(member) ? member.fun_facts : null;
   const isAlive = isFamilyMember(member) ? member.is_alive !== false : true;
-  const videoUrl = isFamilyMember(member) ? (member as any).video_url : null;
-  const resolvedVideoUrl = videoUrl ? getUploadUrl(videoUrl) : null;
 
   // Child profile extras
   const age = !isFamilyMember(member) ? (member as any).age : null;
   const gender = !isFamilyMember(member) ? (member as any).gender : null;
 
-  const hasDetails = connectionDescription || occupation || (hobbies && hobbies.length > 0) || funFacts || resolvedVideoUrl || age;
+  // Fetch multiple videos and stories for family members
+  const [videos, setVideos] = useState<{ id: string; video_url: string; title: string | null; created_at: string }[]>([]);
+  const [stories, setStories] = useState<{ id: string; content: string; created_at: string }[]>([]);
+  const [videoIndex, setVideoIndex] = useState(0);
+
+  useEffect(() => {
+    if (isOpen && isFamilyMember(member)) {
+      apiClient.get(`/family/members/${member.id}/videos`).then((r) => {
+        setVideos(r.data || []);
+        setVideoIndex(0);
+      }).catch(() => setVideos([]));
+      apiClient.get(`/family/members/${member.id}/stories`).then((r) => {
+        setStories(r.data || []);
+      }).catch(() => setStories([]));
+    } else {
+      setVideos([]);
+      setStories([]);
+      setVideoIndex(0);
+    }
+  }, [isOpen, member]);
+
+  // Fallback: use old single fun_facts if no stories in new table
+  const funFacts = isFamilyMember(member) ? member.fun_facts : null;
+  const allStories = stories.length > 0 ? stories : (funFacts ? [{ id: 'legacy', content: funFacts, created_at: '' }] : []);
+
+  const hasDetails = connectionDescription || occupation || (hobbies && hobbies.length > 0) || allStories.length > 0 || videos.length > 0 || age;
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -173,25 +196,62 @@ export function FamilyMemberDetail({ member, type, isOpen, onClose }: FamilyMemb
                 </div>
               )}
 
-              {/* Fun facts */}
-              {funFacts && (
+              {/* Stories / Fun Facts */}
+              {allStories.length > 0 && (
                 <div className="bg-white rounded-2xl p-4 shadow-sm">
                   <div className="flex items-center gap-2 mb-2">
                     <span className="text-h4">✨</span>
-                    <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Fun Fact</p>
+                    <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                      {allStories.length === 1 ? 'Fun Fact' : `Fun Facts (${allStories.length})`}
+                    </p>
                   </div>
-                  <p className="text-body-sm text-foreground leading-relaxed">{funFacts}</p>
+                  <div className="space-y-2">
+                    {allStories.map((story, i) => (
+                      <div key={story.id} className={cn(
+                        'text-body-sm text-foreground leading-relaxed',
+                        i > 0 && 'pt-2 border-t border-border'
+                      )}>
+                        {story.content}
+                        {story.created_at && (
+                          <p className="text-[10px] text-muted-foreground/50 mt-1">
+                            {new Date(story.created_at).toLocaleDateString()}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
 
-              {/* Video */}
-              {resolvedVideoUrl && (
+              {/* Video Carousel */}
+              {videos.length > 0 && (
                 <div className="bg-white rounded-2xl p-4 shadow-sm">
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className="text-h4">🎬</span>
-                    <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Video</p>
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-h4">🎬</span>
+                      <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                        {videos.length === 1 ? 'Video' : `Videos (${videoIndex + 1}/${videos.length})`}
+                      </p>
+                    </div>
+                    {videos.length > 1 && (
+                      <div className="flex gap-1">
+                        <button
+                          onClick={() => setVideoIndex((i) => (i - 1 + videos.length) % videos.length)}
+                          className="w-7 h-7 rounded-full bg-muted flex items-center justify-center hover:bg-muted-foreground/20"
+                        >
+                          <ChevronLeft className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => setVideoIndex((i) => (i + 1) % videos.length)}
+                          className="w-7 h-7 rounded-full bg-muted flex items-center justify-center hover:bg-muted-foreground/20"
+                        >
+                          <ChevronRight className="h-4 w-4" />
+                        </button>
+                      </div>
+                    )}
                   </div>
                   <video
+                    key={videos[videoIndex]?.id}
                     autoPlay
                     loop
                     muted
@@ -199,8 +259,11 @@ export function FamilyMemberDetail({ member, type, isOpen, onClose }: FamilyMemb
                     playsInline
                     className="w-full rounded-xl"
                   >
-                    <source src={resolvedVideoUrl} type="video/mp4" />
+                    <source src={getUploadUrl(videos[videoIndex]?.video_url) || ''} type="video/mp4" />
                   </video>
+                  {videos[videoIndex]?.title && (
+                    <p className="text-caption text-muted-foreground mt-2 text-center">{videos[videoIndex].title}</p>
+                  )}
                 </div>
               )}
             </div>

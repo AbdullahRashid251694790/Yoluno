@@ -328,4 +328,86 @@ If a field is not mentioned, use null for strings or empty array for hobbies.`;
   }
 });
 
+// ─── Multiple Videos & Stories per Family Member ─────────────────────────────
+
+// GET /api/family/members/:id/videos
+router.get('/members/:id/videos', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const result = await query<{ id: string; video_url: string; title: string | null; created_at: string }>(
+      'SELECT * FROM family_member_videos WHERE family_member_id = $1 ORDER BY created_at DESC',
+      [req.params.id]
+    );
+    res.json(result.rows);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// POST /api/family/members/:id/videos
+router.post('/members/:id/videos', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { video_url, title } = req.body;
+    if (!video_url) throw new AppError(400, 'Video URL is required');
+
+    const result = await queryOne(
+      `INSERT INTO family_member_videos (id, family_member_id, video_url, title)
+       VALUES ($1, $2, $3, $4) RETURNING *`,
+      [uuidv4(), req.params.id, video_url, title || null]
+    );
+    res.status(201).json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// DELETE /api/family/members/:memberId/videos/:videoId
+router.delete('/members/:memberId/videos/:videoId', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    await query('DELETE FROM family_member_videos WHERE id = $1 AND family_member_id = $2', [req.params.videoId, req.params.memberId]);
+    res.json({ message: 'Video deleted' });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// GET /api/family/members/:id/stories
+router.get('/members/:id/stories', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const result = await query<{ id: string; content: string; created_at: string }>(
+      'SELECT * FROM family_member_stories WHERE family_member_id = $1 ORDER BY created_at DESC',
+      [req.params.id]
+    );
+    res.json(result.rows);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// POST /api/family/members/:id/stories
+router.post('/members/:id/stories', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { content } = req.body;
+    if (!content) throw new AppError(400, 'Content is required');
+
+    const result = await queryOne(
+      `INSERT INTO family_member_stories (id, family_member_id, content)
+       VALUES ($1, $2, $3) RETURNING *`,
+      [uuidv4(), req.params.id, content]
+    );
+    res.status(201).json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// DELETE /api/family/members/:memberId/stories/:storyId
+router.delete('/members/:memberId/stories/:storyId', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    await query('DELETE FROM family_member_stories WHERE id = $1 AND family_member_id = $2', [req.params.storyId, req.params.memberId]);
+    res.json({ message: 'Story deleted' });
+  } catch (error) {
+    next(error);
+  }
+});
+
 export default router;

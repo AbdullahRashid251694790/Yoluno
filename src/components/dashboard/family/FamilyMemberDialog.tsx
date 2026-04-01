@@ -23,6 +23,7 @@ import {
   useUploadFamilyPhoto,
 } from '@/hooks/queries/useFamily';
 import { useAuth } from '@/contexts/AuthContext';
+import { apiClient } from '@/integrations/api/client';
 import type { FamilyMemberRow } from '@/types/database';
 import type { CreateFamilyMemberFormData } from '@/types/forms';
 import type { ExtractedFamilyData } from '@/services/family';
@@ -39,8 +40,12 @@ function buildConnectionDescription(data: CreateFamilyMemberFormData): string {
     maternal_grandmother: "Mom's mother",
     paternal_uncle: "Dad's brother",
     paternal_aunt: "Dad's sister",
+    paternal_uncle_wife: "Dad's brother's wife",
+    paternal_aunt_husband: "Dad's sister's husband",
     maternal_uncle: "Mom's brother",
     maternal_aunt: "Mom's sister",
+    maternal_uncle_wife: "Mom's brother's wife",
+    maternal_aunt_husband: "Mom's sister's husband",
     brother: "Child's brother",
     sister: "Child's sister",
     step_parent: "Step-parent",
@@ -94,14 +99,14 @@ export function FamilyMemberDialog({
   const handleSubmit = async (
     data: CreateFamilyMemberFormData,
     photoFile: File | null,
-    videoFile: File | null
+    videoFiles: File[],
+    additionalStories: string[]
   ) => {
     if (!user || isSubmitting) return;
 
     setIsSubmitting(true);
     try {
       let photoUrl = member?.photo_url || null;
-      let videoUrl = (member as any)?.video_url || null;
 
       // Upload photo
       if (photoFile) {
@@ -112,13 +117,15 @@ export function FamilyMemberDialog({
         });
       }
 
-      // Upload video
-      if (videoFile) {
-        videoUrl = await uploadPhoto.mutateAsync({
+      // Upload all videos
+      const uploadedVideoUrls: string[] = [];
+      for (const vf of videoFiles) {
+        const vUrl = await uploadPhoto.mutateAsync({
           userId: user.id,
-          memberId: member?.id || 'new-video',
-          file: videoFile,
+          memberId: member?.id || `new-video-${Date.now()}`,
+          file: vf,
         });
+        uploadedVideoUrls.push(vUrl);
       }
 
       const memberData = {
@@ -135,7 +142,7 @@ export function FamilyMemberDialog({
         connection_description: buildConnectionDescription(data),
         photo_description: data.photoDescription || null,
         photo_url: photoUrl,
-        video_url: videoUrl,
+        video_url: uploadedVideoUrls[0] || (member as any)?.video_url || null,
       };
 
       if (isEditing) {
@@ -143,12 +150,46 @@ export function FamilyMemberDialog({
           id: member.id,
           updates: memberData,
         });
+
+        // Save all uploaded videos to multiple videos table
+        for (const vUrl of uploadedVideoUrls) {
+          await apiClient.post(`/family/members/${member.id}/videos`, { video_url: vUrl }).catch(() => {});
+        }
+
+        // Save fun facts to stories table if new content added
+        if (data.funFacts && data.funFacts !== member.fun_facts) {
+          await apiClient.post(`/family/members/${member.id}/stories`, { content: data.funFacts }).catch(() => {});
+        }
+
+        // Save additional stories
+        for (const story of additionalStories) {
+          await apiClient.post(`/family/members/${member.id}/stories`, { content: story }).catch(() => {});
+        }
+
         toast.success('Family member updated!');
       } else {
-        await createMember.mutateAsync({
+        const created = await createMember.mutateAsync({
           user_id: user.id,
           ...memberData,
         });
+
+        if (created?.id) {
+          // Save all videos to multiple videos table
+          for (const vUrl of uploadedVideoUrls) {
+            await apiClient.post(`/family/members/${created.id}/videos`, { video_url: vUrl }).catch(() => {});
+          }
+
+          // Save fun facts to stories table
+          if (data.funFacts) {
+            await apiClient.post(`/family/members/${created.id}/stories`, { content: data.funFacts }).catch(() => {});
+          }
+
+          // Save additional stories
+          for (const story of additionalStories) {
+            await apiClient.post(`/family/members/${created.id}/stories`, { content: story }).catch(() => {});
+          }
+        }
+
         toast.success('Family member added!');
       }
 

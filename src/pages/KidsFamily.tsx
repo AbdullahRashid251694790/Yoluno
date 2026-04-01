@@ -26,7 +26,9 @@ const LABELS: Record<string, string> = {
   paternal_grandfather: 'Grandpa', paternal_grandmother: 'Grandma',
   maternal_grandfather: 'Grandpa', maternal_grandmother: 'Grandma',
   paternal_uncle: 'Uncle', paternal_aunt: 'Aunty',
+  paternal_uncle_wife: 'Aunty', paternal_aunt_husband: 'Uncle',
   maternal_uncle: 'Uncle', maternal_aunt: 'Aunty',
+  maternal_uncle_wife: 'Aunty', maternal_aunt_husband: 'Uncle',
   brother: 'Brother', sister: 'Sister', cousin: 'Cousin',
 };
 

@@ -61,10 +61,14 @@ const SPECIFIC_RELATIONSHIP_OPTIONS: Record<string, Record<string, { value: stri
     paternal: [
       { value: 'paternal_uncle', label: 'Uncle (Dad\'s Brother)' },
       { value: 'paternal_aunt', label: 'Aunt (Dad\'s Sister)' },
+      { value: 'paternal_uncle_wife', label: 'Uncle\'s Wife (Dad\'s Brother\'s Wife)' },
+      { value: 'paternal_aunt_husband', label: 'Aunt\'s Husband (Dad\'s Sister\'s Husband)' },
     ],
     maternal: [
       { value: 'maternal_uncle', label: 'Uncle (Mom\'s Brother)' },
       { value: 'maternal_aunt', label: 'Aunt (Mom\'s Sister)' },
+      { value: 'maternal_uncle_wife', label: 'Uncle\'s Wife (Mom\'s Brother\'s Wife)' },
+      { value: 'maternal_aunt_husband', label: 'Aunt\'s Husband (Mom\'s Sister\'s Husband)' },
     ],
   },
   cousin: {

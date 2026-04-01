@@ -2,6 +2,7 @@
  * Family Member Form
  *
  * Form for adding/editing family members with rich data fields.
+ * Supports multiple videos and stories.
  */
 
 import { useState } from 'react';
@@ -20,7 +21,7 @@ import { cn } from '@/lib/utils';
 
 interface FamilyMemberFormProps {
   member?: FamilyMemberRow;
-  onSubmit: (data: CreateFamilyMemberFormData, photoFile: File | null, videoFile: File | null) => void;
+  onSubmit: (data: CreateFamilyMemberFormData, photoFile: File | null, videoFiles: File[], additionalStories: string[]) => void;
   isLoading?: boolean;
   className?: string;
 }
@@ -32,7 +33,8 @@ export function FamilyMemberForm({
   className,
 }: FamilyMemberFormProps) {
   const [photoFile, setPhotoFile] = useState<File | null>(null);
-  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [videoFiles, setVideoFiles] = useState<File[]>([]);
+  const [additionalStories, setAdditionalStories] = useState<string[]>([]);
 
   const {
     register,
@@ -67,7 +69,7 @@ export function FamilyMemberForm({
   };
 
   const handleFormSubmit = (data: CreateFamilyMemberFormData) => {
-    onSubmit(data, photoFile, videoFile);
+    onSubmit(data, photoFile, videoFiles, additionalStories);
   };
 
   return (
@@ -88,6 +90,9 @@ export function FamilyMemberForm({
         register={register}
         errors={errors}
         isLoading={isLoading}
+        additionalStories={additionalStories}
+        onAddStory={(s) => setAdditionalStories((prev) => [...prev, s])}
+        onRemoveStory={(i) => setAdditionalStories((prev) => prev.filter((_, idx) => idx !== i))}
       />
 
       <HobbiesSection
@@ -99,10 +104,10 @@ export function FamilyMemberForm({
       <MediaSection
         control={control}
         existingPhotoUrl={member?.photo_url}
-        existingVideoUrl={(member as any)?.video_url}
         onPhotoChange={setPhotoFile}
-        onVideoChange={setVideoFile}
-        videoFile={videoFile}
+        videoFiles={videoFiles}
+        onAddVideo={(f) => setVideoFiles((prev) => [...prev, f])}
+        onRemoveVideo={(i) => setVideoFiles((prev) => prev.filter((_, idx) => idx !== i))}
         isLoading={isLoading}
       />
 

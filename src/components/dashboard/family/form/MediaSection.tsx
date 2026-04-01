@@ -1,7 +1,7 @@
 /**
  * Media Section
  *
- * Form section for photo upload, video upload, and voice recorder.
+ * Form section for photo upload and multiple video uploads.
  */
 
 import { useRef } from 'react';
@@ -10,26 +10,26 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { PhotoUpload } from '../PhotoUpload';
 import { VoiceRecorder } from '../VoiceRecorder';
-import { Video, X } from 'lucide-react';
+import { Video, X, Plus } from 'lucide-react';
 import type { CreateFamilyMemberFormData } from '@/types/forms';
 
 interface MediaSectionProps {
   control: Control<CreateFamilyMemberFormData>;
   existingPhotoUrl?: string;
-  existingVideoUrl?: string;
   onPhotoChange: (file: File | null) => void;
-  onVideoChange: (file: File | null) => void;
-  videoFile: File | null;
+  videoFiles: File[];
+  onAddVideo: (file: File) => void;
+  onRemoveVideo: (index: number) => void;
   isLoading: boolean;
 }
 
 export function MediaSection({
   control,
   existingPhotoUrl,
-  existingVideoUrl,
   onPhotoChange,
-  onVideoChange,
-  videoFile,
+  videoFiles,
+  onAddVideo,
+  onRemoveVideo,
   isLoading,
 }: MediaSectionProps) {
   const videoInputRef = useRef<HTMLInputElement>(null);
@@ -37,7 +37,7 @@ export function MediaSection({
   return (
     <div className="space-y-4">
       <h3 className="text-body-sm font-medium text-muted-foreground uppercase tracking-wide">
-        Photo & Video
+        Photo & Videos
       </h3>
 
       <PhotoUpload
@@ -46,59 +46,48 @@ export function MediaSection({
         disabled={isLoading}
       />
 
-      {/* Video upload */}
-      <div className="space-y-2">
-        <Label>Video (optional)</Label>
+      {/* Video uploads */}
+      <div className="space-y-2.5">
         <input
           ref={videoInputRef}
           type="file"
           accept="video/mp4,video/webm,video/quicktime"
           className="hidden"
           onChange={(e) => {
-            const file = e.target.files?.[0] || null;
-            onVideoChange(file);
+            const file = e.target.files?.[0];
+            if (file) {
+              onAddVideo(file);
+              e.target.value = '';
+            }
           }}
           disabled={isLoading}
         />
-        {videoFile ? (
-          <div className="flex items-center gap-2 rounded-lg border p-3 bg-muted/30">
-            <Video className="h-4 w-4 text-primary" />
-            <span className="text-body-sm flex-1 truncate">{videoFile.name}</span>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="h-6 w-6"
-              onClick={() => onVideoChange(null)}
-            >
-              <X className="h-3 w-3" />
-            </Button>
+
+        {videoFiles.length > 0 && (
+          <div className="space-y-1.5">
+            {videoFiles.map((file, i) => (
+              <div key={i} className="flex items-center gap-2 rounded-lg border p-2 bg-muted/30">
+                <Video className="h-4 w-4 text-primary shrink-0" />
+                <span className="text-body-sm flex-1 truncate">{file.name}</span>
+                <button type="button" onClick={() => onRemoveVideo(i)} className="text-muted-foreground hover:text-destructive shrink-0">
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            ))}
           </div>
-        ) : existingVideoUrl ? (
-          <div className="flex items-center gap-2 rounded-lg border p-3 bg-muted/30">
-            <Video className="h-4 w-4 text-primary" />
-            <span className="text-body-sm flex-1 text-muted-foreground">Video uploaded</span>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => videoInputRef.current?.click()}
-            >
-              Replace
-            </Button>
-          </div>
-        ) : (
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full"
-            onClick={() => videoInputRef.current?.click()}
-            disabled={isLoading}
-          >
-            <Video className="h-4 w-4 mr-2" />
-            Upload Video
-          </Button>
         )}
+
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => videoInputRef.current?.click()}
+          disabled={isLoading}
+          className="!h-8 !text-caption"
+        >
+          <Plus className="h-3.5 w-3.5 mr-1" />
+          {videoFiles.length === 0 ? 'Add Video' : 'Add Another Video'}
+        </Button>
       </div>
 
       <div className="space-y-2">

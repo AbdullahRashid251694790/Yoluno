@@ -979,11 +979,27 @@ async function generateBuddyResponse(
   // Get family members for context
   const familyResult = await query<FamilyMember>(
     `SELECT name, relationship, specific_relationship, occupation, hobbies, fun_facts,
-            connection_description, photo_description, is_alive
+            connection_description, photo_description, is_alive, id
      FROM family_members WHERE user_id = $1`,
     [child.user_id]
   );
   const familyMembers = familyResult.rows;
+
+  // Get all stories/fun facts from the new table for richer context
+  const allStoriesResult = await query<{ family_member_id: string; content: string }>(
+    `SELECT fms.family_member_id, fms.content
+     FROM family_member_stories fms
+     JOIN family_members fm ON fms.family_member_id = fm.id
+     WHERE fm.user_id = $1
+     ORDER BY fms.created_at`,
+    [child.user_id]
+  );
+  // Group stories by member id
+  const storiesByMember: Record<string, string[]> = {};
+  for (const row of allStoriesResult.rows) {
+    if (!storiesByMember[row.family_member_id]) storiesByMember[row.family_member_id] = [];
+    storiesByMember[row.family_member_id].push(row.content);
+  }
 
   // Get buddy name for persona
   const buddy = await queryOne<{ name: string }>(
@@ -1050,7 +1066,7 @@ async function generateBuddyResponse(
   }));
 
   // Build system prompt
-  const systemPrompt = buildSystemPrompt(buddyName, child, guardrails, safety, familyMembers, taskCompletion, topicPosts, enabledTopics, customTopics);
+  const systemPrompt = buildSystemPrompt(buddyName, child, guardrails, safety, familyMembers, taskCompletion, topicPosts, enabledTopics, customTopics, storiesByMember);
 
   // Build user message with image context
   let userContent = message;
@@ -1113,7 +1129,8 @@ function buildSystemPrompt(
   taskCompletion?: TaskCompletionResult | null,
   topicPosts?: { topic_name: string; post_title: string; post_content: string }[],
   enabledTopics?: { topic_name: string; description: string }[],
-  customTopics?: { topic_name: string; description: string }[]
+  customTopics?: { topic_name: string; description: string }[],
+  storiesByMember?: Record<string, string[]>
 ): string {
   // Persona-specific traits based on spec
   const personas: Record<string, { description: string; tone: string; examples: string[] }> = {
@@ -1209,7 +1226,16 @@ ${persona.examples.map(e => `- ${e}`).join('\n')}`;
       if (member.connection_description) details.push(`  - ${member.connection_description}`);
       if (member.occupation) details.push(`  - Works as: ${member.occupation}`);
       if (member.hobbies && member.hobbies.length > 0) details.push(`  - Enjoys: ${member.hobbies.join(', ')}`);
-      if (member.fun_facts) details.push(`  - Special thing: ${member.fun_facts}`);
+      // Include all stories/fun facts (from new table + legacy field)
+      const memberId = (member as any).id;
+      const memberStories = memberId && storiesByMember?.[memberId] ? storiesByMember[memberId] : [];
+      if (memberStories.length > 0) {
+        for (const story of memberStories.slice(0, 5)) {
+          details.push(`  - Fun fact: ${story}`);
+        }
+      } else if (member.fun_facts) {
+        details.push(`  - Fun fact: ${member.fun_facts}`);
+      }
       if (!member.is_alive) details.push(`  - Remembered with so much love`);
       prompt += details.join('\n');
     }
