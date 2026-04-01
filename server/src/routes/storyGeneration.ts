@@ -22,6 +22,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
       storyLength = 'medium',
       includeFamily = false,
       narratorVoice = 'nova',
+      created_by = 'parent',
     } = req.body;
 
     // Verify child access
@@ -72,8 +73,8 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
     const story = await queryOne<Story>(
       `INSERT INTO stories (
         id, child_profile_id, title, content, theme, mood,
-        values, word_count, cover_image_url, has_pages, narrator_voice
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        values, word_count, cover_image_url, has_pages, narrator_voice, created_by
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
       RETURNING *`,
       [
         storyId,
@@ -87,6 +88,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
         null,
         true,
         narratorVoice,
+        created_by,
       ]
     );
 

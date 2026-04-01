@@ -22,6 +22,7 @@ export interface StoryGenerationRequest {
   storyLength?: 'short' | 'medium' | 'long';
   includeFamily?: boolean;
   narratorVoice?: string;
+  createdBy?: 'parent' | 'child';
 }
 
 export interface StoryPagePreview {
@@ -64,6 +65,7 @@ export async function generateStory(
       storyLength: request.storyLength,
       includeFamily: request.includeFamily,
       narratorVoice: request.narratorVoice,
+      created_by: request.createdBy || 'parent',
     });
 
     // Check for error in response data

@@ -98,10 +98,11 @@ async function checkCompletions(childId: string, date: string): Promise<Record<s
   );
   results.chat = parseInt(chatResult?.count || '0', 10) > 0;
 
-  // Story: any story created today
+  // Story: only stories created by the child (not parent)
   const storyResult = await queryOne<{ count: string }>(
     `SELECT COUNT(*) as count FROM stories
      WHERE child_profile_id = $1
+     AND created_by = 'child'
      AND created_at::date = $2::date`,
     [childId, date]
   );

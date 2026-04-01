@@ -221,6 +221,7 @@ export function KidsStoryCreator({ childId, onClose, onSuccess }: KidsStoryCreat
         storyLength: state.storyLength,
         includeFamily: state.includeFamily,
         narratorVoice: state.narratorVoice,
+        createdBy: 'child',
       });
 
       if (story.id) {
