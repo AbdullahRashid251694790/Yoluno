@@ -302,7 +302,9 @@ Write engaging stories with clear narratives, positive messages, and vivid descr
 Each page should have a natural pause point, like a picture book would.
 Use age-appropriate vocabulary for a ${childAge}-year-old.
 Never include scary, violent, or inappropriate content.
-${pronounGuidance}`;
+${pronounGuidance}
+
+IMPORTANT: Every story MUST have a completely unique and creative title. Never reuse titles like "The Whispering Woods" or "The Enchanted Forest". Be inventive — use the child's name, the theme, and unexpected word combinations to create a one-of-a-kind title. Examples of creative titles: "The Day ${childName} Found a Cloud", "${childName}'s Secret Rainbow Machine", "The Tiny Dragon Who Loved Pancakes".`;
 
   let userPrompt = `Write a children's story for a ${childAge}-year-old child named ${childName}.
 The story should have exactly ${pageCount} pages, with about ${wordsPerPage} words per page (total ~${totalWords} words).
@@ -358,7 +360,7 @@ ILLUSTRATION: [Description]
           { role: 'user', content: userPrompt },
         ],
         max_tokens: 4000,
-        temperature: 0.8,
+        temperature: 0.95,
       }),
     });
 
