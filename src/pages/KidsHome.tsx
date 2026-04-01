@@ -61,7 +61,7 @@ function getBuddyExpression(): AvatarExpression {
   return 'happy';
 }
 
-// Activity card data
+// Activity card data with character guides
 const activities = [
   {
     id: 'chat',
@@ -71,6 +71,7 @@ const activities = [
     color: 'from-lumi to-primary/10',
     bgColor: 'bg-lumi/10',
     path: '/chat',
+    avatar: '/avatars/Luno.png',
   },
   {
     id: 'stories',
@@ -80,6 +81,7 @@ const activities = [
     color: 'from-lolo/10 to-lolo',
     bgColor: 'bg-lolo/10',
     path: '/stories',
+    avatar: '/avatars/Lolo.png',
   },
   {
     id: 'journeys',
@@ -89,15 +91,17 @@ const activities = [
     color: 'from-primary to-primary',
     bgColor: 'bg-primary/10',
     path: '/journeys',
+    avatar: '/avatars/Lumi.png',
   },
   {
     id: 'family',
     title: 'Family',
-    description: 'Photo album',
+    description: 'Family tree',
     icon: Users,
     color: 'from-gold/50 to-gold/50',
     bgColor: 'bg-gold/10',
     path: '/family',
+    avatar: '/avatars/Lala.png',
   },
 ];
 
@@ -259,21 +263,13 @@ export function KidsHomePage() {
 
             return (
               <Link key={activity.id} to={href}>
-                <Card className="group overflow-hidden border-0 bg-white/70 backdrop-blur-sm shadow-md hover:shadow-lg transition-all hover-scale cursor-pointer h-full">
+                <Card className="group overflow-hidden border-0 bg-white/70 backdrop-blur-sm shadow-md hover:shadow-lg transition-shadow cursor-pointer h-full">
                   <CardContent className="p-4 flex flex-col items-center text-center">
-                    <div
-                      className={`rounded-2xl p-3 mb-2 ${activity.bgColor} group-hover:scale-110 transition-transform`}
-                    >
-                      <Icon className={`h-8 w-8 bg-gradient-to-br ${activity.color} bg-clip-text text-transparent`} style={{ stroke: 'url(#gradient)' }} />
-                      <svg width="0" height="0">
-                        <defs>
-                          <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                            <stop offset="0%" stopColor="currentColor" />
-                            <stop offset="100%" stopColor="currentColor" />
-                          </linearGradient>
-                        </defs>
-                      </svg>
-                    </div>
+                    <img
+                      src={activity.avatar}
+                      alt={activity.title}
+                      className="h-12 w-12 rounded-full mb-2 group-hover:scale-110 transition-transform"
+                    />
                     <h3 className="font-display font-bold text-foreground">
                       {activity.title}
                     </h3>

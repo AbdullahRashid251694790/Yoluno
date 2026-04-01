@@ -74,7 +74,15 @@ export function KidsJourneysPage() {
         <Map className="h-6 w-6 text-primary" />
       </header>
 
-      <div className="px-4 pb-8 pt-4">
+      {/* Character Guide */}
+      <div className="flex items-center gap-3 px-4 py-3">
+        <img src="/avatars/Lumi.png" alt="Lumi" className="h-10 w-10 rounded-full" />
+        <p className="text-body-sm text-muted-foreground italic">
+          "Let's learn something new today!" — Lumi
+        </p>
+      </div>
+
+      <div className="px-4 pb-8 pt-2">
         {!hasJourneys ? (
           <Card className="bg-white/70 backdrop-blur-sm">
             <CardContent className="py-12 text-center">

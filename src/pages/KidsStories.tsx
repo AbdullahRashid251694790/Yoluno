@@ -161,6 +161,14 @@ export function KidsStoriesPage() {
         </Button>
       </header>
 
+      {/* Character Guide */}
+      <div className="flex items-center gap-3 px-4 py-3">
+        <img src="/avatars/Lolo.png" alt="Lolo" className="h-10 w-10 rounded-full" />
+        <p className="text-body-sm text-muted-foreground italic">
+          "Ready for an adventure? Let's write a story!" — Lolo
+        </p>
+      </div>
+
       {/* Main content */}
       <main className="px-4 pb-8">
         <QueryState

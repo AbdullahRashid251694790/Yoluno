@@ -5,7 +5,7 @@
  */
 
 import { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useChildProfile, queryKeys } from '@/hooks/queries';
 import { generateStory, getThemeSuggestions, storyMoods, storyValues, type StoryCharacter } from '@/services/storyGeneration';
@@ -109,7 +109,9 @@ interface StoryWizardState {
 export function StoryWizardPage() {
   const { childId } = useParams<{ childId: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
+  const fromDashboard = searchParams.get('from') === 'dashboard';
   const { data: child, isLoading, isError } = useChildProfile(childId);
 
   const [currentStep, setCurrentStep] = useState(0);
@@ -144,7 +146,7 @@ export function StoryWizardPage() {
     if (currentStep > 0) {
       setCurrentStep(currentStep - 1);
     } else {
-      navigate(`/kids/${childId}/stories`);
+      navigate(fromDashboard ? '/dashboard/stories' : `/kids/${childId}/stories`);
     }
   };
 
@@ -241,7 +243,7 @@ export function StoryWizardPage() {
   };
 
   const handleFinish = () => {
-    navigate(`/kids/${childId}/stories`);
+    navigate(fromDashboard ? '/dashboard/stories' : `/kids/${childId}/stories`);
   };
 
   const toggleValue = (value: string) => {

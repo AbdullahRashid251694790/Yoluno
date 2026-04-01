@@ -305,8 +305,16 @@ export function KidsFamilyPage() {
         </div>
       </header>
 
+      {/* Character Guide */}
+      <div className="flex items-center gap-3 px-4 py-3 relative z-10">
+        <img src="/avatars/Lala.png" alt="Lala" className="h-10 w-10 rounded-full" />
+        <p className="text-body-sm text-muted-foreground italic">
+          "Want to explore your family tree?" — Lala
+        </p>
+      </div>
+
       {!hasFamily ? (
-        <div className="relative z-10 px-6 pt-20 flex flex-col items-center">
+        <div className="relative z-10 px-6 pt-12 flex flex-col items-center">
           <div className="glass-card rounded-3xl p-14 text-center">
             <div className="text-7xl mb-5" style={{ animation: 'float 3s ease-in-out infinite' }}>🌱</div>
             <p className="text-body-lg font-display font-bold text-primary mb-2">Your tree is growing!</p>

@@ -44,7 +44,7 @@ export function StoriesPage() {
 
   const handleCreateStory = () => {
     if (selectedChildId && selectedChildId !== 'all') {
-      navigate(`/story-wizard/${selectedChildId}`);
+      navigate(`/story-wizard/${selectedChildId}?from=dashboard`);
     }
   };
 
