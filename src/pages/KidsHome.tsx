@@ -71,7 +71,6 @@ const activities = [
     color: 'from-lumi to-primary/10',
     bgColor: 'bg-lumi/10',
     path: '/chat',
-    avatar: '/avatars/Luno.png',
   },
   {
     id: 'stories',
@@ -81,7 +80,6 @@ const activities = [
     color: 'from-lolo/10 to-lolo',
     bgColor: 'bg-lolo/10',
     path: '/stories',
-    avatar: '/avatars/Lolo.png',
   },
   {
     id: 'journeys',
@@ -91,7 +89,6 @@ const activities = [
     color: 'from-primary to-primary',
     bgColor: 'bg-primary/10',
     path: '/journeys',
-    avatar: '/avatars/Lumi.png',
   },
   {
     id: 'family',
@@ -101,7 +98,6 @@ const activities = [
     color: 'from-gold/50 to-gold/50',
     bgColor: 'bg-gold/10',
     path: '/family',
-    avatar: '/avatars/Lala.png',
   },
 ];
 
@@ -265,11 +261,13 @@ export function KidsHomePage() {
               <Link key={activity.id} to={href}>
                 <Card className="group overflow-hidden border-0 bg-white/70 backdrop-blur-sm shadow-md hover:shadow-lg transition-shadow cursor-pointer h-full">
                   <CardContent className="p-4 flex flex-col items-center text-center">
-                    <img
-                      src={activity.avatar}
-                      alt={activity.title}
-                      className="h-12 w-12 rounded-full mb-2 group-hover:scale-110 transition-transform"
-                    />
+                    <div className="mb-2 group-hover:scale-110 transition-transform">
+                      <ChatAvatar
+                        buddyName={activity.id === 'chat' ? 'Luno' : activity.id === 'stories' ? 'Lolo' : activity.id === 'journeys' ? 'Lumi' : 'Lala'}
+                        expression={activity.id === 'chat' ? 'happy' : activity.id === 'stories' ? 'excited' : activity.id === 'journeys' ? 'curious' : 'caring'}
+                        size="sm"
+                      />
+                    </div>
                     <h3 className="font-display font-bold text-foreground">
                       {activity.title}
                     </h3>

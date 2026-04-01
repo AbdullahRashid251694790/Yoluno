@@ -23,6 +23,7 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { ChatAvatar } from '@/components/chat/ChatAvatar';
 import type { JourneyWithSteps } from '@/types/domain';
 
 export function KidsJourneysPage() {
@@ -65,29 +66,21 @@ export function KidsJourneysPage() {
         <Button variant="ghost" size="icon" onClick={handleBack}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
+        <ChatAvatar buddyName="Lumi" expression="curious" size="sm" />
         <div className="flex-1">
           <h1 className="text-body-lg font-bold">My Journeys</h1>
           <p className="text-body-sm text-muted-foreground">
             {activeJourneys.length} active, {completedJourneys.length} completed
           </p>
         </div>
-        <Map className="h-6 w-6 text-primary" />
       </header>
-
-      {/* Character Guide */}
-      <div className="flex items-center gap-3 px-4 py-3">
-        <img src="/avatars/Lumi.png" alt="Lumi" className="h-10 w-10 rounded-full" />
-        <p className="text-body-sm text-muted-foreground italic">
-          "Let's learn something new today!" — Lumi
-        </p>
-      </div>
 
       <div className="px-4 pb-8 pt-2">
         {!hasJourneys ? (
           <Card className="bg-white/70 backdrop-blur-sm">
             <CardContent className="py-12 text-center">
-              <div className="rounded-full bg-primary/10 p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                <Map className="h-8 w-8 text-primary" />
+              <div className="flex justify-center mb-4">
+                <ChatAvatar buddyName="Lumi" expression="curious" size="xl" showName />
               </div>
               <h3 className="text-body-lg font-semibold mb-2">No Journeys Yet</h3>
               <p className="text-muted-foreground text-body-sm mb-4">

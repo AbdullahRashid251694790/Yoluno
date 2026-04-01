@@ -19,6 +19,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { ArrowLeft, BookOpen, Star, Volume2, Pause, Square, Loader2, Sparkles } from 'lucide-react';
+import { ChatAvatar } from '@/components/chat/ChatAvatar';
 import { toast } from 'sonner';
 import type { StoryWithDetails } from '@/services/stories';
 import { StorybookReader } from '@/components/storybook';
@@ -149,7 +150,10 @@ export function KidsStoriesPage() {
           <ArrowLeft className="h-5 w-5" />
         </Button>
 
-        <h1 className="text-body-lg font-display font-bold">My Stories</h1>
+        <div className="flex items-center gap-2">
+          <ChatAvatar buddyName="Lolo" expression="excited" size="sm" />
+          <h1 className="text-body-lg font-display font-bold">My Stories</h1>
+        </div>
 
         {/* Create Story Button */}
         <Button
@@ -160,14 +164,6 @@ export function KidsStoriesPage() {
           <Sparkles className="h-5 w-5 text-white" />
         </Button>
       </header>
-
-      {/* Character Guide */}
-      <div className="flex items-center gap-3 px-4 py-3">
-        <img src="/avatars/Lolo.png" alt="Lolo" className="h-10 w-10 rounded-full" />
-        <p className="text-body-sm text-muted-foreground italic">
-          "Ready for an adventure? Let's write a story!" — Lolo
-        </p>
-      </div>
 
       {/* Main content */}
       <main className="px-4 pb-8">

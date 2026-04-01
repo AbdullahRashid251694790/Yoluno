@@ -17,6 +17,7 @@ import { ArrowLeft } from 'lucide-react';
 import { FamilyMemberDetail, type RelationType } from '@/components/kids/family';
 import type { FamilyMemberRow, ChildProfileRow as ChildProfile } from '@/types/database';
 import { cn } from '@/lib/utils';
+import { ChatAvatar } from '@/components/chat/ChatAvatar';
 import { getUploadUrl } from '@/integrations/api/client';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -299,6 +300,7 @@ export function KidsFamilyPage() {
         <Button variant="ghost" size="icon" onClick={handleBack} className="rounded-full">
           <ArrowLeft className="h-5 w-5" />
         </Button>
+        <ChatAvatar buddyName="Lala" expression="caring" size="sm" />
         <div className="flex-1">
           <h1 className="text-body-lg font-display font-bold text-foreground">
             My Family Tree 🌳
@@ -307,18 +309,12 @@ export function KidsFamilyPage() {
         </div>
       </header>
 
-      {/* Character Guide */}
-      <div className="flex items-center gap-3 px-4 py-3 relative z-10">
-        <img src="/avatars/Lala.png" alt="Lala" className="h-10 w-10 rounded-full" />
-        <p className="text-body-sm text-muted-foreground italic">
-          "Want to explore your family tree?" — Lala
-        </p>
-      </div>
-
       {!hasFamily ? (
         <div className="relative z-10 px-6 pt-12 flex flex-col items-center">
           <div className="glass-card rounded-3xl p-14 text-center">
-            <div className="text-7xl mb-5" style={{ animation: 'float 3s ease-in-out infinite' }}>🌱</div>
+            <div className="flex justify-center mb-5">
+              <ChatAvatar buddyName="Lala" expression="caring" size="xl" showName />
+            </div>
             <p className="text-body-lg font-display font-bold text-primary mb-2">Your tree is growing!</p>
             <p className="text-muted-foreground text-body-sm">Ask your parent to add family members</p>
           </div>
