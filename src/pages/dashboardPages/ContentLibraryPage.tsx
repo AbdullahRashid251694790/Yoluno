@@ -52,8 +52,8 @@ import {
 } from 'lucide-react';
 
 const CONTENT_TYPE_INFO: Record<ContentType, { label: string; icon: typeof BookOpen; color: string; gradient: string; border: string }> = {
-  story: { label: 'Story', icon: BookOpen, color: 'text-lolo', gradient: 'from-lolo/10 to-gold/10', border: 'border-lolo/15' },
-  journey: { label: 'Journey', icon: Map, color: 'text-primary', gradient: 'from-primary/10 to-lumi/10', border: 'border-primary/15' },
+  story: { label: 'Story', icon: BookOpen, color: 'text-lumi', gradient: 'from-lumi/10 to-lumi/20', border: 'border-lumi/15' },
+  journey: { label: 'Journey', icon: Map, color: 'text-destructive', gradient: 'from-destructive/10 to-destructive/20', border: 'border-destructive/15' },
   voice: { label: 'Voice', icon: Mic, color: 'text-gold', gradient: 'from-gold/10 to-lala/10', border: 'border-gold/15' },
   chat_snippet: { label: 'Chat', icon: MessageCircle, color: 'text-primary', gradient: 'from-primary/10 to-primary/20', border: 'border-primary/15' },
   note: { label: 'Note', icon: StickyNote, color: 'text-lala', gradient: 'from-lala/10 to-lumi/10', border: 'border-lala/15' },

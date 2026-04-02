@@ -133,11 +133,11 @@ export function InsightsPage() {
           </CardContent>
         </Card>
 
-        <Card className="shadow-md hover:shadow-lg transition-shadow bg-gradient-to-br from-lolo/10 to-lolo/20 border border-lolo/15">
+        <Card className="shadow-md hover:shadow-lg transition-shadow bg-gradient-to-br from-lumi/10 to-lumi/20 border border-lumi/15">
           <CardHeader className="pb-2">
             <CardTitle className="text-body-sm font-medium text-muted-foreground flex items-center gap-2">
-              <div className="rounded-lg bg-lolo/15 p-1.5">
-                <BookOpen className="h-4 w-4 text-lolo" />
+              <div className="rounded-lg bg-lumi/15 p-1.5">
+                <BookOpen className="h-4 w-4 text-lumi" />
               </div>
               Stories Created
             </CardTitle>
@@ -148,11 +148,11 @@ export function InsightsPage() {
           </CardContent>
         </Card>
 
-        <Card className="shadow-md hover:shadow-lg transition-shadow bg-gradient-to-br from-lumi/10 to-lumi/20 border border-lumi/15">
+        <Card className="shadow-md hover:shadow-lg transition-shadow bg-gradient-to-br from-destructive/10 to-destructive/20 border border-destructive/15">
           <CardHeader className="pb-2">
             <CardTitle className="text-body-sm font-medium text-muted-foreground flex items-center gap-2">
-              <div className="rounded-lg bg-lumi/15 p-1.5">
-                <Map className="h-4 w-4 text-lumi" />
+              <div className="rounded-lg bg-destructive/15 p-1.5">
+                <Map className="h-4 w-4 text-destructive" />
               </div>
               Journey Steps
             </CardTitle>
@@ -462,11 +462,11 @@ export function InsightsPage() {
 
           {/* Journey Stats Summary */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Card className="shadow-md hover:shadow-lg transition-shadow bg-gradient-to-br from-primary/10 to-primary/20 border border-primary/15">
+            <Card className="shadow-md hover:shadow-lg transition-shadow bg-gradient-to-br from-destructive/10 to-destructive/20 border border-destructive/15">
               <CardHeader className="pb-2">
                 <CardTitle className="text-body-sm font-medium text-muted-foreground flex items-center gap-2">
-                  <div className="rounded-lg bg-primary/15 p-1.5">
-                    <Map className="h-4 w-4 text-primary" />
+                  <div className="rounded-lg bg-destructive/15 p-1.5">
+                    <Map className="h-4 w-4 text-destructive" />
                   </div>
                   Active Journeys
                 </CardTitle>

@@ -23,7 +23,7 @@ export function StoryCard({ story, onRead, onToggleFavorite, onDelete }: StoryCa
   const readingTime = story.content ? calculateReadingTime(story.content) : 0;
 
   return (
-    <Card className="flex flex-col overflow-hidden shadow-md hover:shadow-lg transition-shadow bg-gradient-to-br from-lolo/10 to-gold/10 border border-lolo/15">
+    <Card className="flex flex-col overflow-hidden shadow-md hover:shadow-lg transition-shadow bg-gradient-to-br from-lumi/10 to-lumi/20 border border-lumi/15">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <CardTitle className="line-clamp-2 text-body-lg">{story.title}</CardTitle>

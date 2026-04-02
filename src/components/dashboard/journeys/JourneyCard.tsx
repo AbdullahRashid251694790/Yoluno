@@ -42,9 +42,9 @@ const CATEGORY_ICONS: Record<string, typeof Clock> = {
 };
 
 const CATEGORY_COLORS: Record<string, { bg: string; border: string; iconBg: string }> = {
-  habit: { bg: 'bg-primary/5', border: 'border-l-primary', iconBg: 'bg-primary/10' },
-  learning: { bg: 'bg-primary/5', border: 'border-l-lumi', iconBg: 'bg-primary/10' },
-  social: { bg: 'bg-primary/5', border: 'border-l-primary', iconBg: 'bg-primary/10' },
+  habit: { bg: 'bg-destructive/5', border: 'border-l-destructive', iconBg: 'bg-destructive/10' },
+  learning: { bg: 'bg-destructive/5', border: 'border-l-destructive', iconBg: 'bg-destructive/10' },
+  social: { bg: 'bg-destructive/5', border: 'border-l-destructive', iconBg: 'bg-destructive/10' },
   health: { bg: 'bg-destructive/5', border: 'border-l-destructive', iconBg: 'bg-destructive/10' },
   creativity: { bg: 'bg-gold/10', border: 'border-l-gold', iconBg: 'bg-gold/10' },
 };

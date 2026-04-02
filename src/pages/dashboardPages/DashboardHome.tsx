@@ -238,11 +238,11 @@ export function DashboardHome() {
             </CardContent>
           </Card>
 
-          <Card className="shadow-md hover:shadow-lg transition-shadow bg-gradient-to-br from-lolo/10 to-lolo/20 border border-lolo/15">
+          <Card className="shadow-md hover:shadow-lg transition-shadow bg-gradient-to-br from-lumi/10 to-lumi/20 border border-lumi/15">
             <CardHeader className="pb-2">
               <CardTitle className="text-body-sm font-medium text-muted-foreground flex items-center gap-2">
-                <div className="rounded-lg bg-lolo/15 p-1.5">
-                  <BookOpen className="h-4 w-4 text-lolo" />
+                <div className="rounded-lg bg-lumi/15 p-1.5">
+                  <BookOpen className="h-4 w-4 text-lumi" />
                 </div>
                 Stories This Week
               </CardTitle>
@@ -333,7 +333,7 @@ export function DashboardHome() {
                       <span>{childData.weekly_activity.messages} messages</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <div className="rounded-md bg-lolo/10 p-1"><BookOpen className="h-3.5 w-3.5 text-lolo" /></div>
+                      <div className="rounded-md bg-lumi/10 p-1"><BookOpen className="h-3.5 w-3.5 text-lumi" /></div>
                       <span>{childData.weekly_activity.stories} stories</span>
                     </div>
                     <div className="flex items-center gap-2">
@@ -341,7 +341,7 @@ export function DashboardHome() {
                       <span>{childData.stats.current_streak} day streak</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <div className="rounded-md bg-lumi/10 p-1"><Map className="h-3.5 w-3.5 text-lumi" /></div>
+                      <div className="rounded-md bg-destructive/10 p-1"><Map className="h-3.5 w-3.5 text-destructive" /></div>
                       <span>{childData.stats.total_journeys_completed} journeys</span>
                     </div>
                   </div>
@@ -360,14 +360,14 @@ export function DashboardHome() {
         <CardContent>
           <div className="flex flex-wrap gap-2">
             <Link to="/dashboard/stories">
-              <Button variant="outline" className="gap-2 border-lolo/30 hover:bg-lolo/5 hover:border-lolo/50">
-                <BookOpen className="h-4 w-4 text-lolo" />
+              <Button variant="outline" className="gap-2 border-lumi/30 hover:bg-lumi/5 hover:border-lumi/50">
+                <BookOpen className="h-4 w-4 text-lumi" />
                 View Stories
               </Button>
             </Link>
             <Link to="/dashboard/journeys">
-              <Button variant="outline" className="gap-2 border-primary/30 hover:bg-primary/5 hover:border-primary/50">
-                <Map className="h-4 w-4 text-primary" />
+              <Button variant="outline" className="gap-2 border-destructive/30 hover:bg-destructive/5 hover:border-destructive/50">
+                <Map className="h-4 w-4 text-destructive" />
                 Manage Journeys
               </Button>
             </Link>

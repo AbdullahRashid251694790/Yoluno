@@ -60,7 +60,7 @@ async function calculateStreak(client: PoolClient, childId: string): Promise<num
   const result = await client.query<{ streak: number }>(
     `WITH consecutive_days AS (
        SELECT activity_date,
-              activity_date - (ROW_NUMBER() OVER (ORDER BY activity_date DESC))::int AS grp
+              activity_date + (ROW_NUMBER() OVER (ORDER BY activity_date DESC))::int AS grp
        FROM streak_history
        WHERE child_profile_id = $1
        ORDER BY activity_date DESC

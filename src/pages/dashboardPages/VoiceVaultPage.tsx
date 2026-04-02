@@ -60,7 +60,7 @@ const CATEGORY_INFO: Record<string, { label: string; color: string; gradient: st
   encouragement: { label: 'Encouragement', color: 'text-lolo', gradient: 'from-lolo/10 to-lolo/20', border: 'border-lolo/15' },
   praise: { label: 'Praise', color: 'text-lala', gradient: 'from-lala/10 to-gold/10', border: 'border-lala/15' },
   celebration: { label: 'Celebration', color: 'text-primary', gradient: 'from-primary/10 to-lumi/10', border: 'border-primary/15' },
-  story: { label: 'Story', color: 'text-primary', gradient: 'from-lolo/10 to-gold/10', border: 'border-lolo/15' },
+  story: { label: 'Story', color: 'text-lumi', gradient: 'from-lumi/10 to-lumi/20', border: 'border-lumi/15' },
   memory: { label: 'Memory', color: 'text-primary', gradient: 'from-lumi/10 to-primary/10', border: 'border-lumi/15' },
   greeting: { label: 'Greeting', color: 'text-gold', gradient: 'from-gold/10 to-lala/10', border: 'border-gold/15' },
   other: { label: 'Other', color: 'text-muted-foreground', gradient: 'from-muted/10 to-muted/20', border: 'border-border' },

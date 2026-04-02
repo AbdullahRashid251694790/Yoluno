@@ -32,9 +32,9 @@ const CATEGORY_ICONS: Record<string, typeof Sparkles> = {
 
 // Category colors
 const CATEGORY_COLORS: Record<string, string> = {
-  habit: 'bg-primary/10 text-primary border-primary',
-  learning: 'bg-primary/10 text-primary border-primary',
-  social: 'bg-primary/10 text-primary border-primary',
+  habit: 'bg-destructive/10 text-destructive border-destructive',
+  learning: 'bg-destructive/10 text-destructive border-destructive',
+  social: 'bg-destructive/10 text-destructive border-destructive',
   health: 'bg-destructive/10 text-destructive border-destructive/20',
   creativity: 'bg-gold/10 text-gold border-gold',
 };
