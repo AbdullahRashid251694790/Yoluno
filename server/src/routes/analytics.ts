@@ -352,17 +352,25 @@ router.get(
             [child.id]
           );
 
-          // Get weekly activity
+          // Get weekly activity from source tables (daily_analytics is not populated)
           const weeklyActivity = await queryOne<{
             message_count: string;
             story_count: string;
           }>(
             `SELECT
-              COALESCE(SUM(message_count), 0) as message_count,
-              COALESCE(SUM(story_count), 0) as story_count
-            FROM daily_analytics
-            WHERE child_profile_id = $1
-              AND date >= CURRENT_DATE - INTERVAL '7 days'`,
+              COALESCE(
+                (SELECT COUNT(*) FROM buddy_messages
+                 WHERE child_profile_id = $1
+                   AND role = 'child'
+                   AND created_at >= CURRENT_DATE - INTERVAL '7 days'),
+                0
+              ) as message_count,
+              COALESCE(
+                (SELECT COUNT(*) FROM stories
+                 WHERE child_profile_id = $1
+                   AND created_at >= CURRENT_DATE - INTERVAL '7 days'),
+                0
+              ) as story_count`,
             [child.id]
           );
 
