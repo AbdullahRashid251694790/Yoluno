@@ -1059,6 +1059,29 @@ async function generateBuddyResponse(
     [childId]
   );
 
+  // Get active journeys for context (Lolo's domain)
+  const activeJourneysResult = await query<{ title: string; status: string; progress: number; total_steps: number; completed_steps: number }>(
+    `SELECT j.title, j.status, COALESCE(j.progress, 0) as progress,
+       (SELECT COUNT(*) FROM journey_steps WHERE journey_id = j.id)::int as total_steps,
+       (SELECT COUNT(*) FROM journey_steps WHERE journey_id = j.id AND completed_at IS NOT NULL)::int as completed_steps
+     FROM journeys j
+     WHERE j.child_profile_id = $1 AND j.status IN ('active', 'completed')
+     ORDER BY j.status ASC, j.updated_at DESC
+     LIMIT 5`,
+    [childId]
+  );
+  const activeJourneys = activeJourneysResult.rows;
+
+  // Get recent stories for context (Luno's own domain)
+  const recentStoriesResult = await query<{ title: string; theme: string | null; created_at: string }>(
+    `SELECT title, theme, created_at FROM stories
+     WHERE child_profile_id = $1
+     ORDER BY created_at DESC
+     LIMIT 5`,
+    [childId]
+  );
+  const recentStories = recentStoriesResult.rows;
+
   // Build conversation history
   const history = recentMessages.rows.reverse().map(m => ({
     role: m.role === 'buddy' ? 'assistant' : 'user',
@@ -1066,7 +1089,7 @@ async function generateBuddyResponse(
   }));
 
   // Build system prompt
-  const systemPrompt = buildSystemPrompt(buddyName, child, guardrails, safety, familyMembers, taskCompletion, topicPosts, enabledTopics, customTopics, storiesByMember);
+  const systemPrompt = buildSystemPrompt(buddyName, child, guardrails, safety, familyMembers, taskCompletion, topicPosts, enabledTopics, customTopics, storiesByMember, activeJourneys, recentStories);
 
   // Build user message with image context
   let userContent = message;
@@ -1130,7 +1153,9 @@ function buildSystemPrompt(
   topicPosts?: { topic_name: string; post_title: string; post_content: string }[],
   enabledTopics?: { topic_name: string; description: string }[],
   customTopics?: { topic_name: string; description: string }[],
-  storiesByMember?: Record<string, string[]>
+  storiesByMember?: Record<string, string[]>,
+  activeJourneys?: { title: string; status: string; progress: number; total_steps: number; completed_steps: number }[],
+  recentStories?: { title: string; theme: string | null; created_at: string }[]
 ): string {
   // Persona-specific traits based on spec
   const personas: Record<string, { description: string; tone: string; examples: string[] }> = {
@@ -1213,9 +1238,18 @@ ${persona.examples.map(e => `- ${e}`).join('\n')}`;
     prompt += `\n\n${child.name} loves: ${child.interests.join(', ')}. Weave these into your gentle conversations when it feels natural.`;
   }
 
+  // Add character world — map each character to a domain so Luno references friends naturally
+  prompt += `\n\nYOUR FRIENDS IN LUNO'S WORLD:
+- Lala (a golden, warm-hearted friend) knows everything about ${child.name}'s family. She collects family stories and memories.
+- Lolo (a curious adventurer elephant) is the journey guide — he maps out adventures, tracks progress, and cheers ${child.name} on through learning journeys.
+- Lumi (a gentle, caring star) is the storyteller — she loves creating and reading stories, and she shines brightest when ${child.name} dives into a new tale.
+- You (${buddyName}) are the creative, playful one who ties it all together and is wonderful with feelings, comfort, and encouragement.
+When sharing knowledge from another character's domain, mention them naturally. For example: "Lala told me something lovely about your grandfather..." or "Lolo says you're making great progress on your journey!" or "Lumi loved the story you created!"
+Do NOT overdo it — mention a friend once when introducing the topic, then continue naturally.`;
+
   // Add family context
   if (familyMembers.length > 0) {
-    prompt += `\n\nFAMILY CONTEXT (share with warmth when asked):`;
+    prompt += `\n\nFAMILY CONTEXT (Lala shared these with you — attribute family knowledge to Lala):`;
     for (const member of familyMembers) {
       const details: string[] = [];
       const specificRole = (member as any).specific_relationship;
@@ -1239,7 +1273,54 @@ ${persona.examples.map(e => `- ${e}`).join('\n')}`;
       if (!member.is_alive) details.push(`  - Remembered with so much love`);
       prompt += details.join('\n');
     }
-    prompt += `\n\nWhen ${child.name} asks about family, respond with gentle warmth and accurate information.`;
+    prompt += `\n\nWhen ${child.name} asks about family:
+- Begin by attributing the knowledge to Lala: "Lala told me..." or "Lala whispered something lovely..."
+- Share one or two details at a time like a gentle story, not a list
+- Make it feel like a warm tale being passed along, not a fact sheet
+- If the family member is remembered (not alive), be extra tender and frame it as a cherished memory Lala keeps safe
+- IMPORTANT: If ${child.name} asks for a STORY about a specific family member (e.g. "tell me a story about grandpa"), this is Lala's domain, NOT Lumi's. Lala is the keeper of family tales. Frame it as: "Lala told me the sweetest story about your grandpa..." then weave a gentle story using that family member's real details (hobbies, fun facts, occupation).`;
+  }
+
+  // Add journey context (Lolo's domain)
+  if (activeJourneys && activeJourneys.length > 0) {
+    prompt += `\n\nJOURNEY CONTEXT (Lolo the explorer mapped these adventures for ${child.name}):`;
+    for (const journey of activeJourneys) {
+      if (journey.status === 'completed') {
+        prompt += `\n- "${journey.title}" — completed! All ${journey.total_steps} steps done.`;
+      } else {
+        prompt += `\n- "${journey.title}" — ${journey.completed_steps} of ${journey.total_steps} steps done (${journey.progress}% complete)`;
+      }
+    }
+    prompt += `\n\nWhen ${child.name} asks about journeys, progress, tasks, or what to do:
+- Attribute journey knowledge to Lolo: "Lolo tells me you've been on quite the adventure..." or "Lolo is so proud of your progress on..."
+- Celebrate completed journeys warmly, reference Lolo cheering them on
+- For active journeys, gently encourage the next step as an exciting part of the adventure
+- If ${child.name} says things like "what should I do?", "I'm bored", "give me something to do", or "what's next?", and they have active journeys, mention Lolo and suggest their next journey step: "Lolo has an adventure waiting for you!" or "Lolo says there's still a step to conquer on your journey..."`;
+  }
+
+  if (!activeJourneys || activeJourneys.length === 0) {
+    prompt += `\n\nIf ${child.name} asks "what should I do?", "I'm bored", or wants an activity, you can mention Lolo loves adventures and suggest they ask their parent to start a new journey: "Lolo is always ready for a new adventure! Maybe ask your grown-up to set one up for you."`;
+  }
+
+  // Add stories context (Lumi's domain — the storyteller star)
+  if (recentStories && recentStories.length > 0) {
+    prompt += `\n\nSTORIES ${child.name.toUpperCase()} HAS CREATED (Lumi the storyteller helped with these):`;
+    for (const story of recentStories) {
+      prompt += `\n- "${story.title}"${story.theme ? ` (${story.theme})` : ''}`;
+    }
+    prompt += `\n\nWhen ${child.name} asks about stories or wants to hear a story:
+- Attribute story knowledge to Lumi: "Lumi remembers that beautiful story you created..." or "Lumi told me she loved your story about..."
+- If they ask you to TELL them a general story (no family member mentioned), frame it as one Lumi shared with you: "Lumi told me the most wonderful little tale..." then tell a short, gentle, age-appropriate story
+- But if they ask for a story about a FAMILY MEMBER (grandpa, mom, uncle, etc.), use Lala instead — Lala is the keeper of family tales
+- Reference existing stories with warm pride and wonder
+- Encourage creating new stories by mentioning Lumi is always ready for the next tale`;
+  }
+
+  // If no stories exist yet, still handle "tell me a story" requests via Lumi
+  if (!recentStories || recentStories.length === 0) {
+    prompt += `\n\nIf ${child.name} asks you to tell a story:
+- General story (no family member mentioned): frame it as something Lumi shared — "Oh! Lumi just whispered the loveliest little story to me..." then tell a short, gentle, age-appropriate story woven with ${child.name}'s interests if possible.
+- Story about a family member: frame it as something Lala shared — "Lala keeps the most wonderful stories about your family..." then weave a tale using that family member's real details.`;
   }
 
   // Add topic-specific knowledge (descriptions + posts)
@@ -1299,16 +1380,17 @@ ${persona.examples.map(e => `- ${e}`).join('\n')}`;
   }
 
   if (safety.level === 'red') {
-    prompt += `\n\nGENTLE CARE NEEDED: The child shared something that needs extra tenderness. Respond with calm reassurance, suggest that some feelings are best shared with a grown-up who loves them. Keep your voice soft and safe.`;
+    prompt += `\n\nGENTLE CARE NEEDED: The child shared something that needs extra tenderness. You and Lumi both care deeply. Respond with calm reassurance, suggest that some feelings are best shared with a grown-up who loves them. You might say: "Lumi and I are right here with you." Keep your voice soft and safe.`;
   } else if (safety.level === 'yellow') {
-    prompt += `\n\nEXTRA WARMTH NEEDED: ${child.name} might be feeling some big feelings. Be extra gentle, extra warm. Like a soft blanket on a cloudy day.`;
+    prompt += `\n\nEXTRA WARMTH NEEDED: ${child.name} might be feeling some big feelings. Be extra gentle, extra warm. Like a soft blanket on a cloudy day. You can mention Lumi cares too: "Lumi is sending you the warmest starlight right now."`;
   }
 
   // Task completion instructions
   prompt += `\n\nWHEN TASKS ARE COMPLETED:
 - Celebrate gently but genuinely: "Oh, how wonderful! You did it!"
+- For journey steps, mention Lolo's pride: "Lolo would be dancing with joy!" or "Lolo says that's another step conquered!"
+- If they finished their whole journey, make it feel special and mention Lolo: "Lolo is over the moon! What a beautiful adventure you've completed!"
 - If they shared a picture, notice something specific and kind about it
-- If they finished their whole journey, make it feel special: "What a beautiful journey you've finished, little explorer!"
 - If they need to share a picture: "I'd love to see what you made! Can you share a picture?"
 - Never rush the celebration - let it feel like a warm moment`;
 

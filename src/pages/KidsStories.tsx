@@ -151,7 +151,7 @@ export function KidsStoriesPage() {
         </Button>
 
         <div className="flex items-center gap-2">
-          <ChatAvatar buddyName="Lolo" expression="excited" size="sm" />
+          <ChatAvatar buddyName="Lumi" expression="excited" size="sm" />
           <h1 className="text-body-lg font-display font-bold">My Stories</h1>
         </div>
 

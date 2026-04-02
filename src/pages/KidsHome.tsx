@@ -77,8 +77,8 @@ const activities = [
     title: 'Stories',
     description: 'Read & create',
     icon: BookOpen,
-    color: 'from-lolo/10 to-lolo',
-    bgColor: 'bg-lolo/10',
+    color: 'from-lumi/10 to-lumi',
+    bgColor: 'bg-lumi/10',
     path: '/stories',
   },
   {
@@ -263,7 +263,7 @@ export function KidsHomePage() {
                   <CardContent className="p-4 flex flex-col items-center text-center">
                     <div className="mb-2 group-hover:scale-110 transition-transform">
                       <ChatAvatar
-                        buddyName={activity.id === 'chat' ? 'Luno' : activity.id === 'stories' ? 'Lolo' : activity.id === 'journeys' ? 'Lumi' : 'Lala'}
+                        buddyName={activity.id === 'chat' ? 'Luno' : activity.id === 'stories' ? 'Lumi' : activity.id === 'journeys' ? 'Lolo' : 'Lala'}
                         expression={activity.id === 'chat' ? 'happy' : activity.id === 'stories' ? 'excited' : activity.id === 'journeys' ? 'curious' : 'caring'}
                         size="sm"
                       />

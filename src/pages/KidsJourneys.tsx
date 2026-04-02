@@ -66,7 +66,7 @@ export function KidsJourneysPage() {
         <Button variant="ghost" size="icon" onClick={handleBack}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <ChatAvatar buddyName="Lumi" expression="curious" size="sm" />
+        <ChatAvatar buddyName="Lolo" expression="curious" size="sm" />
         <div className="flex-1">
           <h1 className="text-body-lg font-bold">My Journeys</h1>
           <p className="text-body-sm text-muted-foreground">
@@ -80,7 +80,7 @@ export function KidsJourneysPage() {
           <Card className="bg-white/70 backdrop-blur-sm">
             <CardContent className="py-12 text-center">
               <div className="flex justify-center mb-4">
-                <ChatAvatar buddyName="Lumi" expression="curious" size="xl" showName />
+                <ChatAvatar buddyName="Lolo" expression="curious" size="xl" showName />
               </div>
               <h3 className="text-body-lg font-semibold mb-2">No Journeys Yet</h3>
               <p className="text-muted-foreground text-body-sm mb-4">
