@@ -41,7 +41,7 @@ const CATEGORY_COLORS: Record<string, string> = {
 
 // Difficulty badges
 const DIFFICULTY_STYLES: Record<string, string> = {
-  easy: 'bg-primary/10 text-primary',
+  easy: 'bg-lolo/10 text-lolo',
   medium: 'bg-lala/10 text-lala',
   hard: 'bg-destructive/10 text-destructive',
 };
@@ -66,7 +66,7 @@ export function JourneyTemplateCard({
     <Card
       className={cn(
         'group overflow-hidden transition-all hover:shadow-md',
-        template.is_featured && 'ring-2 ring-primary/20',
+        template.is_featured && 'ring-2 ring-lolo/20',
         className
       )}
     >
@@ -92,7 +92,7 @@ export function JourneyTemplateCard({
             )}
           </div>
         </div>
-        <h3 className="font-semibold text-body-lg mt-3 group-hover:text-primary transition-colors">
+        <h3 className="font-semibold text-body-lg mt-3 group-hover:text-lolo transition-colors">
           {template.title}
         </h3>
       </CardHeader>
@@ -127,7 +127,7 @@ export function JourneyTemplateCard({
           <Button
             onClick={() => onStart(template)}
             disabled={isStarting}
-            className="w-full"
+            className="w-full bg-lolo hover:bg-lolo/90"
             size="sm"
           >
             {isStarting ? (

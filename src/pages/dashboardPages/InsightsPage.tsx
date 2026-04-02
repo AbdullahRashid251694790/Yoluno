@@ -96,14 +96,13 @@ export function InsightsPage() {
           </p>
         </div>
 
-        {children.length > 1 && (
-          <Select value={selectedChildId} onValueChange={setSelectedChildId}>
+        {children.length > 0 && (
+          <Select value={selectedChildId === 'all' ? children[0]?.id : selectedChildId} onValueChange={setSelectedChildId}>
             <SelectTrigger className="w-[180px]">
               <Filter className="h-4 w-4 mr-2" />
-              <SelectValue placeholder="All children" />
+              <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">First child</SelectItem>
               {children.map((child) => (
                 <SelectItem key={child.id} value={child.id}>
                   {child.name}
@@ -205,7 +204,7 @@ export function InsightsPage() {
 
         {/* Activity Tab */}
         <TabsContent value="activity" className="space-y-6">
-          <Card>
+          <Card className="shadow-md border border-border/50">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Calendar className="h-5 w-5" />
@@ -260,7 +259,7 @@ export function InsightsPage() {
           </Card>
 
           {weeklySummary?.most_active_day && (
-            <Card>
+            <Card className="shadow-md border border-border/50">
               <CardHeader>
                 <CardTitle className="text-body-sm font-medium">Most Active Day</CardTitle>
               </CardHeader>
@@ -284,7 +283,7 @@ export function InsightsPage() {
         <TabsContent value="mood" className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Mood Calendar */}
-            <Card>
+            <Card className="shadow-md border border-border/50">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Calendar className="h-5 w-5" />
@@ -308,7 +307,7 @@ export function InsightsPage() {
             </Card>
 
             {/* Mood Distribution */}
-            <Card>
+            <Card className="shadow-md border border-border/50">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <BarChart3 className="h-5 w-5" />
@@ -333,7 +332,7 @@ export function InsightsPage() {
           </div>
 
           {/* Mood Alerts */}
-          <Card>
+          <Card className="shadow-md border border-border/50">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Heart className="h-5 w-5" />
@@ -359,7 +358,7 @@ export function InsightsPage() {
 
         {/* Topics Tab */}
         <TabsContent value="topics" className="space-y-6">
-          <Card>
+          <Card className="shadow-md border border-border/50">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Tag className="h-5 w-5" />
@@ -394,7 +393,7 @@ export function InsightsPage() {
           </Card>
 
           {weeklySummary?.topics_explored && weeklySummary.topics_explored.length > 0 && (
-            <Card>
+            <Card className="shadow-md border border-border/50">
               <CardHeader>
                 <CardTitle className="text-body-sm font-medium">This Week's Discoveries</CardTitle>
               </CardHeader>
@@ -413,10 +412,10 @@ export function InsightsPage() {
 
         {/* Journeys Tab */}
         <TabsContent value="journeys" className="space-y-6">
-          <Card>
+          <Card className="shadow-md border border-border/50">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Map className="h-5 w-5" />
+                <Map className="h-5 w-5 text-lolo" />
                 Journey Progress
               </CardTitle>
               <CardDescription>

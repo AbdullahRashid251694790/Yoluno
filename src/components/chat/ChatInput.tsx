@@ -98,7 +98,7 @@ export function ChatInput({
 
   return (
     <div className="flex flex-col gap-2">
-      {/* Image preview */}
+      {/* Image preview - hidden for now
       {imagePreview && (
         <div className="relative inline-block w-20 h-20">
           <img
@@ -115,9 +115,10 @@ export function ChatInput({
           </button>
         </div>
       )}
+      */}
 
       <div className="flex items-end gap-2 rounded-2xl border bg-card p-2">
-        {/* Hidden file input */}
+        {/* Hidden file input - hidden for now
         <input
           ref={fileInputRef}
           type="file"
@@ -125,8 +126,9 @@ export function ChatInput({
           onChange={handleImageSelect}
           className="hidden"
         />
+        */}
 
-        {/* Image attachment button */}
+        {/* Image attachment button - hidden for now
         <Button
           type="button"
           size="icon"
@@ -137,6 +139,7 @@ export function ChatInput({
         >
           <ImageIcon className="h-5 w-5" />
         </Button>
+        */}
 
         <Textarea
           ref={textareaRef}
@@ -150,6 +153,7 @@ export function ChatInput({
         />
 
         <div className="flex gap-1">
+          {/* Voice recording button - hidden for now
           <Button
             type="button"
             size="icon"
@@ -163,6 +167,7 @@ export function ChatInput({
           >
             {isRecording ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
           </Button>
+          */}
 
           <Button
             type="button"

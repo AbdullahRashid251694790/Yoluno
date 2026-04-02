@@ -51,9 +51,9 @@ const CATEGORY_COLORS: Record<string, { bg: string; border: string; iconBg: stri
 
 // Status colors with ring for better definition
 const STATUS_STYLES: Record<string, { bg: string; text: string; icon: typeof Play; ring: string }> = {
-  active: { bg: 'bg-primary/10', text: 'text-primary', icon: Play, ring: 'ring-1 ring-primary/20' },
+  active: { bg: 'bg-lolo/10', text: 'text-lolo', icon: Play, ring: 'ring-1 ring-lolo/20' },
   paused: { bg: 'bg-gold/10', text: 'text-gold', icon: Pause, ring: 'ring-1 ring-gold/20' },
-  completed: { bg: 'bg-primary/10', text: 'text-primary', icon: CheckCircle2, ring: 'ring-1 ring-primary/20' },
+  completed: { bg: 'bg-lolo/10', text: 'text-lolo', icon: CheckCircle2, ring: 'ring-1 ring-lolo/20' },
 };
 
 // Extended type with navigation compatibility
@@ -123,8 +123,8 @@ export function JourneyCard({
     <Card
       className={cn(
         'overflow-hidden transition-all hover:shadow-md cursor-pointer border-l-4 relative',
-        isCompleted && 'bg-gradient-to-br from-primary/10 to-primary/10',
-        categoryStyle?.border || 'border-l-primary/50',
+        isCompleted && 'bg-gradient-to-br from-lolo/10 to-lolo/10',
+        categoryStyle?.border || 'border-l-lolo/50',
         className
       )}
       onClick={handleClick}
@@ -190,7 +190,7 @@ export function JourneyCard({
         {childName && (
           <div className="flex items-center gap-1.5 text-caption text-muted-foreground mb-2">
             <Avatar className="h-5 w-5">
-              <AvatarFallback className="text-[10px] bg-primary/10 text-primary">
+              <AvatarFallback className="text-[10px] bg-lolo/10 text-lolo">
                 {childName.charAt(0).toUpperCase()}
               </AvatarFallback>
             </Avatar>
@@ -216,7 +216,7 @@ export function JourneyCard({
                       key={i}
                       className={cn(
                         'h-1.5 w-3 rounded-full transition-colors',
-                        i < displayStep ? 'bg-primary' : 'bg-muted'
+                        i < displayStep ? 'bg-lolo' : 'bg-muted'
                       )}
                     />
                   ))}
@@ -228,7 +228,7 @@ export function JourneyCard({
             </div>
             <span className={cn(
               'text-body-sm font-semibold',
-              isCompleted && 'text-primary'
+              isCompleted && 'text-lolo'
             )}>
               {progress}%
             </span>
@@ -238,8 +238,8 @@ export function JourneyCard({
           <Progress
             value={progress}
             className={cn(
-              'h-2',
-              isCompleted && '[&>div]:bg-gradient-to-r [&>div]:from-primary [&>div]:to-primary'
+              'h-2 [&>div]:bg-lolo',
+              isCompleted && '[&>div]:bg-gradient-to-r [&>div]:from-lolo [&>div]:to-lolo'
             )}
           />
 
@@ -247,7 +247,7 @@ export function JourneyCard({
           {journey.totalSteps > 0 && (
             <p className="text-caption text-muted-foreground">
               {isCompleted ? (
-                <span className="flex items-center gap-1 text-primary">
+                <span className="flex items-center gap-1 text-lolo">
                   <CheckCircle2 className="h-3 w-3" />
                   All {journey.totalSteps} steps completed
                 </span>
@@ -273,7 +273,7 @@ export function JourneyCard({
           ) : (
             <Button
               size="sm"
-              className={cn('w-full group/btn', isPaused && 'opacity-75')}
+              className={cn('w-full group/btn bg-lolo hover:bg-lolo/90', isPaused && 'opacity-75')}
               disabled={isPaused}
               onClick={handleContinue}
             >

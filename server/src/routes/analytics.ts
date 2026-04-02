@@ -215,16 +215,20 @@ router.get(
         throw new AppError(404, 'Child profile not found');
       }
 
-      // Get topics from enabled child topic settings
+      // Match child's chat messages against known topic names
       const topics = await query<ChatTopicEntry>(
         `SELECT
           t.name as topic,
-          1 as mention_count,
-          cts.updated_at::text as last_mentioned_at
-        FROM child_topic_settings cts
-        JOIN topics t ON cts.topic_id = t.id
-        WHERE cts.child_profile_id = $1 AND cts.is_allowed = true
-        ORDER BY t.name
+          COUNT(bm.id)::integer as mention_count,
+          MAX(bm.created_at)::text as last_mentioned_at
+        FROM topics t
+        INNER JOIN buddy_messages bm
+          ON bm.child_profile_id = $1
+          AND bm.role = 'child'
+          AND bm.content ILIKE '%' || t.name || '%'
+        WHERE t.is_active = true
+        GROUP BY t.name
+        ORDER BY mention_count DESC, last_mentioned_at DESC
         LIMIT $2`,
         [childId, limitNum]
       );
