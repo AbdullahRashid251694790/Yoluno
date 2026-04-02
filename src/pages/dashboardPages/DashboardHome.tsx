@@ -341,7 +341,7 @@ export function DashboardHome() {
                       <span>{childData.stats.current_streak} day streak</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <div className="rounded-md bg-destructive/10 p-1"><Map className="h-3.5 w-3.5 text-destructive" /></div>
+                      <div className="rounded-md bg-lolo/10 p-1"><Map className="h-3.5 w-3.5 text-lolo" /></div>
                       <span>{childData.stats.total_journeys_completed} journeys</span>
                     </div>
                   </div>
@@ -366,8 +366,8 @@ export function DashboardHome() {
               </Button>
             </Link>
             <Link to="/dashboard/journeys">
-              <Button variant="outline" className="gap-2 border-destructive/30 hover:bg-destructive/5 hover:border-destructive/50">
-                <Map className="h-4 w-4 text-destructive" />
+              <Button variant="outline" className="gap-2 border-lolo/30 hover:bg-lolo/5 hover:border-lolo/50">
+                <Map className="h-4 w-4 text-lolo" />
                 Manage Journeys
               </Button>
             </Link>
