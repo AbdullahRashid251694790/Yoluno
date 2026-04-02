@@ -186,12 +186,14 @@ export function DashboardHome() {
 
       {/* Today's Moods */}
       {children.length > 0 && (
-        <Card>
+        <Card className="shadow-md hover:shadow-lg transition-shadow bg-gradient-to-br from-lolo/10 to-lala/10 border border-lolo/15">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="text-body-lg flex items-center gap-2">
-                  <Heart className="h-5 w-5 text-lolo" />
+                  <div className="rounded-lg bg-lolo/10 p-1.5">
+                    <Heart className="h-4 w-4 text-lolo" />
+                  </div>
                   Today's Moods
                 </CardTitle>
                 <CardDescription>How your children are feeling today</CardDescription>
@@ -217,10 +219,12 @@ export function DashboardHome() {
       {/* Quick Stats */}
       {children.length > 0 && (
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-          <Card>
+          <Card className="shadow-md hover:shadow-lg transition-shadow bg-gradient-to-br from-primary/10 to-primary/20 border border-primary/15">
             <CardHeader className="pb-2">
               <CardTitle className="text-body-sm font-medium text-muted-foreground flex items-center gap-2">
-                <MessageCircle className="h-4 w-4" />
+                <div className="rounded-lg bg-primary/15 p-1.5">
+                  <MessageCircle className="h-4 w-4 text-primary" />
+                </div>
                 Weekly Messages
               </CardTitle>
             </CardHeader>
@@ -234,10 +238,12 @@ export function DashboardHome() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="shadow-md hover:shadow-lg transition-shadow bg-gradient-to-br from-lolo/10 to-lolo/20 border border-lolo/15">
             <CardHeader className="pb-2">
               <CardTitle className="text-body-sm font-medium text-muted-foreground flex items-center gap-2">
-                <BookOpen className="h-4 w-4" />
+                <div className="rounded-lg bg-lolo/15 p-1.5">
+                  <BookOpen className="h-4 w-4 text-lolo" />
+                </div>
                 Stories This Week
               </CardTitle>
             </CardHeader>
@@ -251,10 +257,12 @@ export function DashboardHome() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="shadow-md hover:shadow-lg transition-shadow bg-gradient-to-br from-gold/10 to-gold/20 border border-gold/15">
             <CardHeader className="pb-2">
               <CardTitle className="text-body-sm font-medium text-muted-foreground flex items-center gap-2">
-                <Flame className="h-4 w-4" />
+                <div className="rounded-lg bg-gold/15 p-1.5">
+                  <Flame className="h-4 w-4 text-gold" />
+                </div>
                 Best Streak
               </CardTitle>
             </CardHeader>
@@ -268,10 +276,12 @@ export function DashboardHome() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="shadow-md hover:shadow-lg transition-shadow bg-gradient-to-br from-lumi/10 to-lumi/20 border border-lumi/15">
             <CardHeader className="pb-2">
               <CardTitle className="text-body-sm font-medium text-muted-foreground flex items-center gap-2">
-                <Trophy className="h-4 w-4" />
+                <div className="rounded-lg bg-lumi/15 p-1.5">
+                  <Trophy className="h-4 w-4 text-lumi" />
+                </div>
                 Total Points
               </CardTitle>
             </CardHeader>
@@ -302,7 +312,7 @@ export function DashboardHome() {
 
           <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
             {analyticsOverview.children.map((childData) => (
-              <Card key={childData.child.id}>
+              <Card key={childData.child.id} className="shadow-md hover:shadow-lg transition-shadow bg-gradient-to-br from-primary/10 to-lala/10 border border-primary/15">
                 <CardHeader>
                   <CardTitle className="text-body-lg flex items-center gap-2">
                     {childData.child.avatar_url && (
@@ -319,19 +329,19 @@ export function DashboardHome() {
                 <CardContent>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-body-sm">
                     <div className="flex items-center gap-2">
-                      <MessageCircle className="h-4 w-4 text-primary" />
+                      <div className="rounded-md bg-primary/10 p-1"><MessageCircle className="h-3.5 w-3.5 text-primary" /></div>
                       <span>{childData.weekly_activity.messages} messages</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <BookOpen className="h-4 w-4 text-primary" />
+                      <div className="rounded-md bg-lolo/10 p-1"><BookOpen className="h-3.5 w-3.5 text-lolo" /></div>
                       <span>{childData.weekly_activity.stories} stories</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Flame className="h-4 w-4 text-gold" />
+                      <div className="rounded-md bg-gold/10 p-1"><Flame className="h-3.5 w-3.5 text-gold" /></div>
                       <span>{childData.stats.current_streak} day streak</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Map className="h-4 w-4 text-primary" />
+                      <div className="rounded-md bg-lumi/10 p-1"><Map className="h-3.5 w-3.5 text-lumi" /></div>
                       <span>{childData.stats.total_journeys_completed} journeys</span>
                     </div>
                   </div>
@@ -343,33 +353,33 @@ export function DashboardHome() {
       )}
 
       {/* Quick Actions */}
-      <Card>
+      <Card className="shadow-md border border-border/50">
         <CardHeader>
           <CardTitle className="text-body-lg">Quick Actions</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-2">
             <Link to="/dashboard/stories">
-              <Button variant="outline" className="gap-2">
-                <BookOpen className="h-4 w-4" />
+              <Button variant="outline" className="gap-2 border-lolo/30 hover:bg-lolo/5 hover:border-lolo/50">
+                <BookOpen className="h-4 w-4 text-lolo" />
                 View Stories
               </Button>
             </Link>
             <Link to="/dashboard/journeys">
-              <Button variant="outline" className="gap-2">
-                <Map className="h-4 w-4" />
+              <Button variant="outline" className="gap-2 border-primary/30 hover:bg-primary/5 hover:border-primary/50">
+                <Map className="h-4 w-4 text-primary" />
                 Manage Journeys
               </Button>
             </Link>
             <Link to="/dashboard/insights">
-              <Button variant="outline" className="gap-2">
-                <BarChart3 className="h-4 w-4" />
+              <Button variant="outline" className="gap-2 border-lumi/30 hover:bg-lumi/5 hover:border-lumi/50">
+                <BarChart3 className="h-4 w-4 text-lumi" />
                 View Insights
               </Button>
             </Link>
             <Link to="/dashboard/safety">
-              <Button variant="outline" className="gap-2">
-                <Shield className="h-4 w-4" />
+              <Button variant="outline" className="gap-2 border-gold/30 hover:bg-gold/5 hover:border-gold/50">
+                <Shield className="h-4 w-4 text-gold" />
                 Safety Settings
               </Button>
             </Link>

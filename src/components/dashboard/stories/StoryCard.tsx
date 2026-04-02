@@ -23,7 +23,7 @@ export function StoryCard({ story, onRead, onToggleFavorite, onDelete }: StoryCa
   const readingTime = story.content ? calculateReadingTime(story.content) : 0;
 
   return (
-    <Card className="flex flex-col overflow-hidden transition-shadow hover:shadow-lg">
+    <Card className="flex flex-col overflow-hidden shadow-md hover:shadow-lg transition-shadow bg-gradient-to-br from-lolo/10 to-gold/10 border border-lolo/15">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <CardTitle className="line-clamp-2 text-body-lg">{story.title}</CardTitle>
@@ -59,7 +59,7 @@ export function StoryCard({ story, onRead, onToggleFavorite, onDelete }: StoryCa
         </div>
       </CardContent>
 
-      <CardFooter className="flex items-center justify-between border-t bg-muted/50 px-6 py-3">
+      <CardFooter className="flex items-center justify-between border-t border-white/50 bg-white/60 px-6 py-3">
         <div className="flex items-center gap-4 text-body-sm text-muted-foreground">
           <span className="flex items-center gap-1">
             <Clock className="h-4 w-4" />

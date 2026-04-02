@@ -51,12 +51,12 @@ import {
   Heart,
 } from 'lucide-react';
 
-const CONTENT_TYPE_INFO: Record<ContentType, { label: string; icon: typeof BookOpen; color: string }> = {
-  story: { label: 'Story', icon: BookOpen, color: 'text-primary' },
-  journey: { label: 'Journey', icon: Map, color: 'text-primary' },
-  voice: { label: 'Voice', icon: Mic, color: 'text-gold' },
-  chat_snippet: { label: 'Chat', icon: MessageCircle, color: 'text-primary' },
-  note: { label: 'Note', icon: StickyNote, color: 'text-lala' },
+const CONTENT_TYPE_INFO: Record<ContentType, { label: string; icon: typeof BookOpen; color: string; gradient: string; border: string }> = {
+  story: { label: 'Story', icon: BookOpen, color: 'text-lolo', gradient: 'from-lolo/10 to-gold/10', border: 'border-lolo/15' },
+  journey: { label: 'Journey', icon: Map, color: 'text-primary', gradient: 'from-primary/10 to-lumi/10', border: 'border-primary/15' },
+  voice: { label: 'Voice', icon: Mic, color: 'text-gold', gradient: 'from-gold/10 to-lala/10', border: 'border-gold/15' },
+  chat_snippet: { label: 'Chat', icon: MessageCircle, color: 'text-primary', gradient: 'from-primary/10 to-primary/20', border: 'border-primary/15' },
+  note: { label: 'Note', icon: StickyNote, color: 'text-lala', gradient: 'from-lala/10 to-lumi/10', border: 'border-lala/15' },
 };
 
 export function ContentLibraryPage() {
@@ -167,11 +167,11 @@ export function ContentLibraryPage() {
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {contentData.items.map((item) => {
-                const typeInfo = CONTENT_TYPE_INFO[item.content_type] ?? { label: item.content_type, icon: Library, color: 'text-muted-foreground' };
+                const typeInfo = CONTENT_TYPE_INFO[item.content_type] ?? { label: item.content_type, icon: Library, color: 'text-muted-foreground', gradient: 'from-muted/10 to-muted/20', border: 'border-border' };
                 const TypeIcon = typeInfo.icon;
 
                 return (
-                  <Card key={item.id} className="overflow-hidden">
+                  <Card key={item.id} className={`overflow-hidden shadow-md hover:shadow-lg transition-shadow bg-gradient-to-br ${typeInfo.gradient} border ${typeInfo.border}`}>
                     <CardHeader className="pb-2">
                       <div className="flex items-start justify-between">
                         <div className="flex items-center gap-2">

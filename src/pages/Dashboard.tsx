@@ -68,7 +68,7 @@ export function DashboardPage() {
   const unreadAlerts = safetyReports.length;
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen bg-white">
       {/* Real-time safety alerts */}
       <SafetyAlertNotification />
 

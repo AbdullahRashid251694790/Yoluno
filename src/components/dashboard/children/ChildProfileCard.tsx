@@ -31,7 +31,7 @@ export function ChildProfileCard({ child, avatarUrl, onEdit }: ChildProfileCardP
 
   return (
     <>
-      <Card className="overflow-hidden transition-shadow hover:shadow-lg">
+      <Card className="overflow-hidden shadow-md hover:shadow-lg transition-shadow bg-gradient-to-br from-primary/10 to-lumi/10 border border-primary/15">
         <CardContent className="pt-6">
           <div className="flex flex-col items-center text-center">
             <div className="relative">
@@ -75,7 +75,7 @@ export function ChildProfileCard({ child, avatarUrl, onEdit }: ChildProfileCardP
           </div>
         </CardContent>
 
-        <CardFooter className="flex items-center justify-center gap-2 border-t bg-muted/50 px-4 py-3">
+        <CardFooter className="flex items-center justify-center gap-2 border-t border-white/50 bg-white/60 px-4 py-3">
           <Link to={`/kids/${child.id}/mood`}>
             <Button size="sm" className="gap-1.5 !h-8 !px-3 !text-caption text-white/85">
               <Play className="h-3.5 w-3.5" />

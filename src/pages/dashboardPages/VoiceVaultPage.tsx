@@ -56,14 +56,14 @@ import { RecordVoiceClipDialog } from '@/components/dashboard/voice-vault';
 
 type VoiceCategory = 'all' | 'encouragement' | 'praise' | 'celebration' | 'story' | 'memory' | 'greeting' | 'other';
 
-const CATEGORY_INFO: Record<string, { label: string; color: string }> = {
-  encouragement: { label: 'Encouragement', color: 'text-lolo' },
-  praise: { label: 'Praise', color: 'text-lala' },
-  celebration: { label: 'Celebration', color: 'text-primary' },
-  story: { label: 'Story', color: 'text-primary' },
-  memory: { label: 'Memory', color: 'text-primary' },
-  greeting: { label: 'Greeting', color: 'text-gold' },
-  other: { label: 'Other', color: 'text-muted-foreground' },
+const CATEGORY_INFO: Record<string, { label: string; color: string; gradient: string; border: string }> = {
+  encouragement: { label: 'Encouragement', color: 'text-lolo', gradient: 'from-lolo/10 to-lolo/20', border: 'border-lolo/15' },
+  praise: { label: 'Praise', color: 'text-lala', gradient: 'from-lala/10 to-gold/10', border: 'border-lala/15' },
+  celebration: { label: 'Celebration', color: 'text-primary', gradient: 'from-primary/10 to-lumi/10', border: 'border-primary/15' },
+  story: { label: 'Story', color: 'text-primary', gradient: 'from-lolo/10 to-gold/10', border: 'border-lolo/15' },
+  memory: { label: 'Memory', color: 'text-primary', gradient: 'from-lumi/10 to-primary/10', border: 'border-lumi/15' },
+  greeting: { label: 'Greeting', color: 'text-gold', gradient: 'from-gold/10 to-lala/10', border: 'border-gold/15' },
+  other: { label: 'Other', color: 'text-muted-foreground', gradient: 'from-muted/10 to-muted/20', border: 'border-border' },
 };
 
 export function VoiceVaultPage() {
@@ -279,7 +279,7 @@ export function VoiceVaultPage() {
                 const isPlaying = playingClipId === clip.id;
 
                 return (
-                  <Card key={clip.id} className="overflow-hidden">
+                  <Card key={clip.id} className={`overflow-hidden shadow-md hover:shadow-lg transition-shadow bg-gradient-to-br ${categoryInfo?.gradient || 'from-muted/10 to-muted/20'} border ${categoryInfo?.border || 'border-border'}`}>
                     <CardHeader className="pb-2">
                       <div className="flex items-start justify-between">
                         <div className="flex items-center gap-2">
