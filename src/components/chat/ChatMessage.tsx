@@ -87,6 +87,7 @@ export function ChatMessage({ message, childId, avatarUrl, childName }: ChatMess
         )}
 
         <p className="whitespace-pre-wrap text-body-sm">{message.content}</p>
+        {/* Timestamp - hidden for now
         <span
           className={cn(
             'mt-1 block text-[10px] leading-tight',
@@ -95,6 +96,7 @@ export function ChatMessage({ message, childId, avatarUrl, childName }: ChatMess
         >
           {formatMessageTime(message.timestamp)}
         </span>
+        */}
       </div>
     </div>
   );

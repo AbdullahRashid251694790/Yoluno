@@ -66,17 +66,54 @@ export function useSendBuddyMessage() {
   return useMutation({
     mutationFn: (params: BuddyChatMessage) =>
       buddyChatService.sendMessage(params),
+    onMutate: async (variables) => {
+      // Cancel outgoing refetches so they don't overwrite our optimistic update
+      await queryClient.cancelQueries({
+        queryKey: queryKeys.buddyChat.messages(variables.childId),
+      });
+      // Snapshot previous messages
+      const previous = queryClient.getQueryData(
+        queryKeys.buddyChat.messages(variables.childId)
+      );
+      // Optimistically add the user's message
+      queryClient.setQueryData(
+        queryKeys.buddyChat.messages(variables.childId),
+        (old: any[] | undefined) => [
+          ...(old || []),
+          {
+            id: `optimistic-${Date.now()}`,
+            child_profile_id: variables.childId,
+            chat_buddy_id: '',
+            role: 'child',
+            content: variables.message,
+            safety_level: 'green',
+            safety_flags: [],
+            safety_notes: null,
+            image_key: null,
+            image_analysis: null,
+            created_at: new Date().toISOString(),
+          },
+        ]
+      );
+      return { previous };
+    },
     onSuccess: (_, variables) => {
-      // Invalidate messages to refetch
+      // Invalidate messages to refetch with real data
       queryClient.invalidateQueries({
         queryKey: queryKeys.buddyChat.messages(variables.childId),
       });
-      // Invalidate buddy to update stats
       queryClient.invalidateQueries({
         queryKey: queryKeys.buddyChat.buddy(variables.childId),
       });
     },
-    onError: (error) => {
+    onError: (error, variables, context) => {
+      // Rollback on error
+      if (context?.previous) {
+        queryClient.setQueryData(
+          queryKeys.buddyChat.messages(variables.childId),
+          context.previous
+        );
+      }
       handleError(error, {
         context: 'useSendBuddyMessage',
         userMessage: 'Failed to send message to buddy',
@@ -313,25 +350,49 @@ export function useSendSessionMessage() {
       message: string;
       image?: File;
     }) => buddyChatService.sendSessionMessage(childId, sessionId, message, image),
+    onMutate: async (variables) => {
+      const messagesKey = queryKeys.buddyChat.sessionMessages(variables.childId, variables.sessionId);
+      await queryClient.cancelQueries({ queryKey: messagesKey });
+      const previous = queryClient.getQueryData(messagesKey);
+      queryClient.setQueryData(
+        messagesKey,
+        (old: any[] | undefined) => [
+          ...(old || []),
+          {
+            id: `optimistic-${Date.now()}`,
+            child_profile_id: variables.childId,
+            chat_buddy_id: '',
+            role: 'child',
+            content: variables.message,
+            safety_level: 'green',
+            safety_flags: [],
+            safety_notes: null,
+            image_key: null,
+            image_analysis: null,
+            created_at: new Date().toISOString(),
+          },
+        ]
+      );
+      return { previous, messagesKey };
+    },
     onSuccess: (_, variables) => {
-      // Invalidate session messages
       queryClient.invalidateQueries({
         queryKey: queryKeys.buddyChat.sessionMessages(variables.childId, variables.sessionId),
       });
-      // Invalidate session to update message count and last_message_at
       queryClient.invalidateQueries({
         queryKey: queryKeys.buddyChat.session(variables.childId, variables.sessionId),
       });
-      // Invalidate sessions list to update order
       queryClient.invalidateQueries({
         queryKey: queryKeys.buddyChat.sessions(variables.childId),
       });
-      // Invalidate buddy stats
       queryClient.invalidateQueries({
         queryKey: queryKeys.buddyChat.buddy(variables.childId),
       });
     },
-    onError: (error) => {
+    onError: (error, _variables, context) => {
+      if (context?.previous && context?.messagesKey) {
+        queryClient.setQueryData(context.messagesKey, context.previous);
+      }
       handleError(error, {
         context: 'useSendSessionMessage',
         userMessage: 'Failed to send message',
