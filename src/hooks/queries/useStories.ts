@@ -85,8 +85,7 @@ export const useToggleFavorite = createMutationHook<
   context: 'useToggleFavorite',
   userMessage: 'Failed to update favorite status',
   invalidateKeys: (data) => [
-    queryKeys.stories.listByChild(data.child_profile_id),
-    queryKeys.stories.favorites(data.child_profile_id),
+    queryKeys.stories.lists(),
     queryKeys.stories.detail(data.id),
   ],
 });

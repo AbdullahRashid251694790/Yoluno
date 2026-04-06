@@ -275,28 +275,33 @@ export function EditChildDialog({
             </div>
           )}
 
-          <DialogFooter className="flex-col sm:flex-row gap-2 pt-4 border-t">
-            <Button
-              variant="destructive"
-              onClick={() => setShowDeleteConfirm(true)}
-              disabled={isPending}
-              className="sm:mr-auto"
-            >
-              <Trash2 className="h-4 w-4 mr-2" />
-              Delete Profile
-            </Button>
-            <Button variant="outline" onClick={() => handleClose(false)}>
-              Cancel
-            </Button>
-            <Button
-              onClick={handleSave}
-              disabled={isPending || !hasChanges || !name.trim()}
-            >
-              {isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              ) : null}
-              Save Changes
-            </Button>
+          <DialogFooter className="pt-4 border-t">
+            <div className="flex items-center justify-between w-full gap-2">
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => setShowDeleteConfirm(true)}
+                disabled={isPending}
+              >
+                <Trash2 className="h-4 w-4 mr-1" />
+                Delete
+              </Button>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" onClick={() => handleClose(false)}>
+                  Cancel
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={handleSave}
+                  disabled={isPending || !hasChanges || !name.trim()}
+                >
+                  {isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : null}
+                  Save Changes
+                </Button>
+              </div>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>

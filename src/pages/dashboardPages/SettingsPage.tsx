@@ -85,7 +85,7 @@ export function SettingsPage() {
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const a = document.createElement('a');
       a.href = url;
-      a.download = `yoluno-data-${new Date().toISOString().split('T')[0]}.json`;
+      a.download = `yoluno-data-${new Date().toISOString().split('T')[0]}.html`;
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -222,19 +222,19 @@ export function SettingsPage() {
             <CardDescription>Irreversible account actions</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            <Button variant="outline" onClick={signOut}>
-              <LogOut className="h-4 w-4 mr-2" />
-              Sign Out
-            </Button>
-            <div>
+            <div className="flex items-center gap-3">
+              <Button variant="outline" onClick={signOut}>
+                <LogOut className="h-4 w-4 mr-2" />
+                Sign Out
+              </Button>
               <Button variant="destructive" onClick={() => setShowDeleteDialog(true)}>
                 <Trash2 className="h-4 w-4 mr-2" />
                 Delete Account
               </Button>
-              <p className="text-caption text-muted-foreground mt-1">
-                This will permanently delete your account and all associated data.
-              </p>
             </div>
+            <p className="text-caption text-muted-foreground">
+              Deleting your account will permanently remove all associated data.
+            </p>
           </CardContent>
         </Card>
       </div>

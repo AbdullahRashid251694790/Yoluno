@@ -90,6 +90,7 @@ export function MediaSection({
         </Button>
       </div>
 
+      {/* Voice recorder for photo description — hidden for now
       <div className="space-y-2">
         <Label>Photo Description</Label>
         <Controller
@@ -105,6 +106,7 @@ export function MediaSection({
           )}
         />
       </div>
+      */}
     </div>
   );
 }

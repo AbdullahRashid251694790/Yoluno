@@ -11,6 +11,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useChildProfiles } from '@/hooks/queries/useChildProfiles';
 import { useRecentStories, useToggleFavorite } from '@/hooks/queries';
 import { StoryCard } from '@/components/dashboard/stories/StoryCard';
+import { StorybookReader } from '@/components/storybook/StorybookReader';
 import { QueryState } from '@/components/shared/feedback/QueryState';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -22,6 +23,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { BookOpen, Plus } from 'lucide-react';
+import type { StoryRow } from '@/types/database';
 
 export function StoriesPage() {
   const navigate = useNavigate();
@@ -31,6 +33,7 @@ export function StoriesPage() {
   const toggleFavorite = useToggleFavorite();
   const [activeTab, setActiveTab] = useState('all');
   const [selectedChildId, setSelectedChildId] = useState<string>('all');
+  const [readingStory, setReadingStory] = useState<StoryRow | null>(null);
 
   const filteredStories = stories?.filter((story) => {
     if (selectedChildId !== 'all' && story.child_profile_id !== selectedChildId) return false;
@@ -110,10 +113,7 @@ export function StoriesPage() {
                   <StoryCard
                     key={story.id}
                     story={story}
-                    onRead={() => {
-                      // Navigate to kid's story view for reading
-                      navigate(`/kids/${story.child_profile_id}/stories`);
-                    }}
+                    onRead={() => setReadingStory(story)}
                     onToggleFavorite={() =>
                       handleToggleFavorite(story.id, story.is_favorite)
                     }
@@ -124,6 +124,20 @@ export function StoriesPage() {
           </QueryState>
         </TabsContent>
       </Tabs>
+
+      {/* Story Reader Overlay */}
+      {readingStory && (
+        <div className="fixed inset-0 z-50 bg-black/50">
+          <StorybookReader
+            storyId={readingStory.id}
+            storyTitle={readingStory.title}
+            theme={readingStory.theme}
+            mood={readingStory.mood}
+            childId={readingStory.child_profile_id}
+            onClose={() => setReadingStory(null)}
+          />
+        </div>
+      )}
     </div>
   );
 }

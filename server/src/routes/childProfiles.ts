@@ -54,6 +54,39 @@ async function assignDefaultJourneys(childId: string, childAge: number): Promise
   }
 }
 
+/** Reset completed auto-assigned (daily routine) journeys if they were completed before today */
+async function resetDailyJourneys(childId: string): Promise<void> {
+  try {
+    // Find completed journeys whose template is auto-assign and completed before today
+    const staleJourneys = await query<{ id: string }>(
+      `SELECT j.id FROM journeys j
+       JOIN journey_templates jt ON j.template_id = jt.id
+       WHERE j.child_profile_id = $1
+         AND j.status = 'completed'
+         AND jt.is_auto_assign = true
+         AND j.completed_at < CURRENT_DATE`,
+      [childId]
+    );
+
+    for (const journey of staleJourneys.rows) {
+      // Reset journey status
+      await query(
+        `UPDATE journeys SET status = 'active', progress = 0, completed_at = NULL, updated_at = NOW()
+         WHERE id = $1`,
+        [journey.id]
+      );
+      // Reset all steps
+      await query(
+        `UPDATE journey_steps SET progress = 0, completed_at = NULL, updated_at = NOW()
+         WHERE journey_id = $1`,
+        [journey.id]
+      );
+    }
+  } catch (error) {
+    console.error('Failed to reset daily journeys:', (error as Error).message);
+  }
+}
+
 // PIN validation schemas
 const setPinSchema = z.object({
   pin: z.string().length(4).regex(/^\d{4}$/, 'PIN must be exactly 4 digits'),
@@ -115,6 +148,9 @@ router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
     if (!profile) {
       throw new AppError(404, 'Child profile not found');
     }
+
+    // Reset daily routine journeys if completed before today (fire-and-forget)
+    resetDailyJourneys(req.params.id).catch(() => {});
 
     res.json(await resolveAvatarUrl(profile));
   } catch (error) {

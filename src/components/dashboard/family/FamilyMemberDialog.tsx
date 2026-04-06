@@ -87,8 +87,9 @@ export function FamilyMemberDialog({
   useEffect(() => {
     if (open) {
       // If editing, go directly to manual form
-      // If adding new, show method selector
-      setMode(isEditing ? 'manual' : 'select');
+      // If adding new, go to manual form (voice option hidden for now)
+      // setMode(isEditing ? 'manual' : 'select');
+      setMode('manual');
     }
   }, [open, isEditing]);
 

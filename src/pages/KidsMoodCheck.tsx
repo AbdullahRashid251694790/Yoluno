@@ -137,9 +137,13 @@ export function KidsMoodCheckPage() {
     navigate(`/kids/${childId}`);
   };
 
-  // Handle back
+  // Handle back — go to previous page in history, fallback to /play
   const handleBack = () => {
-    navigate('/play');
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate('/play');
+    }
   };
 
   // Loading state OR already checked in (prevent flash before redirect)
