@@ -23,6 +23,18 @@ const RELATIONSHIP_LABELS: Record<string, string> = {
   other: 'Family',
 };
 
+const SPECIFIC_RELATIONSHIP_LABELS: Record<string, string> = {
+  father: 'Father', mother: 'Mother', step_father: 'Step-Father', step_mother: 'Step-Mother',
+  paternal_grandfather: 'Grandfather', paternal_grandmother: 'Grandmother',
+  maternal_grandfather: 'Grandfather', maternal_grandmother: 'Grandmother',
+  brother: 'Brother', sister: 'Sister', step_sibling: 'Step-Sibling',
+  paternal_uncle: 'Uncle', paternal_aunt: 'Aunt',
+  paternal_uncle_wife: "Uncle's Wife", paternal_aunt_husband: "Aunt's Husband",
+  maternal_uncle: 'Uncle', maternal_aunt: 'Aunt',
+  maternal_uncle_wife: "Uncle's Wife", maternal_aunt_husband: "Aunt's Husband",
+  cousin: 'Cousin',
+};
+
 interface FamilyMemberCardProps {
   member: FamilyMemberRow;
   onClick?: () => void;
@@ -44,6 +56,7 @@ export function FamilyMemberCard({
     .slice(0, 2);
 
   const relationshipLabel =
+    (member.specific_relationship && SPECIFIC_RELATIONSHIP_LABELS[member.specific_relationship]) ||
     RELATIONSHIP_LABELS[member.relationship || 'other'] || 'Family';
 
   return (
