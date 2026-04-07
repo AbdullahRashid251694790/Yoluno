@@ -145,7 +145,7 @@ export function KidsHomePage() {
   }, [child, enterKidsMode, exitKidsMode]);
 
   const handleBack = () => {
-    navigate('/dashboard');
+    navigate('/play');
   };
 
   if (isLoading) {

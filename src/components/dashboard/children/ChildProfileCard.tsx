@@ -76,7 +76,7 @@ export function ChildProfileCard({ child, avatarUrl, onEdit }: ChildProfileCardP
         </CardContent>
 
         <CardFooter className="flex items-center justify-center gap-2 border-t border-white/50 bg-white/60 px-4 py-3">
-          <Link to={`/kids/${child.id}/mood`}>
+          <Link to={`/kids/${child.id}/mood`} replace>
             <Button size="sm" className="gap-1.5 !h-8 !px-3 !text-caption text-white/85">
               <Play className="h-3.5 w-3.5" />
               Play

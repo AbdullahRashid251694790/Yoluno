@@ -116,34 +116,30 @@ export function KidsMoodCheckPage() {
     const basePath = `/kids/${childId}`;
     switch (activity.path) {
       case 'chat':
-        navigate(`${basePath}/chat?mood=${selectedMood}`);
+        navigate(`${basePath}/chat?mood=${selectedMood}`, { replace: true });
         break;
       case 'stories':
-        navigate(`${basePath}/stories`);
+        navigate(`${basePath}/stories`, { replace: true });
         break;
       case 'journeys':
-        navigate(`${basePath}/journeys`);
+        navigate(`${basePath}/journeys`, { replace: true });
         break;
       case 'family':
-        navigate(`${basePath}/family`);
+        navigate(`${basePath}/family`, { replace: true });
         break;
       default:
-        navigate(basePath);
+        navigate(basePath, { replace: true });
     }
   };
 
-  // Handle continue to home
+  // Handle continue to home (replace so mood check doesn't stay in history)
   const handleContinue = () => {
-    navigate(`/kids/${childId}`);
+    navigate(`/kids/${childId}`, { replace: true });
   };
 
-  // Handle back — go to previous page in history, fallback to /play
+  // Handle back — go to child select, not parent dashboard
   const handleBack = () => {
-    if (window.history.length > 1) {
-      navigate(-1);
-    } else {
-      navigate('/play');
-    }
+    navigate('/play', { replace: true });
   };
 
   // Loading state OR already checked in (prevent flash before redirect)
