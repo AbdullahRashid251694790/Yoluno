@@ -36,8 +36,9 @@ export interface ChatSuggestion {
  */
 export const defaultSuggestions: ChatSuggestion[] = [
   { id: 'tell-story', label: 'Tell me a story', emoji: '📖' },
-  { id: 'learn-something', label: "Let's learn something!", emoji: '🎓' },
-  { id: 'play-game', label: 'Play a game', emoji: '🎮' },
+  { id: 'learn-something', label: 'Teach me something', emoji: '🧠' },
+  { id: 'next-adventure', label: "What's my next adventure?", emoji: '🗺️' },
+  { id: 'about-family', label: 'Tell me about my family', emoji: '👨‍👩‍👧' },
 ];
 
 /**

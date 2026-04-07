@@ -6,12 +6,27 @@
  */
 
 import { useState, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { cn, formatMessageTime } from '@/lib/utils';
 import type { ChatMessage as ChatMessageType } from '@/types/domain';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { MiniAvatar } from '@/components/chat/ChatAvatar';
 import { buddyChatService } from '@/services/buddyChat';
 import { Loader2 } from 'lucide-react';
+
+/** Fix markdown content — ensure table rows are on separate lines */
+function formatMarkdownContent(content: string): string {
+  // Split into lines, then find sequences that look like table rows jammed together
+  // Pattern: "| ... | ... | ... || ... | ... |" (multiple rows on one line)
+  let fixed = content;
+  // Put each pipe-row on its own line: if we see "| " after a " |" without a newline between
+  fixed = fixed.replace(/\s*\|\s*\n?\s*\|/g, ' |\n|');
+  // Ensure separator row (|---|---|) is on its own line
+  fixed = fixed.replace(/([^\n])((?:\|[\s:-]+)+\|)/g, '$1\n$2');
+  fixed = fixed.replace(/((?:\|[\s:-]+)+\|)([^\n])/g, '$1\n$2');
+  return fixed;
+}
 
 interface ChatMessageWithImage extends ChatMessageType {
   imageKey?: string | null;
@@ -86,7 +101,15 @@ export function ChatMessage({ message, childId, avatarUrl, childName }: ChatMess
           </div>
         )}
 
-        <p className="whitespace-pre-wrap text-body-sm">{message.content}</p>
+        {isUser ? (
+          <p className="whitespace-pre-wrap text-body-sm">{message.content}</p>
+        ) : (
+          <div className="text-body-sm prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5 prose-headings:my-2 prose-headings:text-body prose-table:text-body-sm prose-table:w-full prose-table:border-collapse prose-table:rounded-lg prose-table:overflow-hidden prose-th:px-3 prose-th:py-1.5 prose-th:text-left prose-th:font-semibold prose-th:bg-primary/15 prose-th:border prose-th:border-primary/20 prose-td:px-3 prose-td:py-1.5 prose-td:border prose-td:border-primary/10 prose-tr:even:bg-primary/5 prose-strong:text-foreground">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              {formatMarkdownContent(message.content)}
+            </ReactMarkdown>
+          </div>
+        )}
         {/* Timestamp - hidden for now
         <span
           className={cn(

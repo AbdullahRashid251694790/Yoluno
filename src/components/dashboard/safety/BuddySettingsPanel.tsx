@@ -27,7 +27,6 @@ export function BuddySettingsPanel({ childId, childName }: BuddySettingsPanelPro
   const { mutate: updateName, isPending: isUpdatingName } = useUpdateBuddyName();
   const { mutate: updatePersonality, isPending: isUpdatingPersonality } = useUpdateBuddyPersonality();
 
-  const [buddyName, setBuddyName] = useState('');
   const [traits, setTraits] = useState({
     curious: 5,
     patient: 5,
@@ -39,7 +38,6 @@ export function BuddySettingsPanel({ childId, childName }: BuddySettingsPanelPro
 
   useEffect(() => {
     if (buddy) {
-      setBuddyName(buddy.buddy_name || 'Luno');
       // Merge with defaults — DB may return empty {} for new buddies
       setTraits({
         curious: 5,
@@ -54,21 +52,13 @@ export function BuddySettingsPanel({ childId, childName }: BuddySettingsPanelPro
 
   useEffect(() => {
     if (buddy) {
-      const nameChanged = buddyName !== buddy.buddy_name;
       const traitsChanged = JSON.stringify(traits) !== JSON.stringify(buddy.personality_traits);
-      setHasChanges(nameChanged || traitsChanged);
+      setHasChanges(traitsChanged);
     }
-  }, [buddyName, traits, buddy]);
+  }, [traits, buddy]);
 
   const handleSave = () => {
     if (!buddy) return;
-
-    // Update name if changed
-    if (buddyName !== buddy.buddy_name) {
-      updateName({ buddyId: buddy.id, name: buddyName });
-    }
-
-    // Update personality if changed
     if (JSON.stringify(traits) !== JSON.stringify(buddy.personality_traits)) {
       updatePersonality({ buddyId: buddy.id, traits });
     }
@@ -76,7 +66,6 @@ export function BuddySettingsPanel({ childId, childName }: BuddySettingsPanelPro
 
   const handleReset = () => {
     if (buddy) {
-      setBuddyName(buddy.buddy_name);
       setTraits(buddy.personality_traits);
     }
   };
@@ -140,18 +129,12 @@ export function BuddySettingsPanel({ childId, childName }: BuddySettingsPanelPro
           <Avatar className="h-16 w-16">
             <AvatarImage src={buddy.buddy_avatar_url || undefined} />
             <AvatarFallback className="bg-primary/20 text-primary text-body-lg">
-              {buddyName[0]}
+              L
             </AvatarFallback>
           </Avatar>
-          <div className="flex-1 space-y-2">
-            <Label htmlFor="buddy-name">Luno's Name</Label>
-            <Input
-              id="buddy-name"
-              value={buddyName}
-              onChange={(e) => setBuddyName(e.target.value)}
-              placeholder="Enter Luno's name"
-              maxLength={20}
-            />
+          <div className="flex-1">
+            <h3 className="text-body-lg font-semibold">Luno</h3>
+            <p className="text-body-sm text-muted-foreground">{childName}'s AI companion</p>
           </div>
         </div>
 

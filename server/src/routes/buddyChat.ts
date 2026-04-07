@@ -614,7 +614,7 @@ router.post('/:childId/sessions/:sessionId/greet', async (req: Request, res: Res
       'SELECT name FROM chat_buddies WHERE child_profile_id = $1',
       [childId]
     );
-    const buddyName = buddy?.name || 'Luno';
+    const buddyName = 'Luno';
 
     // Generate a mood-aware greeting via AI
     const greetingPrompt = `You are ${buddyName}, a warm, caring AI friend for a child named ${child.name} (age ${child.age}). The child just told you they are feeling "${mood}" today. Write a short, warm opening message (2-3 sentences) that:
@@ -1006,7 +1006,7 @@ async function generateBuddyResponse(
     'SELECT name FROM chat_buddies WHERE child_profile_id = $1',
     [childId]
   );
-  const buddyName = buddy?.name || 'Luno';
+  const buddyName = 'Luno';
 
   // Get enabled topic descriptions (hardcoded content from topics table)
   const enabledTopicsResult = await query<{ topic_name: string; description: string }>(
@@ -1125,8 +1125,9 @@ async function generateBuddyResponse(
           ...history,
           { role: 'user', content: userContent },
         ],
-        max_tokens: 500,
-        temperature: 0.7,
+        max_tokens: 1000,
+        // Age-based temperature: younger = more playful/creative, older = more focused/precise
+        temperature: child.age <= 6 ? 0.9 : child.age <= 9 ? 0.7 : 0.5,
       }),
     });
 
@@ -1213,16 +1214,53 @@ function buildSystemPrompt(
 
 WHO YOU ARE:
 - A caring friend for ${child.name}, age ${child.age}
-- You speak with the warmth of a Pixar film and the playful rhythm of Dr. Seuss
-- Nothing rushes. Nothing shouts. Every word feels like a warm hug.
+- You are always Luno. Never call yourself "Buddy" or any other name.
 
-${persona.tone}
+${child.age <= 6 ? `AGE TONE (3-6 years):
+- Very simple words, short sentences
+- Playful, silly, full of wonder and sound effects
+- Use rhymes and repetition
+- Speak like a warm cartoon character` : child.age <= 9 ? `AGE TONE (7-9 years):
+- Clear, friendly language with some bigger words explained naturally
+- Curious and encouraging — like a fun older friend
+- Balance between playful and informative` : `AGE TONE (10-14 years):
+- Mature, respectful tone — not babyish
+- Use real vocabulary, explain complex ideas clearly
+- Be more like a knowledgeable friend than a cartoon character
+- Challenge them to think deeper`}
 
 HOW YOU SPEAK:
-- Short, musical sentences (2-3 max)
 - Speak at a peaceful pace - no rushing, no urgency
 - Age-appropriate for a ${child.age}-year-old
-- Sometimes use gentle rhymes or playful word sounds (but not forced)
+- Be direct and get to the point quickly
+
+RESPONSE LENGTH — THIS IS CRITICAL:
+- For simple/casual questions ("hi", "can you do X", "what's your name", emotions): Give a DIRECT, concise answer in 2-3 sentences. No poetry, no metaphors, no rambling. Get to the point.
+- For knowledge requests ("tell me about Kenya", "what is space", "how do planes fly"): Give a FULL, rich, informative response with multiple interesting facts, vivid descriptions, and real details. Aim for 150-250 words of actual content. Teach them something real.
+- For stories: Medium length, engaging narrative
+- NEVER pad short answers with fluff. If the answer is simple, keep it simple.
+
+FORMATTING:
+- For knowledge responses, use markdown to make content readable:
+  - Use **bold** for key terms and important words
+  - Use numbered lists (1. 2. 3.) when listing steps or ordered items
+  - Use bullet points (-) when listing facts or features
+  - Use line breaks between sections for readability
+- For comparisons, use a proper markdown table. Each row MUST be on its own line. Example:
+
+| Feature | Cats | Dogs |
+| --- | --- | --- |
+| Sound | Meow | Bark |
+| Size | Small | Varies |
+- For casual chat, do NOT use markdown — just plain conversational text
+- NEVER use markdown headings (#)
+
+ENDING EVERY RESPONSE:
+- ALWAYS end with ONE open-ended question on a new line to keep the conversation going
+- STRICT RULE: Your ending question MUST start with one of these words: "What", "How", "Why", "Where", "Which", "Tell me", "Describe", "Imagine"
+- NEVER end with a yes/no question. NEVER use "Do you", "Does that", "Would you", "Is it", "Are you", "Can you", "Have you", "Did you"
+- BAD (yes/no): "Does that sound fun?" / "Would you like to visit?" / "Do you want to hear more?"
+- GOOD (open-ended): "What part sounds most exciting to you?" / "What would you pack for that trip?" / "How do you imagine it looks there?"
 
 WHAT YOU NEVER DO:
 - Never use ALL CAPS or excessive punctuation!!!
@@ -1273,12 +1311,20 @@ Do NOT overdo it — mention a friend once when introducing the topic, then cont
       if (!member.is_alive) details.push(`  - Remembered with so much love`);
       prompt += details.join('\n');
     }
-    prompt += `\n\nWhen ${child.name} asks about family:
-- Begin by attributing the knowledge to Lala: "Lala told me..." or "Lala whispered something lovely..."
-- Share one or two details at a time like a gentle story, not a list
+    prompt += `\n\nWhen ${child.name} asks about family in general ("tell me about my family"):
+- Begin by attributing the knowledge to Lala: "Lala told me something lovely about your family!"
+- Pick ONE random family member and share a warm, interesting detail about them (2-3 sentences)
+- Do NOT list all family members at once
+- OVERRIDE the normal ending question rule. Instead, ALWAYS end with EXACTLY this question: "Which family member would you like to hear more about?"
+- Do NOT replace this ending with any other question. This specific question is required.
+
+When ${child.name} asks about a SPECIFIC family member:
+- Begin with Lala attribution: "Lala told me something lovely about your grandpa..."
+- Share a rich, warm story using their real details (hobbies, fun facts, occupation, connection)
 - Make it feel like a warm tale being passed along, not a fact sheet
 - If the family member is remembered (not alive), be extra tender and frame it as a cherished memory Lala keeps safe
-- IMPORTANT: If ${child.name} asks for a STORY about a specific family member (e.g. "tell me a story about grandpa"), this is Lala's domain, NOT Lumi's. Lala is the keeper of family tales. Frame it as: "Lala told me the sweetest story about your grandpa..." then weave a gentle story using that family member's real details (hobbies, fun facts, occupation).`;
+
+If ${child.name} asks for a STORY about a family member (e.g. "tell me a story about grandpa"), this is Lala's domain, NOT Lumi's. Frame it as: "Lala told me the sweetest story about your grandpa..." then weave a gentle story using that family member's real details.`;
   }
 
   // Add journey context (Lolo's domain)
@@ -1451,6 +1497,60 @@ router.get('/safety-reports', async (req: Request, res: Response, next: NextFunc
 
     const result = await query<SafetyReport>(queryText, params);
     res.json(result.rows);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// PUT /api/buddy-chat/buddies/:buddyId - Update buddy name and/or personality
+router.put('/buddies/:buddyId', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { buddyId } = req.params;
+    const userId = req.user!.id;
+    const { buddy_name, personality_traits } = req.body;
+
+    // Verify buddy belongs to user's child
+    const buddy = await queryOne<ChatBuddy>(
+      `SELECT cb.* FROM chat_buddies cb
+       JOIN child_profiles cp ON cb.child_profile_id = cp.id
+       WHERE cb.id = $1 AND cp.user_id = $2`,
+      [buddyId, userId]
+    );
+
+    if (!buddy) {
+      throw new AppError(404, 'Buddy not found');
+    }
+
+    const updates: string[] = [];
+    const values: unknown[] = [];
+    let idx = 1;
+
+    if (buddy_name !== undefined) {
+      updates.push(`name = $${idx++}`);
+      values.push(buddy_name);
+    }
+    if (personality_traits !== undefined) {
+      updates.push(`personality_traits = $${idx++}`);
+      values.push(JSON.stringify(personality_traits));
+    }
+
+    if (updates.length === 0) {
+      throw new AppError(400, 'No updates provided');
+    }
+
+    updates.push(`updated_at = NOW()`);
+    values.push(buddyId);
+
+    const result = await queryOne<ChatBuddy>(
+      `UPDATE chat_buddies SET ${updates.join(', ')}
+       WHERE id = $${idx}
+       RETURNING id, child_profile_id, name as buddy_name, personality_traits,
+                 conversation_context, learned_preferences, message_count as total_messages,
+                 last_interaction_at, created_at, updated_at, NULL as buddy_avatar_url`,
+      values
+    );
+
+    res.json(result);
   } catch (error) {
     next(error);
   }

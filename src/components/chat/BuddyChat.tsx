@@ -39,6 +39,7 @@ interface BuddyChatProps {
 
 export function BuddyChat({ childId, childName, sessionId, childAvatarUrl }: BuddyChatProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
   const [isTyping, setIsTyping] = useState(false);
   const queryClient = useQueryClient();
 
@@ -130,12 +131,14 @@ export function BuddyChat({ childId, childName, sessionId, childAvatarUrl }: Bud
     };
   }, [childId, sessionId, queryClient]);
 
-  // Auto-scroll to bottom when new messages arrive
+  // Auto-scroll to bottom when new messages arrive or sending state changes
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  }, [messages]);
+    // Use requestAnimationFrame to ensure DOM has painted, then scroll
+    const raf = requestAnimationFrame(() => {
+      bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [messages.length, isSending]);
 
   const handleSend = (content: string, image?: File) => {
     setIsTyping(false);
@@ -181,7 +184,7 @@ export function BuddyChat({ childId, childName, sessionId, childAvatarUrl }: Bud
     );
   }
 
-  const buddyName = buddy?.buddy_name || 'Luno';
+  const buddyName = 'Luno';
 
   return (
     <div className="flex h-full flex-col bg-kids-gradient">
@@ -261,6 +264,7 @@ export function BuddyChat({ childId, childName, sessionId, childAvatarUrl }: Bud
             {isSending && (
               <TypingIndicator className="animate-fade-in" />
             )}
+            <div ref={bottomRef} />
           </div>
         )}
       </ScrollArea>
