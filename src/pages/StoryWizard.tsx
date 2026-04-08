@@ -9,7 +9,8 @@ import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useChildProfile, queryKeys } from '@/hooks/queries';
 import { generateStory, getThemeSuggestions, storyMoods, storyValues, type StoryCharacter } from '@/services/storyGeneration';
-import { type TTSVoice, getRecommendedVoice } from '@/services/textToSpeech';
+import { type TTSVoice, getRecommendedVoice, CHARACTER_VOICES } from '@/services/textToSpeech';
+import { ChatAvatar } from '@/components/chat/ChatAvatar';
 import { LoadingState, ErrorState } from '@/components/shared';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -83,15 +84,12 @@ const valueEmojis: Record<string, string> = {
   creativity: '🎨',
 };
 
-// Voice options for narration
-const voiceOptions: { value: TTSVoice; label: string; description: string }[] = [
-  { value: 'shimmer', label: 'Shimmer', description: 'Warm & friendly' },
-  { value: 'nova', label: 'Nova', description: 'Clear & engaging' },
-  { value: 'alloy', label: 'Alloy', description: 'Balanced & natural' },
-  { value: 'echo', label: 'Echo', description: 'Calm & soothing' },
-  { value: 'fable', label: 'Fable', description: 'Expressive & dramatic' },
-  { value: 'onyx', label: 'Onyx', description: 'Deep & resonant' },
-];
+// Voice options mapped to characters
+const voiceOptions = CHARACTER_VOICES.map((v) => ({
+  value: v.voiceId,
+  label: v.character,
+  description: v.description,
+}));
 
 interface StoryWizardState {
   theme: string;
@@ -483,20 +481,23 @@ export function StoryWizardPage() {
               <p className="text-muted-foreground text-caption mt-1 mb-2">
                 Choose a voice for reading the story aloud
               </p>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 gap-3">
                 {voiceOptions.map((voice) => (
                   <button
                     key={voice.value}
                     onClick={() => setWizardState((prev) => ({ ...prev, narratorVoice: voice.value }))}
                     className={cn(
-                      'flex flex-col items-center gap-1 rounded-lg border-2 p-3 transition-all hover:scale-105',
+                      'flex items-center gap-3 rounded-xl border-2 p-3 transition-all hover:scale-[1.02]',
                       wizardState.narratorVoice === voice.value
                         ? 'border-primary bg-primary/10'
                         : 'border-muted hover:border-primary/50'
                     )}
                   >
-                    <span className="text-body-sm font-medium">{voice.label}</span>
-                    <span className="text-caption text-muted-foreground">{voice.description}</span>
+                    <ChatAvatar buddyName={voice.label} expression="neutral" size="sm" />
+                    <div className="text-left">
+                      <span className="text-body-sm font-medium block">{voice.label}</span>
+                      <span className="text-caption text-muted-foreground">{voice.description}</span>
+                    </div>
                   </button>
                 ))}
               </div>

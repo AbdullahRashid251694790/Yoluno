@@ -18,16 +18,14 @@ import {
 } from '@/components/ui/select';
 import { useVoiceClipsForNarration } from '@/hooks/queries/useVoiceVault';
 import { Mic, Volume2 } from 'lucide-react';
+import { CHARACTER_VOICES, getCharacterForVoice } from '@/services/textToSpeech';
 
-// AI voice options (OpenAI TTS voices)
-const AI_VOICES = [
-  { id: 'nova', name: 'Nova', description: 'Warm and friendly' },
-  { id: 'shimmer', name: 'Shimmer', description: 'Soft and gentle' },
-  { id: 'alloy', name: 'Alloy', description: 'Balanced and clear' },
-  { id: 'echo', name: 'Echo', description: 'Neutral and smooth' },
-  { id: 'fable', name: 'Fable', description: 'Expressive storyteller' },
-  { id: 'onyx', name: 'Onyx', description: 'Deep and rich' },
-] as const;
+// AI voice options mapped to characters
+const AI_VOICES = CHARACTER_VOICES.map((v) => ({
+  id: v.voiceId,
+  name: v.character,
+  description: v.description,
+}));
 
 export type NarratorVoice =
   | { type: 'ai'; voiceId: string }
@@ -78,7 +76,7 @@ export function NarratorVoiceSelector({
   const getDisplayName = () => {
     if (value.type === 'ai') {
       const aiVoice = AI_VOICES.find((v) => v.id === value.voiceId);
-      return aiVoice?.name || 'AI Voice';
+      return aiVoice?.name || getCharacterForVoice(value.voiceId) || 'AI Voice';
     }
     const clip = voiceClips.find((c) => c.id === value.clipId);
     return clip?.family_member_name || clip?.title || 'Family Voice';
@@ -105,15 +103,22 @@ export function NarratorVoiceSelector({
         <SelectGroup>
           <SelectLabel className="flex items-center gap-2">
             <Volume2 className="h-3 w-3" />
-            AI Voices
+            Story Readers
           </SelectLabel>
           {AI_VOICES.map((voice) => (
             <SelectItem key={voice.id} value={`ai:${voice.id}`}>
-              <div className="flex flex-col">
-                <span>{voice.name}</span>
-                <span className="text-caption text-muted-foreground">
-                  {voice.description}
-                </span>
+              <div className="flex items-center gap-2">
+                <img
+                  src={`/avatars/${voice.name}.png`}
+                  alt={voice.name}
+                  className="h-6 w-6 rounded-full object-cover"
+                />
+                <div className="flex flex-col">
+                  <span>{voice.name}</span>
+                  <span className="text-caption text-muted-foreground">
+                    {voice.description}
+                  </span>
+                </div>
               </div>
             </SelectItem>
           ))}
@@ -150,5 +155,3 @@ export function NarratorVoiceSelector({
   );
 }
 
-// Export AI voices for use elsewhere
-export { AI_VOICES };

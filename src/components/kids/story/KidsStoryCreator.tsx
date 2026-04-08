@@ -17,7 +17,8 @@ import {
   storyValues,
   type StoryCharacter,
 } from '@/services/storyGeneration';
-import { type TTSVoice, getRecommendedVoice } from '@/services/textToSpeech';
+import { type TTSVoice, getRecommendedVoice, CHARACTER_VOICES } from '@/services/textToSpeech';
+import { ChatAvatar } from '@/components/chat/ChatAvatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
@@ -104,14 +105,12 @@ const valueColors: Record<string, { bg: string; border: string; activeBg: string
   creativity: { bg: 'bg-lumi/8', border: 'border-lumi/20', activeBg: 'bg-lumi/15' },
 };
 
-const voiceOptions: { value: TTSVoice; label: string; emoji: string }[] = [
-  { value: 'shimmer', label: 'Shimmer', emoji: '🌸' },
-  { value: 'nova',    label: 'Nova',    emoji: '⭐' },
-  { value: 'alloy',   label: 'Alloy',   emoji: '🎵' },
-  { value: 'echo',    label: 'Echo',    emoji: '🌊' },
-  { value: 'fable',   label: 'Fable',   emoji: '📖' },
-  { value: 'onyx',    label: 'Onyx',    emoji: '🌙' },
-];
+// Voice options mapped to characters
+const voiceOptions = CHARACTER_VOICES.map((v) => ({
+  value: v.voiceId,
+  label: v.character,
+  description: v.description,
+}));
 
 const STEP_COLORS = [
   'bg-gold', 'bg-primary', 'bg-lumi', 'bg-lolo', 'bg-primary',
@@ -433,25 +432,25 @@ export function KidsStoryCreator({ childId, onClose, onSuccess }: KidsStoryCreat
               <p className="text-body-sm font-bold text-center mb-3 text-foreground flex items-center justify-center gap-2">
                 <Volume2 className="h-4 w-4" /> Who reads the story?
               </p>
-              <div className="grid grid-cols-3 gap-2">
-                {voiceOptions.map((v, i) => {
-                  const voiceColors = ['bg-lolo/8 border-lolo/20', 'bg-lala/8 border-lala/20', 'bg-lumi/8 border-lumi/20', 'bg-primary/8 border-primary/20', 'bg-gold/8 border-gold/20', 'bg-lolo/8 border-lolo/20'];
-                  return (
-                    <button
-                      key={v.value}
-                      onClick={() => setState((p) => ({ ...p, narratorVoice: v.value }))}
-                      className={cn(
-                        'flex flex-col items-center gap-1 rounded-2xl py-3 transition-all duration-300 border-2',
-                        state.narratorVoice === v.value
-                          ? 'bg-primary/15 border-primary shadow-[0_4px_16px_rgba(61,214,200,0.15)]'
-                          : `${voiceColors[i % voiceColors.length]} hover:shadow-warm`
-                      )}
-                    >
-                      <span className="text-body-lg">{v.emoji}</span>
-                      <span className={cn('text-caption font-bold', state.narratorVoice === v.value ? 'text-primary' : 'text-foreground')}>{v.label}</span>
-                    </button>
-                  );
-                })}
+              <div className="grid grid-cols-2 gap-2">
+                {voiceOptions.map((v) => (
+                  <button
+                    key={v.value}
+                    onClick={() => setState((p) => ({ ...p, narratorVoice: v.value }))}
+                    className={cn(
+                      'flex items-center gap-2 rounded-2xl p-3 transition-all duration-300 border-2',
+                      state.narratorVoice === v.value
+                        ? 'bg-primary/15 border-primary shadow-[0_4px_16px_rgba(61,214,200,0.15)]'
+                        : 'bg-white/50 border-muted hover:shadow-warm'
+                    )}
+                  >
+                    <ChatAvatar buddyName={v.label} expression="neutral" size="sm" />
+                    <div className="text-left">
+                      <span className={cn('text-caption font-bold block', state.narratorVoice === v.value ? 'text-primary' : 'text-foreground')}>{v.label}</span>
+                      <span className="text-caption text-muted-foreground">{v.description}</span>
+                    </div>
+                  </button>
+                ))}
               </div>
             </div>
           </div>

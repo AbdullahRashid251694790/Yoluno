@@ -57,11 +57,26 @@ export async function speakText(
   return playAudioFromBase64(response.audio);
 }
 
+// Character-to-voice mapping
+export const CHARACTER_VOICES = [
+  { voiceId: 'echo' as TTSVoice, character: 'Luno', description: 'Calm & comforting', gender: 'male' },
+  { voiceId: 'fable' as TTSVoice, character: 'Lolo', description: 'Expressive & adventurous', gender: 'male' },
+  { voiceId: 'shimmer' as TTSVoice, character: 'Lumi', description: 'Warm & gentle', gender: 'female' },
+  { voiceId: 'nova' as TTSVoice, character: 'Lala', description: 'Clear & friendly', gender: 'female' },
+  // { voiceId: 'alloy' as TTSVoice, character: 'Alloy', description: 'Balanced & natural', gender: 'neutral' },
+  // { voiceId: 'onyx' as TTSVoice, character: 'Onyx', description: 'Deep & resonant', gender: 'male' },
+] as const;
+
+// Get character name from voice ID
+export function getCharacterForVoice(voiceId: string): string {
+  return CHARACTER_VOICES.find((v) => v.voiceId === voiceId)?.character || voiceId;
+}
+
 // Child-friendly voice recommendations by age
 export function getRecommendedVoice(age: number): TTSVoice {
-  if (age <= 6) return 'shimmer'; // Warm, friendly
-  if (age <= 10) return 'nova'; // Neutral, clear
-  return 'echo'; // Slightly more mature
+  if (age <= 6) return 'shimmer'; // Lumi - Warm, friendly
+  if (age <= 10) return 'nova'; // Lala - Clear, friendly
+  return 'echo'; // Luno - Calm, comforting
 }
 
 export const textToSpeechService = {
