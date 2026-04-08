@@ -6,6 +6,8 @@
  */
 
 import { useState } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { Button } from '@/components/ui/button';
 import {
   AlertDialog,
@@ -23,7 +25,7 @@ import {
   useGenerateTopicPost,
   type TopicPost,
 } from '@/hooks/queries/useTopicPosts';
-import { Plus, Pencil, Trash2, FileText, Sparkles, Loader2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, FileText, Sparkles, Loader2, ChevronDown, ChevronUp } from 'lucide-react';
 
 interface TopicPostsListProps {
   childId: string;
@@ -50,6 +52,16 @@ export function TopicPostsList({
   const [postDialogOpen, setPostDialogOpen] = useState(false);
   const [editingPost, setEditingPost] = useState<TopicPost | null>(null);
   const [deletingPost, setDeletingPost] = useState<TopicPost | null>(null);
+  const [expandedPosts, setExpandedPosts] = useState<Set<string>>(new Set());
+
+  const togglePost = (postId: string) => {
+    setExpandedPosts(prev => {
+      const next = new Set(prev);
+      if (next.has(postId)) next.delete(postId);
+      else next.add(postId);
+      return next;
+    });
+  };
   const [generatedContent, setGeneratedContent] = useState<{
     title: string;
     content: string;
@@ -123,15 +135,22 @@ export function TopicPostsList({
           {posts.map((post) => (
             <div
               key={post.id}
-              className="flex items-start justify-between gap-3 rounded-lg border p-3 bg-muted/30"
+              className="rounded-lg border p-3 bg-muted/30"
             >
-              <div className="flex-1 min-w-0">
-                <p className="font-medium text-body-sm">{post.title}</p>
-                <p className="text-caption text-muted-foreground mt-1 line-clamp-2">
-                  {post.content}
-                </p>
-              </div>
-              <div className="flex items-center gap-1 flex-shrink-0">
+              <div className="flex items-start justify-between gap-3">
+                <button
+                  type="button"
+                  onClick={() => togglePost(post.id)}
+                  className="flex-1 min-w-0 text-left flex items-center gap-2"
+                >
+                  {expandedPosts.has(post.id) ? (
+                    <ChevronUp className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  )}
+                  <p className="font-medium text-body-sm">{post.title}</p>
+                </button>
+                <div className="flex items-center gap-1 flex-shrink-0">
                 <Button
                   variant="ghost"
                   size="icon"
@@ -149,6 +168,12 @@ export function TopicPostsList({
                   <Trash2 className="h-3.5 w-3.5" />
                 </Button>
               </div>
+              </div>
+              {expandedPosts.has(post.id) && (
+                <div className="mt-3 pt-3 border-t text-caption text-muted-foreground prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5 prose-strong:text-foreground">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{post.content}</ReactMarkdown>
+                </div>
+              )}
             </div>
           ))}
         </div>

@@ -31,7 +31,7 @@ const createChildWithAvatarPinSchema = z.object({
     .number()
     .int('Age must be a whole number')
     .min(3, 'Minimum age is 3')
-    .max(18, 'Maximum age is 18'),
+    .max(14, 'Maximum age is 14'),
   gender: z.enum(['boy', 'girl', 'prefer_not_to_say']).optional(),
   avatar: z.object({
     type: z.enum(['library', 'custom']),
@@ -197,7 +197,7 @@ export function CreateChildDialog({ open: controlledOpen, onOpenChange, trigger 
               id="age"
               type="number"
               min={3}
-              max={18}
+              max={14}
               {...register('age', { valueAsNumber: true })}
             />
             {errors.age && (

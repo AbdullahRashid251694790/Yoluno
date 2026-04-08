@@ -66,7 +66,7 @@ const createTopicPostSchema = z.object({
   topic_id: z.string().uuid().optional(),
   custom_topic_id: z.string().uuid().optional(),
   title: z.string().min(1).max(100),
-  content: z.string().min(1).max(1000),
+  content: z.string().min(1).max(10000),
   sort_order: z.number().int().optional().default(0),
 }).refine(
   (data) => (data.topic_id && !data.custom_topic_id) || (!data.topic_id && data.custom_topic_id),
@@ -722,7 +722,7 @@ router.delete(
 // POST /api/topics/posts/generate - Generate a topic post with AI
 const generatePostSchema = z.object({
   topicName: z.string().min(1, 'Topic name is required'),
-  childAge: z.number().min(3).max(12).optional(),
+  childAge: z.number().min(3).max(14).optional(),
 });
 
 router.post(
@@ -731,23 +731,53 @@ router.post(
     try {
       const { topicName, childAge = 7 } = validateBody(generatePostSchema, req.body);
 
-      const systemPrompt = `You are an expert at creating educational content for children.
-Your task is to generate interesting, age-appropriate facts about a given topic that a parent can save for their child's AI companion to know.
+      // Age-bracket language guidance
+      const ageGuidance = childAge <= 6
+        ? 'Use very simple words (1-2 syllables). Short sentences. Lots of wonder and imagination. Think picture-book level.'
+        : childAge <= 9
+        ? 'Use clear, friendly language. Explain bigger words naturally. Balance fun with learning. Think early chapter-book level.'
+        : 'Use mature, respectful language. Real vocabulary with explanations where needed. Challenge thinking. Think encyclopedia-for-kids level.';
 
-Guidelines:
-- Content should be appropriate for a ${childAge}-year-old child
-- Use simple, clear language
-- Focus on fun, engaging facts that spark curiosity
-- Keep the content positive and encouraging
-- Make it educational but not boring
+      const systemPrompt = `You are an expert children's educator creating content for a ${childAge}-year-old.
 
-Respond with ONLY valid JSON in this exact format (no markdown, no code blocks):
+CONTENT GUARDRAILS — STRICT:
+- NEVER include violence, weapons, gore, or graphic descriptions
+- NEVER include sexual content, innuendo, or adult themes
+- NEVER include discriminatory, racist, or biased content
+- NEVER include religious or political opinions — present facts neutrally
+- NEVER include content that could cause fear, anxiety, or nightmares
+- NEVER include dangerous activities children might imitate (mixing chemicals, fire, etc.)
+- NEVER include profanity, slang, or inappropriate humor
+- If the topic touches on sensitive subjects (war, death, illness), frame it with care, hope, and age-appropriate honesty
+- All facts must be scientifically accurate and verifiable — do NOT make up statistics or claims
+
+AGE-APPROPRIATE LANGUAGE:
+${ageGuidance}
+
+EDUCATIONAL QUALITY:
+- Content must teach something real and valuable — not just trivia
+- Include context that helps the child understand WHY something matters
+- Spark curiosity with questions or "did you know" moments
+- Be engaging, warm, and encouraging — never dry or textbook-like
+
+OUTPUT FORMAT:
+Generate a structured mini-lesson. Respond with ONLY valid JSON (no markdown, no code blocks):
 {
   "title": "A short, catchy title (5-8 words)",
-  "content": "2-4 interesting facts or information about the topic (100-200 words)"
-}`;
+  "content": "A structured lesson using markdown formatting (500-1000 words)"
+}
 
-      const userPrompt = `Generate an educational post about: ${topicName}
+The "content" field MUST follow this structure using markdown:
+1. Start with a 2-3 sentence introduction explaining what the topic is and why it matters
+2. Then a section titled **Key Concepts** with 3-5 numbered items, each with a **bold term** followed by a clear explanation
+3. Then a section titled **Fun Facts** with 3-4 bullet points of surprising, real facts
+4. End with a section titled **Try This!** with 2-3 bullet points of hands-on activities or thought experiments the child can do
+
+Use **bold** for key terms. Use numbered lists (1. 2. 3.) for key concepts. Use bullet points (-) for facts and activities. Use blank lines between sections.`;
+
+      const userPrompt = `Generate a comprehensive educational mini-lesson about: ${topicName}
+Target age: ${childAge} years old.
+Aim for 500-1000 words of real, structured educational content.
 
 Remember: Respond with ONLY the JSON object, no other text.`;
 
@@ -759,13 +789,13 @@ Remember: Respond with ONLY the JSON object, no other text.`;
           'HTTP-Referer': process.env.FRONTEND_URL || 'http://localhost:5173',
         },
         body: JSON.stringify({
-          model: 'google/gemini-2.0-flash-001',
+          model: 'google/gemini-2.5-flash',
           messages: [
             { role: 'system', content: systemPrompt },
             { role: 'user', content: userPrompt },
           ],
-          max_tokens: 500,
-          temperature: 0.7,
+          max_tokens: 2000,
+          temperature: 0.5,
         }),
       });
 
@@ -780,9 +810,20 @@ Remember: Respond with ONLY the JSON object, no other text.`;
 
       // Parse JSON response
       try {
-        // Clean up the response (remove any markdown formatting)
-        const cleanedText = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-        const generated = JSON.parse(cleanedText) as { title: string; content: string };
+        // Strip markdown code fences and any surrounding whitespace
+        let cleanedText = text.replace(/^[\s\S]*?```(?:json)?\s*\n?/i, '').replace(/\n?\s*```[\s\S]*$/, '').trim();
+        // If no code fences were found, try the raw text
+        if (!cleanedText.startsWith('{')) {
+          cleanedText = text.trim();
+        }
+        // Extract the JSON object between first { and last }
+        const firstBrace = cleanedText.indexOf('{');
+        const lastBrace = cleanedText.lastIndexOf('}');
+        if (firstBrace === -1 || lastBrace === -1) {
+          throw new Error('No JSON object found');
+        }
+        const jsonStr = cleanedText.substring(firstBrace, lastBrace + 1);
+        const generated = JSON.parse(jsonStr) as { title: string; content: string };
 
         if (!generated.title || !generated.content) {
           throw new Error('Invalid response structure');
@@ -793,7 +834,7 @@ Remember: Respond with ONLY the JSON object, no other text.`;
           content: generated.content,
         });
       } catch (parseError) {
-        console.error('Failed to parse AI response:', text);
+        console.error('Failed to parse AI response:', text.substring(0, 500));
         throw new AppError(500, 'Failed to parse generated content');
       }
     } catch (error) {

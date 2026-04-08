@@ -207,7 +207,7 @@ export function EditChildDialog({
                     id="edit-age"
                     type="number"
                     min={3}
-                    max={18}
+                    max={14}
                     value={age}
                     onChange={(e) => setAge(parseInt(e.target.value) || 7)}
                     disabled={isPending}
