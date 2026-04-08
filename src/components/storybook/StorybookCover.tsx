@@ -42,7 +42,7 @@ export function StorybookCover({
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 
       {/* Content */}
-      <div className="relative h-full flex flex-col justify-end p-4 md:p-8 pb-8 md:pb-12">
+      <div className="relative h-full flex flex-col justify-end p-4 md:p-8 pb-6 md:pb-10">
         {/* Theme/Mood badges */}
         <div className="flex flex-wrap gap-2 mb-3">
           {theme && (

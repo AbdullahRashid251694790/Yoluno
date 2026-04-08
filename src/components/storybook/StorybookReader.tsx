@@ -280,10 +280,10 @@ export function StorybookReader({
       )}
 
       {/* Main content area */}
-      <div className="flex-1 flex items-center justify-center p-4 pb-20 md:p-8 md:pb-24 min-h-0 overflow-hidden">
+      <div className="flex-1 flex items-center justify-center p-4 md:p-8 min-h-0">
         <div
           className={cn(
-            'w-full max-w-2xl aspect-[3/4] max-h-full transition-all duration-300',
+            'w-full h-full max-w-2xl rounded-2xl overflow-hidden transition-all duration-300',
             isTransitioning && 'opacity-0 scale-95'
           )}
         >
