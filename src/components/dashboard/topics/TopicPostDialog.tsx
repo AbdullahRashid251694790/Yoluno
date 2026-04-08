@@ -123,7 +123,7 @@ export function TopicPostDialog({
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>
-            {isEditing ? 'Edit Post' : `Add Post to "${topicName}"`}
+            {isEditing ? 'Edit Content' : `Add Content to "${topicName}"`}
           </DialogTitle>
           <DialogDescription>
             {isEditing
@@ -174,7 +174,7 @@ export function TopicPostDialog({
             disabled={!title.trim() || !content.trim() || isPending}
           >
             {isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-            {isEditing ? 'Save Changes' : 'Add Post'}
+            {isEditing ? 'Save Changes' : 'Add Content'}
           </Button>
         </DialogFooter>
       </DialogContent>

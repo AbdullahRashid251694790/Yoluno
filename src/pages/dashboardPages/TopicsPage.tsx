@@ -185,7 +185,7 @@ export function TopicsPage() {
           <div>
             <p className="text-body-sm text-primary">
               Topics shown are age-appropriate for {selectedChild?.name} (age {topicSettings?.child_age}).
-              Add posts to topics to give Luno special knowledge for personalized conversations.
+              Add content to topics to give Luno special knowledge for personalized conversations.
             </p>
           </div>
         </CardContent>
