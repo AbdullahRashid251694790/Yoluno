@@ -4,9 +4,10 @@
  * Lists active and completed journeys for a child.
  */
 
+import { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useActiveJourneys, useCompletedJourneys } from '@/hooks/queries/useJourneys';
-import { useChildProfile } from '@/hooks/queries';
+import { useChildProfile, useRequestJourney } from '@/hooks/queries';
 import { LoadingSpinner, ErrorState } from '@/components/shared';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -21,8 +22,10 @@ import {
   Trophy,
   Sparkles,
   ChevronRight,
+  Hand,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 import { ChatAvatar } from '@/components/chat/ChatAvatar';
 import type { JourneyWithSteps } from '@/types/domain';
 
@@ -32,6 +35,26 @@ export function KidsJourneysPage() {
   const { data: child, isLoading: childLoading } = useChildProfile(childId);
   const { data: activeJourneys = [], isLoading: activeLoading } = useActiveJourneys(childId);
   const { data: completedJourneys = [], isLoading: completedLoading } = useCompletedJourneys(childId);
+  const requestJourney = useRequestJourney();
+  const [requested, setRequested] = useState(false);
+
+  const handleRequestJourney = () => {
+    if (!childId) return;
+    requestJourney.mutate(childId, {
+      onSuccess: () => {
+        setRequested(true);
+        toast.success('Request sent! Your parent will be notified.');
+      },
+      onError: (error: any) => {
+        const message = error?.response?.data?.error || error?.message || 'Something went wrong';
+        if (error?.response?.status === 429) {
+          toast.info('You already sent a request recently. Please wait a bit!');
+        } else {
+          toast.error(message);
+        }
+      },
+    });
+  };
 
   const handleBack = () => {
     navigate(`/kids/${childId}`);
@@ -73,6 +96,15 @@ export function KidsJourneysPage() {
             {activeJourneys.length} active, {completedJourneys.length} completed
           </p>
         </div>
+        <Button
+          size="sm"
+          onClick={handleRequestJourney}
+          disabled={requestJourney.isPending || requested}
+          className="rounded-full bg-gradient-to-r from-lolo to-primary text-white gap-1.5 text-caption"
+        >
+          <Hand className="h-3.5 w-3.5" />
+          {requested ? 'Sent!' : 'Request New'}
+        </Button>
       </header>
 
       <div className="px-4 pb-8 pt-2">
@@ -86,9 +118,19 @@ export function KidsJourneysPage() {
               <p className="text-muted-foreground text-body-sm mb-4">
                 Ask your parent to create a learning journey for you!
               </p>
-              <Button variant="outline" onClick={handleBack}>
-                Go Back Home
-              </Button>
+              <div className="flex gap-3 justify-center">
+                <Button
+                  onClick={handleRequestJourney}
+                  disabled={requestJourney.isPending || requested}
+                  className="bg-gradient-to-r from-lolo to-primary text-white gap-2"
+                >
+                  <Hand className="h-4 w-4" />
+                  {requested ? 'Request Sent!' : 'Ask for a Journey'}
+                </Button>
+                <Button variant="outline" onClick={handleBack}>
+                  Go Back Home
+                </Button>
+              </div>
             </CardContent>
           </Card>
         ) : (

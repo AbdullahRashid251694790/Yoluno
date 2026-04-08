@@ -79,6 +79,19 @@ export function useRequestPasswordChange() {
   });
 }
 
+export function useRequestJourney() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (childId: string) => notificationsService.requestJourney(childId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.notifications.all,
+      });
+    },
+  });
+}
+
 // Helper hook to add a notification to the cache (for real-time updates)
 export function useAddNotificationToCache() {
   const queryClient = useQueryClient();

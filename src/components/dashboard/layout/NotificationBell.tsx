@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { Bell, Check, Trash2, KeyRound } from 'lucide-react';
+import { Bell, Check, Trash2, KeyRound, Map } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Popover,
@@ -69,6 +69,8 @@ export function NotificationBell() {
     switch (type) {
       case 'password_change_request':
         return <KeyRound className="h-4 w-4 text-gold" />;
+      case 'journey_request':
+        return <Map className="h-4 w-4 text-lolo" />;
       default:
         return <Bell className="h-4 w-4 text-primary" />;
     }

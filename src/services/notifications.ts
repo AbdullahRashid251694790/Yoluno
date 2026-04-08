@@ -7,7 +7,7 @@
 import { apiClient } from '@/integrations/api';
 import { handleError } from '@/lib/errors';
 
-export type NotificationType = 'password_change_request' | 'other';
+export type NotificationType = 'password_change_request' | 'journey_request' | 'other';
 
 export interface ParentNotification {
   id: string;
@@ -110,6 +110,17 @@ export async function requestPasswordChange(childId: string): Promise<void> {
   }
 }
 
+export async function requestJourney(childId: string): Promise<void> {
+  try {
+    await apiClient.post(`/child-profiles/${childId}/request-journey`);
+  } catch (error) {
+    throw handleError(error, {
+      context: 'notifications.requestJourney',
+      strategy: 'throw',
+    });
+  }
+}
+
 export const notificationsService = {
   getAll: getNotifications,
   getUnreadCount,
@@ -117,4 +128,5 @@ export const notificationsService = {
   markAllAsRead,
   delete: deleteNotification,
   requestPasswordChange,
+  requestJourney,
 };

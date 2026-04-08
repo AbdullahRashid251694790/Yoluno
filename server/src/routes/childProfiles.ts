@@ -443,4 +443,63 @@ router.post('/:id/request-password-change', async (req: Request, res: Response, 
   }
 });
 
+// ============================================================
+// Journey Request (for kids to notify parents)
+// ============================================================
+
+// POST /api/child-profiles/:id/request-journey
+// Rate limited: 1 request per hour per child
+router.post('/:id/request-journey', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    // Get child profile (verify it belongs to the authenticated user)
+    const profile = await queryOne<ChildProfile>(
+      'SELECT id, user_id, name FROM child_profiles WHERE id = $1 AND user_id = $2',
+      [req.params.id, req.user!.id]
+    );
+
+    if (!profile) {
+      throw new AppError(404, 'Child profile not found');
+    }
+
+    // Check for rate limiting - max 1 request per hour per child
+    const recentRequest = await queryOne<{ id: string }>(
+      `SELECT id FROM parent_notifications
+       WHERE child_profile_id = $1
+       AND notification_type = 'journey_request'
+       AND created_at > NOW() - INTERVAL '1 hour'`,
+      [profile.id]
+    );
+
+    if (recentRequest) {
+      throw new AppError(429, 'A journey request was already sent recently. Please wait before trying again.');
+    }
+
+    // Create notification for parent
+    const notification = await queryOne<ParentNotification>(
+      `INSERT INTO parent_notifications (user_id, child_profile_id, notification_type, title, message)
+       VALUES ($1, $2, 'journey_request', $3, $4)
+       RETURNING *`,
+      [
+        profile.user_id,
+        profile.id,
+        'New Journey Requested',
+        `${profile.name} would like a new learning journey! Head to the Journeys section to create one.`
+      ]
+    );
+
+    // Emit real-time notification via Socket.io
+    const io = req.app.get('io') as Server | undefined;
+    if (io && notification) {
+      emitToUser(io, profile.user_id, 'parent-notification', {
+        ...notification,
+        child_name: profile.name
+      });
+    }
+
+    res.json({ message: 'Journey request sent to parent' });
+  } catch (error) {
+    next(error);
+  }
+});
+
 export default router;

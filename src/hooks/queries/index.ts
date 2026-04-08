@@ -83,6 +83,7 @@ export {
   useMarkAllNotificationsRead,
   useDeleteNotification,
   useRequestPasswordChange,
+  useRequestJourney,
   useAddNotificationToCache,
 } from './useNotifications';
 
