@@ -155,13 +155,12 @@ export function KidsStoriesPage() {
           <h1 className="text-body-lg font-display font-bold">My Stories</h1>
         </div>
 
-        {/* Create Story Button */}
         <Button
-          size="icon"
           onClick={() => setIsCreatorOpen(true)}
-          className="rounded-full bg-gradient-to-r from-primary/10 to-lolo/10 hover:from-primary/10 hover:to-lolo/10 shadow-lg"
+          className="rounded-full bg-gradient-to-r from-lumi to-lolo text-white font-display font-bold px-4 py-2 shadow-lg hover:shadow-xl active:scale-[0.98] transition-all gap-2"
         >
-          <Sparkles className="h-5 w-5 text-white" />
+          <Sparkles className="h-4 w-4" />
+          Create New Story
         </Button>
       </header>
 
@@ -173,7 +172,7 @@ export function KidsStoriesPage() {
           data={stories}
           onRetry={refetch}
           emptyTitle="No stories yet!"
-          emptyDescription="Tap the sparkle button to create your first story!"
+          emptyDescription="Tap 'Create New Story' to make your first story!"
           emptyIcon={BookOpen}
         >
           {(storyList) => (
