@@ -1,8 +1,9 @@
 /**
  * StorybookAudioControls Component
  *
- * Audio playback controls with page-by-page and full story modes.
- * Supports AI TTS voices for narration.
+ * Audio playback controls for storybook reading.
+ * - Play: reads the current page, stays on it
+ * - Auto: reads current page then advances and reads the next, and so on until the end
  */
 
 import { useState, useRef, useCallback, useEffect } from 'react';
@@ -13,9 +14,6 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import type { StoryPage } from '@/services/storyPages';
 import type { NarratorVoice } from './NarratorVoiceSelector';
-import { getUploadUrl } from '@/integrations/api/client';
-
-type AudioMode = 'page' | 'full';
 
 interface StorybookAudioControlsProps {
   storyId: string;
@@ -23,6 +21,8 @@ interface StorybookAudioControlsProps {
   currentPage: number; // 1-indexed (page 1 = first story page)
   narratorVoice: NarratorVoice;
   onPageChange: (page: number) => void;
+  autoPlayOnStart?: boolean;
+  onAutoPlayStarted?: () => void;
 }
 
 export function StorybookAudioControls({
@@ -31,155 +31,92 @@ export function StorybookAudioControls({
   currentPage,
   narratorVoice,
   onPageChange,
+  autoPlayOnStart,
+  onAutoPlayStarted,
 }: StorybookAudioControlsProps) {
-  const [mode, setMode] = useState<AudioMode>('page');
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [autoAdvance, setAutoAdvance] = useState(true);
+  const [isAutoMode, setIsAutoMode] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const shouldAutoPlayRef = useRef(false);
-  const previousPageRef = useRef(currentPage);
+  const autoModeRef = useRef(false); // ref to avoid stale closures
+  const stoppedRef = useRef(false); // tracks if user explicitly stopped
 
-  // Get current page data (currentPage is 1-indexed for story pages)
-  const pageData = pages[currentPage - 1];
+  // Keep ref in sync with state
+  useEffect(() => {
+    autoModeRef.current = isAutoMode;
+  }, [isAutoMode]);
 
-  // Define stopAudio first (no dependencies)
+  const getVoiceId = useCallback((): 'shimmer' | 'nova' | 'alloy' | 'echo' | 'fable' | 'onyx' => {
+    if (narratorVoice.type === 'ai') {
+      return narratorVoice.voiceId as 'shimmer' | 'nova' | 'alloy' | 'echo' | 'fable' | 'onyx';
+    }
+    return 'nova';
+  }, [narratorVoice]);
+
   const stopAudio = useCallback(() => {
+    stoppedRef.current = true;
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
       audioRef.current = null;
     }
     setIsPlaying(false);
+    setIsAutoMode(false);
   }, []);
 
-  // Get the voice ID for TTS (use AI voice or fallback for Voice Vault)
-  const getVoiceId = useCallback((): 'shimmer' | 'nova' | 'alloy' | 'echo' | 'fable' | 'onyx' => {
-    if (narratorVoice.type === 'ai') {
-      return narratorVoice.voiceId as 'shimmer' | 'nova' | 'alloy' | 'echo' | 'fable' | 'onyx';
-    }
-    // For Voice Vault, use a warm default voice for narration
-    return 'nova';
-  }, [narratorVoice]);
-
-  // Play Voice Vault intro clip before TTS narration
-  const playVoiceVaultIntro = useCallback((): Promise<void> => {
-    return new Promise((resolve, reject) => {
-      if (narratorVoice.type !== 'voice_vault') {
-        resolve();
+  // Play audio for a given text, returns a promise that resolves when audio ends
+  const playPageAudio = useCallback((text: string): Promise<'ended' | 'stopped'> => {
+    return new Promise(async (resolve) => {
+      if (!text) {
+        resolve('ended');
         return;
       }
 
-      const audio = new Audio(getUploadUrl(narratorVoice.audioUrl));
-      audioRef.current = audio;
-      setIsPlaying(true);
+      setIsLoading(true);
+      try {
+        const response = await generateSpeech(text, { voice: getVoiceId() });
 
-      audio.addEventListener('ended', () => {
-        audioRef.current = null;
-        resolve();
-      });
+        // Check if user stopped while we were generating
+        if (stoppedRef.current) {
+          resolve('stopped');
+          return;
+        }
 
-      audio.addEventListener('error', () => {
-        audioRef.current = null;
-        reject(new Error('Failed to play voice clip'));
-      });
+        // Stop any existing audio
+        if (audioRef.current) {
+          audioRef.current.pause();
+          audioRef.current = null;
+        }
 
-      audio.play().catch(reject);
+        const audio = playAudioFromBase64(response.audio);
+        audioRef.current = audio;
+        setIsPlaying(true);
+
+        audio.addEventListener('ended', () => {
+          setIsPlaying(false);
+          audioRef.current = null;
+          resolve('ended');
+        });
+
+        audio.addEventListener('error', () => {
+          toast.error('Failed to play audio');
+          setIsPlaying(false);
+          audioRef.current = null;
+          resolve('stopped');
+        });
+      } catch (error) {
+        console.error('TTS error:', error);
+        toast.error('Failed to generate audio');
+        setIsPlaying(false);
+        resolve('stopped');
+      } finally {
+        setIsLoading(false);
+      }
     });
-  }, [narratorVoice]);
+  }, [getVoiceId]);
 
-  // Generate and play audio for a specific page
-  const generateAndPlayAudio = useCallback(async (text: string, isAutoAdvanceEnabled: boolean, currentPageNum: number, totalPages: number, playIntro = false) => {
-    if (!text) {
-      toast.error('No content to read');
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      // Play Voice Vault intro on first page if selected
-      if (playIntro && narratorVoice.type === 'voice_vault' && currentPageNum === 1) {
-        try {
-          await playVoiceVaultIntro();
-          // Small pause after intro
-          await new Promise((resolve) => setTimeout(resolve, 500));
-        } catch (error) {
-          console.warn('Failed to play voice intro:', error);
-          // Continue with TTS narration even if intro fails
-        }
-      }
-
-      const response = await generateSpeech(text, {
-        voice: getVoiceId(),
-      });
-
-      stopAudio();
-
-      const audio = playAudioFromBase64(response.audio);
-      audioRef.current = audio;
-      setIsPlaying(true);
-
-      audio.addEventListener('ended', () => {
-        setIsPlaying(false);
-        audioRef.current = null;
-
-        // Auto-advance to next page in page mode
-        if (isAutoAdvanceEnabled && currentPageNum < totalPages) {
-          // Set flag so the useEffect knows to auto-play after page change
-          shouldAutoPlayRef.current = true;
-          onPageChange(currentPageNum + 1);
-        }
-      });
-
-      audio.addEventListener('error', () => {
-        toast.error('Failed to play audio');
-        setIsPlaying(false);
-        audioRef.current = null;
-      });
-    } catch (error) {
-      console.error('TTS error:', error);
-      toast.error('Failed to generate audio');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [narratorVoice, stopAudio, onPageChange, getVoiceId, playVoiceVaultIntro]);
-
-  // Stop audio when component unmounts
-  useEffect(() => {
-    return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current = null;
-      }
-    };
-  }, []);
-
-  // Handle page changes - stop current audio and auto-play if needed
-  useEffect(() => {
-    // Only act when page actually changed
-    if (previousPageRef.current !== currentPage) {
-      const wasAutoPlay = shouldAutoPlayRef.current;
-      previousPageRef.current = currentPage;
-
-      if (mode === 'page') {
-        stopAudio();
-
-        // If this was an auto-advance, trigger playback for the new page
-        if (wasAutoPlay) {
-          shouldAutoPlayRef.current = false;
-          // Small delay to ensure state is updated, then generate audio for new page
-          const newPageData = pages[currentPage - 1];
-          if (newPageData?.content) {
-            setTimeout(() => {
-              generateAndPlayAudio(newPageData.content, autoAdvance, currentPage, pages.length);
-            }, 100);
-          }
-        }
-      }
-    }
-  }, [currentPage, mode, stopAudio, pages, autoAdvance, generateAndPlayAudio]);
-
-  const handlePlayPause = useCallback(async () => {
+  // Play current page only
+  const handlePlay = useCallback(async () => {
     // If playing, pause
     if (isPlaying && audioRef.current) {
       audioRef.current.pause();
@@ -194,66 +131,120 @@ export function StorybookAudioControls({
       return;
     }
 
-    // Generate new audio
-    let textToRead: string;
-
-    if (mode === 'page') {
-      // Read current page only
-      textToRead = pageData?.content || '';
-      // Play intro on first page if this is a fresh start
-      const isFirstPage = currentPage === 1;
-      await generateAndPlayAudio(textToRead, autoAdvance, currentPage, pages.length, isFirstPage);
-    } else {
-      // Read full story (all pages combined)
-      textToRead = pages.map((p) => p.content).join('\n\n');
-      // Always play intro when reading full story
-      await generateAndPlayAudio(textToRead, false, currentPage, pages.length, true);
+    // Generate and play current page
+    const pageData = pages[currentPage - 1];
+    if (!pageData?.content) {
+      toast.error('No content to read');
+      return;
     }
-  }, [isPlaying, mode, pageData, pages, autoAdvance, currentPage, generateAndPlayAudio]);
 
-  const toggleMode = useCallback(() => {
-    stopAudio();
-    setMode((prev) => (prev === 'page' ? 'full' : 'page'));
-  }, [stopAudio]);
+    stoppedRef.current = false;
+    setIsAutoMode(false);
+    await playPageAudio(pageData.content);
+  }, [isPlaying, pages, currentPage, playPageAudio]);
 
-  const toggleAutoAdvance = useCallback(() => {
-    setAutoAdvance((prev) => !prev);
+  // Auto mode: read current page, advance, read next, etc.
+  const handleAutoPlay = useCallback(async () => {
+    // If already in auto mode, stop
+    if (isAutoMode) {
+      stopAudio();
+      return;
+    }
+
+    stoppedRef.current = false;
+    setIsAutoMode(true);
+
+    // Start from current page and read through to the end
+    for (let pageIdx = currentPage; pageIdx <= pages.length; pageIdx++) {
+      // Check if user stopped
+      if (stoppedRef.current) break;
+
+      // Navigate to the page (if not already there)
+      if (pageIdx !== currentPage) {
+        onPageChange(pageIdx);
+      }
+
+      const pageData = pages[pageIdx - 1];
+      if (!pageData?.content) continue;
+
+      // Small delay between pages for natural transition
+      if (pageIdx !== currentPage) {
+        await new Promise((r) => setTimeout(r, 500));
+      }
+
+      if (stoppedRef.current) break;
+
+      const result = await playPageAudio(pageData.content);
+      if (result === 'stopped') break;
+    }
+
+    // Done with all pages or stopped
+    setIsAutoMode(false);
+    setIsPlaying(false);
+  }, [isAutoMode, currentPage, pages, onPageChange, playPageAudio, stopAudio]);
+
+  // Stop audio when page changes manually (user swipes/clicks navigation)
+  const prevPageRef = useRef(currentPage);
+  useEffect(() => {
+    if (prevPageRef.current !== currentPage) {
+      prevPageRef.current = currentPage;
+      // Only stop if NOT in auto mode (auto mode handles its own page changes)
+      if (!autoModeRef.current && audioRef.current) {
+        if (audioRef.current) {
+          audioRef.current.pause();
+          audioRef.current.currentTime = 0;
+          audioRef.current = null;
+        }
+        setIsPlaying(false);
+      }
+    }
+  }, [currentPage]);
+
+  // Trigger auto play when coming from cover page "Tap to begin reading"
+  const autoPlayTriggeredRef = useRef(false);
+  useEffect(() => {
+    if (autoPlayOnStart && !autoPlayTriggeredRef.current) {
+      autoPlayTriggeredRef.current = true;
+      onAutoPlayStarted?.();
+      // Small delay to let the page render before starting audio
+      setTimeout(() => handleAutoPlay(), 300);
+    }
+  }, [autoPlayOnStart]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    };
   }, []);
 
   return (
     <div className="flex items-center justify-center gap-3">
-      {/* Mode toggle */}
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={toggleMode}
-        className="text-white/80 hover:text-white hover:bg-white/20 text-caption"
-      >
-        {mode === 'page' ? 'Page Mode' : 'Full Story'}
-      </Button>
-
-      {/* Play/Pause button */}
+      {/* Play/Pause button — reads current page only */}
       <Button
         variant="ghost"
         size="icon"
-        onClick={handlePlayPause}
-        disabled={isLoading}
+        onClick={handlePlay}
+        disabled={isLoading && !isAutoMode}
         className={cn(
           'rounded-full bg-white/20 hover:bg-white/30 text-white h-12 w-12',
-          isPlaying && 'bg-white/30'
+          isPlaying && !isAutoMode && 'bg-white/30'
         )}
       >
-        {isLoading ? (
+        {isLoading && !isAutoMode ? (
           <Loader2 className="h-6 w-6 animate-spin" />
-        ) : isPlaying ? (
+        ) : isPlaying && !isAutoMode ? (
           <Pause className="h-6 w-6" />
         ) : (
           <Play className="h-6 w-6 ml-0.5" />
         )}
       </Button>
 
-      {/* Stop button (only show when audio exists) */}
-      {(isPlaying || audioRef.current) && (
+      {/* Stop button */}
+      {(isPlaying || isAutoMode) && (
         <Button
           variant="ghost"
           size="icon"
@@ -264,23 +255,26 @@ export function StorybookAudioControls({
         </Button>
       )}
 
-      {/* Auto-advance toggle (only in page mode) */}
-      {mode === 'page' && (
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={toggleAutoAdvance}
-          className={cn(
-            'text-caption gap-1',
-            autoAdvance
-              ? 'text-white hover:text-white/80 hover:bg-white/20'
-              : 'text-white/50 hover:text-white/70 hover:bg-white/10'
-          )}
-        >
+      {/* Auto play toggle — reads all pages sequentially */}
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={handleAutoPlay}
+        disabled={isLoading && !isAutoMode}
+        className={cn(
+          'text-caption gap-1',
+          isAutoMode
+            ? 'text-white bg-white/30 hover:bg-white/20 hover:text-white'
+            : 'text-white/70 hover:text-white hover:bg-white/20'
+        )}
+      >
+        {isAutoMode && isLoading ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
           <SkipForward className="h-4 w-4" />
-          Auto
-        </Button>
-      )}
+        )}
+        Auto
+      </Button>
     </div>
   );
 }

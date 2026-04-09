@@ -44,6 +44,7 @@ export function StorybookReader({
   const [currentPage, setCurrentPage] = useState(0); // 0 = cover, 1+ = story pages
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [showVoiceSelector, setShowVoiceSelector] = useState(false);
+  const [autoPlayOnStart, setAutoPlayOnStart] = useState(false);
   const [narratorVoice, setNarratorVoice] = useState<NarratorVoice>({
     type: 'ai',
     voiceId: initialVoice,
@@ -293,7 +294,7 @@ export function StorybookReader({
               coverImageUrl={resolvedCoverUrl ? getUploadUrl(resolvedCoverUrl) : undefined}
               theme={theme}
               mood={mood}
-              onStart={goToNextPage}
+              onStart={() => { setAutoPlayOnStart(true); goToNextPage(); }}
             />
           ) : (
             <StorybookPage
@@ -320,6 +321,8 @@ export function StorybookReader({
               currentPage={currentPage}
               narratorVoice={narratorVoice}
               onPageChange={goToPage}
+              autoPlayOnStart={autoPlayOnStart}
+              onAutoPlayStarted={() => setAutoPlayOnStart(false)}
             />
           )}
 
