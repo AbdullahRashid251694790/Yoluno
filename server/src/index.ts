@@ -163,7 +163,8 @@ app.use('/api/kids', kidNotificationsRoutes);
 app.use('/api/onboarding', onboardingRoutes);
 
 // Dynamic load of seed route (gitignored — only works locally)
-import('./routes/seedFamilyDemo.js')
+const seedPath = './routes/seedFamilyDemo.js';
+import(/* @vite-ignore */ seedPath)
   .then((mod) => { app.use('/api/seed', mod.default); console.log('Seed demo route loaded'); })
   .catch(() => { /* seedFamilyDemo.ts not present — skip */ });
 app.use('/api/journey-reminders', journeyRemindersRoutes);

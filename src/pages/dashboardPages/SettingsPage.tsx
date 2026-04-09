@@ -4,7 +4,7 @@
  * Page for managing account, password, data export, and account deletion.
  */
 
-import { useState, lazy, Suspense } from 'react';
+import { useState, useEffect, type ComponentType } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { validatePassword } from '@/lib/utils';
 import { apiClient, getErrorMessage } from '@/integrations/api/client';
@@ -23,15 +23,18 @@ import {
 import { LogOut, Download, Trash2, Key } from 'lucide-react';
 import { toast } from 'sonner';
 
-// Lazy-load seed button (gitignored — only exists locally)
-const SeedDemoButton = lazy(() =>
-  import('@/components/dashboard/settings/SeedDemoButton')
-    .then((mod) => ({ default: mod.SeedDemoButton }))
-    .catch(() => ({ default: () => null }))
-);
 
 export function SettingsPage() {
   const { user, signOut, updatePassword } = useAuth();
+
+  // Dev-only seed button (gitignored — loads dynamically only when file exists locally)
+  const [SeedButton, setSeedButton] = useState<ComponentType | null>(null);
+  useEffect(() => {
+    const path = '/src/components/dashboard/settings/SeedDemoButton.tsx';
+    import(/* @vite-ignore */ path)
+      .then((mod) => setSeedButton(() => mod.SeedDemoButton))
+      .catch(() => { /* file not present — skip */ });
+  }, []);
 
   // Password change state
   const [currentPassword, setCurrentPassword] = useState('');
@@ -246,10 +249,8 @@ export function SettingsPage() {
         </Card>
       </div>
 
-      {/* Seed Demo Data (dev only — gitignored, renders nothing if file missing) */}
-      <Suspense fallback={null}>
-        <SeedDemoButton />
-      </Suspense>
+      {/* Seed Demo Data (dev only — only renders when gitignored file exists locally) */}
+      {SeedButton && <SeedButton />}
 
       {/* Delete Account Dialog */}
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
