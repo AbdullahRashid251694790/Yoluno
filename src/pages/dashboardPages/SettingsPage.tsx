@@ -4,7 +4,7 @@
  * Page for managing account, password, data export, and account deletion.
  */
 
-import { useState } from 'react';
+import { useState, lazy, Suspense } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { validatePassword } from '@/lib/utils';
 import { apiClient, getErrorMessage } from '@/integrations/api/client';
@@ -22,6 +22,13 @@ import {
 } from '@/components/ui/dialog';
 import { LogOut, Download, Trash2, Key } from 'lucide-react';
 import { toast } from 'sonner';
+
+// Lazy-load seed button (gitignored — only exists locally)
+const SeedDemoButton = lazy(() =>
+  import('@/components/dashboard/settings/SeedDemoButton')
+    .then((mod) => ({ default: mod.SeedDemoButton }))
+    .catch(() => ({ default: () => null }))
+);
 
 export function SettingsPage() {
   const { user, signOut, updatePassword } = useAuth();
@@ -238,6 +245,11 @@ export function SettingsPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Seed Demo Data (dev only — gitignored, renders nothing if file missing) */}
+      <Suspense fallback={null}>
+        <SeedDemoButton />
+      </Suspense>
 
       {/* Delete Account Dialog */}
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>

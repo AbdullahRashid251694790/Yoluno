@@ -24,5 +24,10 @@ npm-debug.log*
 # Cache
 .cache/
 
+# Demo seed data
+sample/
+server/src/routes/seedFamilyDemo.ts
+src/components/dashboard/settings/SeedDemoButton.tsx
+
 # TypeScript build info
 tsconfig.tsbuildinfo

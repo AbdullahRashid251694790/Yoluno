@@ -267,7 +267,7 @@ export function KidsHomePage() {
                   <CardContent className="p-4 flex flex-col items-center text-center">
                     <div className="mb-2 group-hover:scale-110 transition-transform">
                       <ChatAvatar
-                        buddyName={activity.id === 'chat' ? 'Luno' : activity.id === 'stories' ? 'Lumi' : activity.id === 'journeys' ? 'Lolo' : 'Lala'}
+                        buddyName={activity.id === 'chat' ? 'Luno' : activity.id === 'stories' ? 'Lumi' : activity.id === 'journeys' ? 'Lolo' : 'Lottie'}
                         expression={activity.id === 'chat' ? 'happy' : activity.id === 'stories' ? 'excited' : activity.id === 'journeys' ? 'curious' : 'caring'}
                         size="sm"
                       />

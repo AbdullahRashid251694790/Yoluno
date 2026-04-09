@@ -14,7 +14,7 @@ const BUDDY_AVATARS: Record<string, string> = {
   Luno: '/avatars/Luno.png',
   Lumi: '/avatars/Lumi.png',
   Lolo: '/avatars/Lolo.png',
-  Lala: '/avatars/Lala.png',
+  Lottie: '/avatars/Lottie.png',
 };
 
 // Mood-specific Luno face images

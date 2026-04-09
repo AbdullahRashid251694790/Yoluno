@@ -24,7 +24,7 @@ const SUGGESTION_COLORS: Record<string, string> = {
   'tell-story': 'border-lumi/40 bg-lumi/5 hover:bg-lumi/10 hover:border-lumi/60 text-lumi',       // Stories → Lumi (purple)
   'learn-something': 'border-primary/40 bg-primary/5 hover:bg-primary/10 hover:border-primary/60 text-primary', // Learn → Luno (teal)
   'next-adventure': 'border-lolo/40 bg-lolo/5 hover:bg-lolo/10 hover:border-lolo/60 text-lolo',    // Journeys → Lolo (orange)
-  'about-family': 'border-lala/40 bg-lala/5 hover:bg-lala/10 hover:border-lala/60 text-lala',      // Family → Lala (gold)
+  'about-family': 'border-lala/40 bg-lala/5 hover:bg-lala/10 hover:border-lala/60 text-lala',      // Family → Lottie (gold)
 };
 
 export function SuggestionChips({

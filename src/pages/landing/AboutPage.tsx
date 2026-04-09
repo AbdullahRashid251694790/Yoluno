@@ -6,7 +6,7 @@ import ScrollSparkles from "@/components/landing/ScrollSparkles";
 import CloudDivider from "@/components/landing/CloudDivider";
 import lunoImg from "@/assets/landing/luno.png";
 import lumiImg from "@/assets/landing/lumi.png";
-import lalaImg from "@/assets/landing/lala.png";
+import lottieImg from "@/assets/landing/lottie.png";
 
 const principles = [
   { icon: "🛡️", text: "A child's attention will never be treated as a commodity" },
@@ -218,7 +218,7 @@ export default function AboutPage() {
                 {/* Founder: Amrita */}
                 <div className="glass-card rounded-3xl p-8 text-center">
                   <div className="w-24 h-24 mx-auto mb-5 rounded-full flex items-center justify-center" style={{ background: 'radial-gradient(circle, rgba(61,214,200,0.15) 0%, rgba(180,222,215,0.3) 100%)', boxShadow: '0 0 24px rgba(61,214,200,0.15)' }}>
-                    <img src={lalaImg} alt="Amrita Sethi" className="w-16 h-16 object-contain character-bloom-lala" />
+                    <img src={lottieImg} alt="Amrita Sethi" className="w-16 h-16 object-contain character-bloom-lala" />
                   </div>
                   <h3 className="font-heading-landing text-xl font-bold text-foreground mb-1">Amrita Sethi</h3>
                   <p className="text-label text-xs mb-4">Founder</p>

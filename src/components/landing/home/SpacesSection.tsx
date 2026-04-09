@@ -38,7 +38,7 @@ const islands = [
     color: "hsl(var(--lala))",
     glowColor: "rgba(212,168,67,0.2)",
     img: islandFamily,
-    desc: "Lala keeps the most special things here. Listen to your favorite voices, see photos of the people who love you, and keep your best memories safe in a warm, glowing light.",
+    desc: "Lottie keeps the most special things here. Listen to your favorite voices, see photos of the people who love you, and keep your best memories safe in a warm, glowing light.",
     skills: ["Empathy", "Family Bonds", "Emotional Growth"],
   },
 ];

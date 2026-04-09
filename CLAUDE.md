@@ -14,7 +14,7 @@ AI-powered educational platform for children (ages 3-14). Parents manage child p
 ## The Character World
 Four characters, each with a role referenced by the chatbot (Luno):
 - **Luno** (teal) — the AI chatbot itself, creative, comforting, handles feelings
-- **Lala** (gold) — family keeper, referenced when talking about family members
+- **Lottie** (gold) — family keeper, referenced when talking about family members
 - **Lolo** (orange) — journey guide, referenced for adventures and progress
 - **Lumi** (purple) — storyteller, referenced for stories and tales
 
@@ -55,7 +55,7 @@ See `docs/Yoluno_Development_Roadmap.docx` for the full task list with status.
 
 ### Remaining (14 tasks)
 **Phase 1 remaining:**
-- Task 11: Rename story voice options to Luno, Lumi, Lolo, Lala
+- Task 11: Rename story voice options to Luno, Lumi, Lolo, Lottie
 - Task 12: Add "Create New Story" button on kids stories screen
 - Task 16: Add journey request button for kids
 

@@ -161,6 +161,11 @@ app.use('/api/family-events', familyEventsRoutes);
 app.use('/api/kids-mode', kidsModeRoutes);
 app.use('/api/kids', kidNotificationsRoutes);
 app.use('/api/onboarding', onboardingRoutes);
+
+// Dynamic load of seed route (gitignored — only works locally)
+import('./routes/seedFamilyDemo.js')
+  .then((mod) => { app.use('/api/seed', mod.default); console.log('Seed demo route loaded'); })
+  .catch(() => { /* seedFamilyDemo.ts not present — skip */ });
 app.use('/api/journey-reminders', journeyRemindersRoutes);
 app.use('/api/journey-rewards', journeyRewardsRoutes);
 app.use('/api/notifications', notificationsRoutes);
