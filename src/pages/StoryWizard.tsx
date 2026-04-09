@@ -571,6 +571,9 @@ export function StoryWizardPage() {
                   <p className="text-body-sm text-primary">
                     Your storybook is ready! Illustrations are being created in the background.
                   </p>
+                  <p className="text-caption text-primary/70 mt-1">
+                    This may take a few minutes. You can close this page and come back later.
+                  </p>
                 </div>
               </div>
             ) : (

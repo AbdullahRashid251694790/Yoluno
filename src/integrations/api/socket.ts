@@ -117,6 +117,14 @@ export function onParentNotification(callback: (notification: unknown) => void):
   return () => socket?.off('parent-notification', callback);
 }
 
+// Subscribe to kid notifications (story complete, etc.)
+export function onKidNotification(callback: (notification: unknown) => void): () => void {
+  if (!socket) return () => {};
+
+  socket.on('kid-notification', callback);
+  return () => socket?.off('kid-notification', callback);
+}
+
 // Subscribe to child mood check-in events (real-time parent dashboard updates)
 export function onMoodCheckin(
   callback: (data: { childId: string; childName: string; mood: string; checkin: unknown }) => void

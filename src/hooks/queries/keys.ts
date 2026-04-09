@@ -235,6 +235,13 @@ export const queryKeys = {
     detail: (id: string) => [...queryKeys.notifications.all, 'detail', id] as const,
   },
 
+  // Kid Notifications
+  kidNotifications: {
+    all: ['kid-notifications'] as const,
+    list: (childId: string) => ['kid-notifications', 'list', childId] as const,
+    unreadCount: (childId: string) => ['kid-notifications', 'unread-count', childId] as const,
+  },
+
   // Mood Check-ins
   moodCheckin: {
     all: ['moodCheckin'] as const,

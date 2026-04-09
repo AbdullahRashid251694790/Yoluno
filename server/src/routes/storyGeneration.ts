@@ -4,6 +4,8 @@ import { query, queryOne } from '../config/database.js';
 import { requireAuth } from '../middleware/auth.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { uploadFile, getFileUrl } from '../utils/storage.js';
+import { emitToChild } from '../socket/index.js';
+import type { Server } from 'socket.io';
 import type { Story, ChildProfile, FamilyMember, StoryPage } from '../types/index.js';
 
 const router = Router();
@@ -112,7 +114,8 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
     }
 
     // Generate cover + page illustrations in the background
-    generateAllIllustrations(storyId, child_profile_id, storyContent.title, theme, mood).catch((error) => {
+    const io = req.app.get('io') as Server | undefined;
+    generateAllIllustrations(storyId, child_profile_id, storyContent.title, theme, mood, io).catch((error) => {
       console.error('Background illustration generation failed:', error);
     });
 
@@ -235,7 +238,8 @@ router.post('/:storyId/regenerate-illustrations', async (req: Request, res: Resp
     );
 
     // Start regenerating illustrations
-    generateAllIllustrations(storyId, story.child_profile_id, story.title, story.theme ?? undefined, story.mood ?? undefined).catch((error) => {
+    const io = req.app.get('io') as Server | undefined;
+    generateAllIllustrations(storyId, story.child_profile_id, story.title, story.theme ?? undefined, story.mood ?? undefined, io).catch((error) => {
       console.error('Background illustration regeneration failed:', error);
     });
 
@@ -518,7 +522,8 @@ async function generateAllIllustrations(
   childProfileId: string,
   title: string,
   theme: string | undefined,
-  mood: string | undefined
+  mood: string | undefined,
+  io?: Server
 ): Promise<void> {
   // Generate cover image first
   try {
@@ -595,6 +600,41 @@ async function generateAllIllustrations(
     }
 
     await new Promise((resolve) => setTimeout(resolve, 3000));
+  }
+
+  // Check if all illustrations completed — send kid notification
+  try {
+    const statusResult = await queryOne<{ total: string; completed: string }>(
+      `SELECT COUNT(*) as total,
+              COUNT(*) FILTER (WHERE illustration_status = 'completed') as completed
+       FROM story_pages WHERE story_id = $1`,
+      [storyId]
+    );
+
+    const total = parseInt(statusResult?.total || '0');
+    const completed = parseInt(statusResult?.completed || '0');
+
+    if (total > 0 && completed === total) {
+      // All illustrations done — create kid notification
+      const notification = await queryOne<{ id: string; child_profile_id: string; notification_type: string; title: string; message: string; is_read: boolean; created_at: string; metadata: Record<string, unknown> }>(
+        `INSERT INTO kid_notifications (child_profile_id, notification_type, title, message, metadata)
+         VALUES ($1, 'story_complete', $2, $3, $4)
+         RETURNING *`,
+        [
+          childProfileId,
+          'Your story is ready!',
+          `"${title}" is complete with all its pictures! Tap to read it now.`,
+          JSON.stringify({ storyId }),
+        ]
+      );
+
+      // Emit real-time notification to kid
+      if (io && notification) {
+        emitToChild(io, childProfileId, 'kid-notification', notification);
+      }
+    }
+  } catch (error) {
+    console.error('Failed to send story completion notification:', error);
   }
 }
 

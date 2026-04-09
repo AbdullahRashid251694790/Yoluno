@@ -6,7 +6,8 @@
  * Steps: Theme → Characters → Mood → Values → Generate
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useChildProfile } from '@/hooks/queries';
 import { queryKeys } from '@/hooks/queries/keys';
@@ -34,6 +35,8 @@ import {
   Users,
   Palette,
   Heart,
+  MessageCircle,
+  Map,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -139,12 +142,24 @@ interface WizardState {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
+// Rotating fun messages shown during story generation
+const LOADING_MESSAGES = [
+  'Mixing up some magic words...',
+  'Sprinkling story dust...',
+  'Waking up the characters...',
+  'Painting the adventure...',
+  'Adding a sprinkle of wonder...',
+  'The story fairies are busy...',
+];
+
 export function KidsStoryCreator({ childId, onClose, onSuccess }: KidsStoryCreatorProps) {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const { data: child } = useChildProfile(childId);
 
   const [currentStep, setCurrentStep] = useState(0);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [loadingMsgIndex, setLoadingMsgIndex] = useState(0);
   const [generatedStory, setGeneratedStory] = useState<{
     id?: string;
     title: string;
@@ -165,6 +180,15 @@ export function KidsStoryCreator({ childId, onClose, onSuccess }: KidsStoryCreat
     storyLength: 'medium',
     narratorVoice: child ? getRecommendedVoice(child.age) : 'nova',
   });
+
+  // Rotate loading messages every 3 seconds while generating
+  useEffect(() => {
+    if (!isGenerating) return;
+    const interval = setInterval(() => {
+      setLoadingMsgIndex((prev) => (prev + 1) % LOADING_MESSAGES.length);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [isGenerating]);
 
   const themes = child ? getThemeSuggestions(child.age) : [];
   const isLastStep = currentStep === STEPS.length - 1;
@@ -239,7 +263,7 @@ export function KidsStoryCreator({ childId, onClose, onSuccess }: KidsStoryCreat
         pageCount: story.pages?.length,
       });
 
-      toast.success('Your story is ready! 🎉');
+      // Toast removed — loading screen stays visible with suggestions
     } catch (error: any) {
       const message = error?.message || '';
       if (message.includes('limit') || message.includes('429')) {
@@ -495,12 +519,12 @@ export function KidsStoryCreator({ childId, onClose, onSuccess }: KidsStoryCreat
 
       // ── Step 4: Generate ──────────────────────────────────────────────────────
       case 4:
-        if (isGenerating) {
+        if (isGenerating || generatedStory) {
           return (
-            <div className="flex flex-col items-center justify-center py-12 space-y-6">
+            <div className="flex flex-col items-center justify-center py-6 space-y-5">
               <div className="relative">
-                <div className="w-32 h-32 rounded-full bg-gradient-to-br from-primary to-lolo flex items-center justify-center animate-pulse">
-                  <Wand2 className="h-16 w-16 text-white animate-bounce" />
+                <div className="w-28 h-28 rounded-full bg-gradient-to-br from-primary to-lolo flex items-center justify-center animate-pulse">
+                  <Wand2 className="h-14 w-14 text-white animate-bounce" />
                 </div>
                 <Sparkles className="absolute -top-2 -right-2 h-8 w-8 text-lala animate-spin" />
                 <Sparkles
@@ -509,38 +533,45 @@ export function KidsStoryCreator({ childId, onClose, onSuccess }: KidsStoryCreat
                 />
               </div>
               <div className="text-center space-y-2">
-                <h2 className="text-body-lg font-display font-bold text-foreground">Making your story...</h2>
-                <p className="text-body-sm text-muted-foreground">A little magic is happening! ✨</p>
-                <Loader2 className="h-6 w-6 animate-spin mx-auto text-primary mt-4" />
+                <h2 className="text-body-lg font-display font-bold text-foreground">
+                  {generatedStory ? `Creating "${generatedStory.title}"...` : 'Making your story...'}
+                </h2>
+                <p className="text-body-sm text-muted-foreground transition-opacity duration-500">
+                  {LOADING_MESSAGES[loadingMsgIndex]}
+                </p>
+                <Loader2 className="h-6 w-6 animate-spin mx-auto text-primary mt-3" />
+                <p className="text-caption text-muted-foreground pt-1">
+                  This will take a few minutes — pictures are being drawn!
+                </p>
               </div>
-            </div>
-          );
-        }
 
-        if (generatedStory) {
-          return (
-            <div className="space-y-4 text-center">
-              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary to-primary flex items-center justify-center mx-auto">
-                <BookOpen className="h-10 w-10 text-white" />
+              {/* Suggestions while waiting */}
+              <div className="w-full space-y-2 pt-2">
+                <p className="text-caption text-muted-foreground font-medium text-center">Do something fun while you wait!</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => { onClose(); navigate(`/kids/${childId}/chat`); }}
+                    className="flex items-center gap-2 rounded-2xl p-3 bg-primary/10 border border-primary/20 hover:bg-primary/20 transition-colors"
+                  >
+                    <ChatAvatar buddyName="Luno" expression="excited" size="sm" />
+                    <div className="text-left">
+                      <span className="text-caption font-bold text-foreground block">Chat with Luno</span>
+                      <span className="text-caption text-muted-foreground">Talk & play</span>
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => { onClose(); navigate(`/kids/${childId}/journeys`); }}
+                    className="flex items-center gap-2 rounded-2xl p-3 bg-lolo/10 border border-lolo/20 hover:bg-lolo/20 transition-colors"
+                  >
+                    <ChatAvatar buddyName="Lolo" expression="curious" size="sm" />
+                    <div className="text-left">
+                      <span className="text-caption font-bold text-foreground block">Go on a Journey</span>
+                      <span className="text-caption text-muted-foreground">Explore & learn</span>
+                    </div>
+                  </button>
+                </div>
               </div>
-              <div>
-                <h2 className="text-body-lg font-display font-bold text-foreground">{generatedStory.title}</h2>
-                {generatedStory.hasPages && generatedStory.pageCount && (
-                  <p className="text-body-sm text-muted-foreground mt-1">
-                    {generatedStory.pageCount} pages · illustrations being created...
-                  </p>
-                )}
-              </div>
-              <div className="max-h-40 overflow-y-auto rounded-2xl bg-primary/5 p-4 text-left">
-                <p className="text-body-sm leading-relaxed whitespace-pre-wrap text-foreground/70">
-                  {generatedStory.content}
-                </p>
-              </div>
-              <div className="rounded-2xl bg-lala/10 border border-lala p-3">
-                <p className="text-body-sm text-lala font-medium">
-                  🎨 Your storybook is ready! Pictures are being drawn in the background.
-                </p>
-              </div>
+
             </div>
           );
         }
@@ -616,7 +647,7 @@ export function KidsStoryCreator({ childId, onClose, onSuccess }: KidsStoryCreat
           {currentStep === 1 && '👥 Add Characters'}
           {currentStep === 2 && '🌟 Choose the Mood'}
           {currentStep === 3 && '💡 Pick Your Values'}
-          {currentStep === 4 && (generatedStory ? '🎉 Your Story!' : '✨ Almost Ready!')}
+          {currentStep === 4 && ((isGenerating || generatedStory) ? '🎨 Creating Story...' : '✨ Almost Ready!')}
         </h1>
       </div>
 
@@ -625,8 +656,21 @@ export function KidsStoryCreator({ childId, onClose, onSuccess }: KidsStoryCreat
         {renderStep()}
       </main>
 
-      {/* Footer navigation — hidden while generating */}
-      {!(currentStep === 4 && isGenerating) && (
+      {/* Read My Story footer — shown when story text is ready */}
+      {currentStep === 4 && generatedStory && !isGenerating && (
+        <footer className="px-4 py-4 flex-shrink-0 border-t border-white/50 bg-white/30 backdrop-blur-sm">
+          <button
+            onClick={handleFinish}
+            className="w-full rounded-full p-4 bg-gradient-to-r from-lumi to-lolo text-white font-display font-bold text-body-lg flex items-center justify-center gap-2 shadow-lg hover:shadow-xl active:scale-[0.98] transition-all h-14"
+          >
+            <BookOpen className="h-5 w-5" />
+            Read My Story
+          </button>
+        </footer>
+      )}
+
+      {/* Footer navigation — hidden while generating or story created */}
+      {!(currentStep === 4 && (isGenerating || generatedStory)) && (
         <footer className="px-4 py-4 flex-shrink-0 border-t border-white/50 bg-white/30 backdrop-blur-sm">
           {isLastStep ? (
             generatedStory ? (

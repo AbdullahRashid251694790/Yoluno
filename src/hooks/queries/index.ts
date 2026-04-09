@@ -87,6 +87,16 @@ export {
   useAddNotificationToCache,
 } from './useNotifications';
 
+// Kid Notifications
+export {
+  useKidNotifications,
+  useKidUnreadCount,
+  useMarkKidNotificationRead,
+  useMarkAllKidNotificationsRead,
+  useDeleteKidNotification,
+  useAddKidNotificationToCache,
+} from './useKidNotifications';
+
 // Mood Check-ins
 export {
   useTodaysMood,

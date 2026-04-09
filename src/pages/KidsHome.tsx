@@ -31,6 +31,7 @@ import {
   Gift,
 } from 'lucide-react';
 import { PasswordChangeRequestButton } from '@/components/kids/PasswordChangeRequestButton';
+import { KidNotificationBell } from '@/components/kids/KidNotificationBell';
 import type { AvatarExpression } from '@/types/domain';
 
 // Badge emoji mapping (matches KidsBadges page)
@@ -198,6 +199,9 @@ export function KidsHomePage() {
             <Star className="h-4 w-4 text-lala fill-lala" />
             <span className="text-body-sm font-bold text-lala">{starCount}</span>
           </div>
+
+          {/* Kid Notifications */}
+          <KidNotificationBell childId={childId!} />
 
           {/* Password Change Request (Settings gear icon) */}
           <PasswordChangeRequestButton
