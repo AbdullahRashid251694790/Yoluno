@@ -57,7 +57,7 @@ function getLabel(m: FamilyMemberRow): string {
 function getSide(m: FamilyMemberRow): string { return (m as any).side || 'direct'; }
 function getRelType(m: FamilyMemberRow): RelationType {
   const r = m.relationship;
-  if (r === 'parent' || r === 'grandparent' || r === 'sibling' || r === 'aunt_uncle' || r === 'cousin') return r;
+  if (r === 'parent' || r === 'step_parent' || r === 'grandparent' || r === 'sibling' || r === 'aunt_uncle' || r === 'cousin') return r === 'step_parent' ? 'parent' : r;
   return 'other';
 }
 
@@ -261,7 +261,7 @@ export function KidsFamilyPage() {
     for (const m of familyMembers) {
       const side = getSide(m), rel = m.relationship;
       if (rel === 'grandparent') { (side === 'maternal' ? mg : pg).push(m); }
-      else if (rel === 'parent') { parents.push(m); }
+      else if (rel === 'parent' || rel === 'step_parent') { parents.push(m); }
       else if (rel === 'aunt_uncle') { (side === 'maternal' ? me : side === 'paternal' ? pe : other).push(m); }
       else if (rel === 'cousin') { cousins.push(m); }
       else if (rel !== 'sibling') { other.push(m); }

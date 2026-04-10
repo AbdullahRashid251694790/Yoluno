@@ -30,6 +30,7 @@ const ALL_GENERATIONS = [3, 2, 1, 0, -1];
 const RELATIONSHIP_TO_GENERATION: Record<string, number> = {
   grandparent: 3,
   parent: 2,
+  step_parent: 2,
   aunt_uncle: 1,
   sibling: 0,
   cousin: 0,

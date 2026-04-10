@@ -33,6 +33,7 @@ import { getUploadUrl } from '@/integrations/api';
 
 const RELATIONSHIP_LABELS: Record<string, string> = {
   parent: 'Parent',
+  step_parent: 'Step-Parent',
   grandparent: 'Grandparent',
   sibling: 'Sibling',
   aunt_uncle: 'Aunt/Uncle',
@@ -57,6 +58,7 @@ const SPECIFIC_RELATIONSHIP_LABELS: Record<string, string> = {
 // Relationship-based colors for avatars
 const RELATIONSHIP_COLORS: Record<string, { bg: string; text: string }> = {
   parent: { bg: 'bg-primary/10', text: 'text-primary' },
+  step_parent: { bg: 'bg-primary/10', text: 'text-primary' },
   grandparent: { bg: 'bg-primary/10', text: 'text-primary' },
   sibling: { bg: 'bg-primary/10', text: 'text-primary' },
   aunt_uncle: { bg: 'bg-gold/10', text: 'text-gold' },

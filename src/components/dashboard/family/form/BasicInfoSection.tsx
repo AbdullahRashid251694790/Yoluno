@@ -19,6 +19,7 @@ import type { CreateFamilyMemberFormData } from '@/types/forms';
 
 const RELATIONSHIP_OPTIONS = [
   { value: 'parent', label: 'Parent' },
+  { value: 'step_parent', label: 'Step-Parent' },
   { value: 'grandparent', label: 'Grandparent' },
   { value: 'sibling', label: 'Sibling' },
   { value: 'aunt_uncle', label: 'Aunt/Uncle' },
@@ -38,6 +39,12 @@ const SPECIFIC_RELATIONSHIP_OPTIONS: Record<string, Record<string, { value: stri
     direct: [
       { value: 'father', label: 'Father' },
       { value: 'mother', label: 'Mother' },
+    ],
+  },
+  step_parent: {
+    direct: [
+      { value: 'step_father', label: 'Step-Father' },
+      { value: 'step_mother', label: 'Step-Mother' },
     ],
   },
   grandparent: {
@@ -80,6 +87,7 @@ const SPECIFIC_RELATIONSHIP_OPTIONS: Record<string, Record<string, { value: stri
 // Which relationships need a side selection
 const NEEDS_SIDE: Record<string, string[]> = {
   parent: ['direct'],
+  step_parent: ['direct'],
   grandparent: ['paternal', 'maternal'],
   sibling: ['direct'],
   aunt_uncle: ['paternal', 'maternal'],

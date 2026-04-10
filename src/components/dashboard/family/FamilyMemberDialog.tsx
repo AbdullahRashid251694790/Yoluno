@@ -48,6 +48,8 @@ function buildConnectionDescription(data: CreateFamilyMemberFormData): string {
     maternal_aunt_husband: "Mom's sister's husband",
     brother: "Child's brother",
     sister: "Child's sister",
+    step_father: "Child's step-father",
+    step_mother: "Child's step-mother",
     step_parent: "Step-parent",
     step_sibling: "Step-sibling",
     cousin: data.side === 'paternal' ? "Cousin (Dad's side)" : data.side === 'maternal' ? "Cousin (Mom's side)" : "Cousin",
