@@ -43,27 +43,16 @@ export function DetailsSection({
       <h3 className="text-body-sm font-medium text-muted-foreground uppercase tracking-wide">
         Fun Facts & Stories
       </h3>
+      <p className="text-caption text-muted-foreground">
+        These will be shown to kids and used by Luno when talking about this family member.
+      </p>
 
-      <div className="space-y-2">
-        <Label htmlFor="funFacts">Tell us something special</Label>
-        <Textarea
-          id="funFacts"
-          placeholder="e.g., Grandpa once traveled around the world!"
-          {...register('funFacts')}
-          disabled={isLoading}
-          rows={2}
-        />
-        <p className="text-caption text-muted-foreground">
-          Fun facts that Luno can share with kids
-        </p>
-      </div>
-
-      {/* Additional stories */}
+      {/* List of added stories */}
       {additionalStories.length > 0 && (
         <div className="space-y-2">
-          <Label className="text-caption text-muted-foreground">Added stories:</Label>
           {additionalStories.map((story, i) => (
             <div key={i} className="flex items-start gap-2 rounded-lg border p-2 bg-muted/30">
+              <span className="text-caption text-muted-foreground shrink-0 mt-0.5">{i + 1}.</span>
               <p className="flex-1 text-body-sm">{story}</p>
               <button type="button" onClick={() => onRemoveStory(i)} className="text-muted-foreground hover:text-destructive shrink-0">
                 <X className="h-3.5 w-3.5" />
@@ -73,10 +62,10 @@ export function DetailsSection({
         </div>
       )}
 
-      {/* Add another story */}
+      {/* Add story input */}
       <div className="space-y-2">
         <Textarea
-          placeholder="Add another fun fact or story..."
+          placeholder={additionalStories.length === 0 ? "e.g., Grandpa once traveled around the world!" : "Add another fun fact or story..."}
           value={newStory}
           onChange={(e) => setNewStory(e.target.value)}
           disabled={isLoading}
@@ -91,20 +80,10 @@ export function DetailsSection({
           className="!h-8 !text-caption"
         >
           <Plus className="h-3.5 w-3.5 mr-1" />
-          Add Story
+          {additionalStories.length === 0 ? 'Add Story' : 'Add Another Story'}
         </Button>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="bio">Bio / Notes</Label>
-        <Textarea
-          id="bio"
-          placeholder="Additional notes about this family member..."
-          {...register('bio')}
-          disabled={isLoading}
-          rows={2}
-        />
-      </div>
     </div>
   );
 }

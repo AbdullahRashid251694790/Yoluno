@@ -96,13 +96,13 @@ export async function uploadFamilyPhoto(
   const formData = new FormData();
   formData.append('file', file);
 
-  const response = await apiPostFormData<{ url: string }>(
+  const response = await apiPostFormData<{ key: string; url: string }>(
     '/upload/family-photos',
     `${CONTEXT}.uploadFamilyPhoto`,
     formData
   );
 
-  return response.url;
+  return response.key || response.url;
 }
 
 export async function updateTreePositions(

@@ -21,7 +21,7 @@ import { cn } from '@/lib/utils';
 
 interface FamilyMemberFormProps {
   member?: FamilyMemberRow;
-  onSubmit: (data: CreateFamilyMemberFormData, photoFile: File | null, videoFiles: File[], additionalStories: string[]) => void;
+  onSubmit: (data: CreateFamilyMemberFormData, photoFile: File | null, videoFiles: File[], additionalStories: string[], memoryPhotos: File[]) => void;
   isLoading?: boolean;
   className?: string;
 }
@@ -34,6 +34,7 @@ export function FamilyMemberForm({
 }: FamilyMemberFormProps) {
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [videoFiles, setVideoFiles] = useState<File[]>([]);
+  const [memoryPhotos, setMemoryPhotos] = useState<File[]>([]);
   const [additionalStories, setAdditionalStories] = useState<string[]>([]);
 
   const {
@@ -69,7 +70,7 @@ export function FamilyMemberForm({
   };
 
   const handleFormSubmit = (data: CreateFamilyMemberFormData) => {
-    onSubmit(data, photoFile, videoFiles, additionalStories);
+    onSubmit(data, photoFile, videoFiles, additionalStories, memoryPhotos);
   };
 
   return (
@@ -108,6 +109,9 @@ export function FamilyMemberForm({
         videoFiles={videoFiles}
         onAddVideo={(f) => setVideoFiles((prev) => [...prev, f])}
         onRemoveVideo={(i) => setVideoFiles((prev) => prev.filter((_, idx) => idx !== i))}
+        photoFiles={memoryPhotos}
+        onAddPhoto={(f) => setMemoryPhotos((prev) => [...prev, f])}
+        onRemovePhoto={(i) => setMemoryPhotos((prev) => prev.filter((_, idx) => idx !== i))}
         isLoading={isLoading}
       />
 

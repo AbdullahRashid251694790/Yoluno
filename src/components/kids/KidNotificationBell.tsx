@@ -7,7 +7,7 @@
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, BookOpen, Check, X } from 'lucide-react';
+import { Bell, BookOpen, Check, X, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Popover,
@@ -66,6 +66,9 @@ export function KidNotificationBell({ childId }: KidNotificationBellProps) {
     if (notification.notification_type === 'story_complete' && notification.metadata?.storyId) {
       setIsOpen(false);
       navigate(`/kids/${childId}/stories`);
+    } else if (notification.notification_type === 'family_update') {
+      setIsOpen(false);
+      navigate(`/kids/${childId}/family`);
     }
   };
 
@@ -73,6 +76,8 @@ export function KidNotificationBell({ childId }: KidNotificationBellProps) {
     switch (type) {
       case 'story_complete':
         return <BookOpen className="h-4 w-4 text-lumi" />;
+      case 'family_update':
+        return <Users className="h-4 w-4 text-lala" />;
       default:
         return <Bell className="h-4 w-4 text-primary" />;
     }
@@ -116,7 +121,7 @@ export function KidNotificationBell({ childId }: KidNotificationBellProps) {
         </div>
 
         {/* List */}
-        <ScrollArea className="max-h-[250px]">
+        <ScrollArea className="h-[250px] overflow-y-auto">
           {notifications.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-8 text-center px-4">
               <Bell className="h-8 w-8 text-muted-foreground/40 mb-2" />

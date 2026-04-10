@@ -1001,6 +1001,26 @@ async function generateBuddyResponse(
     storiesByMember[row.family_member_id].push(row.content);
   }
 
+  // Get recent family updates (last 7 days) for proactive mentions
+  const recentFamilyUpdates = await query<{ name: string; update_type: string; created_at: string }>(
+    `(SELECT fm.name, 'new_member' as update_type, fm.created_at
+      FROM family_members fm WHERE fm.user_id = $1 AND fm.created_at > NOW() - INTERVAL '7 days')
+     UNION ALL
+     (SELECT fm.name, 'new_story' as update_type, fms.created_at
+      FROM family_member_stories fms JOIN family_members fm ON fms.family_member_id = fm.id
+      WHERE fm.user_id = $1 AND fms.created_at > NOW() - INTERVAL '7 days')
+     UNION ALL
+     (SELECT fm.name, 'new_photo' as update_type, fmp.created_at
+      FROM family_member_photos fmp JOIN family_members fm ON fmp.family_member_id = fm.id
+      WHERE fm.user_id = $1 AND fmp.created_at > NOW() - INTERVAL '7 days')
+     UNION ALL
+     (SELECT fm.name, 'new_video' as update_type, fmv.created_at
+      FROM family_member_videos fmv JOIN family_members fm ON fmv.family_member_id = fm.id
+      WHERE fm.user_id = $1 AND fmv.created_at > NOW() - INTERVAL '7 days')
+     ORDER BY created_at DESC LIMIT 10`,
+    [child.user_id]
+  );
+
   // Get buddy name for persona
   const buddy = await queryOne<{ name: string }>(
     'SELECT name FROM chat_buddies WHERE child_profile_id = $1',
@@ -1089,7 +1109,7 @@ async function generateBuddyResponse(
   }));
 
   // Build system prompt
-  const systemPrompt = buildSystemPrompt(buddyName, child, guardrails, safety, familyMembers, taskCompletion, topicPosts, enabledTopics, customTopics, storiesByMember, activeJourneys, recentStories);
+  const systemPrompt = buildSystemPrompt(buddyName, child, guardrails, safety, familyMembers, taskCompletion, topicPosts, enabledTopics, customTopics, storiesByMember, activeJourneys, recentStories, recentFamilyUpdates.rows);
 
   // Build user message with image context
   let userContent = message;
@@ -1156,7 +1176,8 @@ function buildSystemPrompt(
   customTopics?: { topic_name: string; description: string }[],
   storiesByMember?: Record<string, string[]>,
   activeJourneys?: { title: string; status: string; progress: number; total_steps: number; completed_steps: number }[],
-  recentStories?: { title: string; theme: string | null; created_at: string }[]
+  recentStories?: { title: string; theme: string | null; created_at: string }[],
+  recentFamilyUpdates?: { name: string; update_type: string; created_at: string }[]
 ): string {
   // Persona-specific traits based on spec
   const personas: Record<string, { description: string; tone: string; examples: string[] }> = {
@@ -1298,14 +1319,15 @@ Do NOT overdo it — mention a friend once when introducing the topic, then cont
       if (member.connection_description) details.push(`  - ${member.connection_description}`);
       if (member.occupation) details.push(`  - Works as: ${member.occupation}`);
       if (member.hobbies && member.hobbies.length > 0) details.push(`  - Enjoys: ${member.hobbies.join(', ')}`);
-      // Include all stories/fun facts (from new table + legacy field)
+      // Include all stories/fun facts from stories table
       const memberId = (member as any).id;
       const memberStories = memberId && storiesByMember?.[memberId] ? storiesByMember[memberId] : [];
       if (memberStories.length > 0) {
-        for (const story of memberStories.slice(0, 5)) {
-          details.push(`  - Fun fact: ${story}`);
+        for (const story of memberStories) {
+          details.push(`  - Story/Fun fact: ${story}`);
         }
       } else if (member.fun_facts) {
+        // Legacy fallback for older entries
         details.push(`  - Fun fact: ${member.fun_facts}`);
       }
       if (!member.is_alive) details.push(`  - Remembered with so much love`);
@@ -1325,6 +1347,19 @@ When ${child.name} asks about a SPECIFIC family member:
 - If the family member is remembered (not alive), be extra tender and frame it as a cherished memory Lottie keeps safe
 
 If ${child.name} asks for a STORY about a family member (e.g. "tell me a story about grandpa"), this is Lottie's domain, NOT Lumi's. Frame it as: "Lottie told me the sweetest story about your grandpa..." then weave a gentle story using that family member's real details.`;
+  }
+
+  // Add recent family updates for proactive mentions
+  if (recentFamilyUpdates && recentFamilyUpdates.length > 0) {
+    prompt += `\n\nRECENT FAMILY UPDATES (Lottie is excited about these — happened in the last 7 days!):`;
+    for (const update of recentFamilyUpdates) {
+      const typeLabel = update.update_type === 'new_member' ? 'joined the family tree' :
+                        update.update_type === 'new_story' ? 'has a new story' :
+                        update.update_type === 'new_photo' ? 'has a new photo' :
+                        'has a new video';
+      prompt += `\n- ${update.name} ${typeLabel}`;
+    }
+    prompt += `\n\nIf ${child.name} hasn't asked about family yet, you may naturally bring up ONE recent update early in conversation: "Oh! Lottie just told me something exciting — [update]! Would you like to hear about it?" But only do this ONCE per conversation, and only if it fits naturally. Don't force it.`;
   }
 
   // Add journey context (Lolo's domain)

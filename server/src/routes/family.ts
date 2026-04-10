@@ -3,9 +3,43 @@ import { v4 as uuidv4 } from 'uuid';
 import { query, queryOne } from '../config/database.js';
 import { requireAuth } from '../middleware/auth.js';
 import { AppError } from '../middleware/errorHandler.js';
+import { emitToChild } from '../socket/index.js';
+import type { Server } from 'socket.io';
 import type { FamilyMember, FamilyRelationship } from '../types/index.js';
 
 const router = Router();
+
+// Helper: notify all children of a parent about family updates
+async function notifyKidsAboutFamily(
+  req: Request,
+  userId: string,
+  title: string,
+  message: string,
+  metadata: Record<string, unknown> = {}
+) {
+  try {
+    const children = await query<{ id: string }>(
+      'SELECT id FROM child_profiles WHERE user_id = $1',
+      [userId]
+    );
+    const io = req.app.get('io') as Server | undefined;
+
+    for (const child of children.rows) {
+      const notification = await queryOne<{ id: string; child_profile_id: string; notification_type: string; title: string; message: string; is_read: boolean; created_at: string; metadata: Record<string, unknown> }>(
+        `INSERT INTO kid_notifications (child_profile_id, notification_type, title, message, metadata)
+         VALUES ($1, 'family_update', $2, $3, $4)
+         RETURNING *`,
+        [child.id, title, message, JSON.stringify(metadata)]
+      );
+
+      if (io && notification) {
+        emitToChild(io, child.id, 'kid-notification', notification);
+      }
+    }
+  } catch (error) {
+    console.error('Failed to send family notification to kids:', error);
+  }
+}
 
 router.use(requireAuth);
 
@@ -97,6 +131,14 @@ router.post('/members', async (req: Request, res: Response, next: NextFunction) 
         connection_description || null, photo_description || null, generation_level || null,
         position_x || null, position_y || null, side, specific_relationship || null, parent_member_id || null,
       ]
+    );
+
+    // Notify kids about new family member
+    await notifyKidsAboutFamily(
+      req, req.user!.id,
+      'New family member!',
+      `${name} has joined your family tree! Tap to meet them.`,
+      { memberId: id }
     );
 
     res.status(201).json(result);
@@ -334,7 +376,7 @@ If a field is not mentioned, use null for strings or empty array for hobbies.`;
 router.get('/members/:id/videos', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const result = await query<{ id: string; video_url: string; title: string | null; created_at: string }>(
-      'SELECT * FROM family_member_videos WHERE family_member_id = $1 ORDER BY created_at DESC',
+      'SELECT * FROM family_member_videos WHERE family_member_id = $1 ORDER BY created_at ASC',
       [req.params.id]
     );
     res.json(result.rows);
@@ -354,6 +396,13 @@ router.post('/members/:id/videos', async (req: Request, res: Response, next: Nex
        VALUES ($1, $2, $3, $4) RETURNING *`,
       [uuidv4(), req.params.id, video_url, title || null]
     );
+
+    // Notify kids only if member is not brand new (skip during initial creation)
+    const member = await queryOne<{ name: string; user_id: string; created_at: string }>('SELECT name, user_id, created_at FROM family_members WHERE id = $1', [req.params.id]);
+    if (member && Date.now() - new Date(member.created_at).getTime() > 60000) {
+      await notifyKidsAboutFamily(req, member.user_id, 'New video!', `${member.name} has a new video for you!`, { memberId: req.params.id });
+    }
+
     res.status(201).json(result);
   } catch (error) {
     next(error);
@@ -374,7 +423,7 @@ router.delete('/members/:memberId/videos/:videoId', async (req: Request, res: Re
 router.get('/members/:id/stories', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const result = await query<{ id: string; content: string; created_at: string }>(
-      'SELECT * FROM family_member_stories WHERE family_member_id = $1 ORDER BY created_at DESC',
+      'SELECT * FROM family_member_stories WHERE family_member_id = $1 ORDER BY created_at ASC',
       [req.params.id]
     );
     res.json(result.rows);
@@ -394,6 +443,13 @@ router.post('/members/:id/stories', async (req: Request, res: Response, next: Ne
        VALUES ($1, $2, $3) RETURNING *`,
       [uuidv4(), req.params.id, content]
     );
+
+    // Notify kids only if member is not brand new (skip during initial creation)
+    const member = await queryOne<{ name: string; user_id: string; created_at: string }>('SELECT name, user_id, created_at FROM family_members WHERE id = $1', [req.params.id]);
+    if (member && Date.now() - new Date(member.created_at).getTime() > 60000) {
+      await notifyKidsAboutFamily(req, member.user_id, 'New story!', `There's a new story about ${member.name}!`, { memberId: req.params.id });
+    }
+
     res.status(201).json(result);
   } catch (error) {
     next(error);
@@ -405,6 +461,55 @@ router.delete('/members/:memberId/stories/:storyId', async (req: Request, res: R
   try {
     await query('DELETE FROM family_member_stories WHERE id = $1 AND family_member_id = $2', [req.params.storyId, req.params.memberId]);
     res.json({ message: 'Story deleted' });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// ─── Multiple Photos per Family Member ────────────────────────────────────────
+
+// GET /api/family/members/:id/photos
+router.get('/members/:id/photos', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const result = await query<{ id: string; photo_url: string; caption: string | null; created_at: string }>(
+      'SELECT * FROM family_member_photos WHERE family_member_id = $1 ORDER BY created_at ASC',
+      [req.params.id]
+    );
+    res.json(result.rows);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// POST /api/family/members/:id/photos
+router.post('/members/:id/photos', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { photo_url, caption } = req.body;
+    if (!photo_url) throw new AppError(400, 'Photo URL is required');
+
+    const result = await queryOne(
+      `INSERT INTO family_member_photos (id, family_member_id, photo_url, caption)
+       VALUES ($1, $2, $3, $4) RETURNING *`,
+      [uuidv4(), req.params.id, photo_url, caption || null]
+    );
+
+    // Notify kids only if member is not brand new (skip during initial creation)
+    const member = await queryOne<{ name: string; user_id: string; created_at: string }>('SELECT name, user_id, created_at FROM family_members WHERE id = $1', [req.params.id]);
+    if (member && Date.now() - new Date(member.created_at).getTime() > 60000) {
+      await notifyKidsAboutFamily(req, member.user_id, 'New photo!', `${member.name} has a new photo to see!`, { memberId: req.params.id });
+    }
+
+    res.status(201).json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// DELETE /api/family/members/:memberId/photos/:photoId
+router.delete('/members/:memberId/photos/:photoId', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    await query('DELETE FROM family_member_photos WHERE id = $1 AND family_member_id = $2', [req.params.photoId, req.params.memberId]);
+    res.json({ message: 'Photo deleted' });
   } catch (error) {
     next(error);
   }

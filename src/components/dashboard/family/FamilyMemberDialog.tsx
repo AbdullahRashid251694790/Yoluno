@@ -100,7 +100,8 @@ export function FamilyMemberDialog({
     data: CreateFamilyMemberFormData,
     photoFile: File | null,
     videoFiles: File[],
-    additionalStories: string[]
+    additionalStories: string[],
+    memoryPhotos: File[] = []
   ) => {
     if (!user || isSubmitting) return;
 
@@ -126,6 +127,17 @@ export function FamilyMemberDialog({
           file: vf,
         });
         uploadedVideoUrls.push(vUrl);
+      }
+
+      // Upload memory photos
+      const uploadedMemoryPhotoUrls: string[] = [];
+      for (const pf of memoryPhotos) {
+        const pUrl = await uploadPhoto.mutateAsync({
+          userId: user.id,
+          memberId: member?.id || `new-photo-${Date.now()}`,
+          file: pf,
+        });
+        uploadedMemoryPhotoUrls.push(pUrl);
       }
 
       const memberData = {
@@ -156,14 +168,14 @@ export function FamilyMemberDialog({
           await apiClient.post(`/family/members/${member.id}/videos`, { video_url: vUrl }).catch(() => {});
         }
 
-        // Save fun facts to stories table if new content added
-        if (data.funFacts && data.funFacts !== member.fun_facts) {
-          await apiClient.post(`/family/members/${member.id}/stories`, { content: data.funFacts }).catch(() => {});
-        }
-
-        // Save additional stories
+        // Save all stories
         for (const story of additionalStories) {
           await apiClient.post(`/family/members/${member.id}/stories`, { content: story }).catch(() => {});
+        }
+
+        // Save memory photos
+        for (const pUrl of uploadedMemoryPhotoUrls) {
+          await apiClient.post(`/family/members/${member.id}/photos`, { photo_url: pUrl }).catch(() => {});
         }
 
         toast.success('Family member updated!');
@@ -179,14 +191,14 @@ export function FamilyMemberDialog({
             await apiClient.post(`/family/members/${created.id}/videos`, { video_url: vUrl }).catch(() => {});
           }
 
-          // Save fun facts to stories table
-          if (data.funFacts) {
-            await apiClient.post(`/family/members/${created.id}/stories`, { content: data.funFacts }).catch(() => {});
-          }
-
-          // Save additional stories
+          // Save all stories
           for (const story of additionalStories) {
             await apiClient.post(`/family/members/${created.id}/stories`, { content: story }).catch(() => {});
+          }
+
+          // Save memory photos
+          for (const pUrl of uploadedMemoryPhotoUrls) {
+            await apiClient.post(`/family/members/${created.id}/photos`, { photo_url: pUrl }).catch(() => {});
           }
         }
 

@@ -65,10 +65,13 @@ export function FamilyMemberDetail({ member, type, isOpen, onClose }: FamilyMemb
   const age = !isFamilyMember(member) ? (member as any).age : null;
   const gender = !isFamilyMember(member) ? (member as any).gender : null;
 
-  // Fetch multiple videos and stories for family members
+  // Fetch multiple videos, stories, and photos for family members
   const [videos, setVideos] = useState<{ id: string; video_url: string; title: string | null; created_at: string }[]>([]);
   const [stories, setStories] = useState<{ id: string; content: string; created_at: string }[]>([]);
+  const [photos, setPhotos] = useState<{ id: string; photo_url: string; caption: string | null; created_at: string }[]>([]);
   const [videoIndex, setVideoIndex] = useState(0);
+  const [photoIndex, setPhotoIndex] = useState(0);
+  const [storyIndex, setStoryIndex] = useState(0);
 
   useEffect(() => {
     if (isOpen && isFamilyMember(member)) {
@@ -78,11 +81,19 @@ export function FamilyMemberDetail({ member, type, isOpen, onClose }: FamilyMemb
       }).catch(() => setVideos([]));
       apiClient.get(`/family/members/${member.id}/stories`).then((r) => {
         setStories(r.data || []);
+        setStoryIndex(0);
       }).catch(() => setStories([]));
+      apiClient.get(`/family/members/${member.id}/photos`).then((r) => {
+        setPhotos(r.data || []);
+        setPhotoIndex(0);
+      }).catch(() => setPhotos([]));
     } else {
       setVideos([]);
       setStories([]);
+      setPhotos([]);
       setVideoIndex(0);
+      setPhotoIndex(0);
+      setStoryIndex(0);
     }
   }, [isOpen, member]);
 
@@ -90,7 +101,7 @@ export function FamilyMemberDetail({ member, type, isOpen, onClose }: FamilyMemb
   const funFacts = isFamilyMember(member) ? member.fun_facts : null;
   const allStories = stories.length > 0 ? stories : (funFacts ? [{ id: 'legacy', content: funFacts, created_at: '' }] : []);
 
-  const hasDetails = connectionDescription || occupation || (hobbies && hobbies.length > 0) || allStories.length > 0 || videos.length > 0 || age;
+  const hasDetails = connectionDescription || occupation || (hobbies && hobbies.length > 0) || allStories.length > 0 || videos.length > 0 || photos.length > 0 || age;
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -196,29 +207,88 @@ export function FamilyMemberDetail({ member, type, isOpen, onClose }: FamilyMemb
                 </div>
               )}
 
-              {/* Stories / Fun Facts */}
+              {/* Photo Carousel */}
+              {photos.length > 0 && (
+                <div className="bg-white rounded-2xl p-4 shadow-sm">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-h4">📸</span>
+                      <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                        {photos.length === 1 ? 'Photo' : `Photos (${photoIndex + 1}/${photos.length})`}
+                      </p>
+                    </div>
+                    {photos.length > 1 && (
+                      <div className="flex gap-1">
+                        <button
+                          onClick={() => setPhotoIndex((i) => (i - 1 + photos.length) % photos.length)}
+                          className="w-7 h-7 rounded-full bg-muted flex items-center justify-center hover:bg-muted-foreground/20"
+                        >
+                          <ChevronLeft className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => setPhotoIndex((i) => (i + 1) % photos.length)}
+                          className="w-7 h-7 rounded-full bg-muted flex items-center justify-center hover:bg-muted-foreground/20"
+                        >
+                          <ChevronRight className="h-4 w-4" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                  <img
+                    key={photos[photoIndex]?.id}
+                    src={getUploadUrl(photos[photoIndex]?.photo_url) || ''}
+                    alt={photos[photoIndex]?.caption || `Photo of ${name}`}
+                    className="w-full rounded-xl object-cover max-h-64"
+                  />
+                  {(photos[photoIndex]?.caption || photos[photoIndex]?.created_at) && (
+                    <div className="mt-2 text-center">
+                      {photos[photoIndex]?.caption && (
+                        <p className="text-caption text-muted-foreground">{photos[photoIndex].caption}</p>
+                      )}
+                      {photos[photoIndex]?.created_at && (
+                        <p className="text-[10px] text-muted-foreground/50 mt-1">
+                          {new Date(photos[photoIndex].created_at).toLocaleDateString()}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Stories / Fun Facts Carousel */}
               {allStories.length > 0 && (
                 <div className="bg-white rounded-2xl p-4 shadow-sm">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-h4">✨</span>
-                    <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                      {allStories.length === 1 ? 'Fun Fact' : `Fun Facts (${allStories.length})`}
-                    </p>
-                  </div>
-                  <div className="space-y-2">
-                    {allStories.map((story, i) => (
-                      <div key={story.id} className={cn(
-                        'text-body-sm text-foreground leading-relaxed',
-                        i > 0 && 'pt-2 border-t border-border'
-                      )}>
-                        {story.content}
-                        {story.created_at && (
-                          <p className="text-[10px] text-muted-foreground/50 mt-1">
-                            {new Date(story.created_at).toLocaleDateString()}
-                          </p>
-                        )}
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-h4">✨</span>
+                      <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                        {allStories.length === 1 ? 'Fun Fact' : `Fun Facts (${storyIndex + 1}/${allStories.length})`}
+                      </p>
+                    </div>
+                    {allStories.length > 1 && (
+                      <div className="flex gap-1">
+                        <button
+                          onClick={() => setStoryIndex((i) => (i - 1 + allStories.length) % allStories.length)}
+                          className="w-7 h-7 rounded-full bg-muted flex items-center justify-center hover:bg-muted-foreground/20"
+                        >
+                          <ChevronLeft className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => setStoryIndex((i) => (i + 1) % allStories.length)}
+                          className="w-7 h-7 rounded-full bg-muted flex items-center justify-center hover:bg-muted-foreground/20"
+                        >
+                          <ChevronRight className="h-4 w-4" />
+                        </button>
                       </div>
-                    ))}
+                    )}
+                  </div>
+                  <div className="text-body-sm text-foreground leading-relaxed">
+                    {allStories[storyIndex]?.content}
+                    {allStories[storyIndex]?.created_at && (
+                      <p className="text-[10px] text-muted-foreground/50 mt-2">
+                        {new Date(allStories[storyIndex].created_at).toLocaleDateString()}
+                      </p>
+                    )}
                   </div>
                 </div>
               )}
@@ -261,8 +331,17 @@ export function FamilyMemberDetail({ member, type, isOpen, onClose }: FamilyMemb
                   >
                     <source src={getUploadUrl(videos[videoIndex]?.video_url) || ''} type="video/mp4" />
                   </video>
-                  {videos[videoIndex]?.title && (
-                    <p className="text-caption text-muted-foreground mt-2 text-center">{videos[videoIndex].title}</p>
+                  {(videos[videoIndex]?.title || videos[videoIndex]?.created_at) && (
+                    <div className="mt-2 text-center">
+                      {videos[videoIndex]?.title && (
+                        <p className="text-caption text-muted-foreground">{videos[videoIndex].title}</p>
+                      )}
+                      {videos[videoIndex]?.created_at && (
+                        <p className="text-[10px] text-muted-foreground/50 mt-1">
+                          {new Date(videos[videoIndex].created_at).toLocaleDateString()}
+                        </p>
+                      )}
+                    </div>
                   )}
                 </div>
               )}
