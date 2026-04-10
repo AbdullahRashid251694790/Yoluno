@@ -187,9 +187,9 @@ export function BuddyChat({ childId, childName, sessionId, childAvatarUrl }: Bud
   const buddyName = 'Luno';
 
   return (
-    <div className="flex h-full flex-col bg-kids-gradient">
+    <div className="flex h-full flex-col bg-kids-chat">
       {/* Header with avatar and star counter */}
-      <div className="flex items-center justify-between px-4 py-3 bg-white/50 backdrop-blur-sm">
+      <div className="flex items-center justify-between px-4 py-3">
         <div className="flex items-center gap-3">
           <ChatAvatar
             expression={avatarExpression}
@@ -280,7 +280,7 @@ export function BuddyChat({ childId, childName, sessionId, childAvatarUrl }: Bud
       )}
 
       {/* Input area */}
-      <div className="border-t bg-white/70 backdrop-blur-sm p-4 safe-area-inset">
+      <div className="border-t border-primary/10 bg-kids-chat p-4 safe-area-inset">
         <ChatInput
           onSend={handleSend}
           isDisabled={isSending}

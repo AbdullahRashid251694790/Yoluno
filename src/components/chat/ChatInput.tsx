@@ -117,7 +117,7 @@ export function ChatInput({
       )}
       */}
 
-      <div className="flex items-end gap-2 rounded-2xl border bg-card p-2">
+      <div className="flex items-end gap-2 rounded-2xl bg-white/80 p-2">
         {/* Hidden file input - hidden for now
         <input
           ref={fileInputRef}

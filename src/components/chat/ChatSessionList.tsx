@@ -61,7 +61,7 @@ export function ChatSessionList({
   return (
     <aside
       className={cn(
-        'flex flex-col bg-white/90 backdrop-blur-sm border-r border-border h-full transition-all duration-300 overflow-hidden',
+        'flex flex-col bg-white border-r border-border h-full transition-all duration-300 overflow-hidden',
         isCollapsed ? 'w-0 border-r-0' : 'w-72'
       )}
     >
