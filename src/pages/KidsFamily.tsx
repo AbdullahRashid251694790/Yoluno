@@ -5,7 +5,7 @@
  * decorative frames, and premium glassmorphism.
  */
 
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { apiClient } from '@/integrations/api/client';
 import { useChildProfile, useFamilyMembers } from '@/hooks/queries';
@@ -13,12 +13,13 @@ import { useChildProfiles } from '@/hooks/queries/useChildProfiles';
 import { useAuth } from '@/contexts/AuthContext';
 import { LoadingSpinner, ErrorState } from '@/components/shared';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Trees, Mic, Play, Pause } from 'lucide-react';
 import { FamilyMemberDetail, type RelationType } from '@/components/kids/family';
 import type { FamilyMemberRow, ChildProfileRow as ChildProfile } from '@/types/database';
 import { cn } from '@/lib/utils';
 import { ChatAvatar } from '@/components/chat/ChatAvatar';
 import { getUploadUrl } from '@/integrations/api/client';
+import type { VoiceClip } from '@/services/voiceVault';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -241,8 +242,59 @@ export function KidsFamilyPage() {
     member: FamilyMemberRow | ChildProfile;
     type: RelationType;
   } | null>(null);
+  const [activeTab, setActiveTab] = useState<'tree' | 'voices'>('tree');
+  const [voiceClips, setVoiceClips] = useState<VoiceClip[]>([]);
+  const [voicesLoading, setVoicesLoading] = useState(false);
+  const [playingClipId, setPlayingClipId] = useState<string | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const handleBack = () => navigate(`/kids/${childId}`);
+
+  // Fetch voice clips when switching to voices tab
+  useEffect(() => {
+    if (activeTab === 'voices' && user?.id) {
+      setVoicesLoading(true);
+      apiClient.get('/voice-vault', { params: { limit: 100 } })
+        .then((r) => setVoiceClips(r.data?.items || []))
+        .catch(() => setVoiceClips([]))
+        .finally(() => setVoicesLoading(false));
+    }
+  }, [activeTab, user?.id]);
+
+  const handlePlayVoice = (clip: VoiceClip) => {
+    if (playingClipId === clip.id) {
+      audioRef.current?.pause();
+      audioRef.current = null;
+      setPlayingClipId(null);
+      return;
+    }
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
+    const audio = new Audio(getUploadUrl(clip.audio_url));
+    audio.play();
+    audioRef.current = audio;
+    setPlayingClipId(clip.id);
+    audio.addEventListener('ended', () => {
+      setPlayingClipId(null);
+      audioRef.current = null;
+    });
+    // Record play
+    apiClient.post(`/voice-vault/${clip.id}/play`).catch(() => {});
+  };
+
+  // Group voice clips by family member
+  const voicesByMember = useMemo(() => {
+    const groups: Record<string, { name: string; clips: VoiceClip[] }> = {};
+    for (const clip of voiceClips) {
+      const key = clip.family_member_id || 'general';
+      const name = clip.family_member_name || 'General';
+      if (!groups[key]) groups[key] = { name, clips: [] };
+      groups[key].clips.push(clip);
+    }
+    return Object.values(groups);
+  }, [voiceClips]);
 
   // Log family visit for daily mission tracking
   useEffect(() => {
@@ -288,20 +340,49 @@ export function KidsFamilyPage() {
   return (
     <div className="min-h-screen bg-kids-family safe-area-inset relative overflow-hidden">
       {/* Header */}
-      <header className="flex items-center gap-3 px-4 py-3 bg-card/95 backdrop-blur-md sticky top-0 z-30 border-b border-border shadow-warm">
-        <Button variant="ghost" size="icon" onClick={handleBack} className="rounded-full">
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <ChatAvatar buddyName="Lottie" expression="caring" size="sm" />
-        <div className="flex-1">
-          <h1 className="text-body-lg font-display font-bold text-foreground">
-            My Family Tree 🌳
-          </h1>
-          <p className="text-[11px] text-muted-foreground">{totalMembers} members</p>
+      <header className="bg-card/95 backdrop-blur-md sticky top-0 z-30 border-b border-border shadow-warm">
+        <div className="flex items-center gap-3 px-4 py-3">
+          <Button variant="ghost" size="icon" onClick={handleBack} className="rounded-full">
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <ChatAvatar buddyName="Lottie" expression="caring" size="sm" />
+          <div className="flex-1">
+            <h1 className="text-body-lg font-display font-bold text-foreground">
+              Lottie's World 💛
+            </h1>
+            <p className="text-[11px] text-muted-foreground">{totalMembers} family members</p>
+          </div>
+        </div>
+        {/* Tab Navigation */}
+        <div className="flex px-4 pb-2 gap-2">
+          <button
+            onClick={() => setActiveTab('tree')}
+            className={cn(
+              'flex items-center gap-1.5 px-4 py-1.5 rounded-full text-caption font-bold transition-all',
+              activeTab === 'tree'
+                ? 'bg-lala text-white'
+                : 'bg-lala/10 text-lala hover:bg-lala/20'
+            )}
+          >
+            <Trees className="h-3.5 w-3.5" />
+            Family Tree
+          </button>
+          <button
+            onClick={() => setActiveTab('voices')}
+            className={cn(
+              'flex items-center gap-1.5 px-4 py-1.5 rounded-full text-caption font-bold transition-all',
+              activeTab === 'voices'
+                ? 'bg-lala text-white'
+                : 'bg-lala/10 text-lala hover:bg-lala/20'
+            )}
+          >
+            <Mic className="h-3.5 w-3.5" />
+            Voice Vault
+          </button>
         </div>
       </header>
 
-      {!hasFamily ? (
+      {activeTab === 'tree' && !hasFamily && (
         <div className="relative z-10 px-6 pt-12 flex flex-col items-center">
           <div className="glass-card rounded-3xl p-14 text-center">
             <div className="flex justify-center mb-5">
@@ -311,7 +392,9 @@ export function KidsFamilyPage() {
             <p className="text-muted-foreground text-body-sm">Ask your parent to add family members</p>
           </div>
         </div>
-      ) : (
+      )}
+
+      {activeTab === 'tree' && hasFamily && (
         <div className="relative z-10 px-4 pb-16 pt-6 space-y-1 max-w-lg mx-auto scrollbar-hide">
 
           {/* Grandparents */}
@@ -410,6 +493,70 @@ export function KidsFamilyPage() {
                 ))}
               </GenRow>
             </>
+          )}
+        </div>
+      )}
+
+      {/* Voice Vault Tab */}
+      {activeTab === 'voices' && (
+        <div className="relative z-10 px-4 pb-16 pt-6 max-w-lg mx-auto">
+          {voicesLoading ? (
+            <div className="flex justify-center py-12">
+              <LoadingSpinner />
+            </div>
+          ) : voiceClips.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="flex justify-center mb-4">
+                <ChatAvatar buddyName="Lottie" expression="caring" size="xl" showName />
+              </div>
+              <p className="text-body-lg font-display font-bold text-foreground mb-2">No voices yet!</p>
+              <p className="text-muted-foreground text-body-sm">Ask your parent to record family voices</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {voicesByMember.map((group) => (
+                <div key={group.name} className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow-sm">
+                  <h3 className="text-body-sm font-display font-bold text-foreground mb-3 flex items-center gap-2">
+                    <Mic className="h-4 w-4 text-lala" />
+                    {group.name}
+                  </h3>
+                  <div className="space-y-2">
+                    {group.clips.map((clip) => (
+                      <button
+                        key={clip.id}
+                        onClick={() => handlePlayVoice(clip)}
+                        className={cn(
+                          'w-full flex items-center gap-3 p-3 rounded-xl transition-all',
+                          playingClipId === clip.id
+                            ? 'bg-lala/15 border border-lala/30'
+                            : 'bg-lala/5 hover:bg-lala/10'
+                        )}
+                      >
+                        <div className={cn(
+                          'w-10 h-10 rounded-full flex items-center justify-center shrink-0',
+                          playingClipId === clip.id ? 'bg-lala text-white' : 'bg-lala/20 text-lala'
+                        )}>
+                          {playingClipId === clip.id
+                            ? <Pause className="h-5 w-5" />
+                            : <Play className="h-5 w-5 ml-0.5" />
+                          }
+                        </div>
+                        <div className="flex-1 text-left min-w-0">
+                          <p className="text-body-sm font-medium text-foreground truncate">{clip.title}</p>
+                          {clip.description && (
+                            <p className="text-caption text-muted-foreground truncate">{clip.description}</p>
+                          )}
+                          <p className="text-[10px] text-muted-foreground/50 mt-0.5">
+                            {clip.duration_seconds ? `${Math.round(clip.duration_seconds)}s` : ''}
+                            {clip.category ? ` · ${clip.category}` : ''}
+                          </p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
         </div>
       )}
