@@ -22,7 +22,7 @@ export function KidsJourneyDetailPage() {
   const completeStep = useCompleteStep();
 
   const handleBack = () => {
-    navigate(`/kids/${childId}`);
+    navigate(`/kids/${childId}/journeys`);
   };
 
   const handleCompleteStep = async (stepId: string) => {
@@ -39,7 +39,7 @@ export function KidsJourneyDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-kids-gradient flex items-center justify-center">
+      <div className="min-h-screen bg-kids-journeys flex items-center justify-center">
         <LoadingSpinner />
       </div>
     );
@@ -47,7 +47,7 @@ export function KidsJourneyDetailPage() {
 
   if (isError || !journey) {
     return (
-      <div className="min-h-screen bg-kids-gradient p-4">
+      <div className="min-h-screen bg-kids-journeys p-4">
         <Button variant="ghost" onClick={handleBack} className="mb-4">
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back
@@ -66,7 +66,7 @@ export function KidsJourneyDetailPage() {
   const nextStep = currentStepIndex >= 0 ? journey.steps[currentStepIndex] : null;
 
   return (
-    <div className="min-h-screen bg-kids-gradient safe-area-inset">
+    <div className="min-h-screen bg-kids-journeys safe-area-inset">
       {/* Header */}
       <header className="flex items-center gap-3 px-4 py-4">
         <Button variant="ghost" size="icon" onClick={handleBack}>
@@ -78,27 +78,27 @@ export function KidsJourneyDetailPage() {
             {journey.currentStep} of {journey.totalSteps} steps
           </p>
         </div>
-        <Badge variant={isCompleted ? 'default' : 'secondary'}>
+        <Badge className={isCompleted ? 'bg-lolo text-white' : 'bg-lolo/15 text-lolo'}>
           {isCompleted ? 'Completed' : 'In Progress'}
         </Badge>
       </header>
 
       <div className="px-4 pb-8 space-y-6">
         {/* Progress Card */}
-        <Card className="bg-gradient-to-r from-primary/10 to-primary/5">
+        <Card className="bg-gradient-to-r from-lolo/10 to-lolo/5">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between mb-2">
               <span className="text-body-sm font-medium">Your Progress</span>
-              <span className="text-h4 font-bold text-primary">{journey.progress}%</span>
+              <span className="text-h4 font-bold text-lolo">{journey.progress}%</span>
             </div>
-            <Progress value={journey.progress} className="h-3" />
+            <Progress value={journey.progress} className="h-3 bg-lolo/20 [&>div]:bg-lolo" />
 
             {isCompleted && (
-              <div className="flex items-center gap-2 mt-4 p-3 bg-lala/10 rounded-lg">
-                <Trophy className="h-6 w-6 text-lala" />
+              <div className="flex items-center gap-2 mt-4 p-3 bg-lolo/10 rounded-lg">
+                <Trophy className="h-6 w-6 text-lolo" />
                 <div>
-                  <p className="font-semibold text-lala">Journey Complete!</p>
-                  <p className="text-body-sm text-lala">Great job finishing all steps!</p>
+                  <p className="font-semibold text-lolo">Journey Complete!</p>
+                  <p className="text-body-sm text-lolo">Great job finishing all steps!</p>
                 </div>
               </div>
             )}
@@ -107,10 +107,10 @@ export function KidsJourneyDetailPage() {
 
         {/* Next Step CTA */}
         {nextStep && !isCompleted && (
-          <Card className="border-primary border-2">
+          <Card className="border-lolo border-2">
             <CardHeader className="pb-2">
               <div className="flex items-center gap-2">
-                <Play className="h-5 w-5 text-primary" />
+                <Play className="h-5 w-5 text-lolo" />
                 <CardTitle className="text-body-lg">Next Up</CardTitle>
               </div>
             </CardHeader>
@@ -122,7 +122,7 @@ export function KidsJourneyDetailPage() {
               <Button
                 onClick={() => handleCompleteStep(nextStep.id)}
                 disabled={completeStep.isPending}
-                className="w-full"
+                className="w-full bg-lolo hover:bg-lolo/90 text-white"
               >
                 {completeStep.isPending ? 'Completing...' : 'Mark as Complete'}
               </Button>
@@ -143,18 +143,18 @@ export function KidsJourneyDetailPage() {
                   key={step.id}
                   className={cn(
                     'transition-all',
-                    isCurrentStep && 'ring-2 ring-primary',
-                    step.isCompleted && 'bg-primary/10'
+                    isCurrentStep && 'ring-2 ring-lolo',
+                    step.isCompleted && 'bg-lolo/10'
                   )}
                 >
                   <CardContent className="py-4">
                     <div className="flex items-start gap-3">
                       <div className="flex-shrink-0 mt-0.5">
                         {step.isCompleted ? (
-                          <CheckCircle2 className="h-6 w-6 text-primary" />
+                          <CheckCircle2 className="h-6 w-6 text-lolo" />
                         ) : isCurrentStep ? (
-                          <div className="h-6 w-6 rounded-full border-2 border-primary flex items-center justify-center">
-                            <div className="h-3 w-3 rounded-full bg-primary" />
+                          <div className="h-6 w-6 rounded-full border-2 border-lolo flex items-center justify-center">
+                            <div className="h-3 w-3 rounded-full bg-lolo" />
                           </div>
                         ) : (
                           <Circle className="h-6 w-6 text-muted-foreground" />
@@ -167,12 +167,12 @@ export function KidsJourneyDetailPage() {
                             Step {step.stepNumber}
                           </span>
                           {step.isCompleted && (
-                            <Star className="h-4 w-4 text-lala fill-lala" />
+                            <Star className="h-4 w-4 text-lolo fill-lolo" />
                           )}
                         </div>
                         <p className={cn(
                           'font-medium',
-                          step.isCompleted && 'text-primary'
+                          step.isCompleted && 'text-lolo'
                         )}>
                           {step.title}
                         </p>

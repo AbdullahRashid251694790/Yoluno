@@ -284,7 +284,7 @@ export function JourneyCard({
                 </>
               ) : (
                 <>
-                  Continue
+                  View
                   <ArrowRight className="h-4 w-4 ml-2 transition-transform group-hover/btn:translate-x-1" />
                 </>
               )}

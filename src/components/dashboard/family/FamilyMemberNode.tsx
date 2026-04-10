@@ -169,7 +169,7 @@ export function FamilyMemberNode({
     <div
       ref={nodeRef}
       className={cn(
-        'relative bg-card rounded-xl shadow-md border p-4 w-44 transition-all hover:shadow-lg hover:border-primary/30',
+        'relative bg-[#FFF8E7] rounded-xl shadow-sm border border-[#F5DEB3] p-4 w-44 transition-all hover:shadow-md hover:border-[#E8C97A]',
         isDragging && 'shadow-lg scale-105 z-50',
         !member.is_alive && 'opacity-80',
         isDraggable ? 'cursor-grab' : 'cursor-pointer',
@@ -239,24 +239,6 @@ export function FamilyMemberNode({
         <Tooltip>
           <TooltipTrigger asChild>
             <div className="flex flex-col items-center text-center">
-              {/* Completeness Indicator */}
-              <div className="absolute top-1 left-1">
-                {completeness.score === completeness.total ? (
-                  <CheckCircle2 className="h-4 w-4 text-primary" />
-                ) : (
-                  <div className="flex items-center gap-0.5">
-                    {Array.from({ length: completeness.total }).map((_, i) => (
-                      <Circle
-                        key={i}
-                        className={cn(
-                          'h-1.5 w-1.5',
-                          i < completeness.score ? 'fill-primary text-primary' : 'text-muted-foreground/30'
-                        )}
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
 
               <Avatar className="h-16 w-16 mb-2">
                 <AvatarImage src={getUploadUrl(member.photo_url)} alt={member.name} />
@@ -278,7 +260,7 @@ export function FamilyMemberNode({
 
               <Badge
                 variant={member.is_alive ? 'secondary' : 'outline'}
-                className="mt-1 text-caption"
+                className="mt-1 text-[11px] px-2 py-0.5 bg-amber-50 text-amber-700 border-amber-200/50"
               >
                 {relationshipLabel}
               </Badge>

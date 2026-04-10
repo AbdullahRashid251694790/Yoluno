@@ -62,7 +62,7 @@ export function KidsJourneysPage() {
 
   if (childLoading || activeLoading) {
     return (
-      <div className="min-h-screen bg-kids-gradient flex items-center justify-center">
+      <div className="min-h-screen bg-kids-journeys flex items-center justify-center">
         <LoadingSpinner />
       </div>
     );
@@ -83,7 +83,7 @@ export function KidsJourneysPage() {
   const hasJourneys = activeJourneys.length > 0 || completedJourneys.length > 0;
 
   return (
-    <div className="min-h-screen bg-kids-gradient safe-area-inset">
+    <div className="min-h-screen bg-kids-journeys safe-area-inset">
       {/* Header */}
       <header className="flex items-center gap-3 px-4 py-4 bg-white/50 backdrop-blur-sm">
         <Button variant="ghost" size="icon" onClick={handleBack}>
@@ -135,21 +135,21 @@ export function KidsJourneysPage() {
           </Card>
         ) : (
           <Tabs defaultValue="active" className="space-y-4">
-            <TabsList className="grid w-full grid-cols-2 bg-white/70">
-              <TabsTrigger value="active" className="gap-2">
+            <TabsList className="grid w-full grid-cols-2 bg-lolo/10">
+              <TabsTrigger value="active" className="gap-2 data-[state=active]:bg-lolo data-[state=active]:text-white">
                 <Play className="h-4 w-4" />
                 Active
                 {activeJourneys.length > 0 && (
-                  <Badge variant="secondary" className="ml-1 h-5 min-w-5 px-1.5">
+                  <Badge variant="secondary" className="ml-1 h-5 min-w-5 px-1.5 bg-lolo/20">
                     {activeJourneys.length}
                   </Badge>
                 )}
               </TabsTrigger>
-              <TabsTrigger value="completed" className="gap-2">
+              <TabsTrigger value="completed" className="gap-2 data-[state=active]:bg-lolo data-[state=active]:text-white">
                 <Trophy className="h-4 w-4" />
                 Done
                 {completedJourneys.length > 0 && (
-                  <Badge variant="secondary" className="ml-1 h-5 min-w-5 px-1.5">
+                  <Badge variant="secondary" className="ml-1 h-5 min-w-5 px-1.5 bg-lolo/20">
                     {completedJourneys.length}
                   </Badge>
                 )}
@@ -221,8 +221,8 @@ function JourneyCard({ journey, childId, isCompleted }: JourneyCardProps) {
     <Link to={`/kids/${childId}/journeys/${journey.id}`}>
       <Card
         className={cn(
-          'bg-white/70 backdrop-blur-sm transition-all hover:shadow-md cursor-pointer',
-          isCompleted && 'bg-gradient-to-br from-lala/5 to-gold/5'
+          'bg-white/90 backdrop-blur-sm transition-all hover:shadow-md cursor-pointer border-l-4 border-l-lolo',
+          isCompleted && 'border-l-lolo'
         )}
       >
         <CardContent className="p-4">
@@ -230,13 +230,13 @@ function JourneyCard({ journey, childId, isCompleted }: JourneyCardProps) {
             <div
               className={cn(
                 'rounded-xl p-2.5',
-                isCompleted ? 'bg-lala/10' : 'bg-primary/10'
+                'bg-lolo/10'
               )}
             >
               {isCompleted ? (
-                <Trophy className="h-6 w-6 text-lala" />
+                <Trophy className="h-6 w-6 text-lolo" />
               ) : (
-                <Map className="h-6 w-6 text-primary" />
+                <Map className="h-6 w-6 text-lolo" />
               )}
             </div>
 
@@ -244,7 +244,7 @@ function JourneyCard({ journey, childId, isCompleted }: JourneyCardProps) {
               <div className="flex items-center gap-2 mb-1">
                 <h3 className="font-semibold truncate">{journey.title}</h3>
                 {isCompleted && (
-                  <CheckCircle2 className="h-4 w-4 text-primary flex-shrink-0" />
+                  <CheckCircle2 className="h-4 w-4 text-lolo flex-shrink-0" />
                 )}
               </div>
 
@@ -264,7 +264,7 @@ function JourneyCard({ journey, childId, isCompleted }: JourneyCardProps) {
                 </div>
                 <Progress
                   value={progress}
-                  className={cn('h-2', isCompleted && 'bg-lala/20')}
+                  className="h-2 bg-lolo/20 [&>div]:bg-lolo"
                 />
               </div>
             </div>

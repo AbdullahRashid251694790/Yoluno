@@ -178,7 +178,7 @@ export function JourneysPage() {
           )}
 
           {children.length > 0 && (
-            <Button onClick={() => setShowCreateDialog(true)}>
+            <Button onClick={() => setShowCreateDialog(true)} className="bg-lolo hover:bg-lolo/90 text-white">
               <Plus className="h-4 w-4 mr-2" />
               Create Journey
             </Button>
@@ -256,8 +256,8 @@ export function JourneysPage() {
                       key={journey.id}
                       journey={journey}
                       childName={childName}
-                      onContinue={handleContinueJourney}
-                      onView={handleContinueJourney}
+                      onContinue={handleEditJourney}
+                      onView={handleEditJourney}
                       onEdit={handleEditJourney}
                     />
                   );
@@ -373,7 +373,7 @@ export function JourneysPage() {
                       key={journey.id}
                       journey={journey}
                       childName={childName}
-                      onView={handleContinueJourney}
+                      onView={handleEditJourney}
                       onEdit={handleEditJourney}
                     />
                   );
