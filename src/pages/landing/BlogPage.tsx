@@ -2,7 +2,7 @@ import AnimatedSection from "@/components/landing/AnimatedSection";
 
 const posts = [
   { title: "Why We Built a World, Not an App", category: "Philosophy", date: "Coming soon", excerpt: "The thinking behind Yoluno's closed, intentional approach to children's technology." },
-  { title: "Meet the Characters of Yoluno", category: "Stories", date: "Coming soon", excerpt: "How Luno, Lolo, Lumi, and Lottie came to life — and what makes each one special." },
+  { title: "Meet the Characters of Yoluno", category: "Stories", date: "Coming soon", excerpt: "How Luno, Lolo, Lumi, and Loti came to life — and what makes each one special." },
   { title: "What 'Parent Sovereignty' Really Means", category: "For Educators", date: "Coming soon", excerpt: "Why we believe parents should govern every aspect of their child's digital world." },
   { title: "The Art of Gentle Redirection", category: "Philosophy", date: "Coming soon", excerpt: "How Yoluno handles curiosity that crosses boundaries — without fear or shame." },
   { title: "Stories That Wait", category: "Updates", date: "Coming soon", excerpt: "Why we designed stories to be created slowly, revisited thoughtfully, and allowed to rest." },

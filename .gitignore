@@ -29,5 +29,12 @@ sample/
 server/src/routes/seedFamilyDemo.ts
 src/components/dashboard/settings/SeedDemoButton.tsx
 
+# Planning docs (not committed)
+docs/Task_26_Family_Voice_Narration.docx
+
+# Stakeholder UI reference folder
+loveable/
+lovable/
+
 # TypeScript build info
 tsconfig.tsbuildinfo

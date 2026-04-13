@@ -2,7 +2,7 @@ import AnimatedSection from "@/components/landing/AnimatedSection";
 import lunoImg from "@/assets/landing/luno.png";
 import loloImg from "@/assets/landing/lolo.png";
 import lumiImg from "@/assets/landing/lumi.png";
-import lottieImg from "@/assets/landing/lottie.png";
+import lotiImg from "@/assets/landing/loti.png";
 
 const characters = [
   {
@@ -24,7 +24,7 @@ const characters = [
     teaches: "Builds confidence, resilience, and problem-solving",
   },
   {
-    name: "Lottie", emoji: "💛", img: lottieImg, role: "The Keeper",
+    name: "Loti", emoji: "💛", img: lotiImg, role: "The Keeper",
     color: "hsl(var(--lala))",
     intro: "I keep your family stories safe. You're always welcome here.",
     teaches: "Strengthens family bonds and emotional awareness",

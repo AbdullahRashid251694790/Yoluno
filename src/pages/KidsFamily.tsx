@@ -345,10 +345,10 @@ export function KidsFamilyPage() {
           <Button variant="ghost" size="icon" onClick={handleBack} className="rounded-full">
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <ChatAvatar buddyName="Lottie" expression="caring" size="sm" />
+          <ChatAvatar buddyName="Loti" expression="caring" size="sm" />
           <div className="flex-1">
             <h1 className="text-body-lg font-display font-bold text-foreground">
-              Lottie's World 💛
+              Loti's World 💛
             </h1>
             <p className="text-[11px] text-muted-foreground">{totalMembers} family members</p>
           </div>
@@ -386,7 +386,7 @@ export function KidsFamilyPage() {
         <div className="relative z-10 px-6 pt-12 flex flex-col items-center">
           <div className="glass-card rounded-3xl p-14 text-center">
             <div className="flex justify-center mb-5">
-              <ChatAvatar buddyName="Lottie" expression="caring" size="xl" showName />
+              <ChatAvatar buddyName="Loti" expression="caring" size="xl" showName />
             </div>
             <p className="text-body-lg font-display font-bold text-primary mb-2">Your tree is growing!</p>
             <p className="text-muted-foreground text-body-sm">Ask your parent to add family members</p>
@@ -507,7 +507,7 @@ export function KidsFamilyPage() {
           ) : voiceClips.length === 0 ? (
             <div className="text-center py-12">
               <div className="flex justify-center mb-4">
-                <ChatAvatar buddyName="Lottie" expression="caring" size="xl" showName />
+                <ChatAvatar buddyName="Loti" expression="caring" size="xl" showName />
               </div>
               <p className="text-body-lg font-display font-bold text-foreground mb-2">No voices yet!</p>
               <p className="text-muted-foreground text-body-sm">Ask your parent to record family voices</p>

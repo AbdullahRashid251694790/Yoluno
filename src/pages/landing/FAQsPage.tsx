@@ -22,7 +22,7 @@ const sections = [
     title: "What Children Experience",
     items: [
       { q: "What can my child do in Yoluno?", a: "Children can chat with friendly characters, co-create stories, go on guided journeys, and explore family memories — all in a safe, closed world." },
-      { q: "Will my child be talking to a real person?", a: "No. Your child interacts with four carefully designed characters — Luno, Lolo, Lumi, and Lottie — each with their own personality and purpose." },
+      { q: "Will my child be talking to a real person?", a: "No. Your child interacts with four carefully designed characters — Luno, Lolo, Lumi, and Loti — each with their own personality and purpose." },
       { q: "What happens if my child asks something inappropriate?", a: "Yoluno pauses, does not answer, and gently redirects toward something safe and engaging. No fear, no exposure, no shame." },
     ],
   },

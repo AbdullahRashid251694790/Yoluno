@@ -16,7 +16,7 @@ const COLORS = [
   { bg: "hsl(174, 60%, 51%)", shadow: "hsl(174, 60%, 40%)", highlight: "hsl(174, 60%, 65%)" },  // Luno teal
   { bg: "hsl(270, 60%, 70%)", shadow: "hsl(270, 60%, 55%)", highlight: "hsl(270, 60%, 82%)" },  // Lumi purple
   { bg: "hsl(18, 76%, 60%)", shadow: "hsl(18, 76%, 45%)", highlight: "hsl(18, 76%, 75%)" },     // Lolo coral
-  { bg: "hsl(45, 78%, 58%)", shadow: "hsl(45, 78%, 43%)", highlight: "hsl(45, 78%, 72%)" },     // Lottie gold
+  { bg: "hsl(45, 78%, 58%)", shadow: "hsl(45, 78%, 43%)", highlight: "hsl(45, 78%, 72%)" },     // Loti gold
 ];
 
 function generateBlocks(count: number): Block[] {

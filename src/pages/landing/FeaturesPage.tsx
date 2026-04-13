@@ -4,7 +4,7 @@ import AnimatedSection from "@/components/landing/AnimatedSection";
 import lunoImg from "@/assets/landing/luno.png";
 import loloImg from "@/assets/landing/lolo.png";
 import lumiImg from "@/assets/landing/lumi.png";
-import lottieImg from "@/assets/landing/lottie.png";
+import lotiImg from "@/assets/landing/loti.png";
 import curiosityTreeImg from "@/assets/landing/curiosity-tree.png";
 import storiesBgImg from "@/assets/landing/stories-bg.png";
 import journeysBgImg from "@/assets/landing/journeys-bg.png";
@@ -46,7 +46,7 @@ const spacesDetail = [
     ],
   },
   {
-    emoji: "👨‍👩‍👧", title: "Family", subtitle: "Memory & Belonging", tagline: "Where your family's stories stay alive.", character: "Lottie", img: lottieImg, color: "border-lala",
+    emoji: "👨‍👩‍👧", title: "Family", subtitle: "Memory & Belonging", tagline: "Where your family's stories stay alive.", character: "Loti", img: lotiImg, color: "border-lala",
     desc: "One evening, your child asks: \"What was Grandma like when she was little?\"\n\nAnd instead of silence, or a vague answer you're too tired to give — they hear a story. In your mum's voice. Or your dad's. Or yours. A story you recorded one afternoon, not knowing when it would matter.\n\nThis is where your family lives inside Yoluno. Photos. Voice recordings. Traditions. The things that make your family yours. Your child can explore them like a conversation — asking questions, hearing stories, feeling connected to something bigger than themselves.",
     features: [
       "Family stories told in the voices your child knows",
