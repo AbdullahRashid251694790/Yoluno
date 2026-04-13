@@ -38,11 +38,11 @@ const sections = [
 export default function FAQsPage() {
   return (
     <main className="pt-20">
-      <section className="section-padding bg-gradient-to-b from-parchment to-background">
+      <section className="section-padding bg-background">
         <div className="container max-w-3xl text-center">
           <AnimatedSection>
             <p className="text-label mb-4">FAQs</p>
-            <h1 className="font-heading-landing text-4xl md:text-5xl font-bold text-foreground mb-6">
+            <h1 className="font-heading text-4xl md:text-5xl font-bold text-foreground mb-6">
               Questions & Answers
             </h1>
             <p className="font-body text-lg text-muted-foreground">
@@ -56,7 +56,7 @@ export default function FAQsPage() {
         <div className="container max-w-2xl space-y-12">
           {sections.map((section, si) => (
             <AnimatedSection key={section.title} delay={si * 0.1}>
-              <h2 className="font-heading-landing text-2xl font-bold text-foreground mb-6">{section.title}</h2>
+              <h2 className="font-heading text-2xl font-bold text-foreground mb-6">{section.title}</h2>
               <Accordion type="single" collapsible className="space-y-3">
                 {section.items.map((item, i) => (
                   <AccordionItem key={i} value={`${si}-${i}`} className="bg-card rounded-2xl shadow-warm-sm border-none px-6">

@@ -11,33 +11,22 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 
 const buttonVariants = cva(
-  'inline-flex items-center justify-center gap-2 whitespace-nowrap font-body font-bold text-[15px] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0',
+  'inline-flex items-center justify-center gap-2 whitespace-nowrap font-body font-semibold text-[15px] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0',
   {
     variants: {
       variant: {
-        /* Landing: bg-primary, pill shape, lift on hover */
-        default: 'bg-primary text-primary-foreground hover:-translate-y-0.5 hover:shadow-warm-lg rounded-[40px]',
-        /* Landing: gold outline, fills on hover */
-        gold: 'border-2 border-gold text-gold bg-transparent hover:bg-gold hover:text-accent-foreground rounded-[40px]',
-        /* Kept conservative — no lift, just darkens */
-        destructive: 'bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-[40px]',
-        /* Landing: subtle border, fills secondary on hover */
-        outline: 'border-2 border-border bg-transparent text-foreground hover:bg-secondary rounded-[40px]',
-        /* Landing: secondary bg */
-        secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80 rounded-[40px]',
-        /* Ghost stays rounded-lg, no lift — used for icon buttons and subtle actions */
+        default: 'bg-primary text-primary-foreground hover:-translate-y-0.5 hover:shadow-warm-lg rounded-pill',
+        gold: 'border-2 border-gold text-gold bg-transparent hover:bg-gold hover:text-white rounded-pill',
+        destructive: 'bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-pill',
+        outline: 'border-2 border-border bg-transparent text-foreground hover:bg-secondary rounded-pill',
+        secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80 rounded-pill',
         ghost: 'hover:bg-secondary hover:text-foreground rounded-lg',
-        /* Landing: primary color link */
         link: 'text-primary underline-offset-4 hover:underline',
       },
       size: {
-        /* Landing: h-12 px-8 py-3 */
         default: 'h-12 px-8 py-3',
-        /* Landing: h-10 px-5 py-2 text-body-sm */
-        sm: 'h-10 px-5 py-2 text-body-sm',
-        /* Landing: h-14 px-10 py-4 */
-        lg: 'h-14 px-10 py-4 text-body',
-        /* Icon stays compact — used in toolbars, close buttons */
+        sm: 'h-10 px-5 py-2 text-sm',
+        lg: 'h-14 px-10 py-4 text-base',
         icon: 'h-10 w-10',
       },
     },

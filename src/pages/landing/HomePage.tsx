@@ -1,7 +1,8 @@
 import HeroSection from "@/components/landing/home/HeroSection";
-import SpacesSection from "@/components/landing/home/SpacesSection";
+import TrustStripSection from "@/components/landing/home/TrustStripSection";
 import CharactersSection from "@/components/landing/home/CharactersSection";
 import HowYouGrowSection from "@/components/landing/home/HowYouGrowSection";
+import MultilingualSection from "@/components/landing/home/MultilingualSection";
 import WorldSection from "@/components/landing/home/WorldSection";
 import WhyYolunoSection from "@/components/landing/home/WhyYolunoSection";
 import TrustSection from "@/components/landing/home/TrustSection";
@@ -12,10 +13,11 @@ export default function HomePage() {
   return (
     <main>
       <HeroSection />
-      <SpacesSection />
+      <TrustStripSection />
+      <WorldSection />
       <CharactersSection />
       <HowYouGrowSection />
-      <WorldSection />
+      <MultilingualSection />
       <WhyYolunoSection />
       <TrustSection />
       <TestimonialsSection />

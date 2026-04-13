@@ -10,36 +10,40 @@ const footerLinks = [
   { label: "FAQs", to: "/faqs" },
 ];
 
-export default function LandingFooter() {
+export default function Footer() {
   return (
-    <footer
-      className="relative z-[1] border-t border-white/30 pt-12 pb-8 px-6"
-      style={{
-        background: 'linear-gradient(180deg, hsl(42 60% 93% / 0.85) 0%, hsl(30 50% 88% / 0.85) 50%, hsl(200 40% 85% / 0.85) 100%)',
-      }}
-    >
-      <div className="container flex flex-col items-center gap-6">
-        <img src={logo} alt="Yoluno" className="h-10" />
+    <footer className="bg-secondary border-t border-border pt-16 pb-10 px-6">
+      <div className="container flex flex-col items-center gap-8">
+        <img src={logo} alt="Yoluno" className="h-14" />
 
         <nav className="flex flex-wrap justify-center gap-6">
           {footerLinks.map((link) => (
             <Link
               key={link.to}
               to={link.to}
-              className="text-sm font-body text-foreground/60 hover:text-foreground transition-colors"
+              className="text-sm font-body text-muted-foreground hover:text-foreground transition-colors"
             >
               {link.label}
             </Link>
           ))}
         </nav>
 
-        <p className="text-center font-body text-foreground/40 text-sm italic">
-          Where Curiosity, Creativity & Care Come Together
+        <p className="text-center font-body text-muted-foreground text-sm">
+          Where Curiosity, Creativity & Care Come Together 🌱
         </p>
 
-        <p className="text-center font-body text-foreground/30 text-xs">
-          &copy; {new Date().getFullYear()} Yoluno. All rights reserved.
+        <p className="text-center font-body text-muted-foreground/70 text-xs">
+          © 2026 Yoluno. Made with 💛 for children everywhere.
         </p>
+        <div className="flex flex-wrap justify-center gap-3 mt-3">
+          <Link to="/privacy-policy" className="font-body text-muted-foreground/70 hover:text-foreground text-xs transition-colors">Privacy Policy</Link>
+          <span className="text-border text-xs">·</span>
+          <a href="/safety-charter" className="font-body text-muted-foreground/70 hover:text-foreground text-xs transition-colors">Safety Charter</a>
+          <span className="text-border text-xs">·</span>
+          <Link to="/data-practices" className="font-body text-muted-foreground/70 hover:text-foreground text-xs transition-colors">Data Practices</Link>
+          <span className="text-border text-xs">·</span>
+          <Link to="/how-ai-works" className="font-body text-muted-foreground/70 hover:text-foreground text-xs transition-colors">How AI Works in Yoluno</Link>
+        </div>
       </div>
     </footer>
   );

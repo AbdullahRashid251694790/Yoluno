@@ -12,7 +12,7 @@ const navLinks = [
   { label: "Blog", to: "/blog" },
 ];
 
-export default function LandingNavbar() {
+export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   const location = useLocation();
@@ -42,8 +42,8 @@ export default function LandingNavbar() {
             <Link
               key={link.to}
               to={link.to}
-              className={`relative text-[15px] font-semibold font-body transition-colors hover:text-primary ${
-                location.pathname === link.to ? "text-primary" : "text-text-body"
+              className={`relative text-[15px] font-medium font-body transition-colors hover:text-primary ${
+                location.pathname === link.to ? "text-primary" : "text-foreground"
               }`}
             >
               {link.label}
@@ -55,12 +55,10 @@ export default function LandingNavbar() {
         </nav>
 
         <div className="hidden md:flex items-center gap-3">
-          <Link to="/play">
-            <Button variant="outline" size="sm">Kids Mode</Button>
-          </Link>
-          <Link to="/login">
-            <Button size="sm">Get Started</Button>
-          </Link>
+          <Button variant="outline" size="sm" asChild className="rounded-full border-[#E8B630] text-[#E8B630] hover:bg-[#E8B630]/10 font-body font-semibold">
+            <Link to="/play">Kids Mode</Link>
+          </Button>
+          <Button size="sm" asChild><Link to="/dashboard">Parent Dashboard</Link></Button>
         </div>
 
         {/* Mobile toggle */}
@@ -75,22 +73,18 @@ export default function LandingNavbar() {
 
       {/* Mobile overlay */}
       {open && (
-        <div className="md:hidden fixed inset-0 top-16 bg-parchment z-40 flex flex-col items-center pt-12 gap-6">
+        <div className="md:hidden fixed inset-0 top-16 bg-background z-40 flex flex-col items-center pt-12 gap-6">
           {navLinks.map((link) => (
             <Link
               key={link.to}
               to={link.to}
-              className="text-lg font-semibold font-body text-foreground hover:text-primary transition-colors"
+              className="text-lg font-medium font-body text-foreground hover:text-primary transition-colors"
             >
               {link.label}
             </Link>
           ))}
-          <Link to="/play">
-            <Button variant="outline" className="mt-4">Kids Mode</Button>
-          </Link>
-          <Link to="/login">
-            <Button>Get Started</Button>
-          </Link>
+          <Button variant="outline" className="rounded-full border-[#E8B630] text-[#E8B630] hover:bg-[#E8B630]/10 font-body font-semibold" asChild><Link to="/play">Kids Mode</Link></Button>
+          <Button className="mt-2" asChild><Link to="/dashboard">Parent Dashboard</Link></Button>
         </div>
       )}
     </header>

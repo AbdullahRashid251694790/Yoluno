@@ -2,46 +2,46 @@ import AnimatedSection from "@/components/landing/AnimatedSection";
 import lunoImg from "@/assets/landing/luno.png";
 import loloImg from "@/assets/landing/lolo.png";
 import lumiImg from "@/assets/landing/lumi.png";
-import lotiImg from "@/assets/landing/loti.png";
+import lalaImg from "@/assets/landing/lala.png";
 
 const characters = [
   {
-    name: "Luno", emoji: "💙", img: lunoImg, role: "The Guide",
-    color: "hsl(var(--luno))",
-    intro: "Yo! I'm Luno. I'm your guide! Let's find something new together.",
-    teaches: "Helps you think, ask questions, and explore ideas",
+    name: "Luno", img: lunoImg, role: "The Guide",
+    color: "hsl(var(--luno))", softBg: "bg-luno-soft", borderColor: "border-luno",
+    intro: "Hey! I'm Luno. Ready to explore? Let's go find something new!",
+    teaches: "Encourages thinking, asking questions, and exploring ideas",
   },
   {
-    name: "Lumi", emoji: "💜", img: lumiImg, role: "The Dreamer",
-    color: "hsl(var(--lumi))",
+    name: "Lumi", img: lumiImg, role: "The Dreamer",
+    color: "hsl(var(--lumi))", softBg: "bg-lumi-soft", borderColor: "border-lumi",
     intro: "I love quiet moments and big dreams. Ready to make a story?",
     teaches: "Grows your imagination and love of stories",
   },
   {
-    name: "Lolo", emoji: "🧡", img: loloImg, role: "The Adventurer",
-    color: "hsl(var(--lolo))",
-    intro: "I'm ready for a challenge! I'll be your biggest cheerleader.",
+    name: "Lolo", img: loloImg, role: "The Adventurer",
+    color: "hsl(var(--lolo))", softBg: "bg-lolo-soft", borderColor: "border-lolo",
+    intro: "I'm ready for a challenge! Let's see what we can do together.",
     teaches: "Builds confidence, resilience, and problem-solving",
   },
   {
-    name: "Loti", emoji: "💛", img: lotiImg, role: "The Keeper",
-    color: "hsl(var(--lala))",
-    intro: "I keep your family stories safe. You're always welcome here.",
+    name: "Loti", img: lalaImg, role: "The Keeper",
+    color: "hsl(var(--lala))", softBg: "bg-lala-soft", borderColor: "border-lala",
+    intro: "This is where your family's stories live. Come visit anytime!",
     teaches: "Strengthens family bonds and emotional awareness",
   },
 ];
 
 export default function CharactersSection() {
   return (
-    <section className="section-padding">
+    <section className="section-padding child-world-gradient">
       <div className="container">
         <AnimatedSection className="text-center mb-16">
-          <p className="text-label mb-3">🌟 Meet Your Best Friends</p>
-          <h2 className="font-heading-landing text-3xl md:text-[38px] font-bold text-foreground mb-4">
-            Your Guides Are Waiting
+          <p className="text-label mb-3">Meet the Guides</p>
+          <h2 className="font-heading text-3xl md:text-[40px] text-foreground mb-4">
+            Four Guides, Each Here to Help Your Child Grow
           </h2>
-          <p className="font-body text-muted-foreground text-lg max-w-xl mx-auto">
-            Four friends who each help you grow in different ways.
+          <p className="font-body text-muted-foreground text-[17px] max-w-[560px] mx-auto">
+            Designed for ages 3 to 14. Younger children explore with voice and pictures. Older children read, write, and think deeper. Every experience adapts.
           </p>
         </AnimatedSection>
 
@@ -49,30 +49,20 @@ export default function CharactersSection() {
           {characters.map((char, i) => (
             <AnimatedSection key={char.name} delay={i * 0.1}>
               <div
-                className="glass-card rounded-3xl p-8 text-center h-full flex flex-col items-center relative overflow-hidden"
-                style={{ borderTop: `4px solid ${char.color}` }}
+                className={`bg-card rounded-2xl p-8 text-center h-full flex flex-col items-center border border-border hover:shadow-warm-lg transition-all duration-300 hover:-translate-y-1`}
+                style={{ borderTop: `3px solid ${char.color}` }}
               >
-                {/* Character glow */}
-                <div
-                  className="absolute top-8 left-1/2 -translate-x-1/2 w-40 h-40 rounded-full pointer-events-none"
-                  style={{ background: `radial-gradient(circle, ${char.color}15 0%, transparent 70%)` }}
-                />
-                <img src={char.img} alt={char.name} className="w-[180px] h-[180px] object-contain mb-4 relative z-10 character-bloom" />
-                <h3 className="font-heading-landing text-lg font-bold text-foreground">{char.name} {char.emoji}</h3>
+                <img src={char.img} alt={char.name} className="w-32 h-32 object-contain mb-4 character-bloom" />
+                <h3 className="font-heading text-lg text-foreground">{char.name}</h3>
                 <p className="text-label text-xs mt-1 mb-3">{char.role}</p>
                 
-                {/* Speech bubble */}
-                <div
-                  className="rounded-2xl p-4 w-full mb-3"
-                  style={{ backgroundColor: `${char.color}08` }}
-                >
-                  <p className="font-body text-sm text-text-body italic leading-relaxed">"{char.intro}"</p>
+                <div className={`rounded-xl p-4 w-full mb-3 ${char.softBg}`}>
+                  <p className="font-body text-sm text-foreground italic leading-relaxed">"{char.intro}"</p>
                 </div>
 
-                {/* What they teach */}
                 <div className="mt-auto pt-2 w-full">
                   <p
-                    className="font-body text-xs font-bold leading-relaxed rounded-xl px-3 py-2"
+                    className="font-body text-xs font-medium leading-relaxed rounded-lg px-3 py-2"
                     style={{ color: char.color, backgroundColor: `${char.color}10` }}
                   >
                     🌱 {char.teaches}

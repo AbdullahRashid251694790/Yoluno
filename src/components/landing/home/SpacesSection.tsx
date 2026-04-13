@@ -38,7 +38,7 @@ const islands = [
     color: "hsl(var(--lala))",
     glowColor: "rgba(212,168,67,0.2)",
     img: islandFamily,
-    desc: "Loti keeps the most special things here. Listen to your favorite voices, see photos of the people who love you, and keep your best memories safe in a warm, glowing light.",
+    desc: "Loti helps you keep your favorite memories close. Parents can add family photos and voice messages here — so the people who love you are always nearby, even in Yoluno's world.",
     skills: ["Empathy", "Family Bonds", "Emotional Growth"],
   },
 ];
@@ -49,7 +49,7 @@ export default function SpacesSection() {
       <div className="container">
         <AnimatedSection className="text-center mb-16">
           <p className="text-label mb-3">🌈 Choose Your Adventure</p>
-          <h2 className="font-heading-landing text-3xl md:text-[38px] font-bold text-foreground mb-4">
+          <h2 className="font-heading text-3xl md:text-[38px] font-bold text-foreground mb-4">
             Yoluno's World
           </h2>
           <p className="font-body text-muted-foreground text-lg max-w-xl mx-auto">

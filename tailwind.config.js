@@ -59,10 +59,22 @@ export default {
           magic: 'hsl(var(--story-magic))',
         },
         // Landing site character colors
-        luno: 'hsl(var(--luno))',
-        lolo: 'hsl(var(--lolo))',
-        lumi: 'hsl(var(--lumi))',
-        lala: 'hsl(var(--lala))',
+        luno: {
+          DEFAULT: 'hsl(var(--luno))',
+          soft: 'hsl(var(--luno-soft, 170 50% 94%))',
+        },
+        lolo: {
+          DEFAULT: 'hsl(var(--lolo))',
+          soft: 'hsl(var(--lolo-soft, 18 90% 95%))',
+        },
+        lumi: {
+          DEFAULT: 'hsl(var(--lumi))',
+          soft: 'hsl(var(--lumi-soft, 268 50% 96%))',
+        },
+        lala: {
+          DEFAULT: 'hsl(var(--lala))',
+          soft: 'hsl(var(--lala-soft, 40 70% 95%))',
+        },
         gold: 'hsl(var(--gold))',
         parchment: 'hsl(var(--parchment))',
         linen: 'hsl(var(--linen))',
@@ -98,10 +110,10 @@ export default {
         'caption': ['12px', { lineHeight: '1.5' }],      /* Labels, tiny text: text-xs */
       },
       fontFamily: {
-        /* From landing tailwind.config.ts lines 17-18 */
-        heading: ['Fraunces', 'Playfair Display', 'Georgia', 'serif'],
-        body: ['Nunito', 'Segoe UI', 'sans-serif'],
-        sans: ['Nunito', 'Segoe UI', 'system-ui', 'sans-serif'],
+        /* Loveable-style: DM Serif Display headings, DM Sans body */
+        heading: ['DM Serif Display', 'Georgia', 'serif'],
+        body: ['DM Sans', 'Segoe UI', 'sans-serif'],
+        sans: ['DM Sans', 'Segoe UI', 'system-ui', 'sans-serif'],
         display: ['Fraunces', 'Playfair Display', 'Georgia', 'serif'],
         /* Kept for kids pages */
         playful: ['Fredoka', 'Nunito', 'system-ui', 'sans-serif'],
@@ -127,7 +139,7 @@ export default {
         },
         float: {
           '0%, 100%': { transform: 'translateY(0)' },
-          '50%': { transform: 'translateY(-10px)' },
+          '50%': { transform: 'translateY(-6px)' },
         },
         'scale-in': {
           '0%': { opacity: '0', transform: 'scale(0.95)' },
@@ -154,7 +166,7 @@ export default {
         'accordion-up': 'accordion-up 0.2s ease-out',
         'bounce-gentle': 'bounce-gentle 2s ease-in-out infinite',
         shimmer: 'shimmer 3s linear infinite',
-        float: 'float 3s ease-in-out infinite',
+        float: 'float 4s ease-in-out infinite',
         'scale-in': 'scale-in 0.2s ease-out',
         'fade-in-up': 'fade-in-up 0.6s ease-out forwards',
         'pulse-soft': 'pulse-soft 3s ease-in-out infinite',

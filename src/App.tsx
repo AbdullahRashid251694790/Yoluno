@@ -40,7 +40,12 @@ const LandingForParentsPage = lazy(() => import('@/pages/landing/ForParentsPage'
 const LandingPricingPage = lazy(() => import('@/pages/landing/PricingPage'));
 const LandingAboutPage = lazy(() => import('@/pages/landing/AboutPage'));
 const LandingBlogPage = lazy(() => import('@/pages/landing/BlogPage'));
+const LandingBlogPostPage = lazy(() => import('@/pages/landing/BlogPostPage'));
 const LandingFAQsPage = lazy(() => import('@/pages/landing/FAQsPage'));
+const LandingSafetyCharterPage = lazy(() => import('@/pages/landing/SafetyCharterPage'));
+const LandingHowAIWorksPage = lazy(() => import('@/pages/landing/HowAIWorksPage'));
+const LandingDataPracticesPage = lazy(() => import('@/pages/landing/DataPracticesPage'));
+const LandingPrivacyPolicyPage = lazy(() => import('@/pages/landing/PrivacyPolicyPage'));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -106,7 +111,12 @@ export default function App() {
                 <Route path="/pricing" element={<LandingLayout><Suspense fallback={null}><LandingPricingPage /></Suspense></LandingLayout>} />
                 <Route path="/about" element={<LandingLayout><Suspense fallback={null}><LandingAboutPage /></Suspense></LandingLayout>} />
                 <Route path="/blog" element={<LandingLayout><Suspense fallback={null}><LandingBlogPage /></Suspense></LandingLayout>} />
+                <Route path="/blog/:slug" element={<LandingLayout><Suspense fallback={null}><LandingBlogPostPage /></Suspense></LandingLayout>} />
                 <Route path="/faqs" element={<LandingLayout><Suspense fallback={null}><LandingFAQsPage /></Suspense></LandingLayout>} />
+                <Route path="/safety-charter" element={<LandingLayout><Suspense fallback={null}><LandingSafetyCharterPage /></Suspense></LandingLayout>} />
+                <Route path="/how-ai-works" element={<LandingLayout><Suspense fallback={null}><LandingHowAIWorksPage /></Suspense></LandingLayout>} />
+                <Route path="/data-practices" element={<LandingLayout><Suspense fallback={null}><LandingDataPracticesPage /></Suspense></LandingLayout>} />
+                <Route path="/privacy-policy" element={<LandingLayout><Suspense fallback={null}><LandingPrivacyPolicyPage /></Suspense></LandingLayout>} />
                 <Route
                   path="/login"
                   element={
