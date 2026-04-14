@@ -146,6 +146,11 @@ router.post('/:token/record', upload.single('audio'), async (req: Request, res: 
     const key = `voice-clips/${invite.user_id}/${filename}`;
     await uploadFile(key, req.file.buffer, req.file.mimetype);
 
+    // Resolve the key into a playable URL — on S3 this returns a signed URL,
+    // on local storage this returns /uploads/<key>. Mirrors what the dashboard
+    // upload route does so playback works consistently across environments.
+    const audioUrl = await getFileUrl(key, 86400);
+
     // Create voice clip owned by the parent
     const clipId = uuidv4();
     await queryOne(
@@ -159,7 +164,7 @@ router.post('/:token/record', upload.single('audio'), async (req: Request, res: 
         title.trim(),
         description || (recorded_by ? `Recorded by ${recorded_by}` : null),
         category,
-        key,
+        audioUrl,
         parseInt(duration_seconds, 10) || 0,
         req.file.size,
       ]
