@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 
 // Import assets
-import lunoLogo from '@/assets/landing/yoluno-logo.png';
+import lunoLogo from '@/assets/landing/yoluno-logo-original.png';
 import coppaBadge from '@/assets/coppa-certified-badge.png';
 import kidsafeBadge from '@/assets/kidsafe-certified-badge.png';
 import encryptedBadge from '@/assets/encrypted-secure-badge.png';

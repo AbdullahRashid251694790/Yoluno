@@ -14,7 +14,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Loader2, ArrowLeft, Mail } from 'lucide-react';
 import { Link as RouterLink } from 'react-router-dom';
 import { getErrorMessage } from '@/integrations/api/client';
-import yolunoLogo from '@/assets/landing/yoluno-logo.png';
+import yolunoLogo from '@/assets/landing/yoluno-logo-original.png';
 
 export function ForgotPasswordPage() {
   const [email, setEmail] = useState('');

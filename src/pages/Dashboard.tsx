@@ -43,7 +43,7 @@ import {
   Menu,
   X,
 } from 'lucide-react';
-import yolunoLogo from '@/assets/landing/yoluno-logo.png';
+import yolunoLogo from '@/assets/landing/yoluno-logo-original.png';
 
 const navItems = [
   { path: '/dashboard', label: 'Home', icon: Home },

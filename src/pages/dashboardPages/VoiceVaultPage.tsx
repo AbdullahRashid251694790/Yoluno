@@ -279,8 +279,8 @@ export function VoiceVaultPage() {
               className={cn(
                 'px-4 py-1.5 rounded-full text-body-sm font-medium transition whitespace-nowrap',
                 activeTab === tab.value
-                  ? 'bg-white text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
+                  ? 'bg-gold text-white shadow-sm'
+                  : 'text-muted-foreground hover:text-gold'
               )}
             >
               {tab.label}

@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Loader2, CheckCircle2, XCircle, Mail } from 'lucide-react';
 import { toast } from 'sonner';
-import yolunoLogo from '@/assets/landing/yoluno-logo.png';
+import yolunoLogo from '@/assets/landing/yoluno-logo-original.png';
 
 export function VerifyEmailPage() {
   const [searchParams] = useSearchParams();

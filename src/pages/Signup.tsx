@@ -14,7 +14,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
-import yolunoLogo from '@/assets/landing/yoluno-logo.png';
+import yolunoLogo from '@/assets/landing/yoluno-logo-original.png';
 
 export function SignupPage() {
   const navigate = useNavigate();

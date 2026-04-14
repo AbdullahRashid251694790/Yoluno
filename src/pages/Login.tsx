@@ -15,7 +15,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { handleError } from '@/lib/errors';
 import { Loader2, Eye, EyeOff, Mail } from 'lucide-react';
 import { toast } from 'sonner';
-import yolunoLogo from '@/assets/landing/yoluno-logo.png';
+import yolunoLogo from '@/assets/landing/yoluno-logo-original.png';
 
 export function LoginPage() {
   const navigate = useNavigate();

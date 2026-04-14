@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import logo from "@/assets/landing/yoluno-logo.png";
+import logo from "@/assets/landing/yoluno-logo-original.png";
 
 const footerLinks = [
   { label: "Features", to: "/features" },
