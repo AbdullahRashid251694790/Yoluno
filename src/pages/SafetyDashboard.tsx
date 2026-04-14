@@ -5,6 +5,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useChildProfiles } from '@/hooks/queries';
 import { SafetyReportsPanel, BuddySettingsPanel, JourneyReminderSettingsPanel } from '@/components/dashboard/safety';
@@ -19,14 +20,19 @@ import { Shield, Users, Bell } from 'lucide-react';
 export function SafetyDashboardPage() {
   const { user } = useAuth();
   const { data: childProfiles = [], isLoading } = useChildProfiles(user?.id);
-  const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
+  const [searchParams] = useSearchParams();
+  const urlChildId = searchParams.get('child');
+  const urlTab = searchParams.get('tab') || 'reports';
+  const [selectedChildId, setSelectedChildId] = useState<string | null>(urlChildId);
 
-  // Auto-select first child if available
+  // Auto-select first child if available, or use URL param
   useEffect(() => {
-    if (childProfiles.length > 0 && !selectedChildId) {
+    if (urlChildId) {
+      setSelectedChildId(urlChildId);
+    } else if (childProfiles.length > 0 && !selectedChildId) {
       setSelectedChildId(childProfiles[0].id);
     }
-  }, [childProfiles, selectedChildId]);
+  }, [childProfiles, selectedChildId, urlChildId]);
 
   const selectedChild = childProfiles.find((child) => child.id === selectedChildId);
 
@@ -97,7 +103,7 @@ export function SafetyDashboardPage() {
 
       {/* Content */}
       {selectedChild ? (
-        <Tabs defaultValue="reports" className="space-y-6">
+        <Tabs defaultValue={urlTab} key={urlTab} className="space-y-6">
           <TabsList>
             <TabsTrigger value="reports">Safety Reports</TabsTrigger>
             <TabsTrigger value="buddy">Luno Settings</TabsTrigger>

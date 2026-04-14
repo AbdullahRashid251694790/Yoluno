@@ -53,8 +53,8 @@ const navItems = [
   { path: '/dashboard/journeys', label: 'Journeys', icon: Map },
   { path: '/dashboard/insights', label: 'Insights', icon: BarChart3 },
   { path: '/dashboard/topics', label: 'Topics', icon: Tag },
-  { path: '/dashboard/library', label: 'Library', icon: Library },
-  { path: '/dashboard/voice-vault', label: 'Voice Vault', icon: Mic },
+  { path: '/dashboard/library', label: 'Keepsakes', icon: Library },
+  { path: '/dashboard/voice-vault', label: 'Family Voices', icon: Mic },
   { path: '/dashboard/safety', label: 'Safety', icon: Shield },
   { path: '/dashboard/settings', label: 'Settings', icon: Settings },
 ];
@@ -138,19 +138,20 @@ export function DashboardPage() {
                   key={item.path}
                   to={item.path}
                   onClick={() => setSidebarOpen(false)}
+                  className={cn(
+                    'relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-body-sm font-medium transition-colors',
+                    isActive
+                      ? 'bg-white text-foreground shadow-sm border-l-[3px] border-l-primary pl-[11px]'
+                      : 'text-muted-foreground hover:bg-primary/10 hover:text-primary'
+                  )}
                 >
-                  <Button
-                    variant={isActive ? 'secondary' : 'ghost'}
-                    className={cn('w-full justify-start gap-3', isActive && 'bg-secondary')}
-                  >
-                    <item.icon className="h-5 w-5" />
-                    <span className="flex-1 text-left">{item.label}</span>
-                    {showBadge && (
-                      <Badge variant="destructive" className="h-5 w-5 p-0 flex items-center justify-center text-caption">
-                        {unreadAlerts}
-                      </Badge>
-                    )}
-                  </Button>
+                  <item.icon className={cn('h-5 w-5', isActive && 'text-primary')} />
+                  <span className="flex-1 text-left">{item.label}</span>
+                  {showBadge && (
+                    <Badge variant="destructive" className="h-5 w-5 p-0 flex items-center justify-center text-caption">
+                      {unreadAlerts}
+                    </Badge>
+                  )}
                 </Link>
               );
             })}

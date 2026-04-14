@@ -12,6 +12,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useChildProfiles } from '@/hooks/queries/useChildProfiles';
 import { useSafetyReports } from '@/hooks/queries/useBuddyChat';
 import { useAnalyticsOverview } from '@/hooks/queries/useAnalytics';
+import { useJourneys } from '@/hooks/queries/useJourneys';
 import { useTodaysMood } from '@/hooks/queries/useMoodCheckin';
 import { ChildProfileCard } from '@/components/dashboard/children/ChildProfileCard';
 import { CreateChildDialog } from '@/components/dashboard/children/CreateChildDialog';
@@ -78,6 +79,8 @@ export function DashboardHome() {
   const { data: children = [], isLoading: childrenLoading } = useChildProfiles(user?.id);
   const { data: safetyReports = [] } = useSafetyReports(user?.id, true);
   const { data: analyticsOverview, isLoading: analyticsLoading } = useAnalyticsOverview();
+  const { data: allJourneys } = useJourneys();
+  const activeJourneyCount = allJourneys?.filter((j) => j.status === 'active').length ?? 0;
 
   const unreadAlerts = safetyReports.length;
 
@@ -276,21 +279,21 @@ export function DashboardHome() {
             </CardContent>
           </Card>
 
-          <Card className="shadow-md hover:shadow-lg transition-shadow bg-gradient-to-br from-lumi/10 to-lumi/20 border border-lumi/15">
+          <Card className="shadow-md hover:shadow-lg transition-shadow bg-gradient-to-br from-lolo/10 to-lolo/20 border border-lolo/15">
             <CardHeader className="pb-2">
               <CardTitle className="text-body-sm font-medium text-muted-foreground flex items-center gap-2">
-                <div className="rounded-lg bg-lumi/15 p-1.5">
-                  <Trophy className="h-4 w-4 text-lumi" />
+                <div className="rounded-lg bg-lolo/15 p-1.5">
+                  <Map className="h-4 w-4 text-lolo" />
                 </div>
-                Total Points
+                Active Journeys
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-h4 font-bold">
-                {analyticsLoading ? '...' : totalStats.points.toLocaleString()}
+                {activeJourneyCount}
               </div>
               <p className="text-caption text-muted-foreground">
-                earned by all children
+                in progress
               </p>
             </CardContent>
           </Card>
@@ -303,7 +306,7 @@ export function DashboardHome() {
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-body-lg font-semibold">This Week's Progress</h2>
             <Link to="/dashboard/insights">
-              <Button variant="ghost" size="sm" className="gap-2">
+              <Button variant="ghost" size="sm" className="gap-2 hover:bg-primary/10 hover:text-primary">
                 <BarChart3 className="h-4 w-4" />
                 View Details
               </Button>
@@ -312,37 +315,48 @@ export function DashboardHome() {
 
           <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
             {analyticsOverview.children.map((childData) => (
-              <Card key={childData.child.id} className="shadow-md hover:shadow-lg transition-shadow bg-gradient-to-br from-primary/10 to-lala/10 border border-primary/15">
-                <CardHeader>
-                  <CardTitle className="text-body-lg flex items-center gap-2">
+              <Card
+                key={childData.child.id}
+                className="relative border border-primary/20 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 rounded-2xl overflow-hidden bg-gradient-to-br from-primary/20 via-lumi/15 to-lolo/20"
+              >
+                <CardHeader className="pb-3">
+                  <div className="flex items-center gap-3">
                     {childData.child.avatar_url && (
                       <img
                         src={childData.child.avatar_url}
                         alt=""
-                        className="w-8 h-8 rounded-full"
+                        className="w-12 h-12 rounded-full ring-2 ring-white shadow-sm shrink-0"
                       />
                     )}
-                    {childData.child.name}
-                  </CardTitle>
-                  <CardDescription>Age {childData.child.age}</CardDescription>
+                    <div className="flex-1 min-w-0">
+                      <CardTitle className="text-body-lg leading-tight">{childData.child.name}</CardTitle>
+                      <span className="inline-flex items-center px-2 py-0.5 mt-1 rounded-full bg-white/70 text-[11px] font-medium text-primary border border-primary/20">
+                        Age {childData.child.age}
+                      </span>
+                    </div>
+                  </div>
                 </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-body-sm">
-                    <div className="flex items-center gap-2">
-                      <div className="rounded-md bg-primary/10 p-1"><MessageCircle className="h-3.5 w-3.5 text-primary" /></div>
-                      <span>{childData.weekly_activity.messages} messages</span>
+                <CardContent className="pt-0">
+                  <div className="grid grid-cols-2 gap-2.5 text-body-sm">
+                    <div className="flex items-center gap-2 rounded-xl bg-white/70 backdrop-blur-sm px-2.5 py-2 shadow-sm">
+                      <MessageCircle className="h-4 w-4 text-primary shrink-0" />
+                      <span className="font-semibold text-foreground">{childData.weekly_activity.messages}</span>
+                      <span className="text-muted-foreground text-caption">messages</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <div className="rounded-md bg-lumi/10 p-1"><BookOpen className="h-3.5 w-3.5 text-lumi" /></div>
-                      <span>{childData.weekly_activity.stories} stories</span>
+                    <div className="flex items-center gap-2 rounded-xl bg-white/70 backdrop-blur-sm px-2.5 py-2 shadow-sm">
+                      <BookOpen className="h-4 w-4 text-lumi shrink-0" />
+                      <span className="font-semibold text-foreground">{childData.weekly_activity.stories}</span>
+                      <span className="text-muted-foreground text-caption">stories</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <div className="rounded-md bg-gold/10 p-1"><Flame className="h-3.5 w-3.5 text-gold" /></div>
-                      <span>{childData.stats.current_streak} day streak</span>
+                    <div className="flex items-center gap-2 rounded-xl bg-white/70 backdrop-blur-sm px-2.5 py-2 shadow-sm">
+                      <Flame className="h-4 w-4 text-gold shrink-0" />
+                      <span className="font-semibold text-foreground">{childData.stats.current_streak}</span>
+                      <span className="text-muted-foreground text-caption">day streak</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <div className="rounded-md bg-lolo/10 p-1"><Map className="h-3.5 w-3.5 text-lolo" /></div>
-                      <span>{childData.stats.total_journeys_completed} journeys</span>
+                    <div className="flex items-center gap-2 rounded-xl bg-white/70 backdrop-blur-sm px-2.5 py-2 shadow-sm">
+                      <Map className="h-4 w-4 text-lolo shrink-0" />
+                      <span className="font-semibold text-foreground">{childData.stats.total_journeys_completed}</span>
+                      <span className="text-muted-foreground text-caption">journeys</span>
                     </div>
                   </div>
                 </CardContent>

@@ -18,9 +18,9 @@ const buttonVariants = cva(
         default: 'bg-primary text-primary-foreground hover:-translate-y-0.5 hover:shadow-warm-lg rounded-pill',
         gold: 'border-2 border-gold text-gold bg-transparent hover:bg-gold hover:text-white rounded-pill',
         destructive: 'bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-pill',
-        outline: 'border-2 border-border bg-transparent text-foreground hover:bg-secondary rounded-pill',
-        secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80 rounded-pill',
-        ghost: 'hover:bg-secondary hover:text-foreground rounded-lg',
+        outline: 'border-2 border-border bg-transparent text-foreground hover:bg-primary/10 hover:text-primary hover:border-primary/30 rounded-pill',
+        secondary: 'bg-primary/10 text-primary hover:bg-primary/15 rounded-pill',
+        ghost: 'hover:bg-primary/10 hover:text-primary rounded-lg',
         link: 'text-primary underline-offset-4 hover:underline',
       },
       size: {

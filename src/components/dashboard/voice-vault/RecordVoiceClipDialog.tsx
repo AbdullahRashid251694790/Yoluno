@@ -45,6 +45,7 @@ const CATEGORIES: { value: VoiceClipCategoryType; label: string }[] = [
   { value: 'story', label: 'Story' },
   { value: 'memory', label: 'Memory' },
   { value: 'greeting', label: 'Greeting' },
+  { value: 'message', label: 'Message' },
   { value: 'other', label: 'Other' },
 ];
 

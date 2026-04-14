@@ -175,9 +175,6 @@ export function InsightsPage() {
             <div className="text-h4 font-bold">
               {childOverview?.stats.current_streak || 0} days
             </div>
-            <p className="text-caption text-muted-foreground">
-              {childOverview?.stats.total_points || 0} total points
-            </p>
           </CardContent>
         </Card>
       </div>
@@ -434,14 +431,12 @@ export function InsightsPage() {
                   {journeyProgress.map((journey) => (
                     <div
                       key={journey.id}
-                      className="flex items-center gap-4 p-3 rounded-lg bg-muted/50"
+                      className="flex items-center gap-4 p-3 rounded-lg bg-lolo/5 border border-lolo/15"
                     >
                       <div className="flex-1">
                         <div className="flex items-center justify-between">
                           <h4 className="font-medium">{journey.title}</h4>
-                          <Badge
-                            variant={journey.status === 'completed' ? 'default' : 'secondary'}
-                          >
+                          <Badge className="bg-lolo/15 text-lolo border-lolo/30 hover:bg-lolo/20">
                             {journey.status}
                           </Badge>
                         </div>
@@ -450,7 +445,10 @@ export function InsightsPage() {
                             {journey.steps_completed} of {journey.total_steps} steps
                           </span>
                         </div>
-                        <Progress value={journey.progress_percent} className="h-2 mt-2" />
+                        <Progress
+                          value={journey.progress_percent}
+                          className="h-2 mt-2 bg-lolo/20 [&>div]:bg-lolo"
+                        />
                       </div>
                     </div>
                   ))}

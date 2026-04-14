@@ -141,6 +141,83 @@ export function TopicsPage() {
     {} as Record<string, typeof topicSettings.topics>
   ) || {};
 
+  // Meta-cluster definitions matching loveable's grouping
+  const CLUSTERS: { label: string; categories: string[] }[] = [
+    {
+      label: 'British National Curriculum',
+      categories: [
+        'British Curriculum: English',
+        'British Curriculum: Maths',
+        'British Curriculum: Science',
+        'British Curriculum: History',
+        'British Curriculum: Geography',
+        'British Curriculum: Computing',
+        'British Curriculum: Languages',
+        'British Curriculum: Design & Technology',
+        'British Curriculum: Citizenship & PSHE',
+      ],
+    },
+    {
+      label: 'International Baccalaureate (IB)',
+      categories: [
+        'IB: Who We Are',
+        'IB: Where We Are in Place and Time',
+        'IB: How We Express Ourselves',
+        'IB: How the World Works',
+        'IB: How We Organize Ourselves',
+        'IB: Sharing the Planet',
+        'IB: Thinking & Learning Skills',
+        'IB: Design Thinking & Innovation',
+      ],
+    },
+    {
+      label: 'Learning & Knowledge',
+      categories: [
+        'Science & Space',
+        'History & Culture',
+        'Math & Logic',
+        'Technology & Future',
+        'World & Geography',
+        'Everyday Learning',
+      ],
+    },
+    {
+      label: 'Creative & Imaginative',
+      categories: ['Arts & Creativity', 'Adventure & Fantasy', 'Careers & Dreams'],
+    },
+    {
+      label: 'Wellbeing & Relationships',
+      categories: [
+        'Emotions & Feelings',
+        'Family & Friends',
+        'Health & Body',
+        'Mindfulness & Wellbeing',
+        'Safety & Life Skills',
+      ],
+    },
+    {
+      label: 'Fun & Exploration',
+      categories: ['Animals & Nature', 'Food & Cooking'],
+    },
+  ];
+
+  // Build list of clusters that actually have topics loaded
+  const clusterGroups = CLUSTERS.map((cluster) => ({
+    ...cluster,
+    presentCategories: cluster.categories.filter((c) => topicsByCategory[c]?.length > 0),
+  })).filter((c) => c.presentCategories.length > 0);
+
+  // Any categories not mapped to a cluster land in "Other"
+  const mappedCategories = new Set(CLUSTERS.flatMap((c) => c.categories));
+  const unmappedCategories = Object.keys(topicsByCategory).filter((c) => !mappedCategories.has(c));
+  if (unmappedCategories.length > 0) {
+    clusterGroups.push({
+      label: 'Other',
+      categories: unmappedCategories,
+      presentCategories: unmappedCategories,
+    });
+  }
+
   // Get posts for a specific topic
   const getPostsForTopic = (topicId: string) =>
     allPosts.filter((p) => p.topic_id === topicId);
@@ -197,7 +274,7 @@ export function TopicsPage() {
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="flex items-center gap-2">
-                <Sparkles className="h-5 w-5" />
+                <Sparkles className="h-5 w-5 text-primary" />
                 Custom Topics
               </CardTitle>
               <CardDescription>
@@ -307,84 +384,108 @@ export function TopicsPage() {
           </CardContent>
         </Card>
       ) : (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Tag className="h-5 w-5" />
-              Topic Settings for {selectedChild?.name}
-            </CardTitle>
-            <CardDescription>
-              Toggle topics on or off and add custom content
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Accordion type="multiple" className="w-full">
-              {Object.entries(topicsByCategory).map(([category, topics]) => {
-                const allowedCount = topics.filter((t) => t.is_allowed).length;
-                return (
-                  <AccordionItem key={category} value={category}>
-                    <AccordionTrigger className="hover:no-underline">
-                      <div className="flex items-center gap-3">
-                        <span className="font-medium">{category}</span>
-                        <Badge variant="secondary" className="!text-caption !px-2.5 !py-0.5">
-                          {allowedCount}/{topics.length} allowed
-                        </Badge>
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent>
-                      <div className="space-y-4 pt-2">
-                        {topics.map((topic) => {
-                          const posts = getPostsForTopic(topic.id);
-                          return (
-                            <div key={topic.id}>
-                              <div className="flex items-center justify-between rounded-lg border p-3">
-                                <div className="space-y-0.5">
-                                  <Label
-                                    htmlFor={topic.id}
-                                    className="text-body-sm font-medium cursor-pointer"
-                                  >
-                                    {topic.name}
-                                  </Label>
-                                  {posts.length > 0 && (
-                                    <Badge variant="outline" className="text-caption mt-1">
-                                      {posts.length} custom {posts.length === 1 ? 'post' : 'posts'}
-                                    </Badge>
-                                  )}
-                                </div>
-                                <Switch
-                                  id={topic.id}
-                                  checked={topic.is_allowed}
-                                  onCheckedChange={() =>
-                                    handleToggleTopic(topic.id, topic.is_allowed || false)
-                                  }
-                                  disabled={updateSetting.isPending}
-                                />
-                              </div>
+        <div className="space-y-6">
+          {clusterGroups.map((cluster) => {
+            const clusterTopicCount = cluster.presentCategories.reduce(
+              (sum, cat) => sum + (topicsByCategory[cat]?.length ?? 0),
+              0
+            );
+            const clusterAllowedCount = cluster.presentCategories.reduce(
+              (sum, cat) => sum + (topicsByCategory[cat]?.filter((t) => t.is_allowed).length ?? 0),
+              0
+            );
 
-                              {/* Posts for this system topic */}
-                              {topic.is_allowed && (
-                                <div className="ml-4 mt-2 border-l-2 pl-4">
-                                  <TopicPostsList
-                                    childId={activeChildId}
-                                    childAge={selectedChild?.age}
-                                    topicId={topic.id}
-                                    topicName={topic.name}
-                                    topicDescription={topic.description}
-                                    posts={posts}
-                                  />
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                );
-              })}
-            </Accordion>
-          </CardContent>
-        </Card>
+            return (
+              <div key={cluster.label}>
+                <div className="flex items-center justify-between mb-3 px-1">
+                  <h3 className="text-[13px] uppercase tracking-[1.5px] font-semibold text-muted-foreground">
+                    {cluster.label}
+                  </h3>
+                  <span className="text-caption text-muted-foreground">
+                    {clusterAllowedCount}/{clusterTopicCount} allowed
+                  </span>
+                </div>
+                <Card>
+                  <CardContent className="p-4">
+                    <Accordion type="multiple" className="w-full">
+                      {cluster.presentCategories.map((category) => {
+                        const topics = topicsByCategory[category] || [];
+                        const allowedCount = topics.filter((t) => t.is_allowed).length;
+                        return (
+                          <AccordionItem key={category} value={category}>
+                            <AccordionTrigger className="hover:no-underline">
+                              <div className="flex items-center gap-3">
+                                <span className="font-medium">{category}</span>
+                                <Badge
+                                  className={`!text-caption !px-2.5 !py-0.5 ${
+                                    allowedCount === topics.length
+                                      ? 'bg-primary/10 text-primary border-primary/20'
+                                      : 'bg-gold/10 text-gold border-gold/20'
+                                  }`}
+                                  variant="outline"
+                                >
+                                  {allowedCount}/{topics.length} allowed
+                                </Badge>
+                              </div>
+                            </AccordionTrigger>
+                            <AccordionContent>
+                              <div className="space-y-4 pt-2">
+                                {topics.map((topic) => {
+                                  const posts = getPostsForTopic(topic.id);
+                                  return (
+                                    <div key={topic.id}>
+                                      <div className="flex items-center justify-between rounded-lg border p-3">
+                                        <div className="space-y-0.5">
+                                          <Label
+                                            htmlFor={topic.id}
+                                            className="text-body-sm font-medium cursor-pointer"
+                                          >
+                                            {topic.name}
+                                          </Label>
+                                          {posts.length > 0 && (
+                                            <Badge variant="outline" className="text-caption mt-1">
+                                              {posts.length} custom {posts.length === 1 ? 'post' : 'posts'}
+                                            </Badge>
+                                          )}
+                                        </div>
+                                        <Switch
+                                          id={topic.id}
+                                          checked={topic.is_allowed}
+                                          onCheckedChange={() =>
+                                            handleToggleTopic(topic.id, topic.is_allowed || false)
+                                          }
+                                          disabled={updateSetting.isPending}
+                                        />
+                                      </div>
+
+                                      {/* Posts for this system topic */}
+                                      {topic.is_allowed && (
+                                        <div className="ml-4 mt-2 border-l-2 pl-4">
+                                          <TopicPostsList
+                                            childId={activeChildId}
+                                            childAge={selectedChild?.age}
+                                            topicId={topic.id}
+                                            topicName={topic.name}
+                                            topicDescription={topic.description}
+                                            posts={posts}
+                                          />
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </AccordionContent>
+                          </AccordionItem>
+                        );
+                      })}
+                    </Accordion>
+                  </CardContent>
+                </Card>
+              </div>
+            );
+          })}
+        </div>
       )}
 
       {/* Custom Topic Dialog */}

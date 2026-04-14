@@ -10,6 +10,7 @@ import { useChildProfiles } from '@/hooks/queries/useChildProfiles';
 import { ChildProfileCard } from '@/components/dashboard/children/ChildProfileCard';
 import { CreateChildDialog } from '@/components/dashboard/children/CreateChildDialog';
 import { EditChildDialog } from '@/components/dashboard/children/EditChildDialog';
+import { BoundariesAtAGlance } from '@/components/dashboard/children/BoundariesAtAGlance';
 import { LoadingState, EmptyState } from '@/components/shared';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -65,16 +66,20 @@ export function ChildrenPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-          {children.map((child) => (
-            <ChildProfileCard
-              key={child.id}
-              child={child}
-              avatarUrl={child.avatarUrl}
-              onEdit={() => setEditingChild(child)}
-            />
-          ))}
-        </div>
+        <>
+          <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+            {children.map((child) => (
+              <ChildProfileCard
+                key={child.id}
+                child={child}
+                avatarUrl={child.avatarUrl}
+                onEdit={() => setEditingChild(child)}
+              />
+            ))}
+          </div>
+
+          <BoundariesAtAGlance children={children} />
+        </>
       )}
 
       {/* Edit Child Dialog */}

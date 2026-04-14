@@ -123,7 +123,17 @@
       "Bash(sed -i -e 's/className=\"\"text-2xl text-foreground\"\"/className=\"\"text-h4 text-foreground\"\"/g' -e 's/\"\"text-xs text-muted-foreground\"\"/\"\"text-caption text-muted-foreground\"\"/g' -e 's/text-center text-sm text-muted-foreground/text-center text-body-sm text-muted-foreground/g' src/pages/Signup.tsx)",
       "Bash(sed -i -e 's/className=\"\"text-2xl text-foreground\"\"/className=\"\"text-h4 text-foreground\"\"/g' -e 's/\"\"text-sm text-destructive/\"\"text-body-sm text-destructive/g' -e 's/text-center text-sm text-muted-foreground/text-center text-body-sm text-muted-foreground/g' src/pages/ForgotPassword.tsx)",
       "Bash(sed -i -e 's/\"\"text-sm text-destructive\"\"/\"\"text-body-sm text-destructive\"\"/g' -e 's/\"\"text-sm font-medium\"\"/\"\"text-body-sm font-medium\"\"/g' src/pages/ResetPassword.tsx)",
-      "Bash(sed -i -e 's/className=\"\"text-2xl text-foreground\"\"/className=\"\"text-h4 text-foreground\"\"/g' -e 's/py-2 text-sm\"\"/py-2 text-body-sm\"\"/g' -e 's/text-center text-xs text-muted-foreground/text-center text-caption text-muted-foreground/g' src/pages/VerifyEmail.tsx)"
+      "Bash(sed -i -e 's/className=\"\"text-2xl text-foreground\"\"/className=\"\"text-h4 text-foreground\"\"/g' -e 's/py-2 text-sm\"\"/py-2 text-body-sm\"\"/g' -e 's/text-center text-xs text-muted-foreground/text-center text-caption text-muted-foreground/g' src/pages/VerifyEmail.tsx)",
+      "Bash(git stash:*)",
+      "Bash(git pull:*)",
+      "Bash(python3 -c ':*)",
+      "Bash(python -c ':*)",
+      "Bash(pip install:*)",
+      "Bash(python:*)",
+      "Bash(npm install:*)",
+      "Bash(git config:*)",
+      "WebFetch(domain:elevenlabs.io)",
+      "Bash(git checkout:*)"
     ]
   }
 }

@@ -132,7 +132,7 @@ export function NotificationBell() {
                 <div
                   key={notification.id}
                   className={cn(
-                    'px-4 py-3 hover:bg-muted/50 transition-colors',
+                    'px-4 py-3 hover:bg-primary/10 transition-colors',
                     !notification.is_read && 'bg-primary/5'
                   )}
                 >

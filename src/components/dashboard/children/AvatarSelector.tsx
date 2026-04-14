@@ -56,7 +56,7 @@ export function AvatarSelector({
         disabled={!canGoPrev || disabled}
         className={cn(
           'rounded-full p-1 transition-colors',
-          canGoPrev ? 'hover:bg-muted text-foreground' : 'text-muted-foreground/30 cursor-default'
+          canGoPrev ? 'hover:bg-primary/10 hover:text-primary text-foreground' : 'text-muted-foreground/30 cursor-default'
         )}
       >
         <ChevronLeft className="h-5 w-5" />
@@ -105,7 +105,7 @@ export function AvatarSelector({
         disabled={!canGoNext || disabled}
         className={cn(
           'rounded-full p-1 transition-colors',
-          canGoNext ? 'hover:bg-muted text-foreground' : 'text-muted-foreground/30 cursor-default'
+          canGoNext ? 'hover:bg-primary/10 hover:text-primary text-foreground' : 'text-muted-foreground/30 cursor-default'
         )}
       >
         <ChevronRight className="h-5 w-5" />

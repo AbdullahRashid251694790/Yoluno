@@ -35,6 +35,7 @@ import { NotFoundPage } from '@/pages/NotFound';
 // Landing pages (lazy-loaded)
 import LandingLayout from '@/components/landing/LandingLayout';
 import ScrollToTop from '@/components/landing/ScrollToTop';
+const RecordForFamilyPage = lazy(() => import('@/pages/RecordForFamilyPage'));
 const LandingHomePage = lazy(() => import('@/pages/landing/HomePage'));
 const LandingFeaturesPage = lazy(() => import('@/pages/landing/FeaturesPage'));
 const LandingForParentsPage = lazy(() => import('@/pages/landing/ForParentsPage'));
@@ -119,6 +120,11 @@ export default function App() {
                 <Route path="/how-ai-works" element={<LandingLayout><Suspense fallback={null}><LandingHowAIWorksPage /></Suspense></LandingLayout>} />
                 <Route path="/data-practices" element={<LandingLayout><Suspense fallback={null}><LandingDataPracticesPage /></Suspense></LandingLayout>} />
                 <Route path="/privacy-policy" element={<LandingLayout><Suspense fallback={null}><LandingPrivacyPolicyPage /></Suspense></LandingLayout>} />
+                {/* Public voice recording invite (no auth, no layout) */}
+                <Route
+                  path="/record-for-family/:token"
+                  element={<Suspense fallback={null}><RecordForFamilyPage /></Suspense>}
+                />
                 <Route
                   path="/login"
                   element={

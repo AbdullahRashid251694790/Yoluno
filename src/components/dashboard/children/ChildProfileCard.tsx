@@ -52,7 +52,7 @@ export function ChildProfileCard({ child, avatarUrl, onEdit }: ChildProfileCardP
             <h3 className="mt-3 text-body font-semibold">{child.name}</h3>
 
             <div className="mt-1.5 flex flex-wrap items-center justify-center gap-1.5">
-              <Badge variant="secondary" className="text-caption px-2.5 py-0.5">{child.age} years old</Badge>
+              <Badge variant="outline" className="!text-[11px] !px-2 !py-0.5 !h-[22px] !leading-none border-primary bg-primary/10 text-primary">{child.age} years old</Badge>
               {child.gender && child.gender !== 'prefer_not_to_say' && (
                 <Badge
                   variant="outline"

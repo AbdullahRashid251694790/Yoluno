@@ -234,13 +234,10 @@ export function JourneyCard({
             </span>
           </div>
 
-          {/* Progress bar with gradient for completed */}
+          {/* Progress bar — lolo track and fill, matching kids dashboard */}
           <Progress
             value={progress}
-            className={cn(
-              'h-2 [&>div]:bg-lolo',
-              isCompleted && '[&>div]:bg-gradient-to-r [&>div]:from-lolo [&>div]:to-lolo'
-            )}
+            className="h-2 bg-lolo/20 [&>div]:bg-lolo"
           />
 
           {/* Step counter */}

@@ -132,10 +132,12 @@ export function useUpdateBuddyPersonality() {
     mutationFn: ({
       buddyId,
       traits,
+      useCustomPersonality,
     }: {
       buddyId: string;
       traits: Partial<ChatBuddy['personality_traits']>;
-    }) => buddyChatService.updatePersonality(buddyId, traits),
+      useCustomPersonality?: boolean;
+    }) => buddyChatService.updatePersonality(buddyId, traits, useCustomPersonality),
     onSuccess: (data) => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.buddyChat.buddy(data.child_profile_id),

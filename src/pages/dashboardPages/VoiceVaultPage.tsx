@@ -1,11 +1,12 @@
 /**
- * Voice Vault Page
+ * Family Voices Page
  *
  * Manage voice recordings for family members.
- * All data from database - no hardcoding.
+ * UI inspired by the loveable design — cards with waveforms, gold accent,
+ * and a "what your child hears" preview.
  */
 
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { getUploadUrl } from '@/integrations/api/client';
@@ -17,11 +18,9 @@ import {
   useRecordVoiceClipPlay,
   type VoiceClipFilters,
 } from '@/hooks/queries/useVoiceVault';
-import { LoadingSpinner, EmptyState } from '@/components/shared';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { LoadingSpinner } from '@/components/shared';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Select,
   SelectContent,
@@ -38,48 +37,97 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
   Mic,
   Play,
   Pause,
-  Star,
-  Trash2,
-  Filter,
   Heart,
-  Clock,
-  User,
-  Plus,
+  MoreHorizontal,
+  Download,
+  Send,
+  Trash2,
+  Pencil,
 } from 'lucide-react';
-import { RecordVoiceClipDialog } from '@/components/dashboard/voice-vault';
+import { RecordVoiceClipDialog, SendRecordingLinkDialog, EditVoiceClipDialog } from '@/components/dashboard/voice-vault';
+import type { VoiceClip } from '@/services/voiceVault';
+import { cn } from '@/lib/utils';
 
-type VoiceCategory = 'all' | 'encouragement' | 'praise' | 'celebration' | 'story' | 'memory' | 'greeting' | 'other';
+type VoiceCategory = 'all' | 'encouragement' | 'praise' | 'celebration' | 'story' | 'memory' | 'greeting' | 'message' | 'other';
 
-const CATEGORY_INFO: Record<string, { label: string; color: string; gradient: string; border: string }> = {
-  encouragement: { label: 'Encouragement', color: 'text-lolo', gradient: 'from-lolo/10 to-lolo/20', border: 'border-lolo/15' },
-  praise: { label: 'Praise', color: 'text-lala', gradient: 'from-lala/10 to-gold/10', border: 'border-lala/15' },
-  celebration: { label: 'Celebration', color: 'text-primary', gradient: 'from-primary/10 to-lumi/10', border: 'border-primary/15' },
-  story: { label: 'Story', color: 'text-lumi', gradient: 'from-lumi/10 to-lumi/20', border: 'border-lumi/15' },
-  memory: { label: 'Memory', color: 'text-primary', gradient: 'from-lumi/10 to-primary/10', border: 'border-lumi/15' },
-  greeting: { label: 'Greeting', color: 'text-gold', gradient: 'from-gold/10 to-lala/10', border: 'border-gold/15' },
-  other: { label: 'Other', color: 'text-muted-foreground', gradient: 'from-muted/10 to-muted/20', border: 'border-border' },
+// Original category tabs — all backend categories preserved
+const CATEGORY_TABS: { value: VoiceCategory; label: string }[] = [
+  { value: 'all', label: 'All' },
+  { value: 'encouragement', label: 'Encouragement' },
+  { value: 'praise', label: 'Praise' },
+  { value: 'celebration', label: 'Celebration' },
+  { value: 'story', label: 'Story' },
+  { value: 'memory', label: 'Memory' },
+  { value: 'greeting', label: 'Greeting' },
+  { value: 'message', label: 'Message' },
+  { value: 'other', label: 'Other' },
+];
+
+const CATEGORY_PILL_LABEL: Record<string, string> = {
+  encouragement: 'Encouragement',
+  praise: 'Praise',
+  celebration: 'Celebration',
+  story: 'Story',
+  memory: 'Memory',
+  greeting: 'Greeting',
+  message: 'Message',
+  other: 'Other',
 };
+
+// Deterministic waveform based on a clip id
+function Waveform({ active, seed }: { active?: boolean; seed: string }) {
+  const bars = useMemo(() => {
+    const hash = seed.split('').reduce((h, c) => h * 31 + c.charCodeAt(0), 7);
+    return Array.from({ length: 40 }).map((_, i) => {
+      const v = Math.sin(i * 0.4 + hash * 0.01) * 10 + ((hash >> i) & 7) + 4;
+      return Math.abs(v);
+    });
+  }, [seed]);
+
+  return (
+    <svg viewBox="0 0 200 32" className="w-full h-8" preserveAspectRatio="none">
+      {bars.map((h, i) => (
+        <rect
+          key={i}
+          x={i * 5}
+          y={16 - h / 2}
+          width={3}
+          height={h}
+          rx={1.5}
+          fill={active ? 'hsl(var(--gold))' : 'hsl(var(--border))'}
+        />
+      ))}
+    </svg>
+  );
+}
 
 export function VoiceVaultPage() {
   const { user } = useAuth();
   const { data: familyMembers = [] } = useFamilyMembers(user?.id);
   const [selectedFamilyMemberId, setSelectedFamilyMemberId] = useState<string>('all');
-  const [selectedCategory, setSelectedCategory] = useState<VoiceCategory>('all');
-  const [showFavorites, setShowFavorites] = useState(false);
+  const [activeTab, setActiveTab] = useState<VoiceCategory>('all');
   const [playingClipId, setPlayingClipId] = useState<string | null>(null);
   const [playbackProgress, setPlaybackProgress] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [isRecordDialogOpen, setIsRecordDialogOpen] = useState(false);
+  const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
+  const [editingClip, setEditingClip] = useState<VoiceClip | null>(null);
+  const [deletingClip, setDeletingClip] = useState<VoiceClip | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const location = useLocation();
 
-  // Stop audio on route change or unmount
   useEffect(() => {
     return () => {
       if (audioRef.current) {
@@ -93,12 +141,10 @@ export function VoiceVaultPage() {
     };
   }, [location.pathname]);
 
-  // Build filters
+  // Fetch all clips for the selected family member (filter client-side by tab)
   const filters: VoiceClipFilters = {
     familyMemberId: selectedFamilyMemberId !== 'all' ? selectedFamilyMemberId : undefined,
-    category: selectedCategory !== 'all' ? selectedCategory : undefined,
-    favorite: showFavorites || undefined,
-    limit: 50,
+    limit: 100,
   };
 
   const { data: clipData, isLoading } = useVoiceClips(filters);
@@ -106,106 +152,100 @@ export function VoiceVaultPage() {
   const deleteClip = useDeleteVoiceClip();
   const recordPlay = useRecordVoiceClipPlay();
 
-  const handleToggleFavorite = (id: string) => {
-    toggleFavorite.mutate(id);
-  };
+  // Filter by tab client-side
+  const allClips = clipData?.items || [];
+  const filteredClips = useMemo(() => {
+    if (activeTab === 'all') return allClips;
+    return allClips.filter((c) => c.category === activeTab);
+  }, [allClips, activeTab]);
 
-  const handleDelete = (id: string) => {
-    deleteClip.mutate(id);
-  };
 
-  const handlePlay = useCallback((id: string, audioUrl: string, totalSeconds: number) => {
-    if (playingClipId === id) {
-      audioRef.current?.pause();
-      setPlayingClipId(null);
+  const handlePlay = useCallback(
+    (id: string, audioUrl: string, totalSecondsForClip: number) => {
+      if (playingClipId === id) {
+        audioRef.current?.pause();
+        setPlayingClipId(null);
+        setPlaybackProgress(0);
+        setCurrentTime(0);
+        return;
+      }
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+      const fullUrl = getUploadUrl(audioUrl) || audioUrl;
+      const audio = new Audio(fullUrl);
+      audioRef.current = audio;
+      const knownDuration = totalSecondsForClip || 1;
+
+      audio.addEventListener('timeupdate', () => {
+        if (audioRef.current !== audio) return;
+        const effectiveDuration = audio.duration && isFinite(audio.duration) ? audio.duration : knownDuration;
+        setPlaybackProgress((audio.currentTime / effectiveDuration) * 100);
+        setCurrentTime(Math.floor(audio.currentTime));
+      });
+
+      audio.addEventListener('ended', () => {
+        if (audioRef.current !== audio) return;
+        setPlayingClipId(null);
+        setPlaybackProgress(0);
+        setCurrentTime(0);
+        audioRef.current = null;
+      });
+
+      setPlayingClipId(id);
       setPlaybackProgress(0);
       setCurrentTime(0);
-      return;
-    }
-
-    // Stop any currently playing audio
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current = null;
-    }
-
-    const fullUrl = getUploadUrl(audioUrl) || audioUrl;
-    const audio = new Audio(fullUrl);
-    audioRef.current = audio;
-
-    // Use known duration from DB so progress works immediately
-    // (webm files often report duration=Infinity until fully loaded)
-    const knownDuration = totalSeconds || 1;
-
-    audio.addEventListener('timeupdate', () => {
-      // Guard against stale listeners from a previous audio instance
-      if (audioRef.current !== audio) return;
-      const effectiveDuration = (audio.duration && isFinite(audio.duration))
-        ? audio.duration
-        : knownDuration;
-      setPlaybackProgress((audio.currentTime / effectiveDuration) * 100);
-      setCurrentTime(Math.floor(audio.currentTime));
-    });
-
-    audio.addEventListener('ended', () => {
-      if (audioRef.current !== audio) return;
-      setPlayingClipId(null);
-      setPlaybackProgress(0);
-      setCurrentTime(0);
-      audioRef.current = null;
-    });
-
-    // Set playing state BEFORE play() so ended/timeupdate have correct state
-    setPlayingClipId(id);
-    setPlaybackProgress(0);
-    setCurrentTime(0);
-
-    audio.play().then(() => {
-      recordPlay.mutate(id);
-    }).catch((err) => {
-      console.error('Failed to play audio:', err);
-      setPlayingClipId(null);
-      setPlaybackProgress(0);
-      setCurrentTime(0);
-      audioRef.current = null;
-    });
-  }, [playingClipId, recordPlay]);
-
-  const handleSeek = useCallback((e: React.MouseEvent<HTMLDivElement>, clipId: string) => {
-    if (playingClipId !== clipId || !audioRef.current) return;
-    const audio = audioRef.current;
-    const effectiveDuration = (audio.duration && isFinite(audio.duration))
-      ? audio.duration
-      : null;
-    if (!effectiveDuration) return;
-    const bar = e.currentTarget;
-    const rect = bar.getBoundingClientRect();
-    const percent = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-    audio.currentTime = percent * effectiveDuration;
-  }, [playingClipId]);
+      audio.play().then(() => recordPlay.mutate(id)).catch(() => {
+        setPlayingClipId(null);
+        setPlaybackProgress(0);
+        setCurrentTime(0);
+        audioRef.current = null;
+      });
+    },
+    [playingClipId, recordPlay]
+  );
 
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
+    if (mins === 0) return `${secs} sec`;
+    return `${mins} min ${secs} sec`;
+  };
+
+  const handleDownload = async (audioUrl: string, title: string) => {
+    const fullUrl = getUploadUrl(audioUrl) || audioUrl;
+    try {
+      const res = await fetch(fullUrl);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${title}.webm`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Download failed', err);
+    }
   };
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div>
-          <h1 className="text-h3 font-bold">Voice Vault</h1>
-          <p className="text-muted-foreground mt-1">
-            Saved voice recordings from family members.
+          <h1 className="text-h3 font-bold text-foreground">Family Voices</h1>
+          <p className="text-muted-foreground mt-1 max-w-xl">
+            Record the voices your child loves most. Bedtime stories, family memories, lullabies,
+            and messages — saved here and available to your child through Loti.
           </p>
         </div>
-
-        <div className="flex gap-2">
+        <div className="flex items-center gap-3 shrink-0">
           {familyMembers.length > 0 && (
             <Select value={selectedFamilyMemberId} onValueChange={setSelectedFamilyMemberId}>
-              <SelectTrigger className="w-[150px]">
-                <Filter className="h-4 w-4 mr-2" />
+              <SelectTrigger className="w-[170px]">
                 <SelectValue placeholder="All members" />
               </SelectTrigger>
               <SelectContent>
@@ -220,203 +260,230 @@ export function VoiceVaultPage() {
           )}
 
           <Button
-            variant={showFavorites ? 'default' : 'outline'}
-            size="icon"
-            onClick={() => setShowFavorites(!showFavorites)}
+            onClick={() => setIsRecordDialogOpen(true)}
+            className="gap-2 bg-gold text-white hover:bg-gold/90 rounded-full"
           >
-            <Heart className={showFavorites ? 'fill-current' : ''} />
-          </Button>
-
-          <Button onClick={() => setIsRecordDialogOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
+            <Mic className="h-4 w-4" />
             Record
           </Button>
         </div>
       </div>
 
-      {/* Category Tabs */}
-      <Tabs value={selectedCategory} onValueChange={(v) => setSelectedCategory(v as VoiceCategory)}>
-        <TabsList className="flex-wrap">
-          <TabsTrigger value="all" className="gap-2">
-            <Mic className="h-4 w-4" />
-            All
-            {clipData && (
-              <Badge variant="secondary" className="ml-1">
-                {clipData.total}
-              </Badge>
-            )}
-          </TabsTrigger>
-          {Object.entries(CATEGORY_INFO).map(([key, info]) => (
-            <TabsTrigger key={key} value={key} className="gap-2">
-              <span className={info.color}>{info.label}</span>
-            </TabsTrigger>
+      {/* Tabs */}
+      <div className="overflow-x-auto -mx-1 px-1 scrollbar-hide">
+        <div className="inline-flex items-center gap-1 p-1 rounded-full bg-muted/50 whitespace-nowrap">
+          {CATEGORY_TABS.map((tab) => (
+            <button
+              key={tab.value}
+              onClick={() => setActiveTab(tab.value)}
+              className={cn(
+                'px-4 py-1.5 rounded-full text-body-sm font-medium transition whitespace-nowrap',
+                activeTab === tab.value
+                  ? 'bg-white text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              {tab.label}
+            </button>
           ))}
-        </TabsList>
+        </div>
+      </div>
 
-        <TabsContent value={selectedCategory} className="mt-6">
-          {isLoading ? (
-            <div className="flex justify-center py-12">
-              <LoadingSpinner />
-            </div>
-          ) : !clipData?.items.length ? (
-            <Card>
-              <CardContent className="py-12">
-                <EmptyState
-                  icon={Mic}
-                  title="No voice clips"
-                  description={
-                    showFavorites
-                      ? 'Mark voice clips as favorite to see them here.'
-                      : 'Record voice messages from family members to save them here.'
-                  }
-                />
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {clipData.items.map((clip) => {
-                const categoryInfo = CATEGORY_INFO[clip.category];
-                const isPlaying = playingClipId === clip.id;
+      {/* Invite banner */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl bg-gold/10 border border-gold/20">
+        <div>
+          <p className="text-body-sm font-semibold text-foreground">
+            Family members can record from anywhere
+          </p>
+          <p className="text-caption text-muted-foreground mt-0.5">
+            Share a link — they can record without a Yoluno account.
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          onClick={() => setIsInviteDialogOpen(true)}
+          className="gap-2 border-2 border-gold text-gold hover:bg-gold/10 hover:text-gold rounded-full"
+        >
+          <Send className="h-3.5 w-3.5" />
+          Send Recording Link
+        </Button>
+      </div>
 
-                return (
-                  <Card key={clip.id} className={`overflow-hidden shadow-md hover:shadow-lg transition-shadow bg-gradient-to-br ${categoryInfo?.gradient || 'from-muted/10 to-muted/20'} border ${categoryInfo?.border || 'border-border'}`}>
-                    <CardHeader className="pb-2">
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-2">
-                          <Badge variant="secondary" className={`text-caption ${categoryInfo?.color}`}>
-                            {categoryInfo?.label || clip.category}
-                          </Badge>
-                        </div>
-                        <div className="flex gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => handleToggleFavorite(clip.id)}
-                            disabled={toggleFavorite.isPending}
-                          >
-                            <Star
-                              className={`h-4 w-4 ${
-                                clip.is_favorite ? 'fill-lala text-lala' : ''
-                              }`}
-                            />
-                          </Button>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-destructive hover:text-destructive"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Delete voice clip?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  This will permanently delete "{clip.title}". This action cannot
-                                  be undone.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => handleDelete(clip.id)}
-                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                >
-                                  Delete
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </div>
-                      </div>
-                      <CardTitle className="text-body mt-2 line-clamp-1">
-                        {clip.title}
-                      </CardTitle>
-                      {clip.family_member_name && (
-                        <CardDescription className="text-caption flex items-center gap-1">
-                          <User className="h-3 w-3" />
-                          {clip.family_member_name}
-                        </CardDescription>
-                      )}
-                    </CardHeader>
-                    <CardContent>
-                      {/* Audio Player */}
-                      <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
-                        <Button
-                          variant="secondary"
-                          size="icon"
-                          className="h-10 w-10 rounded-full"
-                          onClick={() => handlePlay(clip.id, clip.audio_url, clip.duration_seconds)}
-                        >
-                          {isPlaying ? (
-                            <Pause className="h-5 w-5" />
-                          ) : (
-                            <Play className="h-5 w-5" />
-                          )}
-                        </Button>
+      {/* Recording cards */}
+      {isLoading ? (
+        <div className="flex justify-center py-12">
+          <LoadingSpinner />
+        </div>
+      ) : filteredClips.length === 0 ? (
+        <div className="text-center py-20 max-w-xl mx-auto">
+          <div className="flex items-center justify-center w-28 h-28 rounded-full bg-gold/10 mx-auto mb-6">
+            <Mic className="h-12 w-12 text-gold" />
+          </div>
+          <h2 className="text-h4 font-bold text-foreground mb-2">
+            Your family's voices belong here
+          </h2>
+          <p className="text-muted-foreground mb-8">
+            Record a bedtime story. Sing a favourite lullaby. Share a memory from when you were young.
+            Your child can listen anytime through Loti.
+          </p>
+          <Button
+            onClick={() => setIsRecordDialogOpen(true)}
+            className="gap-2 bg-gold text-white hover:bg-gold/90 rounded-full px-8 h-12"
+          >
+            <Mic className="h-4 w-4" />
+            Record Your First Voice Message
+          </Button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          {filteredClips.map((clip) => {
+            const isPlaying = playingClipId === clip.id;
+            const isFav = clip.is_favorite;
+            const pillLabel = CATEGORY_PILL_LABEL[clip.category] || 'Voice';
+            const dateLabel = new Date(clip.created_at).toLocaleDateString(undefined, {
+              month: 'short',
+              day: 'numeric',
+              year: 'numeric',
+            });
+
+            return (
+              <Card
+                key={clip.id}
+                className="bg-white border border-border border-l-[4px] border-l-gold p-6 transition hover:-translate-y-0.5 hover:shadow-md"
+              >
+                <CardContent className="p-0">
+                  {/* Waveform */}
+                  <div className="mb-4 cursor-pointer" onClick={() => handlePlay(clip.id, clip.audio_url, clip.duration_seconds)}>
+                    <Waveform active={isPlaying} seed={clip.id} />
+                    {isPlaying && (
+                      <div className="h-1 bg-muted rounded-full overflow-hidden mt-1">
                         <div
-                          className="flex-1 cursor-pointer"
-                          onClick={(e) => handleSeek(e, clip.id)}
-                        >
-                          <div className="h-2 bg-background rounded-full overflow-hidden">
-                            <div
-                              className="h-full bg-primary rounded-full"
-                              style={{ width: `${isPlaying ? playbackProgress : 0}%`, transition: 'width 0.1s linear' }}
+                          className="h-full bg-gold transition-all"
+                          style={{ width: `${playbackProgress}%` }}
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Play + info */}
+                  <div className="flex items-start gap-4">
+                    <button
+                      onClick={() => handlePlay(clip.id, clip.audio_url, clip.duration_seconds)}
+                      className="flex-shrink-0 flex items-center justify-center w-12 h-12 rounded-full bg-gold text-white hover:scale-105 transition shadow-sm"
+                    >
+                      {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5 ml-0.5" />}
+                    </button>
+
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2">
+                        <h3 className="text-body font-semibold text-foreground truncate">
+                          {clip.title}
+                        </h3>
+                        <div className="flex items-center gap-1 flex-shrink-0">
+                          <button
+                            onClick={() => toggleFavorite.mutate(clip.id)}
+                            className="p-1 transition hover:scale-110"
+                          >
+                            <Heart
+                              className={cn(
+                                'h-4 w-4 text-gold',
+                                isFav && 'fill-gold'
+                              )}
                             />
-                          </div>
+                          </button>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <button className="p-1 rounded-full hover:bg-muted transition">
+                                <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
+                              </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => setEditingClip(clip)}>
+                                <Pencil className="h-4 w-4 mr-2" />
+                                Edit
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                onClick={() => setDeletingClip(clip)}
+                                className="text-destructive focus:text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </div>
-                        <span className="text-caption text-muted-foreground tabular-nums">
-                          {isPlaying
-                            ? `${formatDuration(currentTime)} / ${formatDuration(clip.duration_seconds)}`
-                            : formatDuration(clip.duration_seconds)}
-                        </span>
                       </div>
 
-                      {clip.description && (
-                        <p className="text-body-sm text-muted-foreground mt-3 line-clamp-2">
+                      {clip.family_member_name ? (
+                        <p className="text-caption text-muted-foreground mt-1">
+                          Recorded by {clip.family_member_name}
+                        </p>
+                      ) : clip.description ? (
+                        <p className="text-caption text-muted-foreground mt-1 line-clamp-1">
                           {clip.description}
                         </p>
-                      )}
+                      ) : null}
 
-                      {clip.tags && clip.tags.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mt-3">
-                          {clip.tags.slice(0, 3).map((tag) => (
-                            <Badge key={tag} variant="outline" className="text-caption">
-                              {tag}
-                            </Badge>
-                          ))}
-                          {clip.tags.length > 3 && (
-                            <Badge variant="outline" className="text-caption">
-                              +{clip.tags.length - 3}
-                            </Badge>
-                          )}
-                        </div>
-                      )}
-
-                      <div className="flex items-center justify-between text-caption text-muted-foreground mt-3">
-                        <span className="flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          {new Date(clip.created_at).toLocaleDateString()}
+                      <div className="flex items-center gap-3 mt-3 flex-wrap">
+                        <span className="text-caption text-muted-foreground">
+                          {formatDuration(clip.duration_seconds)} · {dateLabel}
                         </span>
-                        <span>{clip.play_count} plays</span>
+                        <span className="px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-gold/10 text-gold">
+                          {pillLabel}
+                        </span>
                       </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-          )}
-        </TabsContent>
-      </Tabs>
 
-      {/* Record Voice Clip Dialog */}
-      <RecordVoiceClipDialog
-        open={isRecordDialogOpen}
-        onOpenChange={setIsRecordDialogOpen}
+                      <div className="flex items-center gap-2 mt-3">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="!h-8 gap-1.5 rounded-lg"
+                          onClick={() => handleDownload(clip.audio_url, clip.title)}
+                        >
+                          <Download className="h-3 w-3" />
+                          Download
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
+
+      <RecordVoiceClipDialog open={isRecordDialogOpen} onOpenChange={setIsRecordDialogOpen} />
+      <SendRecordingLinkDialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen} />
+      <EditVoiceClipDialog
+        clip={editingClip}
+        open={!!editingClip}
+        onOpenChange={(open) => !open && setEditingClip(null)}
       />
+      <AlertDialog open={!!deletingClip} onOpenChange={(open) => !open && setDeletingClip(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete voice clip?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete "{deletingClip?.title}". This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (deletingClip) deleteClip.mutate(deletingClip.id);
+                setDeletingClip(null);
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

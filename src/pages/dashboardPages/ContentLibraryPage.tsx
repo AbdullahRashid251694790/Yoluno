@@ -73,6 +73,17 @@ export function ContentLibraryPage() {
   };
 
   const { data: contentData, isLoading } = useContentItems(filters);
+
+  // Separate query for total counts (respects child + favorite filters, ignores type)
+  const { data: allForCounts } = useContentItems({
+    childId: filters.childId,
+    favorite: filters.favorite,
+    limit: 500,
+  });
+  const countsByType = (allForCounts?.items ?? []).reduce<Record<string, number>>((acc, item) => {
+    acc[item.content_type] = (acc[item.content_type] ?? 0) + 1;
+    return acc;
+  }, {});
   const toggleFavorite = useToggleFavorite();
   const deleteContent = useDeleteContent();
 
@@ -89,9 +100,9 @@ export function ContentLibraryPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-h3 font-bold">Content Library</h1>
+          <h1 className="text-h3 font-bold">Family Keepsakes</h1>
           <p className="text-muted-foreground mt-1">
-            Stories, journeys, voice recordings, and saved notes.
+            Your family's favorite stories, completed journeys, and saved voice recordings — all in one place.
           </p>
         </div>
 
@@ -129,9 +140,9 @@ export function ContentLibraryPage() {
           <TabsTrigger value="all" className="gap-2">
             <Library className="h-4 w-4" />
             All
-            {contentData && (
-              <Badge variant="secondary" className="ml-1">
-                {contentData.total}
+            {allForCounts && (
+              <Badge variant="secondary" className="ml-1 !text-[11px] !h-5 !px-2 bg-primary/10 text-primary border-primary/20">
+                {allForCounts.total}
               </Badge>
             )}
           </TabsTrigger>
@@ -139,6 +150,9 @@ export function ContentLibraryPage() {
             <TabsTrigger key={type} value={type} className="gap-2">
               <info.icon className={`h-4 w-4 ${info.color}`} />
               {info.label}
+              <Badge variant="secondary" className="ml-1 !text-[11px] !h-5 !px-2 bg-primary/10 text-primary border-primary/20">
+                {countsByType[type] ?? 0}
+              </Badge>
             </TabsTrigger>
           ))}
         </TabsList>

@@ -10,7 +10,7 @@ import { apiGet, apiPost, apiPut, apiDelete } from '@/lib/api';
 const CONTEXT = 'voiceVault';
 
 // Types
-export type VoiceClipCategoryType = 'encouragement' | 'praise' | 'celebration' | 'story' | 'memory' | 'greeting' | 'other';
+export type VoiceClipCategoryType = 'encouragement' | 'praise' | 'celebration' | 'story' | 'memory' | 'greeting' | 'message' | 'other';
 
 export interface VoiceClip {
   id: string;
@@ -75,6 +75,7 @@ export interface UpdateVoiceClipInput {
   category?: VoiceClipCategoryType;
   transcription?: string;
   tags?: string[];
+  family_member_id?: string | null;
 }
 
 // API Functions

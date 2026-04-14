@@ -57,14 +57,18 @@ export function DashboardSidebar() {
                 : location.pathname.startsWith(item.path);
 
             return (
-              <Link key={item.path} to={item.path}>
-                <Button
-                  variant={isActive ? 'secondary' : 'ghost'}
-                  className={cn('w-full justify-start gap-3', isActive && 'bg-secondary')}
-                >
-                  <item.icon className="h-5 w-5" />
-                  {item.label}
-                </Button>
+              <Link
+                key={item.path}
+                to={item.path}
+                className={cn(
+                  'relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-body-sm font-medium transition-colors',
+                  isActive
+                    ? 'bg-white text-foreground shadow-sm border-l-[3px] border-l-primary pl-[11px]'
+                    : 'text-muted-foreground hover:bg-primary/10 hover:text-primary'
+                )}
+              >
+                <item.icon className={cn('h-5 w-5', isActive && 'text-primary')} />
+                {item.label}
               </Link>
             );
           })}

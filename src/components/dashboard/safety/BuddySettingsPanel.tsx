@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
+import { Switch } from '@/components/ui/switch';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { LoadingSpinner } from '@/components/shared/feedback/LoadingState';
@@ -34,6 +35,7 @@ export function BuddySettingsPanel({ childId, childName }: BuddySettingsPanelPro
     educational: 5,
     empathetic: 5,
   });
+  const [useCustom, setUseCustom] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
 
   useEffect(() => {
@@ -47,6 +49,7 @@ export function BuddySettingsPanel({ childId, childName }: BuddySettingsPanelPro
         empathetic: 5,
         ...buddy.personality_traits,
       });
+      setUseCustom(buddy.use_custom_personality ?? false);
     }
   }, [buddy]);
 
@@ -57,16 +60,39 @@ export function BuddySettingsPanel({ childId, childName }: BuddySettingsPanelPro
     }
   }, [traits, buddy]);
 
+  const handleToggleCustom = (enabled: boolean) => {
+    setUseCustom(enabled);
+    if (buddy) {
+      updatePersonality({
+        buddyId: buddy.id,
+        traits,
+        useCustomPersonality: enabled,
+      });
+    }
+  };
+
   const handleSave = () => {
     if (!buddy) return;
     if (JSON.stringify(traits) !== JSON.stringify(buddy.personality_traits)) {
-      updatePersonality({ buddyId: buddy.id, traits });
+      updatePersonality({ buddyId: buddy.id, traits, useCustomPersonality: useCustom });
     }
   };
 
   const handleReset = () => {
+    const defaultTraits = {
+      curious: 5,
+      patient: 5,
+      playful: 5,
+      educational: 5,
+      empathetic: 5,
+    };
+    setTraits(defaultTraits);
     if (buddy) {
-      setTraits(buddy.personality_traits);
+      updatePersonality({
+        buddyId: buddy.id,
+        traits: defaultTraits,
+        useCustomPersonality: useCustom,
+      });
     }
   };
 
@@ -162,8 +188,28 @@ export function BuddySettingsPanel({ childId, childName }: BuddySettingsPanelPro
           </div>
         </div>
 
+        {/* Custom personality toggle */}
+        <div className="flex items-start gap-4 rounded-lg border border-border bg-muted/30 p-4">
+          <Switch
+            id="use-custom-personality"
+            checked={useCustom}
+            onCheckedChange={handleToggleCustom}
+            disabled={isUpdatingPersonality}
+          />
+          <div className="flex-1 space-y-1">
+            <Label htmlFor="use-custom-personality" className="text-body-sm font-semibold cursor-pointer">
+              Customize Luno's personality
+            </Label>
+            <p className="text-caption text-muted-foreground">
+              {useCustom
+                ? `Luno uses the sliders below for ${childName}.`
+                : `Luno automatically adapts based on ${childName}'s age. Turn this on to adjust manually.`}
+            </p>
+          </div>
+        </div>
+
         {/* Personality Traits */}
-        <div className="space-y-4">
+        <div className={`space-y-4 ${!useCustom ? 'opacity-50 pointer-events-none select-none' : ''}`}>
           <h3 className="font-semibold">Personality Traits</h3>
           <p className="text-body-sm text-muted-foreground">
             Adjust the sliders to customize how Luno interacts with {childName}.
@@ -186,6 +232,7 @@ export function BuddySettingsPanel({ childId, childName }: BuddySettingsPanelPro
                 min={1}
                 max={10}
                 step={1}
+                disabled={!useCustom}
                 className="w-full"
               />
               <p className="text-caption text-muted-foreground">
@@ -207,7 +254,7 @@ export function BuddySettingsPanel({ childId, childName }: BuddySettingsPanelPro
         <div className="flex gap-2">
           <Button
             onClick={handleSave}
-            disabled={!hasChanges || isUpdatingName || isUpdatingPersonality}
+            disabled={!useCustom || !hasChanges || isUpdatingName || isUpdatingPersonality}
             className="flex-1"
           >
             {isUpdatingName || isUpdatingPersonality ? (
@@ -225,7 +272,7 @@ export function BuddySettingsPanel({ childId, childName }: BuddySettingsPanelPro
           <Button
             variant="outline"
             onClick={handleReset}
-            disabled={!hasChanges || isUpdatingName || isUpdatingPersonality}
+            disabled={!useCustom || isUpdatingName || isUpdatingPersonality}
           >
             Reset
           </Button>

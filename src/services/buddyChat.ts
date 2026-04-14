@@ -47,6 +47,7 @@ export interface ChatBuddy {
     educational: number;
     empathetic: number;
   };
+  use_custom_personality: boolean;
   conversation_context: unknown[];
   learned_preferences: Record<string, unknown>;
   total_messages: number;
@@ -198,12 +199,17 @@ export async function getChatBuddy(childId: string): Promise<ChatBuddy | null> {
  */
 export async function updateBuddyPersonality(
   buddyId: string,
-  traits: Partial<ChatBuddy['personality_traits']>
+  traits: Partial<ChatBuddy['personality_traits']>,
+  useCustomPersonality?: boolean
 ): Promise<ChatBuddy> {
   try {
+    const body: Record<string, unknown> = { personality_traits: traits };
+    if (useCustomPersonality !== undefined) {
+      body.use_custom_personality = useCustomPersonality;
+    }
     const { data } = await apiClient.put<ChatBuddy>(
       `/buddy-chat/buddies/${buddyId}`,
-      { personality_traits: traits }
+      body
     );
     return data;
   } catch (error) {

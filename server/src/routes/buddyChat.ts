@@ -137,23 +137,24 @@ router.get('/:childId/buddy', async (req: Request, res: Response, next: NextFunc
     await verifyChildAccess(req.params.childId, req.user!.id);
 
     let buddy = await queryOne<ChatBuddy>(
-      `SELECT id, child_profile_id, name as buddy_name, personality_traits,
+      `SELECT id, child_profile_id, name as buddy_name, personality_traits, use_custom_personality,
               conversation_context, learned_preferences, message_count as total_messages,
               last_interaction_at, created_at, updated_at, NULL as buddy_avatar_url
        FROM chat_buddies WHERE child_profile_id = $1`,
       [req.params.childId]
     );
 
-    // Auto-create buddy if doesn't exist
+    // Auto-create buddy if doesn't exist with default personality (all 5/10)
     if (!buddy) {
       const id = uuidv4();
+      const defaultTraits = { curious: 5, patient: 5, playful: 5, educational: 5, empathetic: 5 };
       buddy = await queryOne<ChatBuddy>(
-        `INSERT INTO chat_buddies (id, child_profile_id, name, message_count)
-         VALUES ($1, $2, 'Luno', 0)
-         RETURNING id, child_profile_id, name as buddy_name, personality_traits,
+        `INSERT INTO chat_buddies (id, child_profile_id, name, personality_traits, message_count)
+         VALUES ($1, $2, 'Luno', $3, 0)
+         RETURNING id, child_profile_id, name as buddy_name, personality_traits, use_custom_personality,
                    conversation_context, learned_preferences, message_count as total_messages,
                    last_interaction_at, created_at, updated_at, NULL as buddy_avatar_url`,
-        [id, req.params.childId]
+        [id, req.params.childId, JSON.stringify(defaultTraits)]
       );
     }
 
@@ -1021,12 +1022,17 @@ async function generateBuddyResponse(
     [child.user_id]
   );
 
-  // Get buddy name for persona
-  const buddy = await queryOne<{ name: string }>(
-    'SELECT name FROM chat_buddies WHERE child_profile_id = $1',
+  // Get buddy name, personality traits, and toggle for persona
+  const buddy = await queryOne<{ name: string; personality_traits: Record<string, number> | null; use_custom_personality: boolean }>(
+    'SELECT name, personality_traits, use_custom_personality FROM chat_buddies WHERE child_profile_id = $1',
     [childId]
   );
   const buddyName = 'Luno';
+  // Only inject personality traits if the parent has enabled custom personality;
+  // otherwise Luno uses the age-based defaults in the system prompt.
+  const personalityTraits = buddy?.use_custom_personality
+    ? ((buddy.personality_traits || {}) as Record<string, number>)
+    : undefined;
 
   // Get enabled topic descriptions (hardcoded content from topics table)
   const enabledTopicsResult = await query<{ topic_name: string; description: string }>(
@@ -1109,7 +1115,7 @@ async function generateBuddyResponse(
   }));
 
   // Build system prompt
-  const systemPrompt = buildSystemPrompt(buddyName, child, guardrails, safety, familyMembers, taskCompletion, topicPosts, enabledTopics, customTopics, storiesByMember, activeJourneys, recentStories, recentFamilyUpdates.rows);
+  const systemPrompt = buildSystemPrompt(buddyName, child, guardrails, safety, familyMembers, taskCompletion, topicPosts, enabledTopics, customTopics, storiesByMember, activeJourneys, recentStories, recentFamilyUpdates.rows, personalityTraits);
 
   // Build user message with image context
   let userContent = message;
@@ -1177,7 +1183,8 @@ function buildSystemPrompt(
   storiesByMember?: Record<string, string[]>,
   activeJourneys?: { title: string; status: string; progress: number; total_steps: number; completed_steps: number }[],
   recentStories?: { title: string; theme: string | null; created_at: string }[],
-  recentFamilyUpdates?: { name: string; update_type: string; created_at: string }[]
+  recentFamilyUpdates?: { name: string; update_type: string; created_at: string }[],
+  personalityTraits?: Record<string, number>
 ): string {
   // Persona-specific traits based on spec
   const personas: Record<string, { description: string; tone: string; examples: string[] }> = {
@@ -1237,7 +1244,33 @@ WHO YOU ARE:
 - A caring friend for ${child.name}, age ${child.age}
 - You are always Luno. Never call yourself "Buddy" or any other name.
 
-${child.age <= 6 ? `AGE TONE (3-6 years):
+${personalityTraits && Object.keys(personalityTraits).length > 0 ? `YOUR PERSONALITY (parent-configured, 1-10 scale):
+- Curious: ${personalityTraits.curious ?? 5}/10 — ${(personalityTraits.curious ?? 5) >= 7 ? 'Ask lots of follow-up questions and encourage exploration constantly' : (personalityTraits.curious ?? 5) >= 4 ? 'Occasionally ask follow-up questions' : 'Keep conversations simple, rarely ask back'}
+- Patient: ${personalityTraits.patient ?? 5}/10 — ${(personalityTraits.patient ?? 5) >= 7 ? 'Be extremely calm and understanding, repeat gently when needed' : (personalityTraits.patient ?? 5) >= 4 ? 'Be normally patient' : 'Be direct and brisk'}
+- Playful: ${personalityTraits.playful ?? 5}/10 — ${(personalityTraits.playful ?? 5) >= 7 ? 'Be very silly, use lots of playful sound effects and jokes' : (personalityTraits.playful ?? 5) >= 4 ? 'Be moderately playful and fun' : 'Stay serious and focused'}
+- Educational: ${personalityTraits.educational ?? 5}/10 — ${(personalityTraits.educational ?? 5) >= 7 ? 'Always weave in learning moments and teach actively' : (personalityTraits.educational ?? 5) >= 4 ? 'Balance fun and learning' : 'Focus on conversation, avoid lecturing'}
+- Empathetic: ${personalityTraits.empathetic ?? 5}/10 — ${(personalityTraits.empathetic ?? 5) >= 7 ? 'Be very warm, acknowledge feelings deeply, check in on emotions' : (personalityTraits.empathetic ?? 5) >= 4 ? 'Be warm and supportive' : 'Focus on tasks over feelings'}
+
+Adjust how you talk to ${child.name} based on these exact levels — they reflect what the parent wants.
+` : ''}
+
+${personalityTraits && Object.keys(personalityTraits).length > 0
+  ? (child.age <= 6 ? `AGE-APPROPRIATE LANGUAGE (3-6 years):
+- Very simple words, short sentences
+- Explain things in concrete, tangible ways
+- Use rhymes and repetition when helpful
+- Keep ideas grounded in the child's immediate world (family, animals, food, play)` : child.age <= 9 ? `AGE-APPROPRIATE LANGUAGE (7-9 years):
+- Clear, friendly language with some bigger words explained naturally
+- Can introduce more abstract ideas with examples
+- Like speaking to a fun older friend` : `AGE-APPROPRIATE LANGUAGE (10-14 years):
+- Mature, respectful tone — not babyish
+- Use real vocabulary, explain complex ideas clearly
+- Be more like a knowledgeable friend than a cartoon character
+- Challenge them to think deeper`)
+  + `
+
+NOTE: The above controls VOCABULARY and COMPLEXITY only. How playful, silly, patient, or curious you are is controlled by YOUR PERSONALITY above — always follow the personality traits for tone and style, while keeping vocabulary age-appropriate.`
+  : (child.age <= 6 ? `AGE TONE (3-6 years):
 - Very simple words, short sentences
 - Playful, silly, full of wonder and sound effects
 - Use rhymes and repetition
@@ -1248,7 +1281,8 @@ ${child.age <= 6 ? `AGE TONE (3-6 years):
 - Mature, respectful tone — not babyish
 - Use real vocabulary, explain complex ideas clearly
 - Be more like a knowledgeable friend than a cartoon character
-- Challenge them to think deeper`}
+- Challenge them to think deeper`)
+}
 
 HOW YOU SPEAK:
 - Speak at a peaceful pace - no rushing, no urgency
@@ -1542,7 +1576,7 @@ router.put('/buddies/:buddyId', async (req: Request, res: Response, next: NextFu
   try {
     const { buddyId } = req.params;
     const userId = req.user!.id;
-    const { buddy_name, personality_traits } = req.body;
+    const { buddy_name, personality_traits, use_custom_personality } = req.body;
 
     // Verify buddy belongs to user's child
     const buddy = await queryOne<ChatBuddy>(
@@ -1567,6 +1601,10 @@ router.put('/buddies/:buddyId', async (req: Request, res: Response, next: NextFu
     if (personality_traits !== undefined) {
       updates.push(`personality_traits = $${idx++}`);
       values.push(JSON.stringify(personality_traits));
+    }
+    if (use_custom_personality !== undefined) {
+      updates.push(`use_custom_personality = $${idx++}`);
+      values.push(use_custom_personality);
     }
 
     if (updates.length === 0) {
