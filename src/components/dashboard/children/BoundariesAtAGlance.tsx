@@ -1,43 +1,17 @@
 /**
  * Boundaries at a Glance
  *
- * Compact summary row for each child showing topics enabled, Luno personality,
- * and session time limit. Edit button navigates to the Luno Settings tab in
- * the Safety dashboard pre-selected for that child.
+ * Compact summary row for each child showing topics enabled and Luno
+ * personality. Edit button navigates to the Luno Settings tab in the Safety
+ * dashboard pre-selected for that child.
  */
 
 import { Link } from 'react-router-dom';
 import { Pencil } from 'lucide-react';
 import { useChatBuddy } from '@/hooks/queries/useBuddyChat';
-import { useActivityTimeline } from '@/hooks/queries/useAnalytics';
 import { useChildTopicSettings } from '@/hooks/queries/useTopics';
 import { getUploadUrl } from '@/integrations/api/client';
 import type { ChildProfileWithAvatar } from '@/services/childProfiles';
-
-/**
- * Sum session_duration_minutes from activity timeline entries
- * that fall within the last 24 hours.
- */
-function calculateLast24hMinutes(
-  timeline: Array<{ date: string; session_duration_minutes: number }> | undefined
-): number {
-  if (!timeline || timeline.length === 0) return 0;
-  const cutoff = Date.now() - 24 * 60 * 60 * 1000;
-  return timeline
-    .filter((entry) => {
-      const entryTime = new Date(entry.date).getTime();
-      return entryTime >= cutoff;
-    })
-    .reduce((total, entry) => total + (entry.session_duration_minutes ?? 0), 0);
-}
-
-function formatMinutes(minutes: number): string {
-  if (minutes === 0) return 'No activity today';
-  if (minutes < 60) return `${Math.round(minutes)} min today`;
-  const hours = Math.floor(minutes / 60);
-  const mins = Math.round(minutes % 60);
-  return mins > 0 ? `${hours}h ${mins}m today` : `${hours}h today`;
-}
 
 interface BoundariesRowProps {
   child: ChildProfileWithAvatar;
@@ -47,7 +21,6 @@ interface BoundariesRowProps {
 function BoundariesRow({ child, accentColor }: BoundariesRowProps) {
   const { data: topicSettings } = useChildTopicSettings(child.id);
   const { data: buddy } = useChatBuddy(child.id);
-  const { data: timeline } = useActivityTimeline(child.id, 2);
 
   const initials = child.name
     .split(' ')
@@ -67,8 +40,6 @@ function BoundariesRow({ child, accentColor }: BoundariesRowProps) {
   );
   const totalTopics = topics.length;
   const topicsEnabled = topics.filter((t) => t.is_allowed).length;
-  const minutesLast24h = calculateLast24hMinutes(timeline);
-  const timeLabel = formatMinutes(minutesLast24h);
 
   const traits = buddy?.personality_traits;
   const personalityLabel = traits
@@ -99,14 +70,11 @@ function BoundariesRow({ child, accentColor }: BoundariesRowProps) {
         <span className="text-body-sm font-semibold text-foreground truncate">{child.name}</span>
       </div>
 
-      <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-5 flex-1 text-caption text-muted-foreground min-w-0">
-        <span className="whitespace-nowrap">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-6 flex-1 text-caption text-muted-foreground min-w-0">
+        <span className="truncate">
           Topics: {topicSettings ? `${topicsEnabled}/${totalTopics} enabled` : '…'}
         </span>
-        <span className="hidden md:inline text-border">·</span>
         <span className="truncate">Luno style: {personalityLabel}</span>
-        <span className="hidden md:inline text-border">·</span>
-        <span className="whitespace-nowrap">Screen time: {timeLabel}</span>
       </div>
 
       <Link
