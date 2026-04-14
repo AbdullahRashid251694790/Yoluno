@@ -34,6 +34,7 @@ import { NotFoundPage } from '@/pages/NotFound';
 
 // Landing pages (lazy-loaded)
 import LandingLayout from '@/components/landing/LandingLayout';
+import ScrollToTop from '@/components/landing/ScrollToTop';
 const LandingHomePage = lazy(() => import('@/pages/landing/HomePage'));
 const LandingFeaturesPage = lazy(() => import('@/pages/landing/FeaturesPage'));
 const LandingForParentsPage = lazy(() => import('@/pages/landing/ForParentsPage'));
@@ -98,6 +99,7 @@ export default function App() {
         <ChildProvider>
           <ChatProvider>
             <BrowserRouter>
+              <ScrollToTop />
               <Routes>
                 {/* Landing site pages */}
                 <Route

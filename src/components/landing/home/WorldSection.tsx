@@ -58,12 +58,12 @@ export default function WorldSection() {
           </div>
         </AnimatedSection>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-12">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-12 items-stretch">
           {islands.map((island, i) => (
-            <AnimatedSection key={island.title} delay={i * 0.1}>
-              <Link to={island.link} className="block group">
-                <div className={`bg-card rounded-2xl overflow-hidden border border-border ${island.accent} border-t-[3px] shadow-warm hover:shadow-warm-lg transition-all duration-300 hover:-translate-y-1`}>
-                  <div className="aspect-[16/10] overflow-hidden">
+            <AnimatedSection key={island.title} delay={i * 0.1} className="h-full">
+              <Link to={island.link} className="block group h-full">
+                <div className={`bg-card rounded-2xl overflow-hidden border border-border ${island.accent} border-t-[3px] shadow-warm hover:shadow-warm-lg transition-all duration-300 hover:-translate-y-1 h-full flex flex-col`}>
+                  <div className="aspect-[16/10] overflow-hidden flex-shrink-0">
                     <img
                       src={island.img}
                       alt={island.title}
@@ -71,7 +71,7 @@ export default function WorldSection() {
                       loading="lazy"
                     />
                   </div>
-                  <div className="p-5">
+                  <div className="p-5 flex-1 flex flex-col">
                     <h3 className="font-heading text-lg text-foreground mb-1">{island.title}</h3>
                     <p className="font-body text-sm font-medium text-muted-foreground mb-1">{island.subtitle}</p>
                     <p className="font-body text-sm text-muted-foreground leading-relaxed">{island.tagline}</p>
