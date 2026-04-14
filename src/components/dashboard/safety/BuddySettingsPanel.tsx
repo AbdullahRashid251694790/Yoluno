@@ -17,6 +17,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { LoadingSpinner } from '@/components/shared/feedback/LoadingState';
 import { Loader2, Save, Sparkles } from 'lucide-react';
 import type { ChatBuddy } from '@/services/buddyChat';
+import lunoImage from '@/assets/landing/luno.png';
 
 interface BuddySettingsPanelProps {
   childId: string;
@@ -153,7 +154,7 @@ export function BuddySettingsPanel({ childId, childName }: BuddySettingsPanelPro
         {/* Buddy Avatar & Name */}
         <div className="flex items-center gap-4">
           <Avatar className="h-16 w-16">
-            <AvatarImage src={buddy.buddy_avatar_url || undefined} />
+            <AvatarImage src={buddy.buddy_avatar_url || lunoImage} alt="Luno" />
             <AvatarFallback className="bg-primary/20 text-primary text-body-lg">
               L
             </AvatarFallback>

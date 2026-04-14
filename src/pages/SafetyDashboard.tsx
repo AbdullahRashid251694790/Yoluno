@@ -107,10 +107,12 @@ export function SafetyDashboardPage() {
           <TabsList>
             <TabsTrigger value="reports">Safety Reports</TabsTrigger>
             <TabsTrigger value="buddy">Luno Settings</TabsTrigger>
+            {/* Journey Reminders tab hidden — keep code in case we re-enable later
             <TabsTrigger value="reminders">
               <Bell className="h-4 w-4 mr-1" />
               Journey Reminders
             </TabsTrigger>
+            */}
           </TabsList>
 
           <TabsContent value="reports" className="space-y-4">
@@ -141,6 +143,7 @@ export function SafetyDashboardPage() {
             />
           </TabsContent>
 
+          {/* Journey Reminders panel hidden — keep code in case we re-enable later
           <TabsContent value="reminders" className="space-y-4">
             <Alert>
               <Bell className="h-4 w-4" />
@@ -155,6 +158,7 @@ export function SafetyDashboardPage() {
               childName={selectedChild.name}
             />
           </TabsContent>
+          */}
         </Tabs>
       ) : (
         <Alert>
