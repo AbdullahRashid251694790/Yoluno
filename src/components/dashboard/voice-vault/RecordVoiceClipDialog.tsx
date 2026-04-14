@@ -152,18 +152,19 @@ export function RecordVoiceClipDialog({ open, onOpenChange }: RecordVoiceClipDia
       const formData = new FormData();
       formData.append('file', audioBlob, `voice-clip-${Date.now()}.${ext}`);
 
-      const uploadResponse = await apiClient.post<{ url: string; size: number }>(
+      const uploadResponse = await apiClient.post<{ key: string; url: string; size: number }>(
         '/upload/voice-clips',
         formData
       );
 
-      // Create the voice clip record
+      // Create the voice clip record. Persist the raw S3 key — the server
+      // generates fresh signed URLs on every read so playback never expires.
       await createVoiceClip.mutateAsync({
         title: title.trim(),
         description: description.trim() || undefined,
         category,
         family_member_id: familyMemberId !== 'none' ? familyMemberId : undefined,
-        audio_url: uploadResponse.data.url,
+        audio_url: uploadResponse.data.key,
         duration_seconds: duration,
         file_size_bytes: uploadResponse.data.size,
       });

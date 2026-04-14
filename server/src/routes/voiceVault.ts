@@ -11,7 +11,14 @@ import { query, queryOne } from '../config/database.js';
 import { requireAuth } from '../middleware/auth.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { validateBody } from '../utils/validation.js';
+import { resolveAudioUrl } from '../utils/storage.js';
 import { z } from 'zod';
+
+// Resolve the stored audio_url into a fresh playable URL on every read.
+// Storing raw S3 keys means signed URLs never expire mid-session.
+async function withResolvedUrl<T extends { audio_url: string | null }>(clip: T): Promise<T> {
+  return { ...clip, audio_url: (await resolveAudioUrl(clip.audio_url)) ?? clip.audio_url };
+}
 
 const router = Router();
 
@@ -139,10 +146,12 @@ router.get(
         return acc;
       }, {} as Record<string, string[]>);
 
-      const itemsWithTags = items.map(item => ({
-        ...item,
-        tags: tagsByClip[item.id] || [],
-      }));
+      const itemsWithTags = await Promise.all(
+        items.map(async (item) => ({
+          ...(await withResolvedUrl(item)),
+          tags: tagsByClip[item.id] || [],
+        }))
+      );
 
       // Get total count
       let countSql = `SELECT COUNT(*) as count FROM voice_clips WHERE user_id = $1`;
@@ -244,7 +253,7 @@ router.get(
       );
 
       res.json({
-        ...item,
+        ...(await withResolvedUrl(item)),
         tags: tagsResult.rows.map(t => t.tag),
       });
     } catch (error) {
@@ -317,7 +326,7 @@ router.post(
       }
 
       res.status(201).json({
-        ...item,
+        ...(item ? await withResolvedUrl(item) : item),
         tags,
       });
     } catch (error) {
@@ -425,7 +434,7 @@ router.put(
       );
 
       res.json({
-        ...item,
+        ...(item ? await withResolvedUrl(item) : item),
         tags: currentTagsResult.rows.map(t => t.tag),
       });
     } catch (error) {
@@ -457,7 +466,7 @@ router.put(
         throw new AppError(404, 'Voice clip not found');
       }
 
-      res.json(item);
+      res.json(await withResolvedUrl(item));
     } catch (error) {
       next(error);
     }
