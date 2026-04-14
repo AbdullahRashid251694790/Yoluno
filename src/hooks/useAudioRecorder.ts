@@ -5,7 +5,7 @@
  * Used for voice-to-text photo descriptions in the Family Tree feature.
  */
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 
 export type RecordingState = 'idle' | 'recording' | 'paused' | 'stopped';
 
@@ -184,6 +184,13 @@ export function useAudioRecorder(options: AudioRecorderOptions = {}): AudioRecor
   }, [mimeType, maxDuration, onRecordingComplete, onError, cleanup]);
 
   const stopRecording = useCallback(() => {
+    console.log('[useAudioRecorder] stopRecording called', {
+      hasRecorder: !!mediaRecorderRef.current,
+      recorderState: mediaRecorderRef.current?.state,
+      hasStream: !!streamRef.current,
+      hasTimer: !!timerRef.current,
+    });
+
     // Always clear timers first — even if the recorder ref is gone or the
     // stop() call throws, the UI must not be stuck in the recording state.
     if (timerRef.current) {
@@ -201,9 +208,8 @@ export function useAudioRecorder(options: AudioRecorderOptions = {}): AudioRecor
         if (recorder.state !== 'inactive') {
           recorder.stop();
         }
-      } catch {
-        // Some browsers throw if stop() is called in an unexpected state —
-        // we still need the UI to leave the recording state below.
+      } catch (err) {
+        console.error('[useAudioRecorder] recorder.stop() threw', err);
       }
     }
 
@@ -213,6 +219,34 @@ export function useAudioRecorder(options: AudioRecorderOptions = {}): AudioRecor
     }
 
     setState('stopped');
+  }, []);
+
+  // Always release the mic and clear timers when the host component unmounts.
+  // Without this, navigating away mid-recording leaves the browser tab with
+  // the microphone still active.
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+      if (maxDurationTimerRef.current) {
+        clearTimeout(maxDurationTimerRef.current);
+        maxDurationTimerRef.current = null;
+      }
+      const recorder = mediaRecorderRef.current;
+      if (recorder && recorder.state !== 'inactive') {
+        try { recorder.stop(); } catch { /* ignore */ }
+      }
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => track.stop());
+        streamRef.current = null;
+      }
+      if (audioUrlRef.current) {
+        URL.revokeObjectURL(audioUrlRef.current);
+        audioUrlRef.current = null;
+      }
+    };
   }, []);
 
   const pauseRecording = useCallback(() => {
