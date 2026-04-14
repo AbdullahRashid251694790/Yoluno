@@ -113,7 +113,16 @@ export default function RecordForFamilyPage() {
     setSubmitting(true);
     try {
       const formData = new FormData();
-      const ext = recorder.audioBlob.type.includes('webm') ? '.webm' : '.mp4';
+      const blobType = recorder.audioBlob.type || '';
+      const ext = blobType.includes('webm')
+        ? '.webm'
+        : blobType.includes('mp4')
+          ? '.mp4'
+          : blobType.includes('mpeg')
+            ? '.mp3'
+            : blobType.includes('wav')
+              ? '.wav'
+              : '.webm';
       formData.append('audio', recorder.audioBlob, `recording${ext}`);
       formData.append('title', title.trim());
       formData.append('category', category);

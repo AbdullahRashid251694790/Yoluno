@@ -45,9 +45,34 @@ export interface AudioRecorderReturn {
   error: string | null;
 }
 
+/**
+ * Pick the first MIME type the browser actually supports. iOS Safari only
+ * supports audio/mp4, Chrome/Firefox prefer audio/webm. Returning an empty
+ * string lets the browser pick its own default as a final fallback.
+ */
+function pickSupportedMimeType(preferred?: string): string {
+  if (typeof MediaRecorder === 'undefined') return '';
+  const candidates = [
+    preferred,
+    'audio/webm;codecs=opus',
+    'audio/webm',
+    'audio/mp4',
+    'audio/mpeg',
+    'audio/wav',
+  ].filter((t): t is string => !!t);
+  for (const type of candidates) {
+    try {
+      if (MediaRecorder.isTypeSupported(type)) return type;
+    } catch {
+      // some browsers throw on unknown types — ignore
+    }
+  }
+  return '';
+}
+
 export function useAudioRecorder(options: AudioRecorderOptions = {}): AudioRecorderReturn {
   const {
-    mimeType = 'audio/webm',
+    mimeType,
     onRecordingComplete,
     onError,
     maxDuration = 60000,
@@ -90,16 +115,19 @@ export function useAudioRecorder(options: AudioRecorderOptions = {}): AudioRecor
       setError(null);
       cleanup();
 
+      if (!navigator.mediaDevices || typeof MediaRecorder === 'undefined') {
+        throw new Error('Audio recording is not supported on this device or browser.');
+      }
+
       // Request microphone access
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
 
-      // Check if the preferred MIME type is supported
-      const actualMimeType = MediaRecorder.isTypeSupported(mimeType)
-        ? mimeType
-        : 'audio/webm';
+      // Pick the first MIME type this browser actually supports
+      const actualMimeType = pickSupportedMimeType(mimeType);
+      const recorderOptions = actualMimeType ? { mimeType: actualMimeType } : undefined;
 
-      const mediaRecorder = new MediaRecorder(stream, { mimeType: actualMimeType });
+      const mediaRecorder = new MediaRecorder(stream, recorderOptions);
       mediaRecorderRef.current = mediaRecorder;
       chunksRef.current = [];
 
@@ -110,7 +138,9 @@ export function useAudioRecorder(options: AudioRecorderOptions = {}): AudioRecor
       };
 
       mediaRecorder.onstop = () => {
-        const blob = new Blob(chunksRef.current, { type: actualMimeType });
+        // Use the recorder's actual mimeType — what was negotiated with the OS
+        const blobType = mediaRecorder.mimeType || actualMimeType || 'audio/webm';
+        const blob = new Blob(chunksRef.current, { type: blobType });
         setAudioBlob(blob);
         const url = URL.createObjectURL(blob);
         audioUrlRef.current = url;
@@ -118,14 +148,14 @@ export function useAudioRecorder(options: AudioRecorderOptions = {}): AudioRecor
         onRecordingComplete?.(blob);
       };
 
-      mediaRecorder.onerror = (event) => {
+      mediaRecorder.onerror = () => {
         const errorMessage = 'Recording failed';
         setError(errorMessage);
         onError?.(new Error(errorMessage));
       };
 
-      // Start recording
-      mediaRecorder.start(100); // Collect data every 100ms
+      // Start recording — no timeslice so iOS Safari emits a single chunk on stop
+      mediaRecorder.start();
       setState('recording');
       setDuration(0);
 
@@ -133,7 +163,7 @@ export function useAudioRecorder(options: AudioRecorderOptions = {}): AudioRecor
       const startTime = Date.now();
       timerRef.current = window.setInterval(() => {
         setDuration(Math.floor((Date.now() - startTime) / 1000));
-      }, 100);
+      }, 250);
 
       // Set max duration timer
       maxDurationTimerRef.current = window.setTimeout(() => {
@@ -149,27 +179,40 @@ export function useAudioRecorder(options: AudioRecorderOptions = {}): AudioRecor
       setError(errorMessage);
       onError?.(new Error(errorMessage));
       setState('idle');
+      cleanup();
     }
   }, [mimeType, maxDuration, onRecordingComplete, onError, cleanup]);
 
   const stopRecording = useCallback(() => {
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-      mediaRecorderRef.current.stop();
-      setState('stopped');
+    // Always clear timers first — even if the recorder ref is gone or the
+    // stop() call throws, the UI must not be stuck in the recording state.
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    if (maxDurationTimerRef.current) {
+      clearTimeout(maxDurationTimerRef.current);
+      maxDurationTimerRef.current = null;
+    }
 
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-        timerRef.current = null;
-      }
-      if (maxDurationTimerRef.current) {
-        clearTimeout(maxDurationTimerRef.current);
-        maxDurationTimerRef.current = null;
-      }
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach((track) => track.stop());
-        streamRef.current = null;
+    const recorder = mediaRecorderRef.current;
+    if (recorder) {
+      try {
+        if (recorder.state !== 'inactive') {
+          recorder.stop();
+        }
+      } catch {
+        // Some browsers throw if stop() is called in an unexpected state —
+        // we still need the UI to leave the recording state below.
       }
     }
+
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+
+    setState('stopped');
   }, []);
 
   const pauseRecording = useCallback(() => {
