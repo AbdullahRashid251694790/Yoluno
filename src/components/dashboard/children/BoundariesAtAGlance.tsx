@@ -8,9 +8,9 @@
 
 import { Link } from 'react-router-dom';
 import { Pencil } from 'lucide-react';
-import { useGuardrailSettings } from '@/hooks/queries/useGuardrails';
 import { useChatBuddy } from '@/hooks/queries/useBuddyChat';
 import { useActivityTimeline } from '@/hooks/queries/useAnalytics';
+import { useChildTopicSettings } from '@/hooks/queries/useTopics';
 import { getUploadUrl } from '@/integrations/api/client';
 import type { ChildProfileWithAvatar } from '@/services/childProfiles';
 
@@ -45,10 +45,9 @@ interface BoundariesRowProps {
 }
 
 function BoundariesRow({ child, accentColor }: BoundariesRowProps) {
-  const { data: guardrailsData } = useGuardrailSettings(child.id);
+  const { data: topicSettings } = useChildTopicSettings(child.id);
   const { data: buddy } = useChatBuddy(child.id);
   const { data: timeline } = useActivityTimeline(child.id, 2);
-  const guardrails = guardrailsData as unknown as { blockedTopics?: string[] } | undefined;
 
   const initials = child.name
     .split(' ')
@@ -57,9 +56,17 @@ function BoundariesRow({ child, accentColor }: BoundariesRowProps) {
     .toUpperCase()
     .slice(0, 2);
 
-  const blockedCount = guardrails?.blockedTopics?.length ?? 0;
-  const totalTopics = 48;
-  const topicsEnabled = Math.max(0, totalTopics - blockedCount);
+  // Defensive second filter on the frontend: even if the backend returns
+  // anything broader than this child's age, only count topics that actually
+  // include their age in the [min, max] range.
+  const allReturnedTopics = topicSettings?.topics ?? [];
+  const topics = allReturnedTopics.filter(
+    (t) =>
+      child.age >= t.age_appropriate_min &&
+      child.age <= t.age_appropriate_max
+  );
+  const totalTopics = topics.length;
+  const topicsEnabled = topics.filter((t) => t.is_allowed).length;
   const minutesLast24h = calculateLast24hMinutes(timeline);
   const timeLabel = formatMinutes(minutesLast24h);
 
@@ -93,7 +100,9 @@ function BoundariesRow({ child, accentColor }: BoundariesRowProps) {
       </div>
 
       <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-5 flex-1 text-caption text-muted-foreground min-w-0">
-        <span className="whitespace-nowrap">Topics: {topicsEnabled}/{totalTopics} enabled</span>
+        <span className="whitespace-nowrap">
+          Topics: {topicSettings ? `${topicsEnabled}/${totalTopics} enabled` : '…'}
+        </span>
         <span className="hidden md:inline text-border">·</span>
         <span className="truncate">Luno style: {personalityLabel}</span>
         <span className="hidden md:inline text-border">·</span>
