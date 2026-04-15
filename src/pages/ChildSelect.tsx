@@ -181,22 +181,6 @@ export function ChildSelectPage() {
                 </div>
               </div>
             ))}
-
-            {/* Add more hint (for parents) */}
-            <div
-              onClick={handleParentLogin}
-              className={cn(
-                'flex flex-col items-center justify-center p-6 rounded-3xl',
-                'bg-white/40 backdrop-blur-sm border-2 border-dashed border-muted-foreground/30',
-                'hover:bg-white/60 hover:border-primary/30 transition-all duration-300',
-                'cursor-pointer min-w-[180px] min-h-[220px]'
-              )}
-            >
-              <div className="h-20 w-20 rounded-full bg-muted flex items-center justify-center text-h2">
-                ➕
-              </div>
-              <p className="mt-4 text-muted-foreground font-medium">Add Me!</p>
-            </div>
           </div>
         )}
       </main>

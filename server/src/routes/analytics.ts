@@ -215,19 +215,23 @@ router.get(
         throw new AppError(404, 'Child profile not found');
       }
 
-      // Match child's chat messages against known topic names
-      const topics = await query<ChatTopicEntry>(
+      // Match child's chat messages against known topic names, also
+      // surfacing the curriculum category each topic belongs to so the
+      // Insights page can render curriculum chips.
+      const topics = await query<ChatTopicEntry & { category_name: string | null }>(
         `SELECT
           t.name as topic,
+          tc.name as category_name,
           COUNT(bm.id)::integer as mention_count,
           MAX(bm.created_at)::text as last_mentioned_at
         FROM topics t
+        LEFT JOIN topic_categories tc ON tc.id = t.category_id
         INNER JOIN buddy_messages bm
           ON bm.child_profile_id = $1
           AND bm.role = 'child'
           AND bm.content ILIKE '%' || t.name || '%'
         WHERE t.is_active = true
-        GROUP BY t.name
+        GROUP BY t.name, tc.name
         ORDER BY mention_count DESC, last_mentioned_at DESC
         LIMIT $2`,
         [childId, limitNum]
@@ -378,6 +382,23 @@ router.get(
             [child.id]
           );
 
+          // Topics this child has discussed with Luno — match known topic
+          // names against anything they've said in chat. Most recently
+          // mentioned topics first, capped at 5 tags for the UI.
+          const chatTopicsResult = await query<{ name: string }>(
+            `SELECT t.name
+             FROM topics t
+             INNER JOIN buddy_messages bm
+               ON bm.child_profile_id = $1
+               AND bm.role = 'child'
+               AND bm.content ILIKE '%' || t.name || '%'
+             WHERE t.is_active = true
+             GROUP BY t.name
+             ORDER BY MAX(bm.created_at) DESC
+             LIMIT 5`,
+            [child.id]
+          );
+
           return {
             child: {
               id: child.id,
@@ -395,13 +416,78 @@ router.get(
               messages: parseInt(weeklyActivity?.message_count || '0', 10),
               stories: parseInt(weeklyActivity?.story_count || '0', 10),
             },
+            chat_topics: chatTopicsResult.rows.map((r) => r.name),
           };
         })
+      );
+
+      // Aggregate counts across all of the user's children for the dashboard
+      // home metric tiles.
+
+      // Topics explored — distinct topic names that show up in any child's
+      // chat messages. Uses the same ILIKE match as /chat-topics/:childId.
+      const topicsResult = await queryOne<{ count: string }>(
+        `SELECT COUNT(DISTINCT t.id) AS count
+         FROM topics t
+         INNER JOIN buddy_messages bm
+           ON bm.role = 'child'
+           AND bm.content ILIKE '%' || t.name || '%'
+         INNER JOIN child_profiles cp
+           ON cp.id = bm.child_profile_id
+           AND cp.user_id = $1
+         WHERE t.is_active = true`,
+        [userId]
+      );
+
+      // Family memories — sum of everything the parent has captured about
+      // the family: voice clips, family events, and all per-member media
+      // (photos, videos, stories). Covers both the legacy family_photos /
+      // family_narratives tables and the newer family_member_* tables that
+      // the current Family UI writes to.
+      const memoriesResult = await queryOne<{ count: string }>(
+        `SELECT (
+           COALESCE((SELECT COUNT(*) FROM voice_clips WHERE user_id = $1), 0) +
+           COALESCE((SELECT COUNT(*) FROM family_events WHERE user_id = $1), 0) +
+           COALESCE((SELECT COUNT(*) FROM family_photos WHERE user_id = $1), 0) +
+           COALESCE((SELECT COUNT(*) FROM family_narratives WHERE user_id = $1), 0) +
+           COALESCE((SELECT COUNT(*) FROM family_member_photos fmp
+                     INNER JOIN family_members fm ON fm.id = fmp.family_member_id
+                     WHERE fm.user_id = $1), 0) +
+           COALESCE((SELECT COUNT(*) FROM family_member_videos fmv
+                     INNER JOIN family_members fm ON fm.id = fmv.family_member_id
+                     WHERE fm.user_id = $1), 0) +
+           COALESCE((SELECT COUNT(*) FROM family_member_stories fms
+                     INNER JOIN family_members fm ON fm.id = fms.family_member_id
+                     WHERE fm.user_id = $1), 0)
+         )::text AS count`,
+        [userId]
+      );
+
+      // Stories created across all children (lifetime, not just this week).
+      const storiesCreatedResult = await queryOne<{ count: string }>(
+        `SELECT COUNT(*) AS count
+         FROM stories s
+         INNER JOIN child_profiles cp ON cp.id = s.child_profile_id
+         WHERE cp.user_id = $1`,
+        [userId]
+      );
+
+      // Active journeys — across all children, status = 'active'.
+      const activeJourneysResult = await queryOne<{ count: string }>(
+        `SELECT COUNT(*) AS count
+         FROM journeys j
+         INNER JOIN child_profiles cp ON cp.id = j.child_profile_id
+         WHERE cp.user_id = $1 AND j.status = 'active'`,
+        [userId]
       );
 
       res.json({
         children: childStats,
         total_children: childrenResult.rows.length,
+        topics_explored: parseInt(topicsResult?.count || '0', 10),
+        family_memories: parseInt(memoriesResult?.count || '0', 10),
+        stories_created: parseInt(storiesCreatedResult?.count || '0', 10),
+        active_journeys: parseInt(activeJourneysResult?.count || '0', 10),
       });
     } catch (error) {
       next(error);

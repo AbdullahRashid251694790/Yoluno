@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, CheckCircle2, Circle, Play, Trophy, Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { ShareWithParentButton } from '@/components/kids/ShareWithParentButton';
 
 export function KidsJourneyDetailPage() {
   const { childId, journeyId } = useParams<{ childId: string; journeyId: string }>();
@@ -94,12 +95,25 @@ export function KidsJourneyDetailPage() {
             <Progress value={journey.progress} className="h-3 bg-lolo/20 [&>div]:bg-lolo" />
 
             {isCompleted && (
-              <div className="flex items-center gap-2 mt-4 p-3 bg-lolo/10 rounded-lg">
-                <Trophy className="h-6 w-6 text-lolo" />
-                <div>
-                  <p className="font-semibold text-lolo">Journey Complete!</p>
-                  <p className="text-body-sm text-lolo">Great job finishing all steps!</p>
+              <div className="mt-4 space-y-3">
+                <div className="flex items-center gap-2 p-3 bg-lolo/10 rounded-lg">
+                  <Trophy className="h-6 w-6 text-lolo" />
+                  <div>
+                    <p className="font-semibold text-lolo">Journey Complete!</p>
+                    <p className="text-body-sm text-lolo">Great job finishing all steps!</p>
+                  </div>
                 </div>
+                {childId && (
+                  <ShareWithParentButton
+                    childId={childId}
+                    momentType="journey_complete"
+                    title={`Journey Complete — ${journey.title}`}
+                    context={`Finished all ${journey.totalSteps} steps of ${journey.title}`}
+                    referenceId={journey.id}
+                    className="w-full"
+                    label="Share with your parent"
+                  />
+                )}
               </div>
             )}
           </CardContent>

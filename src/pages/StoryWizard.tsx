@@ -33,6 +33,7 @@ import {
   Volume2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { ShareWithParentButton } from '@/components/kids/ShareWithParentButton';
 
 const STEPS = ['Theme', 'Characters', 'Mood', 'Values', 'Generate'];
 
@@ -575,6 +576,17 @@ export function StoryWizardPage() {
                     This may take a few minutes. You can close this page and come back later.
                   </p>
                 </div>
+                {childId && !fromDashboard && (
+                  <ShareWithParentButton
+                    childId={childId}
+                    momentType="story_created"
+                    title={`New Story — ${generatedStory.title}`}
+                    context={`${child?.name || 'Your child'} created "${generatedStory.title}" with Lumi`}
+                    referenceId={generatedStory.id}
+                    className="w-full"
+                    label="Share with your parent"
+                  />
+                )}
               </div>
             ) : (
               <div className="space-y-4">

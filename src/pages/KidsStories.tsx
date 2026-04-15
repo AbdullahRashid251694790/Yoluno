@@ -250,6 +250,7 @@ export function KidsStoriesPage() {
           }
           theme={selectedStory.theme}
           mood={(selectedStory as { mood?: string }).mood}
+          childId={childId}
           initialVoice={(selectedStory as { narrator_voice?: string }).narrator_voice || 'nova'}
           onClose={handleCloseReader}
         />

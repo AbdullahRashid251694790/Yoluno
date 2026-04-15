@@ -29,6 +29,7 @@ export interface WeeklySummary {
 }
 
 export interface ChatTopicEntry {
+  category_name: string | null;
   topic: string;
   mention_count: number;
   last_mentioned_at: string;
@@ -66,11 +67,16 @@ export interface ChildOverview {
   };
   stats: ChildOverviewStats;
   weekly_activity: ChildWeeklyActivity;
+  chat_topics: string[];
 }
 
 export interface AnalyticsOverview {
   children: ChildOverview[];
   total_children: number;
+  topics_explored: number;
+  family_memories: number;
+  stories_created: number;
+  active_journeys: number;
 }
 
 /**

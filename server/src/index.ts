@@ -54,6 +54,7 @@ import notificationsRoutes from './routes/notifications.js';
 import moodCheckinRoutes from './routes/moodCheckin.js';
 import dataExportRoutes from './routes/dataExport.js';
 import dailyMissionsRoutes from './routes/dailyMissions.js';
+import sharedMomentsRoutes from './routes/sharedMoments.js';
 
 const app = express();
 const httpServer = createServer(app);
@@ -175,6 +176,7 @@ app.use('/api/notifications', notificationsRoutes);
 app.use('/api/mood-checkin', moodCheckinRoutes);
 app.use('/api/data-export', dataExportRoutes);
 app.use('/api/daily-missions', dailyMissionsRoutes);
+app.use('/api/shared-moments', sharedMomentsRoutes);
 
 // Error handler
 app.use(errorHandler);

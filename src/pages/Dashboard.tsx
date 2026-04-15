@@ -24,62 +24,105 @@ import {
   VoiceVaultPage,
   SettingsPage,
 } from './dashboardPages';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
 import {
   Home,
   Users,
   BookOpen,
   Settings,
-  LogOut,
   Shield,
-  Map,
-  TreePine,
   BarChart3,
-  Tag,
-  Library,
+  MessageSquare,
+  Compass,
+  Heart,
+  Bookmark,
   Mic,
   Menu,
   X,
 } from 'lucide-react';
 import yolunoLogo from '@/assets/landing/yoluno-logo-original.png';
 
+// Order, labels, and icons match loveable/DashboardLayout.tsx exactly.
 const navItems = [
   { path: '/dashboard', label: 'Home', icon: Home },
   { path: '/dashboard/children', label: 'Children', icon: Users },
-  { path: '/dashboard/family', label: 'Family', icon: TreePine },
-  { path: '/dashboard/stories', label: 'Stories', icon: BookOpen },
-  { path: '/dashboard/journeys', label: 'Journeys', icon: Map },
   { path: '/dashboard/insights', label: 'Insights', icon: BarChart3 },
-  { path: '/dashboard/topics', label: 'Topics', icon: Tag },
-  { path: '/dashboard/library', label: 'Keepsakes', icon: Library },
+  { path: '/dashboard/topics', label: 'Chat / Topics', icon: MessageSquare },
+  { path: '/dashboard/stories', label: 'Stories', icon: BookOpen },
+  { path: '/dashboard/journeys', label: 'Journeys', icon: Compass },
+  { path: '/dashboard/family', label: 'Family', icon: Heart },
   { path: '/dashboard/voice-vault', label: 'Family Voices', icon: Mic },
+  { path: '/dashboard/library', label: 'Keepsakes', icon: Bookmark },
   { path: '/dashboard/safety', label: 'Safety', icon: Shield },
   { path: '/dashboard/settings', label: 'Settings', icon: Settings },
 ];
 
 export function DashboardPage() {
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const location = useLocation();
   const { data: safetyReports = [] } = useSafetyReports(user?.id, true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const unreadAlerts = safetyReports.length;
 
+  const isActive = (path: string) => {
+    if (path === '/dashboard') return location.pathname === '/dashboard';
+    return location.pathname.startsWith(path);
+  };
+
+  const sidebarNav = (
+    <nav className="flex-1 flex flex-col gap-0.5 px-3 mt-2 overflow-y-auto">
+      {navItems.map((item) => {
+        const active = isActive(item.path);
+        const showBadge = item.path === '/dashboard/safety' && unreadAlerts > 0;
+        return (
+          <Link
+            key={item.label}
+            to={item.path}
+            onClick={() => setSidebarOpen(false)}
+            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[14.5px] transition-all relative no-underline"
+            style={{
+              fontWeight: active ? 600 : 400,
+              color: active ? '#2A2926' : '#6B675E',
+              background: active ? '#FFFFFF' : 'transparent',
+              borderLeft: active ? '3px solid #3ECDC6' : '3px solid transparent',
+            }}
+          >
+            <item.icon size={18} style={{ color: active ? '#3ECDC6' : '#9B978E' }} />
+            <span className="flex-1">{item.label}</span>
+            {showBadge && (
+              <Badge
+                variant="destructive"
+                className="h-5 w-5 p-0 flex items-center justify-center text-caption"
+              >
+                {unreadAlerts}
+              </Badge>
+            )}
+          </Link>
+        );
+      })}
+    </nav>
+  );
+
   return (
-    <div className="flex min-h-screen bg-white">
+    <div
+      className="dashboard-scope flex min-h-screen"
+      style={{ background: '#FAFAF7' }}
+    >
       {/* Real-time safety alerts */}
       <SafetyAlertNotification />
 
       {/* Mobile header */}
-      <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between border-b bg-card/95 backdrop-blur-md px-4 py-3 shadow-warm lg:hidden">
+      <header
+        className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between border-b px-4 py-3 md:hidden"
+        style={{ background: '#FAF9F6', borderColor: '#E8E6E1' }}
+      >
         <button
           onClick={() => setSidebarOpen(true)}
-          className="rounded-md p-2 hover:bg-secondary"
+          className="rounded-md p-2 hover:bg-white/60"
           aria-label="Open menu"
         >
-          <Menu className="h-6 w-6" />
+          <Menu className="h-6 w-6" style={{ color: '#2A2926' }} />
         </button>
         <Link to="/dashboard">
           <img src={yolunoLogo} alt="Yoluno" className="h-8" />
@@ -90,93 +133,61 @@ export function DashboardPage() {
       {/* Backdrop */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+          className="fixed inset-0 z-40 bg-black/20 md:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
-      {/* Sidebar */}
+      {/* Desktop Sidebar */}
       <aside
-        className={cn(
-          'fixed inset-y-0 left-0 z-50 w-64 transform border-r bg-card/95 backdrop-blur-xl shadow-warm transition-transform duration-200 ease-in-out',
-          'lg:translate-x-0',
-          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        )}
+        className="hidden md:flex flex-col w-[220px] min-h-screen border-r sticky top-0 h-screen"
+        style={{ background: '#FAF9F6', borderColor: '#E8E6E1' }}
       >
-        <div className="flex h-full flex-col">
-          {/* Logo and Notifications */}
-          <div className="flex items-center justify-between border-b px-6 py-4">
-            <Link to="/dashboard">
-              <img src={yolunoLogo} alt="Yoluno" className="h-9" />
-            </Link>
-            <div className="flex items-center gap-2">
-              <span className="hidden lg:block">
-                <NotificationBell />
-              </span>
-              <button
-                onClick={() => setSidebarOpen(false)}
-                className="rounded-md p-1 hover:bg-secondary lg:hidden"
-                aria-label="Close menu"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-          </div>
-
-          {/* Navigation */}
-          <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
-            {navItems.map((item) => {
-              const isActive =
-                item.path === '/dashboard'
-                  ? location.pathname === '/dashboard'
-                  : location.pathname.startsWith(item.path);
-
-              const showBadge = item.path === '/dashboard/safety' && unreadAlerts > 0;
-
-              return (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  onClick={() => setSidebarOpen(false)}
-                  className={cn(
-                    'relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-body-sm font-medium transition-colors',
-                    isActive
-                      ? 'bg-white text-foreground shadow-sm border-l-[3px] border-l-primary pl-[11px]'
-                      : 'text-muted-foreground hover:bg-primary/10 hover:text-primary'
-                  )}
-                >
-                  <item.icon className={cn('h-5 w-5', isActive && 'text-primary')} />
-                  <span className="flex-1 text-left">{item.label}</span>
-                  {showBadge && (
-                    <Badge variant="destructive" className="h-5 w-5 p-0 flex items-center justify-center text-caption">
-                      {unreadAlerts}
-                    </Badge>
-                  )}
-                </Link>
-              );
-            })}
-          </nav>
-
-          {/* User & Sign out */}
-          <div className="border-t p-3 space-y-2">
-            <div className="px-3 py-2 text-body-sm text-muted-foreground truncate">
-              {user?.email}
-            </div>
-            <Button
-              variant="ghost"
-              className="w-full justify-start gap-3 text-muted-foreground"
-              onClick={signOut}
-            >
-              <LogOut className="h-5 w-5" />
-              Sign Out
-            </Button>
-          </div>
+        <div className="flex items-center gap-2 px-5 py-5">
+          <Link to="/dashboard" className="flex-1">
+            <img src={yolunoLogo} alt="Yoluno" className="h-8" />
+          </Link>
+          <NotificationBell />
+        </div>
+        {sidebarNav}
+        <div className="px-5 py-4 text-[12px] truncate" style={{ color: '#9B978E' }}>
+          {user?.email}
         </div>
       </aside>
 
+      {/* Mobile Sidebar Overlay */}
+      {sidebarOpen && (
+        <div className="md:hidden fixed inset-0 z-40 flex">
+          <div
+            className="relative w-[260px] h-full overflow-y-auto flex flex-col border-r"
+            style={{ background: '#FAF9F6', borderColor: '#E8E6E1' }}
+          >
+            <div className="flex items-center justify-between px-5 py-5">
+              <Link to="/dashboard" onClick={() => setSidebarOpen(false)}>
+                <img src={yolunoLogo} alt="Yoluno" className="h-8" />
+              </Link>
+              <button
+                onClick={() => setSidebarOpen(false)}
+                className="rounded-md p-1 hover:bg-white/60"
+                aria-label="Close menu"
+              >
+                <X className="h-5 w-5" style={{ color: '#2A2926' }} />
+              </button>
+            </div>
+            {sidebarNav}
+            <div
+              className="px-5 py-4 text-[12px] mt-auto truncate"
+              style={{ color: '#9B978E' }}
+            >
+              {user?.email}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Main content */}
-      <main className="flex-1 pt-16 lg:pt-0 lg:ml-64">
-        <div className="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8">
+      <main className="flex-1 overflow-y-auto pt-14 md:pt-0">
+        <div className="max-w-[1060px] mx-auto px-6 md:px-10 py-8">
           <Routes>
             <Route path="/" element={<DashboardHome />} />
             <Route path="/children" element={<ChildrenPage />} />

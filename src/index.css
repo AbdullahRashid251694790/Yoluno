@@ -466,6 +466,32 @@
     font-family: 'DM Serif Display', Georgia, serif;
   }
 
+  /* ────────────────────────────────────────────────────────────
+     Dashboard Scope — mirrors loveable/DashboardLayout.tsx which
+     sets `fontFamily: 'DM Sans', sans-serif` on the outer wrapper
+     AND has the global `h1-h6 { font-family: 'DM Serif Display' }`
+     base rule. We replicate both here scoped to .dashboard-scope
+     so parent-dashboard pages can drop inline fontFamily overrides
+     and match the loveable JSX byte-for-byte.
+     ──────────────────────────────────────────────────────────── */
+  .dashboard-scope,
+  .dashboard-scope p,
+  .dashboard-scope span,
+  .dashboard-scope div,
+  .dashboard-scope button,
+  .dashboard-scope a {
+    font-family: 'DM Sans', 'Segoe UI', sans-serif;
+  }
+
+  .dashboard-scope h1,
+  .dashboard-scope h2,
+  .dashboard-scope h3,
+  .dashboard-scope h4,
+  .dashboard-scope h5,
+  .dashboard-scope h6 {
+    font-family: 'DM Serif Display', Georgia, serif;
+  }
+
   .landing-scope .bg-warm {
     background-color: hsl(48 14% 97%);
   }
