@@ -288,6 +288,41 @@ export const moodConfigs: Record<MoodType, MoodConfig> = {
       },
     ],
   },
+  notsure: {
+    emoji: '🤔',
+    label: 'Not sure',
+    color: 'text-slate-600',
+    bgGradient: 'from-slate-200 to-gray-200',
+    responses: [
+      "That's totally fine! Let's just start exploring.",
+      "That's okay — feelings can be tricky. Let's find something fun.",
+      "No worries! We can figure it out together.",
+      "It's alright not to know. Let's pick something to do!",
+    ],
+    activities: [
+      {
+        id: 'notsure-chat',
+        title: "Let's Chat",
+        description: 'Talk about whatever you want',
+        emoji: '💬',
+        path: 'chat',
+      },
+      {
+        id: 'notsure-story',
+        title: 'Pick a Story',
+        description: 'See what catches your eye',
+        emoji: '📖',
+        path: 'stories',
+      },
+      {
+        id: 'notsure-journey',
+        title: 'Try a Journey',
+        description: 'A little adventure to start the day',
+        emoji: '🗺️',
+        path: 'journeys',
+      },
+    ],
+  },
 };
 
 /**
@@ -317,7 +352,7 @@ export function getMoodConfig(mood: MoodType): MoodConfig {
  * Get all mood types for rendering mood selection buttons
  */
 export function getAllMoods(): MoodType[] {
-  return ['happy', 'sad', 'angry', 'calm', 'worried', 'tired', 'excited'];
+  return ['happy', 'sad', 'angry', 'calm', 'worried', 'tired', 'excited', 'notsure'];
 }
 
 /**

@@ -19,7 +19,7 @@ const router = Router();
 router.use(requireAuth);
 
 // Types
-type MoodType = 'happy' | 'sad' | 'angry' | 'scared' | 'calm' | 'worried' | 'tired' | 'excited';
+type MoodType = 'happy' | 'sad' | 'angry' | 'scared' | 'calm' | 'worried' | 'tired' | 'excited' | 'notsure';
 
 interface MoodCheckin {
   id: string;
@@ -73,9 +73,9 @@ router.post(
       const { mood, luno_response, suggested_activity } = req.body;
 
       // Validate mood
-      const validMoods: MoodType[] = ['happy', 'sad', 'angry', 'scared', 'calm', 'worried', 'tired', 'excited'];
+      const validMoods: MoodType[] = ['happy', 'sad', 'angry', 'scared', 'calm', 'worried', 'tired', 'excited', 'notsure'];
       if (!mood || !validMoods.includes(mood)) {
-        throw new AppError(400, 'Invalid mood. Must be one of: happy, sad, angry, scared, calm, worried, tired, excited');
+        throw new AppError(400, 'Invalid mood. Must be one of: happy, sad, angry, scared, calm, worried, tired, excited, notsure');
       }
 
       // Verify child belongs to user and fetch name in one query
@@ -305,6 +305,7 @@ router.get(
           worried: 0,
           tired: 0,
           excited: 0,
+          notsure: 0,
         };
         row.moods.forEach((mood) => {
           moodCounts[mood]++;

@@ -5,7 +5,7 @@
  * daily challenges, and gamification elements.
  */
 
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useChild } from '@/contexts/ChildContext';
@@ -33,6 +33,7 @@ import {
 import { PasswordChangeRequestButton } from '@/components/kids/PasswordChangeRequestButton';
 import { KidNotificationBell } from '@/components/kids/KidNotificationBell';
 import type { AvatarExpression } from '@/types/domain';
+import lunoAvatar from '@/assets/landing/luno.png';
 
 // Badge emoji mapping (matches KidsBadges page)
 const BADGE_EMOJIS: Record<string, string> = {
@@ -145,7 +146,14 @@ export function KidsHomePage() {
     };
   }, [child, enterKidsMode, exitKidsMode]);
 
+  const [showSwitchConfirm, setShowSwitchConfirm] = useState(false);
+
   const handleBack = () => {
+    setShowSwitchConfirm(true);
+  };
+
+  const confirmSwitch = () => {
+    setShowSwitchConfirm(false);
     navigate('/play');
   };
 
@@ -165,7 +173,7 @@ export function KidsHomePage() {
       <ErrorState
         title="Oops!"
         message="We couldn't find your profile."
-        onRetry={handleBack}
+        onRetry={() => navigate('/play')}
         retryLabel="Go Back"
         fullPage
       />
@@ -445,6 +453,45 @@ export function KidsHomePage() {
           </Card>
         </Link>
       </main>
+
+      {/* Switch profile confirmation modal */}
+      {showSwitchConfirm && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm px-6"
+          onClick={() => setShowSwitchConfirm(false)}
+        >
+          <div
+            className="bg-white rounded-3xl p-8 max-w-md w-full text-center shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={lunoAvatar}
+              alt="Luno"
+              className="w-28 h-28 object-contain mx-auto mb-4 animate-float drop-shadow-lg"
+            />
+            <h3 className="text-h4 font-bold text-foreground mb-2">
+              Want to switch?
+            </h3>
+            <p className="text-body-sm text-muted-foreground mb-6">
+              Your place is saved. You can come back anytime.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowSwitchConfirm(false)}
+                className="flex-1 py-3 rounded-xl font-semibold border-2 border-border text-foreground bg-white hover:bg-muted/50 transition-colors"
+              >
+                Stay here
+              </button>
+              <button
+                onClick={confirmSwitch}
+                className="flex-1 py-3 rounded-xl font-semibold text-white bg-primary hover:bg-primary/90 transition-colors"
+              >
+                Switch
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

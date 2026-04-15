@@ -326,7 +326,7 @@ router.post('/:childId/sessions', async (req: Request, res: Response, next: Next
     await verifyChildAccess(childId, req.user!.id);
 
     const sessionId = uuidv4();
-    const sessionTitle = title || (mood ? `${mood.charAt(0).toUpperCase() + mood.slice(1)} mood chat` : DEFAULT_SESSION_TITLE);
+    const sessionTitle = title || (mood ? `${moodTitleLabel(mood)} mood chat` : DEFAULT_SESSION_TITLE);
 
     const session = await queryOne<ChatSession>(
       `INSERT INTO chat_sessions (id, child_profile_id, title, mood, started_at)
@@ -609,6 +609,7 @@ router.post('/:childId/sessions/:sessionId/greet', async (req: Request, res: Res
     }
 
     const mood = session.mood || 'calm';
+    const moodPhrase = moodDisplayLabel(mood);
 
     // Get buddy name
     const buddy = await queryOne<{ name: string }>(
@@ -617,15 +618,17 @@ router.post('/:childId/sessions/:sessionId/greet', async (req: Request, res: Res
     );
     const buddyName = 'Luno';
 
-    // Generate a mood-aware greeting via AI
-    const greetingPrompt = `You are ${buddyName}, a warm, caring AI friend for a child named ${child.name} (age ${child.age}). The child just told you they are feeling "${mood}" today. Write a short, warm opening message (2-3 sentences) that:
-- Acknowledges their ${mood} feeling with empathy
+    // Generate a mood-aware greeting via AI. We pass moodPhrase (a natural
+    // English phrase) rather than the raw slug so the LLM never parrots
+    // internal values like "notsure" back to the child.
+    const greetingPrompt = `You are ${buddyName}, a warm, caring AI friend for a child named ${child.name} (age ${child.age}). The child just told you they are feeling ${moodPhrase} today. Write a short, warm opening message (2-3 sentences) that:
+- Acknowledges how they feel with empathy
 - Shows you care about how they feel
 - Gently invites them to talk about it or do something together
 - Uses simple, age-appropriate language
 - Feels natural, not clinical
 
-Do NOT use emojis. Do NOT include your name at the start. Just write the message directly.`;
+Do NOT use emojis. Do NOT include your name at the start. Do NOT use quotation marks around feeling words. Just write the message directly.`;
 
     let greeting: string;
     try {
@@ -640,7 +643,7 @@ Do NOT use emojis. Do NOT include your name at the start. Just write the message
           model: 'google/gemini-2.5-flash',
           messages: [
             { role: 'system', content: greetingPrompt },
-            { role: 'user', content: `The child is feeling ${mood}. Generate the opening message.` },
+            { role: 'user', content: `The child is feeling ${moodPhrase}. Generate the opening message.` },
           ],
           max_tokens: 200,
           temperature: 0.8,
@@ -677,6 +680,20 @@ Do NOT use emojis. Do NOT include your name at the start. Just write the message
   }
 });
 
+// Translate a mood slug into a natural phrase for LLM prompts and UI titles.
+// Only "notsure" needs a rewrite — every other slug is already a real word.
+function moodDisplayLabel(mood: string | null | undefined): string {
+  if (!mood) return '';
+  if (mood === 'notsure') return 'unsure about how they feel';
+  return mood;
+}
+
+function moodTitleLabel(mood: string | null | undefined): string {
+  if (!mood) return '';
+  if (mood === 'notsure') return 'Not sure';
+  return mood.charAt(0).toUpperCase() + mood.slice(1);
+}
+
 // Fallback greetings when AI generation fails
 function getMoodFallbackGreeting(mood: string, childName: string, buddyName: string): string {
   const greetings: Record<string, string> = {
@@ -687,6 +704,7 @@ function getMoodFallbackGreeting(mood: string, childName: string, buddyName: str
     worried: `Hey ${childName}, I noticed you're feeling worried about something. That's a really brave thing to share. Want to talk about what's on your mind?`,
     tired: `Hey ${childName}, it sounds like you could use some rest! Let's take it easy together. We could have a quiet chat or I could tell you something fun.`,
     excited: `Hey ${childName}! I can feel your excitement from here! Something awesome must be going on. Tell me everything!`,
+    notsure: `Hey ${childName}, it's totally okay not to know exactly how you feel right now — that happens to all of us. I'm right here whenever you want to talk, or we could just find something fun to do together.`,
   };
   return greetings[mood] || `Hey ${childName}! I'm ${buddyName}, and I'm so glad you're here. What would you like to talk about?`;
 }

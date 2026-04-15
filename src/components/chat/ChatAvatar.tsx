@@ -9,6 +9,16 @@ import { cn } from '@/lib/utils';
 import type { AvatarExpression } from '@/types/domain';
 import { BUDDY_EXPRESSIONS } from '@/types/domain';
 
+// Luno character variants — same artwork used on the loveable landing pages
+import lunoHappy from '@/assets/landing/luno-happy.png';
+import lunoSad from '@/assets/landing/luno-sad.png';
+import lunoAngry from '@/assets/landing/luno-angry.png';
+import lunoCalm from '@/assets/landing/luno-calm.png';
+import lunoWorried from '@/assets/landing/luno-worried.png';
+import lunoTired from '@/assets/landing/luno-tired.png';
+import lunoExcited from '@/assets/landing/luno-excited.png';
+import lunoDefault from '@/assets/landing/luno.png';
+
 // Default buddy avatar images (from landing page characters)
 const BUDDY_AVATARS: Record<string, string> = {
   Luno: '/avatars/Luno.png',
@@ -19,13 +29,14 @@ const BUDDY_AVATARS: Record<string, string> = {
 
 // Mood-specific Luno face images
 export const MOOD_IMAGES: Record<string, string> = {
-  happy: '/avatars/moods/happy.webp',
-  sad: '/avatars/moods/sad.webp',
-  angry: '/avatars/moods/angry.webp',
-  calm: '/avatars/moods/calm.webp',
-  worried: '/avatars/moods/worried.webp',
-  tired: '/avatars/moods/tired.webp',
-  excited: '/avatars/moods/excited.webp',
+  happy: lunoHappy,
+  sad: lunoSad,
+  angry: lunoAngry,
+  calm: lunoCalm,
+  worried: lunoWorried,
+  tired: lunoTired,
+  excited: lunoExcited,
+  notsure: lunoDefault,
 };
 
 interface ChatAvatarProps {

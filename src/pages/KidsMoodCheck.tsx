@@ -39,6 +39,7 @@ const moodToExpression: Record<MoodType, AvatarExpression> = {
   worried: 'caring',
   tired: 'caring',
   excited: 'happy',
+  notsure: 'curious',
 };
 
 export function KidsMoodCheckPage() {
@@ -224,11 +225,10 @@ export function KidsMoodCheckPage() {
 
         {/* Mood selection buttons with Luno faces */}
         {!showResponse && (
-          <div className="grid grid-cols-4 gap-3 mb-8 max-w-md mx-auto">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-8 w-full max-w-[520px] mx-auto">
             {moods.map((mood) => {
               const config = moodConfigs[mood];
               const isSelected = selectedMood === mood;
-              const expression = moodToExpression[mood];
 
               return (
                 <button
@@ -236,20 +236,23 @@ export function KidsMoodCheckPage() {
                   onClick={() => handleMoodSelect(mood)}
                   disabled={logMoodMutation.isPending}
                   className={cn(
-                    'flex flex-col items-center p-3 rounded-2xl transition-all duration-200',
-                    'bg-white/80 backdrop-blur-sm shadow-md',
-                    'hover:shadow-lg hover:scale-105 active:scale-95',
+                    'flex flex-col items-center justify-center min-h-[130px] p-4 rounded-2xl transition-all duration-200',
+                    'bg-white shadow-sm',
+                    'hover:shadow-md',
                     'touch-target-kids',
-                    isSelected && 'ring-4 ring-primary ring-offset-2 scale-105'
+                    'border-2',
+                    isSelected
+                      ? 'border-primary bg-primary/5 scale-105'
+                      : 'border-transparent'
                   )}
                 >
-                  <ChatAvatar
-                    expression={expression}
-                    moodImage={MOOD_IMAGES[mood]}
-                    size="sm"
-                    buddyName={buddyName}
+                  <img
+                    src={MOOD_IMAGES[mood]}
+                    alt={config.label}
+                    loading="lazy"
+                    className="w-16 h-16 object-contain mb-2"
                   />
-                  <span className={cn('text-caption font-medium mt-1', config.color)}>
+                  <span className={cn('text-caption font-medium', config.color)}>
                     {config.label}
                   </span>
                 </button>

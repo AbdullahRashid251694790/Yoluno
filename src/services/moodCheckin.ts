@@ -10,7 +10,7 @@ import { apiGet, apiPost } from '@/lib/api';
 const CONTEXT = 'moodCheckin';
 
 // Types
-export type MoodType = 'happy' | 'sad' | 'angry' | 'calm' | 'worried' | 'tired' | 'excited';
+export type MoodType = 'happy' | 'sad' | 'angry' | 'calm' | 'worried' | 'tired' | 'excited' | 'notsure';
 
 export interface MoodCheckin {
   id: string;
