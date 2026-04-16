@@ -17,6 +17,7 @@ export interface ChildProfileRow {
   interests: string[];
   learning_style: string | null;
   pin_hash: string | null;
+  session_time_limit_minutes: number | null;
   last_active_at: string | null;
   created_at: string;
   updated_at: string;

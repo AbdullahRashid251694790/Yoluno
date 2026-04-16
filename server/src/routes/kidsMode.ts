@@ -284,4 +284,131 @@ router.put(
   }
 );
 
+/**
+ * POST /api/kids-mode/heartbeat/:childId
+ *
+ * Called every ~30s by the frontend while a child is on any /kids/ screen.
+ * If the child has an active session (last heartbeat within 90s), we extend
+ * it. Otherwise we start a new session row.
+ */
+router.post(
+  '/heartbeat/:childId',
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { childId } = req.params;
+      const userId = req.user!.id;
+
+      // Fetch child + session time limit in one query
+      const child = await queryOne<{
+        id: string;
+        session_time_limit_minutes: number | null;
+      }>(
+        'SELECT id, session_time_limit_minutes FROM child_profiles WHERE id = $1 AND user_id = $2',
+        [childId, userId]
+      );
+      if (!child) {
+        throw new AppError(404, 'Child profile not found');
+      }
+
+      // Extend or create session (always — even when over limit, so
+      // analytics still records accurate screen time for the parent)
+      const extended = await queryOne<{ id: string }>(
+        `UPDATE child_screen_sessions
+         SET last_heartbeat_at = now()
+         WHERE child_profile_id = $1
+           AND last_heartbeat_at >= now() - INTERVAL '90 seconds'
+         RETURNING id`,
+        [childId]
+      );
+
+      if (!extended) {
+        await queryOne(
+          'INSERT INTO child_screen_sessions (child_profile_id) VALUES ($1) RETURNING id',
+          [childId]
+        );
+      }
+
+      // Sum today's accumulated screen time
+      const usage = await queryOne<{ minutes_used: number }>(
+        `SELECT COALESCE(
+           SUM(GREATEST(EXTRACT(EPOCH FROM (last_heartbeat_at - started_at)) / 60.0, 0.5)),
+           0
+         )::real AS minutes_used
+         FROM child_screen_sessions
+         WHERE child_profile_id = $1
+           AND started_at::date = CURRENT_DATE`,
+        [childId]
+      );
+
+      const minutesUsed = Math.round(usage?.minutes_used ?? 0);
+      const limitMinutes = child.session_time_limit_minutes;
+      const timeUp = limitMinutes != null && minutesUsed >= limitMinutes;
+
+      res.json({
+        ok: true,
+        time_up: timeUp,
+        minutes_used: minutesUsed,
+        limit_minutes: limitMinutes,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+/**
+ * POST /api/kids-mode/request-more-time/:childId
+ *
+ * Called when a child's screen time is up and they tap "Request more time".
+ * Creates a parent_notification so the parent sees it in their bell.
+ */
+router.post(
+  '/request-more-time/:childId',
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { childId } = req.params;
+      const userId = req.user!.id;
+
+      const child = await queryOne<{ id: string; name: string; user_id: string }>(
+        'SELECT id, name, user_id FROM child_profiles WHERE id = $1 AND user_id = $2',
+        [childId, userId]
+      );
+      if (!child) {
+        throw new AppError(404, 'Child profile not found');
+      }
+
+      // Prevent spam — only allow one pending request per child per day
+      const existing = await queryOne<{ id: string }>(
+        `SELECT id FROM parent_notifications
+         WHERE child_profile_id = $1
+           AND notification_type = 'more_time_request'
+           AND is_read = false
+           AND created_at::date = CURRENT_DATE`,
+        [childId]
+      );
+
+      if (existing) {
+        res.json({ ok: true, already_requested: true });
+        return;
+      }
+
+      await queryOne(
+        `INSERT INTO parent_notifications (user_id, child_profile_id, notification_type, title, message)
+         VALUES ($1, $2, 'more_time_request', $3, $4)
+         RETURNING id`,
+        [
+          child.user_id,
+          child.id,
+          'More Time Requested',
+          `${child.name} has used up their daily screen time and is asking for more. You can extend their limit in Luno Settings.`,
+        ]
+      );
+
+      res.json({ ok: true, already_requested: false });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
 export default router;

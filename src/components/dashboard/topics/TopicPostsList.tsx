@@ -180,28 +180,28 @@ export function TopicPostsList({
       )}
 
       {/* Action buttons */}
-      <div className="flex justify-center gap-3 px-4">
-        <Button
-          size="sm"
-          className="gap-1.5 text-white"
+      <div className="flex justify-center gap-2 px-1 mt-1">
+        <button
           onClick={handleGenerateWithAI}
           disabled={generatePost.isPending}
+          className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-[13px] transition hover:bg-[#E8F6F4]"
+          style={{ fontWeight: 600, color: '#3ECDC6', border: '1px solid #3ECDC6' }}
         >
           {generatePost.isPending ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
           ) : (
-            <Sparkles className="h-4 w-4" />
+            <Sparkles className="h-3.5 w-3.5" />
           )}
           {generatePost.isPending ? 'Generating...' : 'Generate with AI'}
-        </Button>
-        <Button
-          size="sm"
-          className="gap-1.5 text-white"
+        </button>
+        <button
           onClick={handleAddPost}
+          className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-[13px] transition hover:bg-[#E8F6F4]"
+          style={{ fontWeight: 600, color: '#3ECDC6', border: '1px solid #3ECDC6' }}
         >
-          <Plus className="h-4 w-4" />
+          <Plus className="h-3.5 w-3.5" />
           Add Content
-        </Button>
+        </button>
       </div>
 
       {/* Post dialog */}

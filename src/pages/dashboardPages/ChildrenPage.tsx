@@ -77,7 +77,7 @@ function ChildDetailCard({ child, accent, overview, onEdit }: ChildDetailCardPro
       {/* Accent bar */}
       <div style={{ height: 3, background: accent.bar }} />
 
-      <div className="p-7 flex-1 flex flex-col">
+      <div className="px-4 py-5 flex-1 flex flex-col">
         {/* Row 1: Avatar + Identity */}
         <div className="flex items-start gap-3.5 mb-5">
           {avatarUrl ? (
@@ -159,17 +159,17 @@ function ChildDetailCard({ child, accent, overview, onEdit }: ChildDetailCardPro
         {/* Row 5: Actions — mt-auto pins this to the bottom so all cards in
             a row align their action buttons even when topic or mood rows
             have different heights. */}
-        <div className="flex gap-2 mt-auto">
+        <div className="flex gap-1.5 mt-auto">
           <Link
             to={`/kids/${child.id}/mood`}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-full text-[13px] transition hover:opacity-80"
+            className="flex items-center gap-1 px-3.5 py-1.5 rounded-full text-[12.5px] transition hover:opacity-80 whitespace-nowrap"
             style={{ background: '#3ECDC6', color: '#FFFFFF', fontWeight: 600 }}
           >
-            <Compass size={13} /> Explore
+            <Compass size={12} /> Explore
           </Link>
           <Link
             to="/dashboard/stories"
-            className="flex items-center gap-1.5 px-4 py-2 rounded-full text-[13px] transition hover:bg-[#F5F3EE]"
+            className="flex items-center gap-1 px-3.5 py-1.5 rounded-full text-[12.5px] transition hover:bg-[#F5F3EE] whitespace-nowrap"
             style={{
               background: '#FFFFFF',
               border: '1px solid #E8E6E1',
@@ -177,11 +177,11 @@ function ChildDetailCard({ child, accent, overview, onEdit }: ChildDetailCardPro
               fontWeight: 500,
             }}
           >
-            <BookOpen size={13} /> Stories
+            <BookOpen size={12} /> Stories
           </Link>
           <button
             onClick={onEdit}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-full text-[13px] transition hover:bg-[#F5F3EE]"
+            className="flex items-center gap-1 px-3.5 py-1.5 rounded-full text-[12.5px] transition hover:bg-[#F5F3EE] whitespace-nowrap"
             style={{
               background: '#FFFFFF',
               border: '1px solid #E8E6E1',
@@ -189,7 +189,7 @@ function ChildDetailCard({ child, accent, overview, onEdit }: ChildDetailCardPro
               fontWeight: 500,
             }}
           >
-            <Settings size={13} /> Settings
+            <Settings size={12} /> Settings
           </button>
         </div>
       </div>

@@ -22,6 +22,7 @@ interface ActivityTimelineEntry {
   story_count: number;
   journey_steps_completed: number;
   session_duration_minutes: number;
+  topics: string[];
 }
 
 interface WeeklySummary {
@@ -73,14 +74,20 @@ router.get(
         throw new AppError(404, 'Child profile not found');
       }
 
-      // Get activity data from source tables directly
+      // Get activity data from source tables. session_duration_minutes is
+      // derived from child_screen_sessions — the frontend heartbeat writes
+      // rows there every ~30s while the child is on a /kids/ screen.
       const activities = await query<ActivityTimelineEntry>(
         `SELECT
           d::text as date,
           COALESCE((SELECT COUNT(*) FROM buddy_messages WHERE child_profile_id = $1 AND role = 'child' AND created_at::date = d), 0)::int as message_count,
           COALESCE((SELECT COUNT(*) FROM stories WHERE child_profile_id = $1 AND created_at::date = d), 0)::int as story_count,
           COALESCE((SELECT COUNT(*) FROM journey_steps js JOIN journeys j ON js.journey_id = j.id WHERE j.child_profile_id = $1 AND js.completed_at IS NOT NULL AND js.completed_at::date = d), 0)::int as journey_steps_completed,
-          0 as session_duration_minutes
+          COALESCE((
+            SELECT SUM(GREATEST(EXTRACT(EPOCH FROM (last_heartbeat_at - started_at)) / 60.0, 0.5))::int
+            FROM child_screen_sessions
+            WHERE child_profile_id = $1 AND started_at::date = d
+          ), 0) as session_duration_minutes
         FROM generate_series(CURRENT_DATE - INTERVAL '${daysNum} days', CURRENT_DATE, '1 day') d
         WHERE EXISTS (
           SELECT 1 FROM buddy_messages WHERE child_profile_id = $1 AND created_at::date = d
@@ -90,12 +97,34 @@ router.get(
           SELECT 1 FROM journey_steps js JOIN journeys j ON js.journey_id = j.id WHERE j.child_profile_id = $1 AND js.completed_at IS NOT NULL AND js.completed_at::date = d
           UNION ALL
           SELECT 1 FROM child_activities WHERE child_profile_id = $1 AND created_at::date = d
+          UNION ALL
+          SELECT 1 FROM child_screen_sessions WHERE child_profile_id = $1 AND started_at::date = d
         )
         ORDER BY d DESC`,
         [childId]
       );
 
-      res.json(activities.rows);
+      // Attach per-day topic chips: match child messages on each day
+      // against the topics table (same ILIKE approach as chat-topics).
+      const enriched = await Promise.all(
+        activities.rows.map(async (row) => {
+          const topicResult = await query<{ name: string }>(
+            `SELECT DISTINCT t.name
+             FROM topics t
+             INNER JOIN buddy_messages bm
+               ON bm.child_profile_id = $1
+               AND bm.role = 'child'
+               AND bm.created_at::date = $2::date
+               AND bm.content ILIKE '%' || t.name || '%'
+             WHERE t.is_active = true
+             LIMIT 5`,
+            [childId, row.date]
+          );
+          return { ...row, topics: topicResult.rows.map((r) => r.name) };
+        })
+      );
+
+      res.json(enriched);
     } catch (error) {
       next(error);
     }

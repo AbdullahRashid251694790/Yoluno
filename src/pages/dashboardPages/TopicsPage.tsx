@@ -1,8 +1,8 @@
 /**
  * Topics Page
  *
- * Manage content topics for children.
- * Includes system topics, custom topics, and topic posts.
+ * Manage content topics for children. Visual design mirrors the loveable
+ * DashboardTopicsPage exactly; data comes from the live database.
  */
 
 import { useState } from 'react';
@@ -11,6 +11,7 @@ import { useChildProfiles } from '@/hooks/queries/useChildProfiles';
 import {
   useChildTopicSettings,
   useUpdateTopicSetting,
+  useBulkUpdateTopicSettings,
 } from '@/hooks/queries/useTopics';
 import {
   useCustomTopics,
@@ -21,25 +22,7 @@ import {
   CustomTopicDialog,
   TopicPostsList,
 } from '@/components/dashboard/topics';
-import { LoadingSpinner, EmptyState } from '@/components/shared';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion';
+import { LoadingSpinner } from '@/components/shared';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -51,32 +34,212 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import {
-  Tag,
-  Filter,
-  Users,
-  Info,
+  ChevronDown,
+  ChevronRight,
+  Search,
+  BookOpen,
+  RotateCcw,
+  ShieldCheck,
+  CheckCircle2,
+  Sparkles,
   Plus,
   Pencil,
   Trash2,
-  Sparkles,
 } from 'lucide-react';
 import type { CustomTopic } from '@/hooks/queries/useTopicPosts';
+
+// Meta-cluster definitions matching loveable's grouping
+const CLUSTERS: { label: string; categories: string[]; isCurriculum?: boolean }[] = [
+  {
+    label: 'British National Curriculum',
+    isCurriculum: true,
+    categories: [
+      'British Curriculum: English',
+      'British Curriculum: Maths',
+      'British Curriculum: Science',
+      'British Curriculum: History',
+      'British Curriculum: Geography',
+      'British Curriculum: Computing',
+      'British Curriculum: Languages',
+      'British Curriculum: Design & Technology',
+      'British Curriculum: Citizenship & PSHE',
+    ],
+  },
+  {
+    label: 'International Baccalaureate (IB)',
+    isCurriculum: true,
+    categories: [
+      'IB: Who We Are',
+      'IB: Where We Are in Place and Time',
+      'IB: How We Express Ourselves',
+      'IB: How the World Works',
+      'IB: How We Organize Ourselves',
+      'IB: Sharing the Planet',
+      'IB: Thinking & Learning Skills',
+      'IB: Design Thinking & Innovation',
+    ],
+  },
+  {
+    label: 'Learning & Knowledge',
+    categories: ['Science & Space', 'History & Culture', 'Math & Logic', 'Technology & Future', 'World & Geography', 'Everyday Learning'],
+  },
+  {
+    label: 'Creative & Imaginative',
+    categories: ['Arts & Creativity', 'Adventure & Fantasy', 'Careers & Dreams'],
+  },
+  {
+    label: 'Wellbeing & Relationships',
+    categories: ['Emotions & Feelings', 'Family & Friends', 'Health & Body', 'Mindfulness & Wellbeing', 'Safety & Life Skills'],
+  },
+  {
+    label: 'Fun & Exploration',
+    categories: ['Animals & Nature', 'Food & Cooking'],
+  },
+];
+
+interface TopicItem {
+  id: string;
+  name: string;
+  description: string | null;
+  is_allowed?: boolean;
+  is_default?: boolean;
+  category_name?: string;
+}
+
+function CategoryRow({
+  category,
+  topics,
+  search,
+  onToggle,
+  isPending,
+  childId,
+  childAge,
+  allPosts,
+}: {
+  category: string;
+  topics: TopicItem[];
+  search: string;
+  onToggle: (id: string, current: boolean) => void;
+  isPending: boolean;
+  childId: string;
+  childAge?: number;
+  allPosts: Array<{ topic_id?: string; custom_topic_id?: string; [key: string]: any }>;
+}) {
+  const [expanded, setExpanded] = useState(false);
+
+  const allowed = topics.filter((t) => t.is_allowed).length;
+  const total = topics.length;
+  const allAllowed = allowed === total;
+  const preview = topics.slice(0, 3).map((t) => t.name).join(', ');
+
+  if (
+    search &&
+    !category.toLowerCase().includes(search) &&
+    !topics.some((t) => t.name.toLowerCase().includes(search))
+  )
+    return null;
+
+  return (
+    <div className="border-b last:border-b-0" style={{ borderColor: '#F5F3EE' }}>
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="w-full flex items-center gap-3 py-3.5 px-1 text-left hover:bg-[#FAFAF7] transition"
+      >
+        <ChevronRight
+          size={14}
+          className={`transition-transform shrink-0 ${expanded ? 'rotate-90' : ''}`}
+          style={{ color: '#9B978E' }}
+        />
+        <div className="flex-1 min-w-0">
+          <span className="text-[15px]" style={{ fontWeight: 500, color: '#2A2926' }}>
+            {category}
+          </span>
+          {!expanded && (
+            <p className="text-[12px] truncate mt-0.5" style={{ color: '#9B978E' }}>
+              Includes: {preview}...
+            </p>
+          )}
+        </div>
+        <span
+          className="px-2.5 py-0.5 rounded-full text-[12px] shrink-0"
+          style={{
+            background: allAllowed ? '#E8F6F4' : '#FDF6E8',
+            color: allAllowed ? '#3ECDC6' : '#D4A843',
+            fontWeight: 600,
+          }}
+        >
+          {allowed}/{total} allowed
+        </span>
+      </button>
+      {expanded && (
+        <div className="pl-8 pr-2 pb-3 flex flex-col gap-2">
+          {topics.map((t) => {
+            const posts = allPosts.filter((p) => p.topic_id === t.id);
+            return (
+              <div key={t.id}>
+                <div className="flex items-start justify-between py-1.5 gap-3">
+                  <div className="flex-1 min-w-0">
+                    <span
+                      className="text-[14px]"
+                      style={{ color: t.is_allowed ? '#2A2926' : '#9B978E' }}
+                    >
+                      {t.name}
+                    </span>
+                    {t.description && (
+                      <p className="text-[12px] mt-0.5 leading-relaxed" style={{ color: '#9B978E' }}>
+                        {t.description}
+                      </p>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => onToggle(t.id, t.is_allowed || false)}
+                    disabled={isPending}
+                    className="w-10 h-5 rounded-full relative transition-colors"
+                    style={{ background: t.is_allowed ? '#3ECDC6' : '#D4D2CD' }}
+                  >
+                    <span
+                      className="absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all"
+                      style={{ left: t.is_allowed ? 21 : 2 }}
+                    />
+                  </button>
+                </div>
+                {t.is_allowed && (
+                  <div className="ml-2 mt-1 mb-2 border-l-2 pl-3" style={{ borderColor: '#E8E6E1' }}>
+                    <TopicPostsList
+                      childId={childId}
+                      childAge={childAge}
+                      topicId={t.id}
+                      topicName={t.name}
+                      topicDescription={t.description}
+                      posts={posts}
+                    />
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function TopicsPage() {
   const { user } = useAuth();
   const { data: children = [], isLoading: childrenLoading } = useChildProfiles(user?.id);
   const [selectedChildId, setSelectedChildId] = useState<string>('');
+  const [search, setSearch] = useState('');
 
-  // Set first child as default when loaded
   const activeChildId = selectedChildId || children[0]?.id;
+  const selectedChild = children.find((c) => c.id === activeChildId);
 
   const { data: topicSettings, isLoading: topicsLoading } = useChildTopicSettings(activeChildId);
   const { data: customTopics = [], isLoading: customTopicsLoading } = useCustomTopics(activeChildId);
   const { data: allPosts = [] } = useTopicPosts(activeChildId);
   const updateSetting = useUpdateTopicSetting();
+  const bulkUpdate = useBulkUpdateTopicSettings();
   const deleteCustomTopic = useDeleteCustomTopic();
 
-  // Dialog states
   const [customTopicDialogOpen, setCustomTopicDialogOpen] = useState(false);
   const [editingCustomTopic, setEditingCustomTopic] = useState<CustomTopic | null>(null);
   const [deletingCustomTopic, setDeletingCustomTopic] = useState<CustomTopic | null>(null);
@@ -91,404 +254,300 @@ export function TopicsPage() {
 
   if (children.length === 0) {
     return (
-      <Card>
-        <CardContent className="py-12">
-          <EmptyState
-            icon={Users}
-            title="No children to manage"
-            description="Add a child profile first to manage their content topics."
-          />
-        </CardContent>
-      </Card>
+      <div
+        className="dashboard-scope rounded-2xl p-10 text-center"
+        style={{ background: '#FFFFFF', border: '1px solid #E8E6E1' }}
+      >
+        <p className="text-[15px]" style={{ color: '#6B675E' }}>
+          Add a child profile first to manage their content topics.
+        </p>
+      </div>
     );
   }
 
   const handleToggleTopic = (topicId: string, currentAllowed: boolean) => {
     if (!activeChildId) return;
-    updateSetting.mutate({
-      childId: activeChildId,
-      topicId,
-      isAllowed: !currentAllowed,
-    });
+    updateSetting.mutate({ childId: activeChildId, topicId, isAllowed: !currentAllowed });
   };
 
-  const handleEditCustomTopic = (topic: CustomTopic) => {
-    setEditingCustomTopic(topic);
-    setCustomTopicDialogOpen(true);
+  const handleAllowAll = () => {
+    if (!activeChildId || !topicSettings) return;
+    const settings = topicSettings.topics
+      .filter((t) => !t.is_allowed)
+      .map((t) => ({ topic_id: t.id, is_allowed: true }));
+    if (settings.length > 0) bulkUpdate.mutate({ childId: activeChildId, settings });
+  };
+
+  const handleRestrictSensitive = () => {
+    if (!activeChildId || !topicSettings) return;
+    // Topics where is_default = false are system-flagged as sensitive.
+    // Set those to disallowed, leave everything else untouched.
+    const settings = topicSettings.topics
+      .filter((t) => t.is_default === false && t.is_allowed)
+      .map((t) => ({ topic_id: t.id, is_allowed: false }));
+    if (settings.length > 0) bulkUpdate.mutate({ childId: activeChildId, settings });
+  };
+
+  const handleResetToDefault = () => {
+    if (!activeChildId || !topicSettings) return;
+    const settings = topicSettings.topics.map((t) => ({
+      topic_id: t.id,
+      is_allowed: t.is_default ?? true,
+    }));
+    bulkUpdate.mutate({ childId: activeChildId, settings });
   };
 
   const handleDeleteCustomTopic = async () => {
     if (!deletingCustomTopic || !activeChildId) return;
     try {
-      await deleteCustomTopic.mutateAsync({
-        childId: activeChildId,
-        customTopicId: deletingCustomTopic.id,
-      });
+      await deleteCustomTopic.mutateAsync({ childId: activeChildId, customTopicId: deletingCustomTopic.id });
       setDeletingCustomTopic(null);
-    } catch {
-      // Error handled by mutation
-    }
+    } catch {}
   };
 
-  // Group system topics by category
+  // Group topics by category
   const topicsByCategory = topicSettings?.topics.reduce(
     (acc, topic) => {
-      const category = topic.category_name || 'Other';
-      if (!acc[category]) acc[category] = [];
-      acc[category].push(topic);
+      const cat = topic.category_name || 'Other';
+      if (!acc[cat]) acc[cat] = [];
+      acc[cat].push(topic);
       return acc;
     },
-    {} as Record<string, typeof topicSettings.topics>
+    {} as Record<string, TopicItem[]>
   ) || {};
 
-  // Meta-cluster definitions matching loveable's grouping
-  const CLUSTERS: { label: string; categories: string[] }[] = [
-    {
-      label: 'British National Curriculum',
-      categories: [
-        'British Curriculum: English',
-        'British Curriculum: Maths',
-        'British Curriculum: Science',
-        'British Curriculum: History',
-        'British Curriculum: Geography',
-        'British Curriculum: Computing',
-        'British Curriculum: Languages',
-        'British Curriculum: Design & Technology',
-        'British Curriculum: Citizenship & PSHE',
-      ],
-    },
-    {
-      label: 'International Baccalaureate (IB)',
-      categories: [
-        'IB: Who We Are',
-        'IB: Where We Are in Place and Time',
-        'IB: How We Express Ourselves',
-        'IB: How the World Works',
-        'IB: How We Organize Ourselves',
-        'IB: Sharing the Planet',
-        'IB: Thinking & Learning Skills',
-        'IB: Design Thinking & Innovation',
-      ],
-    },
-    {
-      label: 'Learning & Knowledge',
-      categories: [
-        'Science & Space',
-        'History & Culture',
-        'Math & Logic',
-        'Technology & Future',
-        'World & Geography',
-        'Everyday Learning',
-      ],
-    },
-    {
-      label: 'Creative & Imaginative',
-      categories: ['Arts & Creativity', 'Adventure & Fantasy', 'Careers & Dreams'],
-    },
-    {
-      label: 'Wellbeing & Relationships',
-      categories: [
-        'Emotions & Feelings',
-        'Family & Friends',
-        'Health & Body',
-        'Mindfulness & Wellbeing',
-        'Safety & Life Skills',
-      ],
-    },
-    {
-      label: 'Fun & Exploration',
-      categories: ['Animals & Nature', 'Food & Cooking'],
-    },
-  ];
-
-  // Build list of clusters that actually have topics loaded
+  // Build cluster groups that have topics loaded
+  const mappedCategories = new Set(CLUSTERS.flatMap((c) => c.categories));
   const clusterGroups = CLUSTERS.map((cluster) => ({
     ...cluster,
-    presentCategories: cluster.categories.filter((c) => topicsByCategory[c]?.length > 0),
+    presentCategories: cluster.categories.filter((c) => (topicsByCategory[c]?.length ?? 0) > 0),
   })).filter((c) => c.presentCategories.length > 0);
 
-  // Any categories not mapped to a cluster land in "Other"
-  const mappedCategories = new Set(CLUSTERS.flatMap((c) => c.categories));
   const unmappedCategories = Object.keys(topicsByCategory).filter((c) => !mappedCategories.has(c));
   if (unmappedCategories.length > 0) {
-    clusterGroups.push({
-      label: 'Other',
-      categories: unmappedCategories,
-      presentCategories: unmappedCategories,
-    });
+    clusterGroups.push({ label: 'Other', categories: unmappedCategories, presentCategories: unmappedCategories });
   }
 
-  // Get posts for a specific topic
-  const getPostsForTopic = (topicId: string) =>
-    allPosts.filter((p) => p.topic_id === topicId);
+  // Totals for summary bar
+  const allTopics = topicSettings?.topics || [];
+  const totalSubs = allTopics.length;
+  const totalAllowed = allTopics.filter((t) => t.is_allowed).length;
+  const totalRestricted = totalSubs - totalAllowed;
 
-  const getPostsForCustomTopic = (customTopicId: string) =>
-    allPosts.filter((p) => p.custom_topic_id === customTopicId);
+  const lc = search.toLowerCase();
 
-  const selectedChild = children.find((c) => c.id === activeChildId);
+  const getPostsForCustomTopic = (id: string) => allPosts.filter((p) => p.custom_topic_id === id);
 
   return (
-    <div className="space-y-6">
+    <div className="dashboard-scope">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-5">
         <div>
-          <h1 className="text-h3 font-bold">Content Topics</h1>
-          <p className="text-muted-foreground mt-1">
-            Control what topics Luno can discuss with your children.
+          <h1 className="text-[28px] mb-1" style={{ fontWeight: 600, color: '#2A2926' }}>
+            Content Topics
+          </h1>
+          <p className="text-[15px] max-w-xl" style={{ color: '#6B675E' }}>
+            Control what your child can explore across all spaces — Chat, Stories, Journeys, and Family.
           </p>
         </div>
+        <div className="relative shrink-0">
+          <select
+            value={activeChildId}
+            onChange={(e) => setSelectedChildId(e.target.value)}
+            className="appearance-none pl-4 pr-9 py-2.5 rounded-lg text-[14px] border cursor-pointer"
+            style={{ background: '#FFFFFF', borderColor: '#E8E6E1', color: '#2A2926', fontWeight: 500 }}
+          >
+            {children.map((c) => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
+          <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: '#9B978E' }} />
+        </div>
+      </div>
 
-        {children.length > 1 && (
-          <Select value={activeChildId} onValueChange={setSelectedChildId}>
-            <SelectTrigger className="w-[180px]">
-              <Filter className="h-4 w-4 mr-2" />
-              <SelectValue placeholder="Select child" />
-            </SelectTrigger>
-            <SelectContent>
-              {children.map((child) => (
-                <SelectItem key={child.id} value={child.id}>
-                  {child.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+      {/* Age Banner */}
+      <div className="mb-5 px-5 py-4 rounded-xl" style={{ background: '#E8F6F4', borderLeft: '3px solid #3ECDC6' }}>
+        <p className="text-[14px]" style={{ color: '#2A2926' }}>
+          Showing topics for <strong>{selectedChild?.name}</strong> (age {topicSettings?.child_age ?? selectedChild?.age}).
+          Topics are pre-filtered for age-appropriateness. You can further restrict any topic below.
+        </p>
+      </div>
+
+      {/* Search */}
+      <div className="relative mb-5">
+        <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2" style={{ color: '#9B978E' }} />
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search topics... e.g., 'animals', 'history', 'feelings'"
+          className="w-full pl-11 pr-4 py-3 rounded-xl text-[15px] border outline-none transition focus:border-[#3ECDC6]"
+          style={{ background: '#FFFFFF', borderColor: '#E8E6E1', color: '#2A2926' }}
+        />
+      </div>
+
+      {/* Custom Topics */}
+      <div className="rounded-2xl p-6 mb-6" style={{ background: '#FFFFFF', border: '1px solid #E8E6E1' }}>
+        <div className="flex items-start justify-between gap-3 mb-2">
+          <div className="flex items-center gap-2">
+            <Sparkles size={18} style={{ color: '#3ECDC6' }} />
+            <h2 className="text-[18px]" style={{ fontWeight: 600, color: '#2A2926' }}>Custom Topics</h2>
+          </div>
+          <button
+            onClick={() => { setEditingCustomTopic(null); setCustomTopicDialogOpen(true); }}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-[13px] transition hover:bg-[#E8F6F4]"
+            style={{ fontWeight: 600, color: '#3ECDC6', border: '1px solid #3ECDC6' }}
+          >
+            <Plus size={14} /> Add Topic
+          </button>
+        </div>
+        <p className="text-[14px] mb-1" style={{ color: '#6B675E' }}>
+          Add your own topics with custom content. Your child's guide will reference this information in conversations.
+        </p>
+        <p className="text-[12px] mb-4" style={{ color: '#9B978E' }}>
+          Custom content is provided by you and is not verified by Yoluno.
+        </p>
+        {customTopicsLoading ? (
+          <div className="flex justify-center py-4"><LoadingSpinner /></div>
+        ) : customTopics.length === 0 ? (
+          <p className="text-[14px] py-4 text-center" style={{ color: '#9B978E' }}>
+            No custom topics yet. Create one to add personalised content for Luno.
+          </p>
+        ) : (
+          customTopics.map((ct) => {
+            const posts = getPostsForCustomTopic(ct.id);
+            return (
+              <div key={ct.id} className="flex items-center justify-between py-2.5 border-t" style={{ borderColor: '#F5F3EE' }}>
+                <div className="flex items-center gap-2">
+                  {ct.icon && <span className="text-[14px]">{ct.icon}</span>}
+                  <span className="text-[14px]" style={{ color: '#2A2926' }}>{ct.name}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="px-2.5 py-0.5 rounded-full text-[12px]" style={{ background: '#F5F3EE', color: '#9B978E' }}>
+                    {posts.length} {posts.length === 1 ? 'post' : 'posts'}
+                  </span>
+                  <button
+                    onClick={() => { setEditingCustomTopic(ct); setCustomTopicDialogOpen(true); }}
+                    className="p-1 rounded hover:bg-[#F5F3EE] transition"
+                  >
+                    <Pencil size={12} style={{ color: '#9B978E' }} />
+                  </button>
+                  <button
+                    onClick={() => setDeletingCustomTopic(ct)}
+                    className="p-1 rounded hover:bg-[#FDF6E8] transition"
+                  >
+                    <Trash2 size={12} style={{ color: '#D4A843' }} />
+                  </button>
+                </div>
+              </div>
+            );
+          })
         )}
       </div>
 
-      {/* Info Card */}
-      <Card className="bg-primary/5 border-primary">
-        <CardContent className="flex items-start gap-3 py-4">
-          <Info className="h-5 w-5 text-primary mt-0.5" />
-          <div>
-            <p className="text-body-sm text-primary">
-              Topics shown are age-appropriate for {selectedChild?.name} (age {topicSettings?.child_age}).
-              Add content to topics to give Luno special knowledge for personalized conversations.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Quick Actions */}
+      <div className="flex flex-wrap gap-2 mb-2">
+        <button
+          onClick={handleAllowAll}
+          disabled={bulkUpdate.isPending}
+          className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-[13px] transition hover:bg-[#E8F6F4]"
+          style={{ border: '1px solid #E8E6E1', color: '#6B675E', fontWeight: 500 }}
+        >
+          <CheckCircle2 size={13} style={{ color: '#3ECDC6' }} /> Allow All
+        </button>
+        <button
+          onClick={handleRestrictSensitive}
+          disabled={bulkUpdate.isPending}
+          className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-[13px] transition hover:bg-[#FDF6E8]"
+          style={{ border: '1px solid #E8E6E1', color: '#6B675E', fontWeight: 500 }}
+        >
+          <ShieldCheck size={13} style={{ color: '#D4A843' }} /> Restrict Sensitive Topics
+        </button>
+        <button
+          onClick={handleResetToDefault}
+          disabled={bulkUpdate.isPending}
+          className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-[13px] transition hover:bg-[#F5F3EE]"
+          style={{ border: '1px solid #E8E6E1', color: '#6B675E', fontWeight: 500 }}
+        >
+          <RotateCcw size={13} style={{ color: '#9B978E' }} /> Reset to Default
+        </button>
+      </div>
+      <p className="text-[12px] mb-6" style={{ color: '#9B978E' }}>
+        Default settings are based on your child's age. You can adjust anything at any time.
+      </p>
 
-      {/* Custom Topics Section */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <Sparkles className="h-5 w-5 text-primary" />
-                Custom Topics
-              </CardTitle>
-              <CardDescription>
-                Create your own topics and add custom content for Luno
-              </CardDescription>
-            </div>
-            <Button
-              onClick={() => {
-                setEditingCustomTopic(null);
-                setCustomTopicDialogOpen(true);
-              }}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Add Topic
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {customTopicsLoading ? (
-            <div className="flex justify-center py-8">
-              <LoadingSpinner />
-            </div>
-          ) : customTopics.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <Sparkles className="h-12 w-12 mx-auto mb-3 opacity-30" />
-              <p>No custom topics yet.</p>
-              <p className="text-body-sm">Create a topic to add personalized content for Luno.</p>
-            </div>
-          ) : (
-            <Accordion type="multiple" className="w-full">
-              {customTopics.map((customTopic) => {
-                const posts = getPostsForCustomTopic(customTopic.id);
-                return (
-                  <AccordionItem key={customTopic.id} value={customTopic.id}>
-                    <AccordionTrigger className="hover:no-underline">
-                      <div className="flex items-center gap-3 flex-1">
-                        {customTopic.icon && (
-                          <span className="text-body-lg">{customTopic.icon}</span>
-                        )}
-                        <span className="font-medium">{customTopic.name}</span>
-                        <Badge variant="secondary" className="!text-caption !px-2.5 !py-0.5">
-                          {posts.length} {posts.length === 1 ? 'post' : 'posts'}
-                        </Badge>
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent>
-                      <div className="space-y-4">
-                        {/* Edit/Delete buttons */}
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleEditCustomTopic(customTopic)}
-                          >
-                            <Pencil className="h-3.5 w-3.5 mr-1.5" />
-                            Edit Topic
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="text-destructive hover:text-destructive"
-                            onClick={() => setDeletingCustomTopic(customTopic)}
-                          >
-                            <Trash2 className="h-3.5 w-3.5 mr-1.5" />
-                            Delete Topic
-                          </Button>
-                        </div>
-
-                        {customTopic.description && (
-                          <p className="text-body-sm text-muted-foreground">
-                            {customTopic.description}
-                          </p>
-                        )}
-
-                        {/* Posts list */}
-                        <TopicPostsList
-                          childId={activeChildId}
-                          childAge={selectedChild?.age}
-                          customTopicId={customTopic.id}
-                          topicName={customTopic.name}
-                          topicDescription={customTopic.description}
-                          posts={posts}
-                        />
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                );
-              })}
-            </Accordion>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* System Topics List */}
+      {/* System Topics */}
       {topicsLoading ? (
-        <div className="flex justify-center py-12">
-          <LoadingSpinner />
-        </div>
-      ) : Object.keys(topicsByCategory).length === 0 ? (
-        <Card>
-          <CardContent className="py-12">
-            <EmptyState
-              icon={Tag}
-              title="No topics available"
-              description="Topic categories will appear here once configured."
-            />
-          </CardContent>
-        </Card>
+        <div className="flex justify-center py-12"><LoadingSpinner /></div>
       ) : (
-        <div className="space-y-6">
-          {clusterGroups.map((cluster) => {
-            const clusterTopicCount = cluster.presentCategories.reduce(
-              (sum, cat) => sum + (topicsByCategory[cat]?.length ?? 0),
-              0
-            );
-            const clusterAllowedCount = cluster.presentCategories.reduce(
-              (sum, cat) => sum + (topicsByCategory[cat]?.filter((t) => t.is_allowed).length ?? 0),
-              0
-            );
-
+        clusterGroups.map((cluster) => {
+          if (cluster.isCurriculum) {
             return (
-              <div key={cluster.label}>
-                <div className="flex items-center justify-between mb-3 px-1">
-                  <h3 className="text-[13px] uppercase tracking-[1.5px] font-semibold text-muted-foreground">
-                    {cluster.label}
-                  </h3>
-                  <span className="text-caption text-muted-foreground">
-                    {clusterAllowedCount}/{clusterTopicCount} allowed
-                  </span>
+              <div key={cluster.label} className="rounded-2xl overflow-hidden mb-6" style={{ background: '#F5F3EE', border: '1px solid #E8E6E1' }}>
+                <div className="px-6 pt-5 pb-2 flex items-center gap-2">
+                  <BookOpen size={16} style={{ color: '#3ECDC6' }} />
+                  <h3 className="text-[16px]" style={{ fontWeight: 600, color: '#2A2926' }}>{cluster.label}</h3>
                 </div>
-                <Card>
-                  <CardContent className="p-4">
-                    <Accordion type="multiple" className="w-full">
-                      {cluster.presentCategories.map((category) => {
-                        const topics = topicsByCategory[category] || [];
-                        const allowedCount = topics.filter((t) => t.is_allowed).length;
-                        return (
-                          <AccordionItem key={category} value={category}>
-                            <AccordionTrigger className="hover:no-underline">
-                              <div className="flex items-center gap-3">
-                                <span className="font-medium">{category}</span>
-                                <Badge
-                                  className={`!text-caption !px-2.5 !py-0.5 ${
-                                    allowedCount === topics.length
-                                      ? 'bg-primary/10 text-primary border-primary/20'
-                                      : 'bg-gold/10 text-gold border-gold/20'
-                                  }`}
-                                  variant="outline"
-                                >
-                                  {allowedCount}/{topics.length} allowed
-                                </Badge>
-                              </div>
-                            </AccordionTrigger>
-                            <AccordionContent>
-                              <div className="space-y-4 pt-2">
-                                {topics.map((topic) => {
-                                  const posts = getPostsForTopic(topic.id);
-                                  return (
-                                    <div key={topic.id}>
-                                      <div className="flex items-center justify-between rounded-lg border p-3">
-                                        <div className="space-y-0.5">
-                                          <Label
-                                            htmlFor={topic.id}
-                                            className="text-body-sm font-medium cursor-pointer"
-                                          >
-                                            {topic.name}
-                                          </Label>
-                                          {posts.length > 0 && (
-                                            <Badge variant="outline" className="text-caption mt-1">
-                                              {posts.length} custom {posts.length === 1 ? 'post' : 'posts'}
-                                            </Badge>
-                                          )}
-                                        </div>
-                                        <Switch
-                                          id={topic.id}
-                                          checked={topic.is_allowed}
-                                          onCheckedChange={() =>
-                                            handleToggleTopic(topic.id, topic.is_allowed || false)
-                                          }
-                                          disabled={updateSetting.isPending}
-                                        />
-                                      </div>
-
-                                      {/* Posts for this system topic */}
-                                      {topic.is_allowed && (
-                                        <div className="ml-4 mt-2 border-l-2 pl-4">
-                                          <TopicPostsList
-                                            childId={activeChildId}
-                                            childAge={selectedChild?.age}
-                                            topicId={topic.id}
-                                            topicName={topic.name}
-                                            topicDescription={topic.description}
-                                            posts={posts}
-                                          />
-                                        </div>
-                                      )}
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            </AccordionContent>
-                          </AccordionItem>
-                        );
-                      })}
-                    </Accordion>
-                  </CardContent>
-                </Card>
+                <div className="bg-white mx-3 mb-3 rounded-xl px-4">
+                  {cluster.presentCategories.map((cat) => (
+                    <CategoryRow
+                      key={cat}
+                      category={cat}
+                      topics={topicsByCategory[cat] || []}
+                      search={lc}
+                      onToggle={handleToggleTopic}
+                      isPending={updateSetting.isPending}
+                      childId={activeChildId}
+                      childAge={selectedChild?.age}
+                      allPosts={allPosts}
+                    />
+                  ))}
+                </div>
               </div>
             );
-          })}
+          }
+
+          return (
+            <div key={cluster.label} className="mb-6">
+              <h4
+                className="text-[13px] uppercase tracking-wider mb-2 px-1"
+                style={{ fontWeight: 600, color: '#9B978E', letterSpacing: '1.5px' }}
+              >
+                {cluster.label}
+              </h4>
+              <div className="rounded-2xl px-4" style={{ background: '#FFFFFF', border: '1px solid #E8E6E1' }}>
+                {cluster.presentCategories.map((cat) => (
+                  <CategoryRow
+                    key={cat}
+                    category={cat}
+                    topics={topicsByCategory[cat] || []}
+                    search={lc}
+                    onToggle={handleToggleTopic}
+                    isPending={updateSetting.isPending}
+                    childId={activeChildId}
+                    childAge={selectedChild?.age}
+                    allPosts={allPosts}
+                  />
+                ))}
+              </div>
+            </div>
+          );
+        })
+      )}
+
+      {/* Summary Bar */}
+      {totalSubs > 0 && (
+        <div
+          className="rounded-xl px-5 py-4 mt-4 sticky bottom-4"
+          style={{ background: '#FFFFFF', border: '1px solid #E8E6E1', boxShadow: '0 -4px 16px rgba(42,41,38,0.06)' }}
+        >
+          <p className="text-[14px]" style={{ color: '#6B675E' }}>
+            <strong>{selectedChild?.name}</strong> (Age {selectedChild?.age}): {totalAllowed}/{totalSubs} sub-topics allowed · {totalRestricted} restricted · {customTopics.length} custom {customTopics.length === 1 ? 'topic' : 'topics'}
+          </p>
         </div>
       )}
 
-      {/* Custom Topic Dialog */}
+      {/* Dialogs */}
       <CustomTopicDialog
         open={customTopicDialogOpen}
         onOpenChange={setCustomTopicDialogOpen}
@@ -496,11 +555,7 @@ export function TopicsPage() {
         topic={editingCustomTopic}
       />
 
-      {/* Delete Custom Topic Confirmation */}
-      <AlertDialog
-        open={!!deletingCustomTopic}
-        onOpenChange={(open) => !open && setDeletingCustomTopic(null)}
-      >
+      <AlertDialog open={!!deletingCustomTopic} onOpenChange={(open) => !open && setDeletingCustomTopic(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Custom Topic</AlertDialogTitle>

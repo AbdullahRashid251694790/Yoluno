@@ -281,7 +281,7 @@ export function KidsFamilyPage() {
       audioRef.current = null;
     });
     // Record play
-    apiClient.post(`/voice-vault/${clip.id}/play`).catch(() => {});
+    apiClient.post(`/voice-vault/${clip.id}/play`, { childId }).catch(() => {});
   };
 
   // Group voice clips by family member

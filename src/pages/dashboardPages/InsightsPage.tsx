@@ -56,13 +56,13 @@ const MOOD_LABEL: Record<MoodType, string> = {
   notsure: 'Not sure',
 };
 
-const MOMENT_COLORS: Record<SharedMomentType | 'curiosity' | 'family' | 'mood', { border: string; bg: string }> = {
+const MOMENT_COLORS: Record<string, { border: string; bg: string }> = {
   journey_complete: { border: '#E8946A', bg: '#FEF0EA' },
   story_created: { border: '#B8A5D4', bg: '#F3EFF8' },
   story_read: { border: '#B8A5D4', bg: '#F3EFF8' },
   curiosity: { border: '#3ECDC6', bg: '#E8F6F4' },
-  family: { border: '#D4A843', bg: '#FDF6E8' },
-  mood: { border: '#9B978E', bg: '#F5F3EE' },
+  family_listen: { border: '#D4A843', bg: '#FDF6E8' },
+  mood_checkin: { border: '#9B978E', bg: '#F5F3EE' },
 };
 
 const JOURNEY_PALETTE = ['#B8A5D4', '#E8946A', '#3ECDC6', '#D4A843'];
@@ -147,25 +147,27 @@ export function InsightsPage() {
   // Mood tab: 14 days, oldest → newest, with empty placeholders for missing days
   const moodGrid = useMemo(() => {
     const items: { day: string; emoji: string | null; isToday: boolean }[] = [];
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    // Map existing entries by YYYY-MM-DD
+
+    // Use local YYYY-MM-DD strings for keys to avoid UTC/local timezone shift.
+    const localKey = (d: Date) =>
+      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+    // Map backend entries by their date string (already YYYY-MM-DD from server)
     const moodByDate: Record<string, MoodType> = {};
     moodHistory.forEach((entry) => {
-      const d = new Date(entry.date);
-      d.setHours(0, 0, 0, 0);
-      const key = d.toISOString().slice(0, 10);
-      if (!moodByDate[key]) moodByDate[key] = entry.mood;
+      // entry.date is "YYYY-MM-DD" from the server — use as-is
+      if (!moodByDate[entry.date]) moodByDate[entry.date] = entry.mood;
     });
 
+    const today = new Date();
     for (let i = 13; i >= 0; i--) {
       const d = new Date(today);
       d.setDate(d.getDate() - i);
-      const key = d.toISOString().slice(0, 10);
+      const key = localKey(d);
       const mood = moodByDate[key];
       items.push({
         day: d.toLocaleDateString('en-US', { weekday: 'short' }),
-        emoji: mood ? MOOD_EMOJI[mood] : null,
+        emoji: mood ? (MOOD_EMOJI[mood] ?? null) : null,
         isToday: i === 0,
       });
     }
@@ -195,15 +197,9 @@ export function InsightsPage() {
     };
   }, [moodHistory]);
 
-  // Activity tab: max minutes for bar chart
+  // Activity tab: use real session_duration_minutes for the bar chart
   const maxMinutes = useMemo(
-    () =>
-      Math.max(
-        1,
-        ...activityTimeline.map(
-          (d) => d.message_count + d.story_count * 2 + d.journey_steps_completed * 2
-        )
-      ),
+    () => Math.max(1, ...activityTimeline.map((d) => d.session_duration_minutes)),
     [activityTimeline]
   );
 
@@ -557,21 +553,20 @@ export function InsightsPage() {
             </p>
           ) : (
             <>
-              {/* Mini bar chart */}
+              {/* Mini bar chart — bar height = session minutes */}
               <div className="flex items-end gap-3 mb-6 h-[50px]">
                 {activityTimeline
                   .slice()
                   .reverse()
                   .map((d, i) => {
-                    const score =
-                      d.message_count + d.story_count * 2 + d.journey_steps_completed * 2;
+                    const mins = d.session_duration_minutes;
                     return (
                       <div key={i} className="flex-1 flex flex-col items-center gap-1">
                         <div
                           className="w-full rounded-t"
                           style={{
-                            height: score > 0 ? `${(score / maxMinutes) * 40}px` : 2,
-                            background: score > 0 ? '#3ECDC6' : '#E8E6E1',
+                            height: mins > 0 ? `${(mins / maxMinutes) * 40}px` : 2,
+                            background: mins > 0 ? '#3ECDC6' : '#E8E6E1',
                             minHeight: 2,
                           }}
                         />
@@ -601,7 +596,7 @@ export function InsightsPage() {
                         >
                           {formatLongDay(d.date)}
                         </span>
-                        {!hasActivity ? (
+                        {!hasActivity && d.session_duration_minutes === 0 ? (
                           <span className="text-[14px] italic" style={{ color: '#9B978E' }}>
                             No session
                           </span>
@@ -611,6 +606,27 @@ export function InsightsPage() {
                               {d.message_count} questions · {d.story_count} stories ·{' '}
                               {d.journey_steps_completed} journey steps
                             </span>
+                            {d.topics && d.topics.length > 0 && (
+                              <div className="flex flex-wrap gap-1">
+                                {d.topics.map((t) => (
+                                  <span
+                                    key={t}
+                                    className="px-2.5 py-0.5 rounded-full text-[11px]"
+                                    style={{ background: '#F5F3EE', color: '#9B978E' }}
+                                  >
+                                    {t}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                            {d.session_duration_minutes > 0 && (
+                              <span
+                                className="text-[12px] sm:ml-auto shrink-0"
+                                style={{ color: '#9B978E' }}
+                              >
+                                {d.session_duration_minutes} min
+                              </span>
+                            )}
                           </div>
                         )}
                       </div>
@@ -790,16 +806,18 @@ export function InsightsPage() {
                           {formatShortDate(m.shared_at)}
                         </span>
                       </div>
-                      <span
-                        className="px-2.5 py-0.5 rounded-full text-[11px] whitespace-nowrap"
-                        style={{
-                          background: '#FDF6E8',
-                          color: '#D4A843',
-                          fontWeight: 600,
-                        }}
-                      >
-                        Shared with you
-                      </span>
+                      {!m.is_auto && (
+                        <span
+                          className="px-2.5 py-0.5 rounded-full text-[11px] whitespace-nowrap"
+                          style={{
+                            background: '#FDF6E8',
+                            color: '#D4A843',
+                            fontWeight: 600,
+                          }}
+                        >
+                          Shared with you
+                        </span>
+                      )}
                     </div>
                     {m.context && (
                       <p className="text-[14px] mb-2" style={{ color: '#6B675E' }}>

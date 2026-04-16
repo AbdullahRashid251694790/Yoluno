@@ -16,6 +16,7 @@ export interface ActivityTimelineEntry {
   story_count: number;
   journey_steps_completed: number;
   session_duration_minutes: number;
+  topics: string[];
 }
 
 export interface WeeklySummary {

@@ -26,6 +26,13 @@ function BoundariesRow({ child, bg }: BoundariesRowProps) {
   const { data: topicSettings } = useChildTopicSettings(child.id);
   const { data: buddy } = useChatBuddy(child.id);
 
+  const limitMin = child.session_time_limit_minutes;
+  const timeLabel = limitMin
+    ? limitMin >= 60
+      ? `${Math.floor(limitMin / 60)}h ${limitMin % 60 > 0 ? `${limitMin % 60}m` : ''}/day`.trim()
+      : `${limitMin} min/day`
+    : 'No time limit set';
+
   // Defensive second filter on the frontend: only count topics whose age
   // range actually includes this child's age.
   const allReturnedTopics = topicSettings?.topics ?? [];
@@ -82,7 +89,7 @@ function BoundariesRow({ child, bg }: BoundariesRowProps) {
         <span className="hidden md:inline" style={{ color: '#E8E6E1' }}>
           ·
         </span>
-        <span>Time: No time limit set</span>
+        <span>Time: {timeLabel}</span>
       </div>
 
       <Link

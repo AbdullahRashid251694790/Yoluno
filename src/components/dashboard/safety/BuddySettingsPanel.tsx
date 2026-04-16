@@ -6,6 +6,7 @@
 
 import { useState, useEffect } from 'react';
 import { useChatBuddy, useUpdateBuddyName, useUpdateBuddyPersonality } from '@/hooks/queries/useBuddyChat';
+import { useChildProfile, useUpdateChildProfile } from '@/hooks/queries/useChildProfiles';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,9 +16,116 @@ import { Switch } from '@/components/ui/switch';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { LoadingSpinner } from '@/components/shared/feedback/LoadingState';
-import { Loader2, Save, Sparkles } from 'lucide-react';
+import { Loader2, Save, Sparkles, Clock } from 'lucide-react';
 import type { ChatBuddy } from '@/services/buddyChat';
 import lunoImage from '@/assets/landing/luno.png';
+import { toast } from 'sonner';
+
+function SessionTimeLimitControl({ childId, childName }: { childId: string; childName: string }) {
+  const { data: child } = useChildProfile(childId);
+  const updateChild = useUpdateChildProfile();
+
+  const totalMin = child?.session_time_limit_minutes ?? 0;
+  const [hours, setHours] = useState(Math.floor(totalMin / 60));
+  const [minutes, setMinutes] = useState(totalMin % 60);
+  const [enabled, setEnabled] = useState(totalMin > 0);
+
+  // Sync local state when DB value loads / changes
+  useEffect(() => {
+    const val = child?.session_time_limit_minutes ?? 0;
+    setHours(Math.floor(val / 60));
+    setMinutes(val % 60);
+    setEnabled(val > 0);
+  }, [child?.session_time_limit_minutes]);
+
+  const handleSave = async () => {
+    const total = enabled ? hours * 60 + minutes : null;
+    if (enabled && (total === 0 || total === null)) {
+      toast.error('Please enter at least 1 minute');
+      return;
+    }
+    try {
+      await updateChild.mutateAsync({
+        id: childId,
+        updates: { session_time_limit_minutes: total },
+      });
+      toast.success(
+        total ? `Daily limit set to ${hours > 0 ? `${hours}h ` : ''}${minutes > 0 ? `${minutes}m` : ''}`.trim() : 'Daily limit removed'
+      );
+    } catch {
+      toast.error('Failed to update session limit');
+    }
+  };
+
+  return (
+    <div className="rounded-lg border p-4 space-y-3">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Clock className="h-4 w-4 text-muted-foreground" />
+          <Label className="text-body-sm font-semibold">Daily Screen Time Limit</Label>
+        </div>
+        <Switch
+          checked={enabled}
+          onCheckedChange={async (on) => {
+            setEnabled(on);
+            if (!on) {
+              // Save null immediately when toggling off so refresh persists
+              try {
+                await updateChild.mutateAsync({
+                  id: childId,
+                  updates: { session_time_limit_minutes: null },
+                });
+                toast.success('Daily limit removed');
+              } catch {
+                toast.error('Failed to update');
+                setEnabled(true); // revert on failure
+              }
+            }
+          }}
+        />
+      </div>
+      <p className="text-caption text-muted-foreground">
+        {enabled
+          ? `${childName} will see a "Time's up" screen after using the app for this long each day.`
+          : `No limit — ${childName} can use the app as long as they want.`}
+      </p>
+      {enabled && (
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5">
+            <Input
+              type="number"
+              min={0}
+              max={23}
+              value={hours}
+              onChange={(e) => setHours(Math.max(0, Math.min(23, parseInt(e.target.value) || 0)))}
+              className="w-16 text-center"
+            />
+            <span className="text-body-sm text-muted-foreground">hrs</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <Input
+              type="number"
+              min={0}
+              max={59}
+              value={minutes}
+              onChange={(e) => setMinutes(Math.max(0, Math.min(59, parseInt(e.target.value) || 0)))}
+              className="w-16 text-center"
+            />
+            <span className="text-body-sm text-muted-foreground">min</span>
+          </div>
+          <Button
+            size="sm"
+            onClick={handleSave}
+            disabled={updateChild.isPending}
+            className="ml-2"
+          >
+            {updateChild.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Save'}
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
 
 interface BuddySettingsPanelProps {
   childId: string;
@@ -242,6 +350,9 @@ export function BuddySettingsPanel({ childId, childName }: BuddySettingsPanelPro
             </div>
           ))}
         </div>
+
+        {/* Session Time Limit */}
+        <SessionTimeLimitControl childId={childId} childName={childName} />
 
         {/* Actions */}
         {hasChanges && (

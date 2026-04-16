@@ -10,7 +10,7 @@ import { apiClient } from '@/integrations/api/client';
 
 const CONTEXT = 'sharedMoments';
 
-export type SharedMomentType = 'journey_complete' | 'story_created' | 'story_read';
+export type SharedMomentType = 'journey_complete' | 'story_created' | 'story_read' | 'curiosity' | 'family_listen' | 'mood_checkin';
 
 export interface SharedMoment {
   id: string;
@@ -22,6 +22,7 @@ export interface SharedMoment {
   reflection: string | null;
   reference_id: string | null;
   is_seen: boolean;
+  is_auto: boolean;
   shared_at: string;
   child_name: string;
 }

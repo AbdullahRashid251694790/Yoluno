@@ -554,6 +554,43 @@ router.post('/:childId/sessions/:sessionId/send', upload.single('image'), async 
       });
     }
 
+    // Auto-create "curiosity" Growth Journal moment when the child sends
+    // their 5th message in this session (deep conversation trigger).
+    const newMessageCount = session.message_count + 2; // +2 for child+buddy
+    if (newMessageCount >= 10 && session.message_count < 10) {
+      // Re-fetch the session to get the latest AI-generated title which
+      // describes what the conversation is about (far more reliable than
+      // ILIKE matching child messages against topic names).
+      const freshSession = await queryOne<{ title: string }>(
+        'SELECT title FROM chat_sessions WHERE id = $1',
+        [sessionId]
+      );
+      const sessionTitle = freshSession?.title || 'something interesting';
+      const questionCount = Math.floor(newMessageCount / 2);
+
+      // One curiosity moment per session max
+      const existing = await queryOne<{ id: string }>(
+        `SELECT id FROM shared_moments
+         WHERE child_profile_id = $1 AND moment_type = 'curiosity'
+           AND reference_id = $2::uuid`,
+        [childId, sessionId]
+      );
+      if (!existing) {
+        query(
+          `INSERT INTO shared_moments
+             (child_profile_id, user_id, moment_type, title, context, reference_id, is_seen, is_auto)
+           VALUES ($1, $2, 'curiosity', $3, $4, $5, true, true)`,
+          [
+            childId,
+            req.user!.id,
+            'Asked a Big Question',
+            `Asked Luno about ${sessionTitle} — ${questionCount} questions deep!`,
+            sessionId,
+          ]
+        ).catch(() => {});
+      }
+    }
+
     // Handle task completion events
     if (taskCompletion?.completed) {
       emitToUser(io, req.user!.id, 'task-completed', {

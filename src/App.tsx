@@ -35,6 +35,7 @@ import { NotFoundPage } from '@/pages/NotFound';
 // Landing pages (lazy-loaded)
 import LandingLayout from '@/components/landing/LandingLayout';
 import ScrollToTop from '@/components/landing/ScrollToTop';
+import { KidsScreenTimeTracker } from '@/components/KidsScreenTimeTracker';
 const RecordForFamilyPage = lazy(() => import('@/pages/RecordForFamilyPage'));
 const LandingHomePage = lazy(() => import('@/pages/landing/HomePage'));
 const LandingFeaturesPage = lazy(() => import('@/pages/landing/FeaturesPage'));
@@ -101,6 +102,7 @@ export default function App() {
           <ChatProvider>
             <BrowserRouter>
               <ScrollToTop />
+              <KidsScreenTimeTracker />
               <Routes>
                 {/* Landing site pages */}
                 <Route

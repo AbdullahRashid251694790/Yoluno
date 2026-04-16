@@ -485,16 +485,53 @@ router.post(
       const userId = req.user!.id;
 
       // Verify ownership
-      const existing = await queryOne<{ id: string }>(
-        'SELECT id FROM voice_clips WHERE id = $1 AND user_id = $2',
+      const clip = await queryOne<{
+        id: string;
+        title: string;
+        family_member_id: string | null;
+      }>(
+        'SELECT id, title, family_member_id FROM voice_clips WHERE id = $1 AND user_id = $2',
         [id, userId]
       );
-      if (!existing) {
+      if (!clip) {
         throw new AppError(404, 'Voice clip not found');
       }
 
       // Increment play count using database function
       await query('SELECT increment_voice_clip_play_count($1)', [id]);
+
+      // Auto-create a family_listen moment if a childId was provided
+      // (means a child is playing the clip from kids mode, not the parent)
+      const { childId } = req.body;
+      if (childId && typeof childId === 'string') {
+        // Look up family member name for richer context
+        let memberName = 'a family member';
+        if (clip.family_member_id) {
+          const member = await queryOne<{ name: string }>(
+            'SELECT name FROM family_members WHERE id = $1',
+            [clip.family_member_id]
+          );
+          if (member) memberName = member.name;
+        }
+
+        // Only one family_listen moment per clip per child per day
+        const existing = await queryOne<{ id: string }>(
+          `SELECT id FROM shared_moments
+           WHERE child_profile_id = $1
+             AND moment_type = 'family_listen'
+             AND reference_id = $2
+             AND shared_at::date = CURRENT_DATE`,
+          [childId, id]
+        );
+        if (!existing) {
+          query(
+            `INSERT INTO shared_moments
+               (child_profile_id, user_id, moment_type, title, context, reference_id, is_seen, is_auto)
+             VALUES ($1, $2, 'family_listen', $3, $4, $5, true, true)`,
+            [childId, userId, `Listened to ${memberName}`, `Listened to "${clip.title}"`, id]
+          ).catch(() => {});
+        }
+      }
 
       res.json({ message: 'Play count incremented' });
     } catch (error) {

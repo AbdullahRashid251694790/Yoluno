@@ -111,6 +111,24 @@ router.post(
         console.error('Failed to log mood_checkin activity:', err);
       });
 
+      // Auto-create a Growth Journal moment (non-blocking)
+      const moodLabels: Record<string, string> = {
+        happy: 'happy', sad: 'sad', angry: 'angry', scared: 'scared',
+        calm: 'calm', worried: 'worried', tired: 'tired', excited: 'excited',
+        notsure: 'unsure',
+      };
+      query(
+        `INSERT INTO shared_moments
+           (child_profile_id, user_id, moment_type, title, context, is_seen, is_auto)
+         VALUES ($1, $2, 'mood_checkin', $3, $4, true, true)`,
+        [
+          childId,
+          userId,
+          'Checked In',
+          `Told Luno they were feeling ${moodLabels[mood] || mood}`,
+        ]
+      ).catch(() => {});
+
       res.status(201).json(result);
     } catch (error) {
       next(error);

@@ -194,7 +194,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
 // PUT /api/child-profiles/:id
 router.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { name, age, gender, avatar_id, custom_avatar_url, interests, learning_style, pin_hash } = req.body;
+    const { name, age, gender, avatar_id, custom_avatar_url, interests, learning_style, pin_hash, session_time_limit_minutes } = req.body;
 
     // Verify ownership
     const existing = await queryOne<ChildProfile>(
@@ -216,10 +216,11 @@ router.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
            interests = COALESCE($6, interests),
            learning_style = COALESCE($7, learning_style),
            pin_hash = COALESCE($8, pin_hash),
+           session_time_limit_minutes = $9,
            updated_at = NOW()
-       WHERE id = $9
+       WHERE id = $10
        RETURNING *`,
-      [name, age, gender, avatar_id, custom_avatar_url, interests, learning_style, pin_hash, req.params.id]
+      [name, age, gender, avatar_id, custom_avatar_url, interests, learning_style, pin_hash, session_time_limit_minutes ?? null, req.params.id]
     );
 
     res.json(result);

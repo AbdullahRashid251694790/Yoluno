@@ -34,6 +34,7 @@ interface SharedMomentRow {
   reflection: string | null;
   reference_id: string | null;
   is_seen: boolean;
+  is_auto: boolean;
   shared_at: string;
   child_name: string;
 }
@@ -60,11 +61,12 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
     const rows = await query<SharedMomentRow>(
       `SELECT sm.id, sm.child_profile_id, sm.user_id, sm.moment_type,
               sm.title, sm.context, sm.reflection, sm.reference_id,
-              sm.is_seen, sm.shared_at::text, cp.name AS child_name
+              sm.is_seen, sm.is_auto, sm.shared_at::text, cp.name AS child_name
        FROM shared_moments sm
        INNER JOIN child_profiles cp ON cp.id = sm.child_profile_id
        WHERE sm.user_id = $1
          ${includeSeenFlag ? '' : 'AND sm.is_seen = false'}
+         ${childFilter ? '' : 'AND sm.is_auto = false'}
          ${childClause}
        ORDER BY sm.shared_at DESC
        LIMIT 50`,

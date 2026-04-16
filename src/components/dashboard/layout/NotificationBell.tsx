@@ -161,7 +161,7 @@ export function NotificationBell() {
                           })}
                         </p>
                       </div>
-                      <p className="text-body-sm text-muted-foreground mt-1 line-clamp-2">
+                      <p className="text-body-sm text-muted-foreground mt-1">
                         {notification.message}
                       </p>
                       <div className="flex items-center gap-2 mt-2">
