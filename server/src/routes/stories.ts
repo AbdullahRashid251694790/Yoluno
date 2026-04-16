@@ -66,8 +66,8 @@ router.get('/recent', async (req: Request, res: Response, next: NextFunction) =>
   try {
     const { limit = '10' } = req.query;
 
-    const result = await query<Story>(
-      `SELECT s.* FROM stories s
+    const result = await query<Story & { child_name: string }>(
+      `SELECT s.*, cp.name as child_name FROM stories s
        JOIN child_profiles cp ON s.child_profile_id = cp.id
        WHERE cp.user_id = $1
        ORDER BY s.created_at DESC
@@ -100,6 +100,34 @@ router.get('/favorites', async (req: Request, res: Response, next: NextFunction)
     );
 
     res.json(await resolveStoryUrls(result.rows));
+  } catch (error) {
+    next(error);
+  }
+});
+
+// GET /api/stories/reading-progress
+// Must be BEFORE /:id so Express doesn't treat "reading-progress" as a UUID.
+router.get('/reading-progress', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = req.user!.id;
+
+    const result = await query<{
+      story_id: string;
+      child_profile_id: string;
+      last_page_read: number;
+      total_pages: number;
+      updated_at: string;
+    }>(
+      `SELECT srp.story_id, srp.child_profile_id, srp.last_page_read,
+              srp.total_pages, srp.updated_at::text
+       FROM story_reading_progress srp
+       INNER JOIN child_profiles cp ON cp.id = srp.child_profile_id
+       WHERE cp.user_id = $1
+       ORDER BY srp.updated_at DESC`,
+      [userId]
+    );
+
+    res.json(result.rows);
   } catch (error) {
     next(error);
   }
@@ -215,6 +243,84 @@ router.delete('/:id', async (req: Request, res: Response, next: NextFunction) =>
     await query('DELETE FROM stories WHERE id = $1', [req.params.id]);
 
     res.json({ message: 'Story deleted' });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// ─── Reading Progress ──────────────────────────────────────────────
+
+/**
+ * POST /api/stories/:storyId/progress
+ * Upsert reading progress for a child. Called from StorybookReader on
+ * every page flip (fire-and-forget) and on close.
+ */
+router.post('/:storyId/progress', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { storyId } = req.params;
+    const { child_profile_id, last_page_read, total_pages } = req.body;
+    const userId = req.user!.id;
+
+    if (!child_profile_id || last_page_read == null || total_pages == null) {
+      throw new AppError(400, 'child_profile_id, last_page_read, and total_pages are required');
+    }
+
+    // Verify child belongs to user
+    const child = await queryOne<{ id: string }>(
+      'SELECT id FROM child_profiles WHERE id = $1 AND user_id = $2',
+      [child_profile_id, userId]
+    );
+    if (!child) {
+      throw new AppError(404, 'Child profile not found');
+    }
+
+    await queryOne(
+      `INSERT INTO story_reading_progress (child_profile_id, story_id, last_page_read, total_pages)
+       VALUES ($1, $2, $3, $4)
+       ON CONFLICT (child_profile_id, story_id)
+       DO UPDATE SET
+         last_page_read = GREATEST(story_reading_progress.last_page_read, $3),
+         total_pages = $4,
+         updated_at = now()
+       RETURNING id`,
+      [child_profile_id, storyId, last_page_read, total_pages]
+    );
+
+    res.json({ ok: true });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * GET /api/stories/:storyId/progress/:childId
+ * Get reading progress for a specific child + story.
+ */
+router.get('/:storyId/progress/:childId', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { storyId, childId } = req.params;
+    const userId = req.user!.id;
+
+    const child = await queryOne<{ id: string }>(
+      'SELECT id FROM child_profiles WHERE id = $1 AND user_id = $2',
+      [childId, userId]
+    );
+    if (!child) {
+      throw new AppError(404, 'Child profile not found');
+    }
+
+    const progress = await queryOne<{
+      last_page_read: number;
+      total_pages: number;
+      updated_at: string;
+    }>(
+      `SELECT last_page_read, total_pages, updated_at::text
+       FROM story_reading_progress
+       WHERE child_profile_id = $1 AND story_id = $2`,
+      [childId, storyId]
+    );
+
+    res.json(progress || { last_page_read: 0, total_pages: 0 });
   } catch (error) {
     next(error);
   }

@@ -5,9 +5,10 @@
  * All templates come from database - no hardcoding.
  */
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from './keys';
 import { createMutationHook } from './useMutationFactory';
+import { handleError } from '@/lib/errors';
 import {
   journeyTemplatesService,
   type JourneyTemplate,
@@ -90,17 +91,28 @@ interface StartJourneyVariables {
 /**
  * Start a journey from a template
  */
-export const useStartJourneyFromTemplate = createMutationHook<Journey, StartJourneyVariables>({
-  mutationFn: ({ templateId, childId }) =>
-    journeyTemplatesService.startFromTemplate(templateId, childId),
-  context: 'useStartJourneyFromTemplate',
-  userMessage: 'Failed to start journey',
-  invalidateKeys: (data, { childId }) => [
-    queryKeys.journeys.lists(),
-    queryKeys.journeys.active(childId),
-    queryKeys.journeyTemplates.all,
-  ],
-});
+export function useStartJourneyFromTemplate() {
+  const queryClient = useQueryClient();
+  return useMutation<Journey, Error, StartJourneyVariables>({
+    mutationFn: ({ templateId, childId }) =>
+      journeyTemplatesService.startFromTemplate(templateId, childId),
+    onSuccess: (_data, { childId }) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.journeys.lists() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.journeys.active(childId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.journeyTemplates.all });
+    },
+    onError: (error: any) => {
+      // Axios puts the server JSON body in error.response.data
+      // Backend returns { success: false, error: "actual message" }
+      const data = error?.response?.data;
+      const serverMsg = (typeof data === 'object' && data?.error) ? data.error : null;
+      handleError(error, {
+        context: 'useStartJourneyFromTemplate',
+        userMessage: serverMsg || 'Failed to start journey',
+      });
+    },
+  });
+}
 
 // ============================================================
 // Convenience Exports

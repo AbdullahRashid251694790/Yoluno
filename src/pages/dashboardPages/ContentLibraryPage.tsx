@@ -1,11 +1,10 @@
 /**
- * Content Library Page
+ * Content Library / Keepsakes Page
  *
- * View and manage saved content.
- * All data from database - no hardcoding.
+ * Visual design mirrors loveable DashboardLibraryPage exactly; data from DB.
  */
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useChildProfiles } from '@/hooks/queries/useChildProfiles';
 import {
@@ -15,294 +14,349 @@ import {
   type ContentFilters,
   type ContentType,
 } from '@/hooks/queries/useContentLibrary';
-import { LoadingSpinner, EmptyState } from '@/components/shared';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { LoadingSpinner } from '@/components/shared';
+import { getUploadUrl } from '@/integrations/api/client';
+import { getInitials } from '@/lib/utils';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
-import {
-  Library,
+  ChevronDown,
+  Search,
+  Download,
   BookOpen,
-  MessageCircle,
-  Map,
-  StickyNote,
-  Mic,
-  Star,
-  Trash2,
-  Filter,
   Heart,
+  Play,
+  Printer,
+  MoreHorizontal,
+  Mic,
+  Map,
+  CheckCircle2,
 } from 'lucide-react';
 
-const CONTENT_TYPE_INFO: Record<ContentType, { label: string; icon: typeof BookOpen; color: string; gradient: string; border: string }> = {
-  story: { label: 'Story', icon: BookOpen, color: 'text-lumi', gradient: 'from-lumi/10 to-lumi/20', border: 'border-lumi/15' },
-  journey: { label: 'Journey', icon: Map, color: 'text-lolo', gradient: 'from-lolo/10 to-lolo/20', border: 'border-lolo/15' },
-  voice: { label: 'Voice', icon: Mic, color: 'text-gold', gradient: 'from-gold/10 to-lala/10', border: 'border-gold/15' },
-};
+type Tab = 'all' | 'story' | 'journey' | 'voice';
+
+const CHILD_BGS = ['#E8F6F4', '#F3EFF8', '#FEF0EA', '#FDF6E8'];
+
+function borderColor(type: string) {
+  if (type === 'story') return '#B8A5D4';
+  if (type === 'journey') return '#E8946A';
+  return '#D4A843';
+}
 
 export function ContentLibraryPage() {
   const { user } = useAuth();
   const { data: children = [] } = useChildProfiles(user?.id);
-  const [selectedChildId, setSelectedChildId] = useState<string>('all');
-  const [selectedType, setSelectedType] = useState<ContentType | 'all'>('all');
-  const [showFavorites, setShowFavorites] = useState(false);
+  const [childFilter, setChildFilter] = useState('all');
+  const [activeTab, setActiveTab] = useState<Tab>('all');
+  const [search, setSearch] = useState('');
 
-  // Build filters
   const filters: ContentFilters = {
-    childId: selectedChildId !== 'all' ? selectedChildId : undefined,
-    type: selectedType !== 'all' ? selectedType : undefined,
-    favorite: showFavorites || undefined,
-    limit: 50,
+    childId: childFilter !== 'all' ? childFilter : undefined,
+    type: activeTab !== 'all' ? (activeTab as ContentType) : undefined,
+    limit: 200,
   };
 
   const { data: contentData, isLoading } = useContentItems(filters);
-
-  // Separate query for total counts (respects child + favorite filters, ignores type)
-  const { data: allForCounts } = useContentItems({
-    childId: filters.childId,
-    favorite: filters.favorite,
-    limit: 500,
-  });
-  const countsByType = (allForCounts?.items ?? []).reduce<Record<string, number>>((acc, item) => {
-    acc[item.content_type] = (acc[item.content_type] ?? 0) + 1;
-    return acc;
-  }, {});
   const toggleFavorite = useToggleFavorite();
   const deleteContent = useDeleteContent();
 
-  const handleToggleFavorite = (id: string) => {
-    toggleFavorite.mutate(id);
-  };
+  // All items for tab counts (ignore type filter)
+  const { data: allForCounts } = useContentItems({
+    childId: filters.childId,
+    limit: 500,
+  });
 
-  const handleDelete = (id: string) => {
-    deleteContent.mutate(id);
-  };
+  const countsByType = useMemo(() => {
+    const items = allForCounts?.items ?? [];
+    return {
+      all: items.length,
+      story: items.filter((i) => i.content_type === 'story').length,
+      journey: items.filter((i) => i.content_type === 'journey').length,
+      voice: items.filter((i) => i.content_type === 'voice').length,
+    };
+  }, [allForCounts]);
+
+  // Child lookup
+  const childMap = useMemo(() => {
+    const map: Record<string, { name: string; initial: string; bg: string; avatarUrl?: string }> = {};
+    children.forEach((c, i) => {
+      map[c.id] = {
+        name: c.name,
+        initial: getInitials(c.name),
+        bg: CHILD_BGS[i % CHILD_BGS.length],
+        avatarUrl: getUploadUrl(c.avatarUrl || c.custom_avatar_url) || undefined,
+      };
+    });
+    return map;
+  }, [children]);
+
+  // Search filter + sort: stories first, then journeys, then voice
+  const TYPE_ORDER: Record<string, number> = { story: 0, journey: 1, voice: 2 };
+  const lc = search.toLowerCase();
+  const filtered = (contentData?.items ?? [])
+    .filter((item) => {
+      if (lc && !item.title.toLowerCase().includes(lc) && !item.content?.toLowerCase().includes(lc)) return false;
+      return true;
+    })
+    .sort((a, b) => (TYPE_ORDER[a.content_type] ?? 3) - (TYPE_ORDER[b.content_type] ?? 3));
+
+  const tabs: { key: Tab; label: string; count: number }[] = [
+    { key: 'all', label: 'All', count: countsByType.all },
+    { key: 'story', label: 'Stories', count: countsByType.story },
+    { key: 'journey', label: 'Journeys', count: countsByType.journey },
+    { key: 'voice', label: 'Voice Recordings', count: countsByType.voice },
+  ];
 
   return (
-    <div className="space-y-6">
+    <div style={{ fontFamily: "'DM Sans', 'Segoe UI', sans-serif" }}>
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-5">
         <div>
-          <h1 className="text-h3 font-bold">Family Keepsakes</h1>
-          <p className="text-muted-foreground mt-1">
-            Your family's favorite stories, completed journeys, and saved voice recordings — all in one place.
+          <h1 className="text-[28px] mb-1" style={{ fontWeight: 600, color: '#2A2926' }}>
+            Family Keepsakes
+          </h1>
+          <p className="text-[15px] max-w-xl" style={{ color: '#6B675E' }}>
+            Your family's favorite stories, completed journeys, and saved voice
+            recordings — all in one place, ready to print or export.
           </p>
         </div>
-
-        <div className="flex gap-2">
-          {children.length > 0 && (
-            <Select value={selectedChildId} onValueChange={setSelectedChildId}>
-              <SelectTrigger className="w-[150px]">
-                <Filter className="h-4 w-4 mr-2" />
-                <SelectValue placeholder="All children" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All children</SelectItem>
-                {children.map((child) => (
-                  <SelectItem key={child.id} value={child.id}>
-                    {child.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-
-          <Button
-            variant={showFavorites ? 'default' : 'outline'}
-            size="icon"
-            onClick={() => setShowFavorites(!showFavorites)}
+        <div className="flex items-center gap-3 shrink-0">
+          <div className="relative">
+            <select
+              value={childFilter}
+              onChange={(e) => setChildFilter(e.target.value)}
+              className="appearance-none pl-4 pr-9 py-2.5 rounded-lg text-[14px] border cursor-pointer"
+              style={{ background: '#FFFFFF', borderColor: '#E8E6E1', color: '#2A2926', fontWeight: 500 }}
+            >
+              <option value="all">All children</option>
+              {children.map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+            <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: '#9B978E' }} />
+          </div>
+          <button
+            className="flex items-center gap-1.5 px-4 py-2.5 rounded-lg text-[13px] transition hover:bg-[#E8F6F4]"
+            style={{ fontWeight: 600, color: '#3ECDC6', border: '1px solid #3ECDC6' }}
           >
-            <Heart className={showFavorites ? 'fill-current' : ''} />
-          </Button>
+            <Download size={14} /> Export All
+          </button>
         </div>
       </div>
 
-      {/* Content Type Tabs */}
-      <Tabs value={selectedType} onValueChange={(v) => setSelectedType(v as ContentType | 'all')}>
-        <TabsList>
-          <TabsTrigger value="all" className="gap-2">
-            <Library className="h-4 w-4" />
-            All
-            {allForCounts && (
-              <Badge variant="secondary" className="ml-1 !text-[11px] !h-5 !px-2 bg-primary/10 text-primary border-primary/20">
-                {allForCounts.total}
-              </Badge>
-            )}
-          </TabsTrigger>
-          {Object.entries(CONTENT_TYPE_INFO).map(([type, info]) => (
-            <TabsTrigger key={type} value={type} className="gap-2">
-              <info.icon className={`h-4 w-4 ${info.color}`} />
-              {info.label}
-              <Badge variant="secondary" className="ml-1 !text-[11px] !h-5 !px-2 bg-primary/10 text-primary border-primary/20">
-                {countsByType[type] ?? 0}
-              </Badge>
-            </TabsTrigger>
-          ))}
-        </TabsList>
+      {/* Info banner (when empty and no search) */}
+      {filtered.length === 0 && !search && !isLoading && (
+        <div className="mb-6 px-5 py-4 rounded-xl" style={{ background: '#E8F6F4', borderLeft: '3px solid #3ECDC6' }}>
+          <p className="text-[14px]" style={{ color: '#2A2926' }}>
+            Favorite a story, complete a journey, or save a voice recording — and it
+            will appear here as a keepsake. You can print stories, export recordings,
+            and keep everything your family creates.
+          </p>
+        </div>
+      )}
 
-        <TabsContent value={selectedType} className="mt-6">
-          {isLoading ? (
-            <div className="flex justify-center py-12">
-              <LoadingSpinner />
-            </div>
-          ) : !contentData?.items.length ? (
-            <Card>
-              <CardContent className="py-12">
-                <EmptyState
-                  icon={Library}
-                  title="No saved content"
-                  description={
-                    showFavorites
-                      ? 'Mark content as favorite to see it here.'
-                      : 'Create stories, start journeys, or record voice clips to see them here.'
-                  }
-                />
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {contentData.items.map((item) => {
-                const typeInfo = CONTENT_TYPE_INFO[item.content_type] ?? { label: item.content_type, icon: Library, color: 'text-muted-foreground', gradient: 'from-muted/10 to-muted/20', border: 'border-border' };
-                const TypeIcon = typeInfo.icon;
+      {/* Tabs */}
+      <div className="flex gap-1 p-1 rounded-lg mb-4 overflow-x-auto w-fit" style={{ background: '#F5F3EE' }}>
+        {tabs.map((t) => (
+          <button
+            key={t.key}
+            onClick={() => setActiveTab(t.key)}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-md text-[13px] whitespace-nowrap transition"
+            style={{
+              fontWeight: activeTab === t.key ? 600 : 400,
+              color: activeTab === t.key ? '#2A2926' : '#6B675E',
+              background: activeTab === t.key ? '#FFFFFF' : 'transparent',
+              boxShadow: activeTab === t.key ? '0 1px 3px rgba(42,41,38,0.08)' : 'none',
+            }}
+          >
+            {t.label}
+            <span
+              className="text-[11px] px-1.5 py-0.5 rounded"
+              style={{ background: activeTab === t.key ? '#F5F3EE' : 'transparent', color: '#9B978E' }}
+            >
+              {t.count}
+            </span>
+          </button>
+        ))}
+      </div>
 
-                return (
-                  <Card key={item.id} className={`overflow-hidden shadow-md hover:shadow-lg transition-shadow bg-gradient-to-br ${typeInfo.gradient} border ${typeInfo.border}`}>
-                    <CardHeader className="pb-2">
-                      <div className="flex items-start justify-between">
+      {/* Search */}
+      <div className="relative mb-6">
+        <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2" style={{ color: '#9B978E' }} />
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search keepsakes..."
+          className="w-full pl-11 pr-4 py-3 rounded-xl text-[15px] border outline-none transition focus:border-[#3ECDC6]"
+          style={{ background: '#FFFFFF', borderColor: '#E8E6E1', color: '#2A2926' }}
+        />
+      </div>
+
+      {/* Grid */}
+      {isLoading ? (
+        <div className="flex justify-center py-12"><LoadingSpinner /></div>
+      ) : filtered.length === 0 ? (
+        <div className="text-center py-20">
+          <Heart size={40} className="mx-auto mb-4 opacity-30" style={{ color: '#D4A843' }} />
+          <h2 className="text-[24px] mb-2" style={{ fontWeight: 600, color: '#2A2926' }}>
+            Your keepsake collection is waiting
+          </h2>
+          <p className="text-[16px] max-w-md mx-auto" style={{ color: '#6B675E' }}>
+            When your child finishes a story, completes a journey, or when you save a
+            voice recording — it appears here.
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          {filtered.map((item) => {
+            const child = childMap[item.child_profile_id || ''];
+            const bc = borderColor(item.content_type);
+            const dateLabel = new Date(item.created_at).toLocaleDateString('en-US', {
+              month: 'short', day: 'numeric', year: 'numeric',
+            });
+
+            return (
+              <div
+                key={item.id}
+                className="rounded-2xl overflow-hidden transition-all hover:-translate-y-0.5 hover:shadow-md"
+                style={{ background: '#FFFFFF', border: '1px solid #E8E6E1', borderLeft: `4px solid ${bc}` }}
+              >
+                {/* Story card */}
+                {item.content_type === 'story' && (
+                  <>
+                    <div
+                      className="flex items-center justify-center overflow-hidden"
+                      style={{ background: 'linear-gradient(135deg, #F3EFF8, #E8E6F0)', aspectRatio: '1 / 1' }}
+                    >
+                      {item.metadata?.illustration_url ? (
+                        <img
+                          src={getUploadUrl(String(item.metadata.illustration_url)) || ''}
+                          alt={item.title}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <BookOpen size={24} style={{ color: '#B8A5D4', opacity: 0.5 }} />
+                      )}
+                    </div>
+                    <div className="p-5">
+                      <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
-                          <TypeIcon className={`h-4 w-4 ${typeInfo.color}`} />
-                          <Badge variant="secondary" className="text-caption">
-                            {typeInfo.label}
-                          </Badge>
+                          {child?.avatarUrl ? (
+                            <img src={child.avatarUrl} alt="" className="w-6 h-6 rounded-full object-cover" style={{ background: child.bg }} />
+                          ) : (
+                            <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px]" style={{ background: child?.bg || '#F5F3EE', fontWeight: 600, color: '#2A2926' }}>
+                              {child?.initial || '?'}
+                            </div>
+                          )}
+                          <span className="text-[12px]" style={{ color: '#9B978E' }}>
+                            {item.child_name || child?.name || 'Child'} · with Lumi
+                          </span>
                         </div>
-                        <div className="flex gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => handleToggleFavorite(item.id)}
-                            disabled={toggleFavorite.isPending}
-                          >
-                            <Star
-                              className={`h-4 w-4 ${
-                                item.is_favorite ? 'fill-lala text-lala' : ''
-                              }`}
-                            />
-                          </Button>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-destructive hover:text-destructive"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Delete content?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  This will permanently delete "{item.title}". This action cannot
-                                  be undone.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => handleDelete(item.id)}
-                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                >
-                                  Delete
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
+                        <div className="flex items-center gap-1">
+                          <button onClick={() => toggleFavorite.mutate(item.id)} className="p-1 hover:scale-110 transition">
+                            <Heart size={14} fill={item.is_favorite ? '#D4A843' : 'none'} style={{ color: '#D4A843' }} />
+                          </button>
                         </div>
                       </div>
-                      <CardTitle className="text-body mt-2 line-clamp-1">
-                        {item.title}
-                      </CardTitle>
-                      {item.child_name && (
-                        <CardDescription className="text-caption">
-                          For {item.child_name}
-                        </CardDescription>
-                      )}
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-body-sm text-muted-foreground line-clamp-3">
-                        {item.content}
-                      </p>
-                      {/* Extra metadata for specific types */}
-                      {item.content_type === 'journey' && item.metadata?.status && (
-                        <div className="flex items-center gap-2 mt-2">
-                          <Badge
-                            variant={item.metadata.status === 'completed' ? 'default' : 'secondary'}
-                            className="text-caption"
-                          >
-                            {item.metadata.status === 'completed' ? 'Completed' : item.metadata.status === 'active' ? 'Active' : String(item.metadata.status)}
-                          </Badge>
-                          {typeof item.metadata.step_count === 'number' && item.metadata.step_count > 0 && (
-                            <span className="text-caption text-muted-foreground">
-                              {item.metadata.step_count} steps
-                            </span>
-                          )}
+                      <h3 className="text-[16px] mb-1 line-clamp-2" style={{ fontWeight: 600, color: '#2A2926' }}>{item.title}</h3>
+                      <p className="text-[13px] mb-3 line-clamp-2" style={{ color: '#6B675E', lineHeight: 1.5 }}>{item.content}</p>
+                      <div className="flex flex-wrap items-center gap-2 mb-3 text-[12px]" style={{ color: '#9B978E' }}>
+                        {item.metadata?.theme && (
+                          <span className="px-2.5 py-0.5 rounded-full" style={{ background: '#F5F3EE' }}>{String(item.metadata.theme)}</span>
+                        )}
+                        {typeof item.metadata?.word_count === 'number' && <span>{item.metadata.word_count} words</span>}
+                        <span>·</span>
+                        <span>{dateLabel}</span>
+                      </div>
+                      <div className="flex gap-2">
+                        <button className="px-3 py-1.5 rounded-full text-[12px] hover:bg-[#F5F3EE] transition" style={{ border: '1px solid #E8E6E1', color: '#6B675E', fontWeight: 500 }}>Read</button>
+                        <button className="flex items-center gap-1 px-3 py-1.5 rounded-full text-[12px] hover:bg-[#F5F3EE] transition" style={{ border: '1px solid #E8E6E1', color: '#6B675E', fontWeight: 500 }}><Printer size={11} /> Print</button>
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {/* Journey card */}
+                {item.content_type === 'journey' && (
+                  <div className="p-5">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px]" style={{ background: '#E8F6F4', color: '#3ECDC6', fontWeight: 600 }}>
+                        <CheckCircle2 size={11} /> {item.metadata?.status === 'completed' ? 'Completed' : 'Active'}
+                      </span>
+                      <button onClick={() => toggleFavorite.mutate(item.id)} className="p-1 hover:scale-110 transition">
+                        <Heart size={14} fill={item.is_favorite ? '#D4A843' : 'none'} style={{ color: '#D4A843' }} />
+                      </button>
+                    </div>
+                    <h3 className="text-[16px] mb-1" style={{ fontWeight: 600, color: '#2A2926' }}>{item.title}</h3>
+                    <div className="flex items-center gap-2 mb-2">
+                      {child?.avatarUrl ? (
+                        <img src={child.avatarUrl} alt="" className="w-6 h-6 rounded-full object-cover" style={{ background: child.bg }} />
+                      ) : (
+                        <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px]" style={{ background: child?.bg || '#F5F3EE', fontWeight: 600, color: '#2A2926' }}>
+                          {child?.initial || '?'}
                         </div>
                       )}
-                      {item.content_type === 'voice' && (
-                        <div className="flex items-center gap-2 mt-2">
-                          {item.metadata?.category && (
-                            <Badge variant="outline" className="text-caption capitalize">
-                              {String(item.metadata.category)}
-                            </Badge>
-                          )}
-                          {typeof item.metadata?.duration_seconds === 'number' && (
-                            <span className="text-caption text-muted-foreground">
-                              {Math.floor(Number(item.metadata.duration_seconds) / 60)}:{String(Number(item.metadata.duration_seconds) % 60).padStart(2, '0')}
-                            </span>
-                          )}
-                        </div>
-                      )}
-                      {item.content_type === 'story' && item.metadata?.theme && (
-                        <div className="flex items-center gap-2 mt-2">
-                          <Badge variant="outline" className="text-caption capitalize">
-                            {String(item.metadata.theme)}
-                          </Badge>
-                          {typeof item.metadata?.word_count === 'number' && (
-                            <span className="text-caption text-muted-foreground">
-                              {item.metadata.word_count} words
-                            </span>
-                          )}
-                        </div>
-                      )}
-                      <p className="text-caption text-muted-foreground mt-3">
-                        {new Date(item.created_at).toLocaleDateString()}
-                      </p>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-          )}
-        </TabsContent>
-      </Tabs>
+                      <span className="text-[12px]" style={{ color: '#9B978E' }}>
+                        {item.child_name || child?.name || 'Child'} · with Lolo
+                      </span>
+                    </div>
+                    <p className="text-[13px] mb-2" style={{ color: '#6B675E' }}>
+                      {dateLabel}
+                      {typeof item.metadata?.step_count === 'number' && ` · ${item.metadata.step_count} steps`}
+                    </p>
+                    {item.content && (
+                      <p className="text-[13px] italic mb-3" style={{ color: '#6B675E' }}>"{item.content}"</p>
+                    )}
+                    <div className="flex gap-2">
+                      <button className="px-3 py-1.5 rounded-full text-[12px] hover:bg-[#F5F3EE] transition" style={{ border: '1px solid #E8E6E1', color: '#6B675E', fontWeight: 500 }}>View Reflections</button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Voice card */}
+                {item.content_type === 'voice' && (
+                  <div className="p-5">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <Mic size={15} style={{ color: '#D4A843' }} />
+                        <span className="text-[12px] uppercase tracking-wider" style={{ fontWeight: 600, color: '#D4A843' }}>
+                          Voice Recording
+                        </span>
+                      </div>
+                      <button onClick={() => toggleFavorite.mutate(item.id)} className="p-1 hover:scale-110 transition">
+                        <Heart size={14} fill={item.is_favorite ? '#D4A843' : 'none'} style={{ color: '#D4A843' }} />
+                      </button>
+                    </div>
+                    {/* Mini waveform */}
+                    <div className="flex items-center gap-0.5 h-8 mb-3">
+                      {Array.from({ length: 30 }).map((_, i) => (
+                        <div key={i} className="flex-1 rounded-full" style={{ height: `${30 + ((item.id.charCodeAt(i % item.id.length) * 7 + i * 13) % 70)}%`, background: '#D4A843', opacity: 0.3 }} />
+                      ))}
+                    </div>
+                    <h3 className="text-[16px] mb-1" style={{ fontWeight: 600, color: '#2A2926' }}>{item.title}</h3>
+                    <p className="text-[13px] mb-1" style={{ color: '#6B675E' }}>
+                      {item.child_name || child?.name || 'Child'}
+                      {item.metadata?.category && ` · ${String(item.metadata.category)}`}
+                    </p>
+                    <p className="text-[12px] mb-3" style={{ color: '#9B978E' }}>
+                      {typeof item.metadata?.duration_seconds === 'number' &&
+                        `${Math.floor(Number(item.metadata.duration_seconds) / 60)} min ${Number(item.metadata.duration_seconds) % 60} sec · `}
+                      {dateLabel}
+                    </p>
+                    <div className="flex gap-2">
+                      <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] transition hover:opacity-80" style={{ background: '#D4A843', color: '#FFFFFF', fontWeight: 600 }}>
+                        <Play size={11} /> Play
+                      </button>
+                      <button className="px-3 py-1.5 rounded-full text-[12px] hover:bg-[#F5F3EE] transition" style={{ border: '1px solid #E8E6E1', color: '#6B675E', fontWeight: 500 }}>
+                        Download
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

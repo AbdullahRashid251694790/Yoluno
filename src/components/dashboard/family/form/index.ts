@@ -7,4 +7,4 @@
 export { BasicInfoSection } from './BasicInfoSection';
 export { HobbiesSection } from './HobbiesSection';
 export { DetailsSection } from './DetailsSection';
-export { MediaSection } from './MediaSection';
+export { MediaSection, type PhotoEntry } from './MediaSection';

@@ -30,8 +30,9 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
     }
 
     let queryText = `
-      SELECT j.* FROM journeys j
+      SELECT j.*, jt.description as template_description FROM journeys j
       JOIN child_profiles cp ON j.child_profile_id = cp.id
+      LEFT JOIN journey_templates jt ON jt.id::text = j.template_id
       WHERE cp.user_id = $1
     `;
     const params: unknown[] = [req.user!.id];

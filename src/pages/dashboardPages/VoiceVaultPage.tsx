@@ -19,15 +19,6 @@ import {
   type VoiceClipFilters,
 } from '@/hooks/queries/useVoiceVault';
 import { LoadingSpinner } from '@/components/shared';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -62,18 +53,17 @@ import { cn } from '@/lib/utils';
 
 type VoiceCategory = 'all' | 'encouragement' | 'praise' | 'celebration' | 'story' | 'memory' | 'greeting' | 'message' | 'other';
 
-// Original category tabs — all backend categories preserved
-const CATEGORY_TABS: { value: VoiceCategory; label: string }[] = [
-  { value: 'all', label: 'All' },
-  { value: 'encouragement', label: 'Encouragement' },
-  { value: 'praise', label: 'Praise' },
-  { value: 'celebration', label: 'Celebration' },
-  { value: 'story', label: 'Story' },
-  { value: 'memory', label: 'Memory' },
-  { value: 'greeting', label: 'Greeting' },
-  { value: 'message', label: 'Message' },
-  { value: 'other', label: 'Other' },
-];
+// Tabs matching loveable: All, Stories, Messages, Songs
+const CATEGORY_TABS = ['All', 'Stories', 'Messages', 'Songs'] as const;
+type CategoryTab = typeof CATEGORY_TABS[number];
+
+// Map each loveable tab to the backend categories it includes
+const TAB_TO_CATEGORIES: Record<CategoryTab, VoiceCategory[]> = {
+  All: [],
+  Stories: ['story', 'memory'],
+  Messages: ['message', 'encouragement', 'praise', 'greeting'],
+  Songs: ['celebration', 'other'],
+};
 
 const CATEGORY_PILL_LABEL: Record<string, string> = {
   encouragement: 'Encouragement',
@@ -117,7 +107,7 @@ export function VoiceVaultPage() {
   const { user } = useAuth();
   const { data: familyMembers = [] } = useFamilyMembers(user?.id);
   const [selectedFamilyMemberId, setSelectedFamilyMemberId] = useState<string>('all');
-  const [activeTab, setActiveTab] = useState<VoiceCategory>('all');
+  const [activeTab, setActiveTab] = useState<CategoryTab>('All');
   const [playingClipId, setPlayingClipId] = useState<string | null>(null);
   const [playbackProgress, setPlaybackProgress] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
@@ -155,8 +145,9 @@ export function VoiceVaultPage() {
   // Filter by tab client-side
   const allClips = clipData?.items || [];
   const filteredClips = useMemo(() => {
-    if (activeTab === 'all') return allClips;
-    return allClips.filter((c) => c.category === activeTab);
+    if (activeTab === 'All') return allClips;
+    const cats = TAB_TO_CATEGORIES[activeTab];
+    return allClips.filter((c) => cats.includes(c.category as VoiceCategory));
   }, [allClips, activeTab]);
 
 
@@ -231,82 +222,97 @@ export function VoiceVaultPage() {
     }
   };
 
+  const totalRecordings = allClips.length;
+  const totalDurationSec = allClips.reduce((sum, c) => sum + (c.duration_seconds || 0), 0);
+  const totalDurationLabel = totalDurationSec >= 60
+    ? `${Math.floor(totalDurationSec / 60)} minutes`
+    : `${totalDurationSec} seconds`;
+  const uniqueMembers = new Set(allClips.map((c) => c.family_member_name).filter(Boolean)).size;
+
   return (
-    <div className="space-y-6">
+    <div style={{ fontFamily: "'DM Sans', 'Segoe UI', sans-serif" }}>
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-h3 font-bold text-foreground">Family Voices</h1>
-          <p className="text-muted-foreground mt-1 max-w-xl">
-            Record the voices your child loves most. Bedtime stories, family memories, lullabies,
-            and messages — saved here and available to your child through Loti.
+          <h1 className="text-[28px] mb-1" style={{ fontWeight: 600, color: '#2A2926' }}>
+            Family Voices
+          </h1>
+          <p className="text-[15px] max-w-xl" style={{ color: '#6B675E' }}>
+            Record the voices your child loves most. Bedtime stories, family memories,
+            lullabies, and messages — saved here and available to your child through Loti.
           </p>
         </div>
         <div className="flex items-center gap-3 shrink-0">
-          {familyMembers.length > 0 && (
-            <Select value={selectedFamilyMemberId} onValueChange={setSelectedFamilyMemberId}>
-              <SelectTrigger className="w-[170px]">
-                <SelectValue placeholder="All members" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All members</SelectItem>
-                {familyMembers.map((member) => (
-                  <SelectItem key={member.id} value={member.id}>
-                    {member.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-
-          <Button
+          <div className="relative">
+            <select
+              value={selectedFamilyMemberId}
+              onChange={(e) => setSelectedFamilyMemberId(e.target.value)}
+              className="appearance-none pr-8 pl-4 py-2 rounded-lg text-[13px] border cursor-pointer"
+              style={{ background: '#FFFFFF', borderColor: '#E8E6E1', color: '#6B675E' }}
+            >
+              <option value="all">All members</option>
+              {familyMembers.map((m) => (
+                <option key={m.id} value={m.id}>{m.name}</option>
+              ))}
+            </select>
+            <span className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: '#9B978E' }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m6 9 6 6 6-6"/></svg>
+            </span>
+          </div>
+          <button
             onClick={() => setIsRecordDialogOpen(true)}
-            className="gap-2 bg-gold text-white hover:bg-gold/90 rounded-full"
+            className="flex items-center gap-2 px-5 py-2.5 rounded-full text-white text-[14px] transition hover:-translate-y-0.5"
+            style={{ background: '#D4A843', fontWeight: 600 }}
           >
-            <Mic className="h-4 w-4" />
-            Record
-          </Button>
+            <Mic size={16} /> Record
+          </button>
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="overflow-x-auto -mx-1 px-1 scrollbar-hide">
-        <div className="inline-flex items-center gap-1 p-1 rounded-full bg-muted/50 whitespace-nowrap">
+      {/* Tabs + stats */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+        <div className="flex gap-1 p-1 rounded-xl" style={{ background: '#F5F3EE' }}>
           {CATEGORY_TABS.map((tab) => (
             <button
-              key={tab.value}
-              onClick={() => setActiveTab(tab.value)}
-              className={cn(
-                'px-4 py-1.5 rounded-full text-body-sm font-medium transition whitespace-nowrap',
-                activeTab === tab.value
-                  ? 'bg-gold text-white shadow-sm'
-                  : 'text-muted-foreground hover:text-gold'
-              )}
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className="px-4 py-2 rounded-lg text-[13px] transition whitespace-nowrap"
+              style={{
+                fontWeight: activeTab === tab ? 600 : 400,
+                background: activeTab === tab ? '#FFFFFF' : 'transparent',
+                color: activeTab === tab ? '#2A2926' : '#9B978E',
+                boxShadow: activeTab === tab ? '0 1px 3px rgba(0,0,0,0.06)' : 'none',
+              }}
             >
-              {tab.label}
+              {tab}
             </button>
           ))}
         </div>
+        <p className="text-[13px]" style={{ color: '#9B978E' }}>
+          {totalRecordings} recordings · {totalDurationLabel} of family voices · {uniqueMembers} family members
+        </p>
       </div>
 
       {/* Invite banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl bg-gold/10 border border-gold/20">
+      <div
+        className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl mb-6"
+        style={{ background: '#FDF6E8' }}
+      >
         <div>
-          <p className="text-body-sm font-semibold text-foreground">
+          <p className="text-[14px]" style={{ fontWeight: 600, color: '#2A2926' }}>
             Family members can record from anywhere
           </p>
-          <p className="text-caption text-muted-foreground mt-0.5">
+          <p className="text-[13px] mt-0.5" style={{ color: '#6B675E' }}>
             Share a link — they can record without a Yoluno account.
           </p>
         </div>
-        <Button
-          variant="outline"
+        <button
           onClick={() => setIsInviteDialogOpen(true)}
-          className="gap-2 border-2 border-gold text-gold hover:bg-gold/10 hover:text-gold rounded-full"
+          className="flex items-center gap-2 px-4 py-2 rounded-full text-[13px] transition hover:bg-amber-50 mt-3 sm:mt-0"
+          style={{ border: '2px solid #D4A843', color: '#D4A843', fontWeight: 600, background: 'transparent' }}
         >
-          <Send className="h-3.5 w-3.5" />
-          Send Recording Link
-        </Button>
+          <Send size={14} /> Send Recording Link
+        </button>
       </div>
 
       {/* Recording cards */}
@@ -316,139 +322,141 @@ export function VoiceVaultPage() {
         </div>
       ) : filteredClips.length === 0 ? (
         <div className="text-center py-20 max-w-xl mx-auto">
-          <div className="flex items-center justify-center w-28 h-28 rounded-full bg-gold/10 mx-auto mb-6">
-            <Mic className="h-12 w-12 text-gold" />
+          <div
+            className="flex items-center justify-center rounded-full mx-auto mb-6"
+            style={{ width: 120, height: 120, background: '#FDF6E8' }}
+          >
+            <Mic size={48} style={{ color: '#D4A843' }} />
           </div>
-          <h2 className="text-h4 font-bold text-foreground mb-2">
+          <h2 className="text-[28px] mb-4" style={{ fontFamily: "'DM Serif Display', serif", fontWeight: 600, color: '#2A2926' }}>
             Your family's voices belong here
           </h2>
-          <p className="text-muted-foreground mb-8">
+          <p className="text-[16px] mb-10" style={{ color: '#6B675E', lineHeight: 1.7 }}>
             Record a bedtime story. Sing a favourite lullaby. Share a memory from when you were young.
             Your child can listen anytime through Loti.
           </p>
-          <Button
+          <button
             onClick={() => setIsRecordDialogOpen(true)}
-            className="gap-2 bg-gold text-white hover:bg-gold/90 rounded-full px-8 h-12"
+            className="px-8 py-3.5 rounded-full text-white text-[15px] transition hover:-translate-y-0.5 hover:shadow-lg mb-4"
+            style={{ background: '#D4A843', fontWeight: 600 }}
           >
-            <Mic className="h-4 w-4" />
             Record Your First Voice Message
-          </Button>
+          </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-10">
           {filteredClips.map((clip) => {
             const isPlaying = playingClipId === clip.id;
             const isFav = clip.is_favorite;
-            const pillLabel = CATEGORY_PILL_LABEL[clip.category] || 'Voice';
+            const pillLabel =
+              clip.category === 'story' || clip.category === 'memory' ? 'Story'
+              : clip.category === 'celebration' || clip.category === 'other' ? 'Song'
+              : 'Message';
             const dateLabel = new Date(clip.created_at).toLocaleDateString(undefined, {
-              month: 'short',
+              month: 'long',
               day: 'numeric',
               year: 'numeric',
             });
 
             return (
-              <Card
+              <div
                 key={clip.id}
-                className="bg-white border border-border border-l-[4px] border-l-gold p-6 transition hover:-translate-y-0.5 hover:shadow-md"
+                className="rounded-2xl p-6 transition hover:-translate-y-0.5 hover:shadow-md"
+                style={{ background: '#FFFFFF', border: '1px solid #E8E6E1', borderLeft: '4px solid #D4A843' }}
               >
-                <CardContent className="p-0">
-                  {/* Waveform */}
-                  <div className="mb-4 cursor-pointer" onClick={() => handlePlay(clip.id, clip.audio_url, clip.duration_seconds)}>
-                    <Waveform active={isPlaying} seed={clip.id} />
-                    {isPlaying && (
-                      <div className="h-1 bg-muted rounded-full overflow-hidden mt-1">
-                        <div
-                          className="h-full bg-gold transition-all"
-                          style={{ width: `${playbackProgress}%` }}
-                        />
-                      </div>
-                    )}
-                  </div>
+                {/* Waveform */}
+                <div className="mb-4 cursor-pointer" onClick={() => handlePlay(clip.id, clip.audio_url, clip.duration_seconds)}>
+                  <Waveform active={isPlaying} seed={clip.id} />
+                  {isPlaying && (
+                    <div className="h-1 rounded-full overflow-hidden mt-1" style={{ background: '#F5F3EE' }}>
+                      <div
+                        className="h-full transition-all"
+                        style={{ width: `${playbackProgress}%`, background: '#D4A843' }}
+                      />
+                    </div>
+                  )}
+                </div>
 
-                  {/* Play + info */}
-                  <div className="flex items-start gap-4">
-                    <button
-                      onClick={() => handlePlay(clip.id, clip.audio_url, clip.duration_seconds)}
-                      className="flex-shrink-0 flex items-center justify-center w-12 h-12 rounded-full bg-gold text-white hover:scale-105 transition shadow-sm"
-                    >
-                      {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5 ml-0.5" />}
-                    </button>
+                {/* Play + info */}
+                <div className="flex items-start gap-4">
+                  <button
+                    onClick={() => handlePlay(clip.id, clip.audio_url, clip.duration_seconds)}
+                    className="flex-shrink-0 flex items-center justify-center rounded-full transition hover:scale-105"
+                    style={{ width: 48, height: 48, background: '#D4A843' }}
+                  >
+                    {isPlaying ? <Pause size={20} color="white" /> : <Play size={20} color="white" style={{ marginLeft: 2 }} />}
+                  </button>
 
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-2">
-                        <h3 className="text-body font-semibold text-foreground truncate">
-                          {clip.title}
-                        </h3>
-                        <div className="flex items-center gap-1 flex-shrink-0">
-                          <button
-                            onClick={() => toggleFavorite.mutate(clip.id)}
-                            className="p-1 transition hover:scale-110"
-                          >
-                            <Heart
-                              className={cn(
-                                'h-4 w-4 text-gold',
-                                isFav && 'fill-gold'
-                              )}
-                            />
-                          </button>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <button className="p-1 rounded-full hover:bg-muted transition">
-                                <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
-                              </button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => setEditingClip(clip)}>
-                                <Pencil className="h-4 w-4 mr-2" />
-                                Edit
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                onClick={() => setDeletingClip(clip)}
-                                className="text-destructive focus:text-destructive"
-                              >
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                Delete
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-                      </div>
-
-                      {clip.family_member_name ? (
-                        <p className="text-caption text-muted-foreground mt-1">
-                          Recorded by {clip.family_member_name}
-                        </p>
-                      ) : clip.description ? (
-                        <p className="text-caption text-muted-foreground mt-1 line-clamp-1">
-                          {clip.description}
-                        </p>
-                      ) : null}
-
-                      <div className="flex items-center gap-3 mt-3 flex-wrap">
-                        <span className="text-caption text-muted-foreground">
-                          {formatDuration(clip.duration_seconds)} · {dateLabel}
-                        </span>
-                        <span className="px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-gold/10 text-gold">
-                          {pillLabel}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center gap-2 mt-3">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="!h-8 gap-1.5 rounded-lg"
-                          onClick={() => handleDownload(clip.audio_url, clip.title)}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-2">
+                      <h3 className="text-[16px] truncate" style={{ fontWeight: 600, color: '#2A2926' }}>
+                        {clip.title}
+                      </h3>
+                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                        <button
+                          onClick={() => toggleFavorite.mutate(clip.id)}
+                          className="p-1 transition hover:scale-110"
                         >
-                          <Download className="h-3 w-3" />
-                          Download
-                        </Button>
+                          <Heart
+                            size={16}
+                            fill={isFav ? '#D4A843' : 'none'}
+                            style={{ color: '#D4A843' }}
+                          />
+                        </button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button className="p-1 rounded-full hover:bg-gray-100 transition">
+                              <MoreHorizontal size={16} style={{ color: '#9B978E' }} />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => setEditingClip(clip)}>
+                              <Pencil className="h-4 w-4 mr-2" />
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={() => setDeletingClip(clip)}
+                              className="text-destructive focus:text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     </div>
+
+                    <p className="text-[13px] mt-0.5" style={{ color: '#9B978E' }}>
+                      {clip.family_member_name
+                        ? `Recorded by ${clip.family_member_name}`
+                        : clip.description || 'Voice recording'}
+                    </p>
+
+                    <div className="flex items-center gap-3 mt-3 flex-wrap">
+                      <span className="text-[12px]" style={{ color: '#9B978E' }}>
+                        {formatDuration(clip.duration_seconds)} · {dateLabel}
+                      </span>
+                      <span
+                        className="px-2.5 py-0.5 rounded-full text-[11px]"
+                        style={{ background: '#FDF6E8', color: '#D4A843', fontWeight: 600 }}
+                      >
+                        {pillLabel}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2 mt-3">
+                      <button
+                        onClick={() => handleDownload(clip.audio_url, clip.title)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] transition hover:bg-gray-50"
+                        style={{ border: '1px solid #E8E6E1', color: '#6B675E', fontWeight: 500 }}
+                      >
+                        <Download size={12} /> Download
+                      </button>
+                    </div>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             );
           })}
         </div>

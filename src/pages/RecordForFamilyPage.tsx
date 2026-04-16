@@ -26,14 +26,9 @@ import { apiClient } from '@/integrations/api/client';
 import lotiAvatar from '@/assets/landing/loti.png';
 
 const CATEGORIES = [
-  { value: 'encouragement', label: 'Encouragement' },
-  { value: 'praise', label: 'Praise' },
-  { value: 'celebration', label: 'Celebration' },
   { value: 'story', label: 'Story' },
-  { value: 'memory', label: 'Memory' },
-  { value: 'greeting', label: 'Greeting' },
   { value: 'message', label: 'Message' },
-  { value: 'other', label: 'Other' },
+  { value: 'celebration', label: 'Song' },
 ];
 
 type Status = 'loading' | 'ready' | 'invalid' | 'submitted';
@@ -58,7 +53,7 @@ export default function RecordForFamilyPage() {
   const [familyMemberId, setFamilyMemberId] = useState<string>('');
   const [recordedBy, setRecordedBy] = useState('');
   const [description, setDescription] = useState('');
-  const [category, setCategory] = useState('message');
+  const [category, setCategory] = useState('story');
   const [submitting, setSubmitting] = useState(false);
   const [playing, setPlaying] = useState(false);
   const audioElRef = useRef<HTMLAudioElement | null>(null);
@@ -201,7 +196,7 @@ export default function RecordForFamilyPage() {
               setFamilyMemberId('');
               setRecordedBy('');
               setDescription('');
-              setCategory('message');
+              setCategory('story');
               setStatus('ready');
             }}
           >
@@ -296,17 +291,6 @@ export default function RecordForFamilyPage() {
                 ))}
               </SelectContent>
             </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="description">A note (optional)</Label>
-            <Textarea
-              id="description"
-              placeholder="Anything you'd like to add…"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={2}
-            />
           </div>
 
           {/* Recorder */}

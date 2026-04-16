@@ -19,6 +19,7 @@ import { StorybookAudioControls } from './StorybookAudioControls';
 import { NarratorVoiceSelector, type NarratorVoice } from './NarratorVoiceSelector';
 import { cn } from '@/lib/utils';
 import { getUploadUrl } from '@/integrations/api/client';
+import { apiClient } from '@/integrations/api/client';
 import { ShareWithParentButton } from '@/components/kids/ShareWithParentButton';
 
 interface StorybookReaderProps {
@@ -86,6 +87,38 @@ export function StorybookReader({
   }, [illustrationsInProgress, storyId, queryClient]);
 
   const totalPages = (pages?.length ?? 0) + 1; // +1 for cover
+  const progressLoadedRef = useRef(false);
+
+  // Load saved reading progress on mount (kids only)
+  useEffect(() => {
+    if (!childId || !storyId || progressLoadedRef.current || totalPages <= 1) return;
+    apiClient
+      .get<{ last_page_read: number; total_pages: number }>(
+        `/stories/${storyId}/progress/${childId}`
+      )
+      .then((res) => {
+        const { last_page_read } = res.data;
+        if (last_page_read > 0 && last_page_read < totalPages) {
+          setCurrentPage(last_page_read);
+        }
+        progressLoadedRef.current = true;
+      })
+      .catch(() => {
+        progressLoadedRef.current = true;
+      });
+  }, [childId, storyId, totalPages]);
+
+  // Save progress on every page change (kids only, fire-and-forget)
+  useEffect(() => {
+    if (!childId || !storyId || currentPage === 0 || totalPages <= 1) return;
+    apiClient
+      .post(`/stories/${storyId}/progress`, {
+        child_profile_id: childId,
+        last_page_read: currentPage,
+        total_pages: totalPages,
+      })
+      .catch(() => {});
+  }, [childId, storyId, currentPage, totalPages]);
 
   // Preload adjacent page images so transitions are instant
   useEffect(() => {

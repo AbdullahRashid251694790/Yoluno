@@ -259,6 +259,19 @@ router.post('/:id/start', async (req: Request, res: Response, next: NextFunction
       );
     }
 
+    // Prevent duplicate: same template + same child + active/paused
+    const existing = await queryOne<{ id: string }>(
+      `SELECT id FROM journeys
+       WHERE child_profile_id = $1 AND template_id = $2 AND status IN ('active', 'paused')`,
+      [childId, req.params.id]
+    );
+    if (existing) {
+      throw new AppError(
+        400,
+        `${child.name} already has this journey in progress`
+      );
+    }
+
     // Get template steps
     const templateSteps = await query<JourneyTemplateStep>(
       `SELECT * FROM journey_template_steps

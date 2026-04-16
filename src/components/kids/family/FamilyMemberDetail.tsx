@@ -241,12 +241,16 @@ export function FamilyMemberDetail({ member, type, isOpen, onClose }: FamilyMemb
                     className="w-full rounded-xl object-cover max-h-64"
                   />
                   {(photos[photoIndex]?.caption || photos[photoIndex]?.created_at) && (
-                    <div className="mt-2 text-center">
+                    <div className="mt-3">
                       {photos[photoIndex]?.caption && (
-                        <p className="text-caption text-muted-foreground">{photos[photoIndex].caption}</p>
+                        <div className="rounded-xl bg-muted/50 p-3">
+                          <p className="text-body-sm text-foreground leading-relaxed">
+                            {photos[photoIndex].caption}
+                          </p>
+                        </div>
                       )}
                       {photos[photoIndex]?.created_at && (
-                        <p className="text-[10px] text-muted-foreground/50 mt-1">
+                        <p className="text-[10px] text-muted-foreground/50 mt-2 text-center">
                           {new Date(photos[photoIndex].created_at).toLocaleDateString()}
                         </p>
                       )}

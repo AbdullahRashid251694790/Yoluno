@@ -179,7 +179,7 @@ function mapJourneyWithSteps(
   return {
     id: data.id,
     title: data.title,
-    description: null,
+    description: (data as any).template_description || null,
     status: data.status as JourneyWithSteps['status'],
     templateId: data.template_id ?? undefined,
     childProfileId: data.child_profile_id,

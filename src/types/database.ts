@@ -92,6 +92,7 @@ export interface FamilyMemberRow {
   user_id: string;
   name: string;
   relationship: string;
+  specific_relationship: string | null;
   birth_date: string | null;
   photo_url: string | null;
   notes: string | null;

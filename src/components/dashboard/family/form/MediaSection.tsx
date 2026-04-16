@@ -13,6 +13,11 @@ import { VoiceRecorder } from '../VoiceRecorder';
 import { Video, Image as ImageIcon, X, Plus } from 'lucide-react';
 import type { CreateFamilyMemberFormData } from '@/types/forms';
 
+export interface PhotoEntry {
+  file: File;
+  story: string;
+}
+
 interface MediaSectionProps {
   control: Control<CreateFamilyMemberFormData>;
   existingPhotoUrl?: string;
@@ -20,9 +25,10 @@ interface MediaSectionProps {
   videoFiles: File[];
   onAddVideo: (file: File) => void;
   onRemoveVideo: (index: number) => void;
-  photoFiles: File[];
+  photoEntries: PhotoEntry[];
   onAddPhoto: (file: File) => void;
   onRemovePhoto: (index: number) => void;
+  onUpdatePhotoStory: (index: number, story: string) => void;
   isLoading: boolean;
 }
 
@@ -33,9 +39,10 @@ export function MediaSection({
   videoFiles,
   onAddVideo,
   onRemoveVideo,
-  photoFiles,
+  photoEntries,
   onAddPhoto,
   onRemovePhoto,
+  onUpdatePhotoStory,
   isLoading,
 }: MediaSectionProps) {
   const videoInputRef = useRef<HTMLInputElement>(null);
@@ -77,22 +84,34 @@ export function MediaSection({
           disabled={isLoading}
         />
 
-        {photoFiles.length > 0 && (
-          <div className="grid grid-cols-3 gap-2">
-            {photoFiles.map((file, i) => (
-              <div key={i} className="relative group rounded-lg border overflow-hidden bg-muted/30">
-                <img
-                  src={URL.createObjectURL(file)}
-                  alt={file.name}
-                  className="w-full h-20 object-cover"
-                />
-                <button
-                  type="button"
-                  onClick={() => onRemovePhoto(i)}
-                  className="absolute top-1 right-1 w-5 h-5 rounded-full bg-destructive text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  <X className="h-3 w-3" />
-                </button>
+        {photoEntries.length > 0 && (
+          <div className="flex flex-col gap-3">
+            {photoEntries.map((entry, i) => (
+              <div key={i} className="rounded-lg border overflow-hidden bg-muted/10">
+                <div className="relative">
+                  <img
+                    src={URL.createObjectURL(entry.file)}
+                    alt={entry.file.name}
+                    className="w-full h-32 object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => onRemovePhoto(i)}
+                    className="absolute top-2 right-2 w-6 h-6 rounded-full bg-destructive text-white flex items-center justify-center"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+                <div className="p-3">
+                  <textarea
+                    value={entry.story}
+                    onChange={(e) => onUpdatePhotoStory(i, e.target.value)}
+                    placeholder="Write a story or memory about this photo..."
+                    className="w-full text-body-sm border rounded-lg p-2 resize-none focus:outline-none focus:ring-1 focus:ring-primary"
+                    rows={3}
+                    disabled={isLoading}
+                  />
+                </div>
               </div>
             ))}
           </div>
@@ -107,7 +126,7 @@ export function MediaSection({
           className="!h-8 !text-caption"
         >
           <Plus className="h-3.5 w-3.5 mr-1" />
-          {photoFiles.length === 0 ? 'Add Photo' : 'Add Another Photo'}
+          {photoEntries.length === 0 ? 'Add Photo with Story' : 'Add Another Photo'}
         </Button>
       </div>
 

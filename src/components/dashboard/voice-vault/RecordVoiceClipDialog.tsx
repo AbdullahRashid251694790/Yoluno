@@ -39,14 +39,9 @@ interface RecordVoiceClipDialogProps {
 }
 
 const CATEGORIES: { value: VoiceClipCategoryType; label: string }[] = [
-  { value: 'encouragement', label: 'Encouragement' },
-  { value: 'praise', label: 'Praise' },
-  { value: 'celebration', label: 'Celebration' },
   { value: 'story', label: 'Story' },
-  { value: 'memory', label: 'Memory' },
-  { value: 'greeting', label: 'Greeting' },
   { value: 'message', label: 'Message' },
-  { value: 'other', label: 'Other' },
+  { value: 'celebration', label: 'Song' },
 ];
 
 export function RecordVoiceClipDialog({ open, onOpenChange }: RecordVoiceClipDialogProps) {
@@ -56,7 +51,7 @@ export function RecordVoiceClipDialog({ open, onOpenChange }: RecordVoiceClipDia
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [category, setCategory] = useState<VoiceClipCategoryType>('other');
+  const [category, setCategory] = useState<VoiceClipCategoryType>('story');
   const [familyMemberId, setFamilyMemberId] = useState<string>('none');
   const [isUploading, setIsUploading] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -103,7 +98,7 @@ export function RecordVoiceClipDialog({ open, onOpenChange }: RecordVoiceClipDia
   const resetForm = () => {
     setTitle('');
     setDescription('');
-    setCategory('other');
+    setCategory('story');
     setFamilyMemberId('none');
     setIsPlaying(false);
     resetRecording();
@@ -308,17 +303,6 @@ export function RecordVoiceClipDialog({ open, onOpenChange }: RecordVoiceClipDia
               </div>
             )}
 
-            <div>
-              <Label htmlFor="description">Description (optional)</Label>
-              <Textarea
-                id="description"
-                placeholder="Add a note about this recording..."
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                className="mt-1"
-                rows={2}
-              />
-            </div>
           </div>
         </div>
 
