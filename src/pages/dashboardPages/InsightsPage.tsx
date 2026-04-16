@@ -150,19 +150,19 @@ export function InsightsPage() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     // Map existing entries by YYYY-MM-DD
-    const moodByDate = new Map<string, MoodType>();
+    const moodByDate: Record<string, MoodType> = {};
     moodHistory.forEach((entry) => {
       const d = new Date(entry.date);
       d.setHours(0, 0, 0, 0);
       const key = d.toISOString().slice(0, 10);
-      if (!moodByDate.has(key)) moodByDate.set(key, entry.mood);
+      if (!moodByDate[key]) moodByDate[key] = entry.mood;
     });
 
     for (let i = 13; i >= 0; i--) {
       const d = new Date(today);
       d.setDate(d.getDate() - i);
       const key = d.toISOString().slice(0, 10);
-      const mood = moodByDate.get(key);
+      const mood = moodByDate[key];
       items.push({
         day: d.toLocaleDateString('en-US', { weekday: 'short' }),
         emoji: mood ? MOOD_EMOJI[mood] : null,
