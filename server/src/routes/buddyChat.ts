@@ -73,9 +73,16 @@ function analyzeSafety(message: string): { level: 'green' | 'yellow' | 'red'; fl
   const lowerMessage = message.toLowerCase();
   const flags: string[] = [];
 
+  // Use word-boundary regex so "hello" doesn't match "hell",
+  // "class" doesn't match "ass", "shitake" doesn't match "shit", etc.
+  const matchesWord = (text: string, word: string) => {
+    const re = new RegExp(`\\b${word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`);
+    return re.test(text);
+  };
+
   // Check red flags first (most serious)
   for (const keyword of RED_FLAG_KEYWORDS) {
-    if (lowerMessage.includes(keyword)) {
+    if (matchesWord(lowerMessage, keyword)) {
       flags.push(keyword);
     }
   }
@@ -86,7 +93,7 @@ function analyzeSafety(message: string): { level: 'green' | 'yellow' | 'red'; fl
 
   // Check yellow flags
   for (const keyword of YELLOW_FLAG_KEYWORDS) {
-    if (lowerMessage.includes(keyword)) {
+    if (matchesWord(lowerMessage, keyword)) {
       flags.push(keyword);
     }
   }
@@ -210,13 +217,25 @@ router.post('/:childId/send', upload.single('image'), async (req: Request, res: 
     // Create safety report if needed
     if (inputSafety.level === 'red' || inputSafety.level === 'yellow') {
       const reportId = uuidv4();
-      const report = await queryOne<SafetyReport>(
-        `INSERT INTO safety_reports (id, user_id, child_profile_id, message_id, severity, issue_summary)
-         VALUES ($1, $2, $3, $4, $5, $6)
-         RETURNING *`,
-        [reportId, req.user!.id, childId, childMessageId, inputSafety.level,
-         `Child used concerning language: ${inputSafety.flags.join(', ')}`]
-      );
+      let report: SafetyReport | null = null;
+      try {
+        report = await queryOne<SafetyReport>(
+          `INSERT INTO safety_reports (id, user_id, child_profile_id, message_id, severity, issue_summary, report_type)
+           VALUES ($1, $2, $3, $4, $5, $6, 'language')
+           RETURNING *`,
+          [reportId, req.user!.id, childId, childMessageId, inputSafety.level,
+           `Child used concerning language: ${inputSafety.flags.join(', ')}`]
+        );
+      } catch {
+        // Fallback if report_type column doesn't exist yet (migration 062 not run)
+        report = await queryOne<SafetyReport>(
+          `INSERT INTO safety_reports (id, user_id, child_profile_id, message_id, severity, issue_summary)
+           VALUES ($1, $2, $3, $4, $5, $6)
+           RETURNING *`,
+          [reportId, req.user!.id, childId, childMessageId, inputSafety.level,
+           `Child used concerning language: ${inputSafety.flags.join(', ')}`]
+        );
+      }
 
       // Emit safety alert to parent
       emitToUser(io, req.user!.id, 'safety-alert', report);
@@ -493,21 +512,114 @@ router.post('/:childId/sessions/:sessionId/send', upload.single('image'), async 
     // Create safety report if needed
     if (inputSafety.level === 'red' || inputSafety.level === 'yellow') {
       const reportId = uuidv4();
-      const report = await queryOne<SafetyReport>(
-        `INSERT INTO safety_reports (id, user_id, child_profile_id, message_id, severity, issue_summary)
-         VALUES ($1, $2, $3, $4, $5, $6)
-         RETURNING *`,
-        [reportId, req.user!.id, childId, childMessageId, inputSafety.level,
-         `Child used concerning language: ${inputSafety.flags.join(', ')}`]
-      );
+      let report: SafetyReport | null = null;
+      try {
+        report = await queryOne<SafetyReport>(
+          `INSERT INTO safety_reports (id, user_id, child_profile_id, message_id, severity, issue_summary, report_type)
+           VALUES ($1, $2, $3, $4, $5, $6, 'language')
+           RETURNING *`,
+          [reportId, req.user!.id, childId, childMessageId, inputSafety.level,
+           `Child used concerning language: ${inputSafety.flags.join(', ')}`]
+        );
+      } catch {
+        // Fallback if report_type column doesn't exist yet (migration 062 not run)
+        report = await queryOne<SafetyReport>(
+          `INSERT INTO safety_reports (id, user_id, child_profile_id, message_id, severity, issue_summary)
+           VALUES ($1, $2, $3, $4, $5, $6)
+           RETURNING *`,
+          [reportId, req.user!.id, childId, childMessageId, inputSafety.level,
+           `Child used concerning language: ${inputSafety.flags.join(', ')}`]
+        );
+      }
       emitToUser(io, req.user!.id, 'safety-alert', report);
+
+      // Create a dashboard notification if the user has notify_on_report enabled
+      if (inputSafety.level === 'red') {
+        const notifyPrefs = await queryOne<{ notify_on_report: boolean }>(
+          'SELECT notify_on_report FROM user_safety_settings WHERE user_id = $1',
+          [req.user!.id]
+        );
+        if (notifyPrefs?.notify_on_report !== false) {
+          await query(
+            `INSERT INTO parent_notifications (user_id, child_profile_id, notification_type, title, message)
+             VALUES ($1, $2, 'other', $3, $4)`,
+            [
+              req.user!.id, childId,
+              'Safety Report Generated',
+              `A safety concern was detected in ${child.name}'s conversation: ${inputSafety.flags.join(', ')}. Review it in the Safety dashboard.`,
+            ]
+          ).catch(() => {});
+        }
+      }
     }
 
-    // Check for task completion
-    const taskCompletion = await checkTaskCompletion(childId, message, imageKey, imageAnalysis);
+    // Check if the child's message touches a banned topic
+    console.log('[TOPIC CHECK] Checking banned topics for child:', childId, 'message:', message.slice(0, 50));
+    const bannedTopicMatch = await checkBannedTopics(childId, message);
+    console.log('[TOPIC CHECK] Result:', bannedTopicMatch ? `BANNED: ${bannedTopicMatch.topicName}` : 'No match');
+    let buddyResponse: string;
 
-    // Generate buddy response using AI
-    const buddyResponse = await generateBuddyResponse(childId, message, child, inputSafety, imageAnalysis, taskCompletion);
+    let taskCompletion: Awaited<ReturnType<typeof checkTaskCompletion>> | null = null;
+
+    if (bannedTopicMatch) {
+      // Generate a gentle redirect instead of answering
+      buddyResponse = await generateTopicRedirect(
+        child.name, child.age, message,
+        bannedTopicMatch.topicName, bannedTopicMatch.categoryName
+      );
+
+      // Log as topic_redirect safety report
+      const redirectReportId = uuidv4();
+      const issueSummary = `${child.name} asked about: "${message.length > 100 ? message.slice(0, 100) + '...' : message}"`;
+      const fullContext = {
+        ai_analysis: `Luno gently redirected the conversation. Topic boundary: ${bannedTopicMatch.categoryName} — ${bannedTopicMatch.topicName} (restricted by parent)`,
+        topic_name: bannedTopicMatch.topicName,
+        category_name: bannedTopicMatch.categoryName,
+      };
+
+      // Try with report_type column first; fall back without it if migration 062 not yet run
+      try {
+        await query(
+          `INSERT INTO safety_reports (id, user_id, child_profile_id, message_id, severity, issue_summary, full_context, report_type)
+           VALUES ($1, $2, $3, $4, 'yellow', $5, $6, 'topic_redirect')`,
+          [redirectReportId, req.user!.id, childId, childMessageId, issueSummary, JSON.stringify(fullContext)]
+        );
+      } catch {
+        await query(
+          `INSERT INTO safety_reports (id, user_id, child_profile_id, message_id, severity, issue_summary, full_context)
+           VALUES ($1, $2, $3, $4, 'yellow', $5, $6)`,
+          [redirectReportId, req.user!.id, childId, childMessageId, issueSummary, JSON.stringify(fullContext)]
+        ).catch((e) => console.error('[topic_redirect] failed to log safety report:', e.message));
+      }
+
+      // Notify parent in real-time only if they opted in
+      const safetyPrefs = await queryOne<{ notify_on_redirect: boolean }>(
+        'SELECT notify_on_redirect FROM user_safety_settings WHERE user_id = $1',
+        [req.user!.id]
+      );
+      if (safetyPrefs?.notify_on_redirect) {
+        // Create a dashboard bell notification
+        await query(
+          `INSERT INTO parent_notifications (user_id, child_profile_id, notification_type, title, message)
+           VALUES ($1, $2, 'other', $3, $4)`,
+          [
+            req.user!.id,
+            childId,
+            'Topic Redirected',
+            `${child.name} asked about a restricted topic (${bannedTopicMatch.topicName}) and Luno gently redirected the conversation.`,
+          ]
+        ).catch(() => {});
+
+        emitToUser(io, req.user!.id, 'safety-alert', {
+          childId, childName: child.name, severity: 'yellow',
+          summary: `${child.name} asked about a restricted topic: ${bannedTopicMatch.topicName}`,
+        });
+      }
+    } else {
+      // Normal flow: check task completion + generate AI response
+      taskCompletion = await checkTaskCompletion(childId, message, imageKey, imageAnalysis);
+      buddyResponse = await generateBuddyResponse(childId, message, child, inputSafety, imageAnalysis, taskCompletion, sessionId);
+    }
 
     // Save buddy response with session_id
     const buddyMessageId = uuidv4();
@@ -1024,7 +1136,8 @@ async function generateBuddyResponse(
   child: ChildProfile,
   safety: { level: string; flags: string[] },
   imageAnalysis?: string | null,
-  taskCompletion?: TaskCompletionResult | null
+  taskCompletion?: TaskCompletionResult | null,
+  sessionId?: string
 ): Promise<string> {
   // Get guardrails
   const guardrails = await queryOne<GuardrailSettings>(
@@ -1131,13 +1244,19 @@ async function generateBuddyResponse(
   );
   const topicPosts = topicPostsResult.rows;
 
-  // Get recent messages for context
+  // Get recent messages for context — scoped to current session so new
+  // conversations don't leak context from previous ones.
   const recentMessages = await query<BuddyMessage>(
-    `SELECT role, content FROM buddy_messages
-     WHERE child_profile_id = $1
-     ORDER BY created_at DESC
-     LIMIT 10`,
-    [childId]
+    sessionId
+      ? `SELECT role, content FROM buddy_messages
+         WHERE child_profile_id = $1 AND session_id = $2
+         ORDER BY created_at DESC
+         LIMIT 10`
+      : `SELECT role, content FROM buddy_messages
+         WHERE child_profile_id = $1
+         ORDER BY created_at DESC
+         LIMIT 10`,
+    sessionId ? [childId, sessionId] : [childId]
   );
 
   // Get active journeys for context (Lolo's domain)
@@ -1169,8 +1288,18 @@ async function generateBuddyResponse(
     content: m.content,
   }));
 
+  // Fetch banned topic names so the AI itself refuses even on misspellings
+  const bannedTopicsResult = await query<{ name: string }>(
+    `SELECT t.name FROM topics t
+     INNER JOIN child_topic_settings cts ON cts.topic_id = t.id
+       AND cts.child_profile_id = $1 AND cts.is_allowed = false
+     WHERE t.is_active = true`,
+    [childId]
+  ).catch(() => ({ rows: [] as { name: string }[] }));
+  const bannedTopicNames = bannedTopicsResult.rows.map(r => r.name);
+
   // Build system prompt
-  const systemPrompt = buildSystemPrompt(buddyName, child, guardrails, safety, familyMembers, taskCompletion, topicPosts, enabledTopics, customTopics, storiesByMember, activeJourneys, recentStories, recentFamilyUpdates.rows, personalityTraits);
+  const systemPrompt = buildSystemPrompt(buddyName, child, guardrails, safety, familyMembers, taskCompletion, topicPosts, enabledTopics, customTopics, storiesByMember, activeJourneys, recentStories, recentFamilyUpdates.rows, personalityTraits, bannedTopicNames);
 
   // Build user message with image context
   let userContent = message;
@@ -1239,7 +1368,8 @@ function buildSystemPrompt(
   activeJourneys?: { title: string; status: string; progress: number; total_steps: number; completed_steps: number }[],
   recentStories?: { title: string; theme: string | null; created_at: string }[],
   recentFamilyUpdates?: { name: string; update_type: string; created_at: string }[],
-  personalityTraits?: Record<string, number>
+  personalityTraits?: Record<string, number>,
+  bannedTopicNames?: string[]
 ): string {
   // Persona-specific traits based on spec
   const personas: Record<string, { description: string; tone: string; examples: string[] }> = {
@@ -1549,6 +1679,10 @@ If ${child.name} asks for a STORY about a family member (e.g. "tell me a story a
     prompt += `\n\nTopics to gently redirect away from: ${guardrails.blocked_topics.join(', ')}.`;
   }
 
+  if (bannedTopicNames && bannedTopicNames.length > 0) {
+    prompt += `\n\nPARENT-RESTRICTED TOPICS — The parent has explicitly banned these topics. If the child asks about ANY of them (even with misspellings, synonyms, or indirect references), you MUST NOT discuss them or give any information about them. Say something like "Your parent hasn't allowed me to talk about that topic with you — but there are so many other cool things we can explore together! What else would you like to know about?" Be warm and friendly, never make the child feel bad for asking. The banned topics are: ${bannedTopicNames.join(', ')}.`;
+  }
+
   if (safety.level === 'red') {
     prompt += `\n\nGENTLE CARE NEEDED: The child shared something that needs extra tenderness. You and Lumi both care deeply. Respond with calm reassurance, suggest that some feelings are best shared with a grown-up who loves them. You might say: "Lumi and I are right here with you." Keep your voice soft and safe.`;
   } else if (safety.level === 'yellow') {
@@ -1605,8 +1739,10 @@ router.get('/safety-reports', async (req: Request, res: Response, next: NextFunc
 
     let queryText = `
       SELECT sr.*,
+        sr.full_context->>'ai_analysis' as ai_analysis,
         cp.name as child_name,
-        bm.content as message_excerpt
+        bm.content as message_excerpt,
+        bm.session_id as session_id
       FROM safety_reports sr
       LEFT JOIN child_profiles cp ON sr.child_profile_id = cp.id
       LEFT JOIN buddy_messages bm ON sr.message_id = bm.id
@@ -1708,5 +1844,202 @@ router.put('/safety-reports/:id', async (req: Request, res: Response, next: Next
     next(error);
   }
 });
+
+/**
+ * Check if a child's message touches a topic that has been banned (is_allowed = false)
+ * by the parent. Uses the same keyword matching as the analytics topic detection.
+ */
+async function checkBannedTopics(
+  childId: string,
+  message: string
+): Promise<{ topicName: string; categoryName: string } | null> {
+  try {
+    // First check if there are ANY banned topics for this child
+    const bannedCount = await queryOne<{ count: string }>(
+      `SELECT COUNT(*) as count FROM child_topic_settings WHERE child_profile_id = $1 AND is_allowed = false`,
+      [childId]
+    );
+    console.log('[checkBannedTopics] Child', childId, 'has', bannedCount?.count || 0, 'banned topics');
+
+    if (!bannedCount || bannedCount.count === '0') return null;
+
+    // Try with search_keywords first (migration 059+060)
+    console.log('[checkBannedTopics] Running keyword query for message:', message.slice(0, 60));
+    const match = await queryOne<{ topic_name: string; category_name: string }>(
+      `SELECT t.name AS topic_name, COALESCE(tc.name, 'General') AS category_name
+       FROM topics t
+       LEFT JOIN topic_categories tc ON tc.id = t.category_id
+       INNER JOIN child_topic_settings cts
+         ON cts.topic_id = t.id
+         AND cts.child_profile_id = $1
+         AND cts.is_allowed = false
+       WHERE t.is_active = true
+         AND (
+           $2 ILIKE '%' || t.name || '%'
+           OR EXISTS (
+             SELECT 1 FROM unnest(t.search_keywords) kw
+             WHERE $2 ILIKE '%' || kw || '%'
+           )
+         )
+       LIMIT 1`,
+      [childId, message]
+    );
+    console.log('[checkBannedTopics] Keyword query result:', match ? match.topic_name : 'NO MATCH');
+    if (match) return { topicName: match.topic_name, categoryName: match.category_name };
+
+    // Layer 3: fuzzy prefix match — check if first 4+ chars of any banned
+    // topic name appear in the message (catches misspellings like "dinasoures")
+    return fuzzyBannedCheck(childId, message);
+  } catch (err) {
+    console.error('[checkBannedTopics] primary query failed:', (err as Error).message);
+    try {
+      const match = await queryOne<{ topic_name: string; category_name: string }>(
+        `SELECT t.name AS topic_name, COALESCE(tc.name, 'General') AS category_name
+         FROM topics t
+         LEFT JOIN topic_categories tc ON tc.id = t.category_id
+         INNER JOIN child_topic_settings cts
+           ON cts.topic_id = t.id
+           AND cts.child_profile_id = $1
+           AND cts.is_allowed = false
+         WHERE t.is_active = true
+           AND $2 ILIKE '%' || t.name || '%'
+         LIMIT 1`,
+        [childId, message]
+      );
+      console.log('[checkBannedTopics] Fallback result:', match ? match.topic_name : 'NO MATCH');
+      if (match) return { topicName: match.topic_name, categoryName: match.category_name };
+      return fuzzyBannedCheck(childId, message);
+    } catch (fallbackErr) {
+      console.error('[checkBannedTopics] fallback also failed:', (fallbackErr as Error).message);
+      return null;
+    }
+  }
+}
+
+/**
+ * Fuzzy banned topic check — fetches all banned topic names for this child
+ * and checks if the first 4+ characters of any topic word appear in the
+ * message. Catches misspellings like "dinasoures" for "Dinosaurs".
+ */
+/**
+ * Levenshtein edit distance — number of single-character edits (insert,
+ * delete, substitute) needed to turn `a` into `b`.
+ */
+function levenshtein(a: string, b: string): number {
+  const m = a.length;
+  const n = b.length;
+  const dp: number[][] = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0));
+  for (let i = 0; i <= m; i++) dp[i][0] = i;
+  for (let j = 0; j <= n; j++) dp[0][j] = j;
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      dp[i][j] = a[i - 1] === b[j - 1]
+        ? dp[i - 1][j - 1]
+        : 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]);
+    }
+  }
+  return dp[m][n];
+}
+
+async function fuzzyBannedCheck(
+  childId: string,
+  message: string
+): Promise<{ topicName: string; categoryName: string } | null> {
+  try {
+    const bannedResult = await query<{ topic_name: string; category_name: string }>(
+      `SELECT t.name AS topic_name, COALESCE(tc.name, 'General') AS category_name
+       FROM topics t
+       LEFT JOIN topic_categories tc ON tc.id = t.category_id
+       INNER JOIN child_topic_settings cts
+         ON cts.topic_id = t.id AND cts.child_profile_id = $1 AND cts.is_allowed = false
+       WHERE t.is_active = true`,
+      [childId]
+    );
+
+    const lowerMsg = message.toLowerCase();
+    const msgWords = lowerMsg.split(/\s+/).filter(w => w.length >= 3);
+
+    for (const banned of bannedResult.rows) {
+      const topicWords = banned.topic_name.toLowerCase().split(/[\s&,]+/).filter(w => w.length >= 3);
+      for (const tw of topicWords) {
+        for (const mw of msgWords) {
+          // 1) 3-char prefix match (both words must be >= 4 chars to avoid false positives)
+          if (tw.length >= 4 && mw.length >= 4 && mw.slice(0, 3) === tw.slice(0, 3)) {
+            // If prefixes match, allow up to 2 edits for words of similar length
+            const dist = levenshtein(mw, tw);
+            const maxDist = Math.max(tw.length, mw.length) <= 5 ? 1 : 2;
+            if (dist <= maxDist) {
+              console.log(`[checkBannedTopics] Fuzzy match: "${mw}" ≈ "${tw}" (distance ${dist}) for topic "${banned.topic_name}"`);
+              return { topicName: banned.topic_name, categoryName: banned.category_name };
+            }
+          }
+          // 2) Direct Levenshtein for short words (3-5 chars) — allow 1 edit
+          if (tw.length >= 3 && tw.length <= 5 && mw.length >= 3 && mw.length <= 5) {
+            if (levenshtein(mw, tw) <= 1) {
+              console.log(`[checkBannedTopics] Fuzzy match (short): "${mw}" ≈ "${tw}" for topic "${banned.topic_name}"`);
+              return { topicName: banned.topic_name, categoryName: banned.category_name };
+            }
+          }
+        }
+      }
+    }
+    console.log('[checkBannedTopics] Fuzzy check: no match');
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Generate a gentle topic redirect response via AI. The child's question is
+ * acknowledged but the conversation is steered away from the restricted topic.
+ */
+async function generateTopicRedirect(
+  childName: string,
+  childAge: number,
+  childMessage: string,
+  topicName: string,
+  categoryName: string
+): Promise<string> {
+  const prompt = `You are Luno, a warm and caring AI friend for a child named ${childName} (age ${childAge}). The child just asked about "${childMessage}" which touches on "${topicName}" — a topic their parent has chosen to keep off-limits for now.
+
+Your job is to:
+1. Tell them clearly that their parent hasn't allowed you to talk about this topic
+2. Acknowledge their curiosity positively — don't make them feel bad for asking
+3. Offer to explore something else fun together
+
+Be warm and honest. Say something like "Your parent hasn't allowed me to talk about that topic with you — but there are so many other cool things we can explore together! What else would you like to know about?"
+
+Write 2-3 short sentences. No emojis. Do NOT include your name at the start.`;
+
+  try {
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': process.env.FRONTEND_URL || 'http://localhost:5173',
+      },
+      body: JSON.stringify({
+        model: 'google/gemini-2.5-flash',
+        messages: [
+          { role: 'system', content: prompt },
+          { role: 'user', content: childMessage },
+        ],
+        max_tokens: 200,
+        temperature: 0.7,
+      }),
+    });
+
+    if (response.ok) {
+      const data = (await response.json()) as { choices: { message: { content: string } }[] };
+      const content = data.choices[0]?.message?.content;
+      if (content) return content;
+    }
+  } catch {}
+
+  // Fallback if AI fails
+  return `Your parent hasn't allowed me to talk about that topic with you — but there are so many other cool things we can explore together! What else would you like to know about?`;
+}
 
 export default router;

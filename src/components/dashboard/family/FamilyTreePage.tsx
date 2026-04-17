@@ -77,13 +77,32 @@ export function FamilyTreePage() {
     return ordered;
   }, [members]);
 
-  // Collect memories (voice clips, photos, stories) across members
-  // For now show member counts — real media items need separate queries
-  const memberMemories = useMemo(() => {
-    return members.map((m) => ({
-      member: m,
-      avatarUrl: getUploadUrl(m.photo_url) || undefined,
-    }));
+  // Fetch memory counts (photos, stories, videos) per member
+  const [memoryCounts, setMemoryCounts] = useState<Record<string, { photos: number; stories: number; videos: number }>>({});
+
+  useEffect(() => {
+    if (members.length === 0) return;
+    const fetchCounts = async () => {
+      const counts: Record<string, { photos: number; stories: number; videos: number }> = {};
+      for (const m of members) {
+        try {
+          const [p, s, v] = await Promise.all([
+            apiClient.get(`/family/members/${m.id}/photos`).catch(() => ({ data: [] })),
+            apiClient.get(`/family/members/${m.id}/stories`).catch(() => ({ data: [] })),
+            apiClient.get(`/family/members/${m.id}/videos`).catch(() => ({ data: [] })),
+          ]);
+          counts[m.id] = {
+            photos: (p.data || []).length,
+            stories: (s.data || []).length,
+            videos: (v.data || []).length,
+          };
+        } catch {
+          counts[m.id] = { photos: 0, stories: 0, videos: 0 };
+        }
+      }
+      setMemoryCounts(counts);
+    };
+    fetchCounts();
   }, [members]);
 
   const tabs: [Tab, string][] = [
@@ -227,11 +246,18 @@ export function FamilyTreePage() {
                               <p className="text-[13px] mb-2" style={{ color: '#D4A843' }}>
                                 {formatRelationship(m.relationship, m.specific_relationship)}
                               </p>
-                              {m.hobbies && m.hobbies.length > 0 && (
-                                <p className="text-[12px] mb-3" style={{ color: '#9B978E' }}>
-                                  {m.hobbies.slice(0, 3).join(' · ')}
-                                </p>
-                              )}
+                              {(() => {
+                                const mc = memoryCounts[m.id];
+                                const parts: string[] = [];
+                                if (mc?.videos) parts.push(`${mc.videos} voice recording${mc.videos > 1 ? 's' : ''}`);
+                                if (mc?.photos) parts.push(`${mc.photos} photo${mc.photos > 1 ? 's' : ''}`);
+                                if (mc?.stories) parts.push(`${mc.stories} ${mc.stories > 1 ? 'stories' : 'story'}`);
+                                return (
+                                  <p className="text-[12px] mb-2" style={{ color: '#9B978E' }}>
+                                    {parts.length > 0 ? parts.join(' · ') : 'No memories yet'}
+                                  </p>
+                                );
+                              })()}
                             </div>
                           </div>
                         </div>

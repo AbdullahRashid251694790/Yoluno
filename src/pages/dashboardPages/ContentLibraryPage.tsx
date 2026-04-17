@@ -6,6 +6,8 @@
 
 import { useState, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { apiClient } from '@/integrations/api/client';
+import { toast } from 'sonner';
 import { useChildProfiles } from '@/hooks/queries/useChildProfiles';
 import {
   useContentItems,
@@ -57,6 +59,27 @@ export function ContentLibraryPage() {
   const { data: contentData, isLoading } = useContentItems(filters);
   const toggleFavorite = useToggleFavorite();
   const deleteContent = useDeleteContent();
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExportAll = async () => {
+    setIsExporting(true);
+    try {
+      const response = await apiClient.get('/data-export', { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `yoluno-data-${new Date().toISOString().split('T')[0]}.html`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      toast.success('Data exported successfully');
+    } catch {
+      toast.error('Failed to export data');
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   // All items for tab counts (ignore type filter)
   const { data: allForCounts } = useContentItems({
@@ -134,10 +157,12 @@ export function ContentLibraryPage() {
             <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: '#9B978E' }} />
           </div>
           <button
+            onClick={handleExportAll}
+            disabled={isExporting}
             className="flex items-center gap-1.5 px-4 py-2.5 rounded-lg text-[13px] transition hover:bg-[#E8F6F4]"
             style={{ fontWeight: 600, color: '#3ECDC6', border: '1px solid #3ECDC6' }}
           >
-            <Download size={14} /> Export All
+            <Download size={14} /> {isExporting ? 'Exporting...' : 'Export All'}
           </button>
         </div>
       </div>

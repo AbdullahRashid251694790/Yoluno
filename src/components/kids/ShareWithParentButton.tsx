@@ -6,11 +6,12 @@
  * confirmation state once tapped so the child can't spam it.
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Heart, Check } from 'lucide-react';
 import { useCreateSharedMoment } from '@/hooks/queries/useSharedMoments';
 import type { SharedMomentType } from '@/services/sharedMoments';
+import { apiClient } from '@/integrations/api/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
@@ -40,10 +41,23 @@ export function ShareWithParentButton({
   const createShare = useCreateSharedMoment();
   const [shared, setShared] = useState(false);
 
+  // Check if already shared on mount (by reference_id)
+  useEffect(() => {
+    if (!referenceId) return;
+    apiClient.get('/shared-moments', {
+      params: { childId, include_seen: 'true' },
+    }).then((res) => {
+      const moments = res.data as any[];
+      if (moments.some((m) => m.reference_id === referenceId && m.moment_type === momentType)) {
+        setShared(true);
+      }
+    }).catch(() => {});
+  }, [childId, referenceId, momentType]);
+
   const handleClick = async () => {
     if (shared) return;
     try {
-      await createShare.mutateAsync({
+      const result = await createShare.mutateAsync({
         child_profile_id: childId,
         moment_type: momentType,
         title,
@@ -52,7 +66,10 @@ export function ShareWithParentButton({
         reference_id: referenceId,
       });
       setShared(true);
-      toast.success('Shared with your parent!');
+      // Don't show "shared" toast if it was already shared (backend returned existing)
+      if (!(result as any).already_shared) {
+        toast.success('Shared with your parent!');
+      }
     } catch {
       // handleError already shows a toast via the mutation hook
     }

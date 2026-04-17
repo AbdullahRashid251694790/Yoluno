@@ -185,6 +185,33 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
       [id, child_profile_id, title, content, theme, mood, values, word_count, illustration_style, illustration_url]
     );
 
+    // Notify parent if they opted in
+    (async () => {
+      try {
+        const prefs = await queryOne<{ notify_on_story: boolean }>(
+          'SELECT notify_on_story FROM user_safety_settings WHERE user_id = $1',
+          [req.user!.id]
+        );
+        if (prefs?.notify_on_story !== true) return;
+        const child = await queryOne<{ name: string }>(
+          'SELECT name FROM child_profiles WHERE id = $1',
+          [child_profile_id]
+        );
+        await query(
+          `INSERT INTO parent_notifications (user_id, child_profile_id, notification_type, title, message)
+           VALUES ($1, $2, 'story_created', $3, $4)`,
+          [
+            req.user!.id,
+            child_profile_id,
+            `${child?.name || 'Your child'} created a new story!`,
+            `${child?.name || 'Your child'} just created "${title}". Check it out in the Stories section!`,
+          ]
+        );
+      } catch (err) {
+        console.error('Error sending story notification:', (err as Error).message);
+      }
+    })();
+
     res.status(201).json(result);
   } catch (error) {
     next(error);

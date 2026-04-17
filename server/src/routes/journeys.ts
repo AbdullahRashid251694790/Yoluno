@@ -248,6 +248,33 @@ router.put('/:journeyId/steps/:stepId', async (req: Request, res: Response, next
             console.error('Error creating journey reward:', (err as Error).message);
           }
         })();
+
+        // Notify parent if they opted in
+        (async () => {
+          try {
+            const prefs = await queryOne<{ notify_on_journey: boolean }>(
+              'SELECT notify_on_journey FROM user_safety_settings WHERE user_id = $1',
+              [req.user!.id]
+            );
+            if (prefs?.notify_on_journey === false) return;
+            const child = await queryOne<{ name: string }>(
+              'SELECT name FROM child_profiles WHERE id = $1',
+              [journey.child_profile_id]
+            );
+            await query(
+              `INSERT INTO parent_notifications (user_id, child_profile_id, notification_type, title, message)
+               VALUES ($1, $2, 'journey_completed', $3, $4)`,
+              [
+                req.user!.id,
+                journey.child_profile_id,
+                `${child?.name || 'Your child'} completed a journey!`,
+                `${child?.name || 'Your child'} just finished the "${journey.title}" journey. Check their progress in the dashboard!`,
+              ]
+            );
+          } catch (err) {
+            console.error('Error sending journey notification:', (err as Error).message);
+          }
+        })();
       }
     }
 

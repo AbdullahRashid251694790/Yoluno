@@ -55,6 +55,8 @@ import moodCheckinRoutes from './routes/moodCheckin.js';
 import dataExportRoutes from './routes/dataExport.js';
 import dailyMissionsRoutes from './routes/dailyMissions.js';
 import sharedMomentsRoutes from './routes/sharedMoments.js';
+import safetySettingsRoutes from './routes/safetySettings.js';
+import weeklyReportRoutes from './routes/weeklyReport.js';
 
 const app = express();
 const httpServer = createServer(app);
@@ -177,6 +179,8 @@ app.use('/api/mood-checkin', moodCheckinRoutes);
 app.use('/api/data-export', dataExportRoutes);
 app.use('/api/daily-missions', dailyMissionsRoutes);
 app.use('/api/shared-moments', sharedMomentsRoutes);
+app.use('/api/safety-settings', safetySettingsRoutes);
+app.use('/api/weekly-report', weeklyReportRoutes);
 
 // Error handler
 app.use(errorHandler);
@@ -196,6 +200,9 @@ async function start() {
     httpServer.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
       console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+
+      // Weekly safety email cron — runs every Monday at 8 AM UTC
+      scheduleWeeklyReport();
     });
   } catch (error) {
     console.error('Failed to start server:', error);
@@ -204,6 +211,116 @@ async function start() {
 }
 
 start();
+
+// Weekly safety report cron — checks every hour, fires on Monday 8 AM UTC
+let lastWeeklyRun = '';
+function scheduleWeeklyReport() {
+  const check = async () => {
+    const now = new Date();
+    const day = now.getUTCDay(); // 0=Sun, 1=Mon
+    const hour = now.getUTCHours();
+    const dateKey = now.toISOString().slice(0, 10); // YYYY-MM-DD
+
+    // Fire on Monday at 8 AM UTC, once per day
+    if (day === 1 && hour === 8 && lastWeeklyRun !== dateKey) {
+      lastWeeklyRun = dateKey;
+      console.log('Triggering weekly safety report emails...');
+      try {
+        // Import and call the send logic directly
+        const { query: dbQuery } = await import('./config/database.js');
+        const RESEND_API_KEY = process.env.RESEND_API_KEY || '';
+        const FROM_EMAIL = process.env.FROM_EMAIL || 'Yoluno <noreply@yoluno.ai>';
+
+        if (!RESEND_API_KEY) {
+          console.log('Weekly report skipped — RESEND_API_KEY not set');
+          return;
+        }
+
+        const usersResult = await dbQuery<{ user_id: string; email: string }>(
+          `SELECT uss.user_id, u.email
+           FROM user_safety_settings uss
+           INNER JOIN users u ON u.id = uss.user_id
+           WHERE uss.weekly_summary = true AND u.email IS NOT NULL`
+        );
+
+        let sent = 0;
+        for (const user of usersResult.rows) {
+          const reportsResult = await dbQuery<{
+            severity: string; issue_summary: string; ai_analysis: string | null;
+            child_name: string | null; created_at: string;
+          }>(
+            `SELECT sr.severity, sr.issue_summary, sr.ai_analysis,
+                    cp.name as child_name, sr.created_at::text
+             FROM safety_reports sr
+             LEFT JOIN child_profiles cp ON sr.child_profile_id = cp.id
+             WHERE sr.user_id = $1 AND sr.created_at >= NOW() - INTERVAL '7 days'
+             ORDER BY sr.created_at DESC`,
+            [user.user_id]
+          );
+
+          const reports = reportsResult.rows;
+          const redirections = reports.filter((r) => r.severity === 'yellow');
+          const safetyReports = reports.filter((r) => r.severity === 'red');
+
+          // Build simple HTML email
+          const html = `
+<div style="font-family:'DM Sans',sans-serif;max-width:600px;margin:0 auto;padding:32px 20px;">
+  <h1 style="font-size:24px;color:#2A2926;">Weekly Safety Summary</h1>
+  <p style="color:#9B978E;font-size:14px;">Your children's safety digest for the past 7 days</p>
+  <div style="display:flex;gap:12px;margin:20px 0;">
+    <div style="flex:1;background:#E8F6F4;border-radius:8px;padding:16px;text-align:center;">
+      <p style="font-size:24px;font-weight:600;color:#2A2926;margin:0;">${reports.length}</p>
+      <p style="font-size:12px;color:#9B978E;margin:4px 0 0;">Total</p>
+    </div>
+    <div style="flex:1;background:#FDF6E8;border-radius:8px;padding:16px;text-align:center;">
+      <p style="font-size:24px;font-weight:600;color:#2A2926;margin:0;">${redirections.length}</p>
+      <p style="font-size:12px;color:#9B978E;margin:4px 0 0;">Redirections</p>
+    </div>
+    <div style="flex:1;background:#FEF0EA;border-radius:8px;padding:16px;text-align:center;">
+      <p style="font-size:24px;font-weight:600;color:#2A2926;margin:0;">${safetyReports.length}</p>
+      <p style="font-size:12px;color:#9B978E;margin:4px 0 0;">Reports</p>
+    </div>
+  </div>
+  ${reports.length === 0 ? '<div style="background:#E8F6F4;border-radius:12px;padding:32px;text-align:center;margin:20px 0;"><p style="font-size:28px;margin:0 0 8px;">&#10003;</p><p style="font-size:16px;font-weight:600;color:#2A2926;margin:0 0 8px;">All clear this week!</p><p style="font-size:14px;color:#6B675E;margin:0;line-height:1.6;">All your children stayed within the boundaries you set. No topics were redirected and no safety concerns were flagged. Keep up the great parenting!</p></div>' :
+    reports.map((r) => `
+      <div style="border-left:3px solid ${r.severity === 'yellow' ? '#D4A843' : '#E8946A'};padding:12px 16px;margin:8px 0;background:#FAFAF7;border-radius:8px;">
+        <p style="font-size:12px;color:#9B978E;margin:0 0 4px;">${r.child_name || 'Child'}</p>
+        <p style="font-size:14px;color:#2A2926;margin:0 0 4px;">${r.issue_summary}</p>
+        ${r.ai_analysis ? `<p style="font-size:13px;color:#6B675E;margin:0;">${r.ai_analysis}</p>` : ''}
+      </div>`).join('')}
+  <p style="font-size:12px;color:#9B978E;text-align:center;margin-top:24px;">Powered by Yoluno</p>
+</div>`;
+
+          try {
+            const res = await fetch('https://api.resend.com/emails', {
+              method: 'POST',
+              headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                from: FROM_EMAIL,
+                to: [user.email],
+                subject: `Yoluno Weekly Safety Summary — ${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`,
+                html,
+              }),
+            });
+            if (res.ok) sent++;
+            else console.error(`Weekly email failed for ${user.email}:`, await res.text());
+          } catch (err) {
+            console.error(`Weekly email error for ${user.email}:`, err);
+          }
+        }
+        console.log(`Weekly safety report: sent ${sent}/${usersResult.rows.length} emails`);
+      } catch (err) {
+        console.error('Weekly report cron error:', err);
+      }
+    }
+  };
+
+  // Check every hour
+  setInterval(check, 60 * 60 * 1000);
+  // Also check once on startup (in case server restarts on Monday morning)
+  setTimeout(check, 10_000);
+  console.log('Weekly safety report cron scheduled (Monday 8 AM UTC)');
+}
 
 // Graceful shutdown
 process.on('SIGTERM', async () => {

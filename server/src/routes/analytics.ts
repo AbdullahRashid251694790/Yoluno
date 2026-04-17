@@ -115,7 +115,7 @@ router.get(
                ON bm.child_profile_id = $1
                AND bm.role = 'child'
                AND bm.created_at::date = $2::date
-               AND bm.content ILIKE '%' || t.name || '%'
+               AND (bm.content ILIKE '%' || t.name || '%' OR EXISTS (SELECT 1 FROM unnest(t.search_keywords) kw WHERE bm.content ILIKE '%' || kw || '%'))
              WHERE t.is_active = true
              LIMIT 5`,
             [childId, row.date]
@@ -258,7 +258,7 @@ router.get(
         INNER JOIN buddy_messages bm
           ON bm.child_profile_id = $1
           AND bm.role = 'child'
-          AND bm.content ILIKE '%' || t.name || '%'
+          AND (bm.content ILIKE '%' || t.name || '%' OR EXISTS (SELECT 1 FROM unnest(t.search_keywords) kw WHERE bm.content ILIKE '%' || kw || '%'))
         WHERE t.is_active = true
         GROUP BY t.name, tc.name
         ORDER BY mention_count DESC, last_mentioned_at DESC
@@ -420,7 +420,7 @@ router.get(
              INNER JOIN buddy_messages bm
                ON bm.child_profile_id = $1
                AND bm.role = 'child'
-               AND bm.content ILIKE '%' || t.name || '%'
+               AND (bm.content ILIKE '%' || t.name || '%' OR EXISTS (SELECT 1 FROM unnest(t.search_keywords) kw WHERE bm.content ILIKE '%' || kw || '%'))
              WHERE t.is_active = true
              GROUP BY t.name
              ORDER BY MAX(bm.created_at) DESC
@@ -460,7 +460,7 @@ router.get(
          FROM topics t
          INNER JOIN buddy_messages bm
            ON bm.role = 'child'
-           AND bm.content ILIKE '%' || t.name || '%'
+           AND (bm.content ILIKE '%' || t.name || '%' OR EXISTS (SELECT 1 FROM unnest(t.search_keywords) kw WHERE bm.content ILIKE '%' || kw || '%'))
          INNER JOIN child_profiles cp
            ON cp.id = bm.child_profile_id
            AND cp.user_id = $1

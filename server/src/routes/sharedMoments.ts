@@ -109,6 +109,21 @@ router.post(
         throw new AppError(404, 'Child profile not found');
       }
 
+      // Prevent duplicates — if same child + type + reference already shared, return existing
+      if (reference_id) {
+        const existing = await queryOne<SharedMomentRow>(
+          `SELECT id, child_profile_id, user_id, moment_type, title, context, reflection,
+                  reference_id, is_seen, shared_at::text
+           FROM shared_moments
+           WHERE child_profile_id = $1 AND moment_type = $2 AND reference_id = $3`,
+          [child_profile_id, moment_type, reference_id]
+        );
+        if (existing) {
+          res.status(200).json({ ...existing, already_shared: true });
+          return;
+        }
+      }
+
       const row = await queryOne<SharedMomentRow>(
         `INSERT INTO shared_moments
            (child_profile_id, user_id, moment_type, title, context, reflection, reference_id)
