@@ -1,16 +1,84 @@
 /**
  * Data Export Route
  *
- * Allows users to download all their data as a styled HTML report.
+ * Allows users to download all their data as styled HTML reports.
+ * Includes rate limiting (1 export per type per hour) and timestamps.
  */
 
 import { Router, Request, Response, NextFunction } from 'express';
-import { query } from '../config/database.js';
+import { query, queryOne } from '../config/database.js';
 import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
 
 router.use(requireAuth);
+
+const RESEND_API_KEY = process.env.RESEND_API_KEY || '';
+const FROM_EMAIL = process.env.FROM_EMAIL || 'Yoluno <noreply@yoluno.ai>';
+
+// ─── In-memory rate limiter: 1 export per type per user per hour ───
+const exportRateMap = new Map<string, number>();
+
+function checkExportRateLimit(userId: string, type: string): boolean {
+  const key = `${userId}:${type}`;
+  const last = exportRateMap.get(key);
+  const now = Date.now();
+  if (last && now - last < 60 * 60 * 1000) return false; // within 1 hour
+  exportRateMap.set(key, now);
+  return true;
+}
+
+/** Update last_export_at timestamp */
+async function markExported(userId: string) {
+  await queryOne(
+    `INSERT INTO user_safety_settings (user_id, last_export_at) VALUES ($1, NOW())
+     ON CONFLICT (user_id) DO UPDATE SET last_export_at = NOW()`,
+    [userId]
+  ).catch(() => {});
+}
+
+/** Update last_delete_at timestamp + send confirmation email */
+async function markDeleted(userId: string, action: string) {
+  await queryOne(
+    `INSERT INTO user_safety_settings (user_id, last_delete_at) VALUES ($1, NOW())
+     ON CONFLICT (user_id) DO UPDATE SET last_delete_at = NOW()`,
+    [userId]
+  ).catch(() => {});
+
+  // Send confirmation email
+  if (!RESEND_API_KEY) return;
+  try {
+    const user = await queryOne<{ email: string }>(
+      'SELECT email FROM users WHERE id = $1',
+      [userId]
+    );
+    if (!user?.email) return;
+
+    await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${RESEND_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: FROM_EMAIL,
+        to: [user.email],
+        subject: `Yoluno — Data Deletion Confirmation`,
+        html: `<div style="font-family:'DM Sans',sans-serif;max-width:500px;margin:0 auto;padding:32px 20px;">
+          <h2 style="color:#2A2926;margin-bottom:8px;">Data Deleted</h2>
+          <p style="color:#6B675E;line-height:1.6;">The following action was completed on your Yoluno account:</p>
+          <div style="background:#FEF0EA;border-radius:12px;padding:16px;margin:16px 0;">
+            <p style="color:#E8946A;font-weight:600;margin:0;">${action}</p>
+          </div>
+          <p style="color:#6B675E;line-height:1.6;">If you did not perform this action, please contact us immediately at <a href="mailto:safety@yoluno.com" style="color:#3ECDC6;">safety@yoluno.com</a>.</p>
+          <p style="color:#9B978E;font-size:12px;margin-top:24px;">Powered by <span style="color:#D4A843;font-weight:600;">Yoluno</span></p>
+        </div>`,
+      }),
+    });
+  } catch (err) {
+    console.error('[data-export] Failed to send delete confirmation email:', (err as Error).message);
+  }
+}
 
 /** Safe query wrapper — returns empty rows if the table/column doesn't exist */
 async function safeQuery(sql: string, params: unknown[]) {
@@ -246,6 +314,10 @@ ${voiceClips.length === 0 ? '<p class="empty">No voice recordings saved.</p>' : 
 router.get('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = req.user!.id;
+    if (!checkExportRateLimit(userId, 'all')) {
+      res.status(429).json({ error: 'Export limit reached. Please wait 1 hour between exports.' });
+      return;
+    }
 
     // Gather all user data in parallel
     const [
@@ -338,7 +410,411 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
       'Content-Disposition',
       `attachment; filename="yoluno-data-${new Date().toISOString().split('T')[0]}.html"`
     );
+    markExported(userId);
     res.send(html);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// ─── Granular export endpoints ───
+
+const REPORT_CSS = `
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #faf9f7; color: #2d2a26; line-height: 1.6; padding: 2rem; max-width: 900px; margin: 0 auto; }
+  h1 { font-size: 2rem; margin-bottom: 0.25rem; }
+  h2 { font-size: 1.4rem; margin: 2.5rem 0 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid #3dd6c8; }
+  h3 { font-size: 1.1rem; margin: 1.5rem 0 0.5rem; color: #555; }
+  .subtitle { color: #7a7067; margin-bottom: 2rem; }
+  .card { background: #fff; border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem; box-shadow: 0 2px 8px rgba(45,42,38,0.06); border: 1px solid #eee; }
+  .meta { font-size: 0.85rem; color: #7a7067; }
+  .message { padding: 0.6rem 1rem; border-radius: 12px; margin-bottom: 0.5rem; max-width: 80%; }
+  .message-child { background: #3dd6c8; color: #fff; margin-left: auto; text-align: right; border-bottom-right-radius: 4px; }
+  .message-buddy { background: #f0efed; color: #2d2a26; border-bottom-left-radius: 4px; }
+  .message-time { font-size: 0.7rem; opacity: 0.7; margin-top: 2px; }
+  .empty { color: #aaa; font-style: italic; padding: 1rem 0; }
+  .stat-card { background: #fff; border-radius: 12px; padding: 1rem; text-align: center; box-shadow: 0 2px 8px rgba(45,42,38,0.06); border: 1px solid #eee; display: inline-block; margin-right: 1rem; margin-bottom: 1rem; min-width: 140px; }
+  .stat-value { font-size: 2rem; font-weight: 700; color: #3dd6c8; }
+  .stat-label { font-size: 0.85rem; color: #7a7067; }
+  table { width: 100%; border-collapse: collapse; margin-top: 0.5rem; }
+  th, td { text-align: left; padding: 0.5rem 0.75rem; border-bottom: 1px solid #eee; font-size: 0.9rem; }
+  th { color: #7a7067; font-weight: 600; font-size: 0.8rem; text-transform: uppercase; }
+  @media print { body { padding: 1rem; } .card { break-inside: avoid; } }
+`;
+
+function wrapHtml(title: string, subtitle: string, body: string): string {
+  return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>${escapeHtml(title)}</title><style>${REPORT_CSS}</style></head><body>
+<h1>${escapeHtml(title)}</h1>
+<p class="subtitle">${escapeHtml(subtitle)}</p>
+${body}
+</body></html>`;
+}
+
+/**
+ * GET /api/data-export/conversations
+ * Export all chat sessions and messages as HTML.
+ */
+router.get('/conversations', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = req.user!.id;
+    if (!checkExportRateLimit(userId, 'conversations')) {
+      res.status(429).json({ error: 'Export limit reached. Please wait 1 hour between exports.' });
+      return;
+    }
+
+    const children = (await query('SELECT id, name FROM child_profiles WHERE user_id = $1', [userId])).rows;
+    const childNames: Record<string, string> = {};
+    for (const c of children) childNames[c.id] = c.name;
+
+    const sessions = (await safeQuery(
+      `SELECT cs.* FROM chat_sessions cs
+       JOIN child_profiles cp ON cs.child_profile_id = cp.id
+       WHERE cp.user_id = $1 ORDER BY cs.created_at DESC`,
+      [userId]
+    )).rows;
+
+    const messages = (await safeQuery(
+      `SELECT bm.* FROM buddy_messages bm
+       JOIN child_profiles cp ON bm.child_profile_id = cp.id
+       WHERE cp.user_id = $1 ORDER BY bm.created_at ASC`,
+      [userId]
+    )).rows;
+
+    // Group messages by session
+    const msgsBySession: Record<string, any[]> = {};
+    for (const m of messages) {
+      const sid = m.session_id || 'no-session';
+      if (!msgsBySession[sid]) msgsBySession[sid] = [];
+      msgsBySession[sid].push(m);
+    }
+
+    let body = `<div class="stat-card"><div class="stat-value">${sessions.length}</div><div class="stat-label">Sessions</div></div>`;
+    body += `<div class="stat-card"><div class="stat-value">${messages.length}</div><div class="stat-label">Messages</div></div>`;
+
+    for (const session of sessions) {
+      const childName = childNames[session.child_profile_id] || 'Unknown';
+      const msgs = msgsBySession[session.id] || [];
+      body += `<h2>${escapeHtml(session.title || 'Untitled Session')} — ${escapeHtml(childName)}</h2>`;
+      body += `<p class="meta">${formatDateTime(session.created_at)} · ${msgs.length} messages</p>`;
+      if (msgs.length === 0) {
+        body += `<p class="empty">No messages in this session.</p>`;
+      } else {
+        for (const m of msgs) {
+          const cls = m.role === 'child' ? 'message-child' : 'message-buddy';
+          body += `<div class="message ${cls}"><div>${escapeHtml(m.content)}</div><div class="message-time">${formatDateTime(m.created_at)}</div></div>`;
+        }
+      }
+    }
+
+    if (sessions.length === 0) body += `<p class="empty">No conversations found.</p>`;
+
+    const html = wrapHtml(
+      'Yoluno — Conversations Export',
+      `Exported on ${formatDate(new Date().toISOString())}`,
+      body
+    );
+
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="yoluno-conversations-${new Date().toISOString().split('T')[0]}.html"`);
+    markExported(userId);
+    res.send(html);
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * GET /api/data-export/stories
+ * Export all stories with page content as HTML.
+ */
+router.get('/stories', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = req.user!.id;
+    if (!checkExportRateLimit(userId, 'stories')) {
+      res.status(429).json({ error: 'Export limit reached. Please wait 1 hour between exports.' });
+      return;
+    }
+
+    const children = (await query('SELECT id, name FROM child_profiles WHERE user_id = $1', [userId])).rows;
+    const childNames: Record<string, string> = {};
+    for (const c of children) childNames[c.id] = c.name;
+
+    const stories = (await safeQuery(
+      `SELECT s.* FROM stories s
+       JOIN child_profiles cp ON s.child_profile_id = cp.id
+       WHERE cp.user_id = $1 ORDER BY s.created_at DESC`,
+      [userId]
+    )).rows;
+
+    const pages = (await safeQuery(
+      `SELECT sp.* FROM story_pages sp
+       JOIN stories s ON sp.story_id = s.id
+       JOIN child_profiles cp ON s.child_profile_id = cp.id
+       WHERE cp.user_id = $1 ORDER BY sp.story_id, sp.page_number`,
+      [userId]
+    )).rows;
+
+    const pagesByStory: Record<string, any[]> = {};
+    for (const p of pages) {
+      if (!pagesByStory[p.story_id]) pagesByStory[p.story_id] = [];
+      pagesByStory[p.story_id].push(p);
+    }
+
+    let body = `<div class="stat-card"><div class="stat-value">${stories.length}</div><div class="stat-label">Stories</div></div>`;
+
+    for (const story of stories) {
+      const childName = childNames[story.child_profile_id] || 'Unknown';
+      const storyPages = pagesByStory[story.id] || [];
+      body += `<h2>${escapeHtml(story.title)}</h2>`;
+      body += `<p class="meta">By ${escapeHtml(childName)} · ${formatDate(story.created_at)} · Theme: ${escapeHtml(story.theme || '—')} · Mood: ${escapeHtml(story.mood || '—')}</p>`;
+
+      if (storyPages.length > 0) {
+        for (const page of storyPages) {
+          body += `<div class="card"><strong>Page ${page.page_number}</strong><p>${escapeHtml(page.content)}</p></div>`;
+        }
+      } else if (story.content) {
+        body += `<div class="card"><p>${escapeHtml(story.content)}</p></div>`;
+      }
+    }
+
+    if (stories.length === 0) body += `<p class="empty">No stories found.</p>`;
+
+    const html = wrapHtml(
+      'Yoluno — Stories Export',
+      `Exported on ${formatDate(new Date().toISOString())}`,
+      body
+    );
+
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="yoluno-stories-${new Date().toISOString().split('T')[0]}.html"`);
+    markExported(userId);
+    res.send(html);
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * GET /api/data-export/voice-recordings
+ * Export voice recording metadata and URLs as HTML.
+ */
+router.get('/voice-recordings', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = req.user!.id;
+    if (!checkExportRateLimit(userId, 'voice')) {
+      res.status(429).json({ error: 'Export limit reached. Please wait 1 hour between exports.' });
+      return;
+    }
+
+    const clips = (await safeQuery(
+      `SELECT vc.* FROM voice_clips vc WHERE vc.user_id = $1 ORDER BY vc.created_at DESC`,
+      [userId]
+    )).rows;
+
+    // Also include family member voice recordings
+    const familyClips = (await safeQuery(
+      `SELECT fm.name as member_name, fmr.* FROM family_member_recordings fmr
+       JOIN family_members fm ON fmr.family_member_id = fm.id
+       WHERE fm.user_id = $1 ORDER BY fmr.created_at DESC`,
+      [userId]
+    )).rows;
+
+    let body = `<div class="stat-card"><div class="stat-value">${clips.length + familyClips.length}</div><div class="stat-label">Recordings</div></div>`;
+
+    if (clips.length > 0) {
+      body += `<h2>Voice Clips</h2>`;
+      body += `<table><tr><th>Title</th><th>Category</th><th>Duration</th><th>Created</th></tr>`;
+      for (const clip of clips) {
+        body += `<tr><td>${escapeHtml(clip.title || '—')}</td><td>${escapeHtml(clip.category || '—')}</td><td>${clip.duration_seconds ? clip.duration_seconds + 's' : '—'}</td><td>${formatDate(clip.created_at)}</td></tr>`;
+      }
+      body += `</table>`;
+    }
+
+    if (familyClips.length > 0) {
+      body += `<h2>Family Voice Recordings</h2>`;
+      body += `<table><tr><th>Family Member</th><th>Label</th><th>Duration</th><th>Created</th></tr>`;
+      for (const clip of familyClips) {
+        body += `<tr><td>${escapeHtml(clip.member_name || '—')}</td><td>${escapeHtml(clip.label || '—')}</td><td>${clip.duration_seconds ? clip.duration_seconds + 's' : '—'}</td><td>${formatDate(clip.created_at)}</td></tr>`;
+      }
+      body += `</table>`;
+    }
+
+    if (clips.length === 0 && familyClips.length === 0) body += `<p class="empty">No voice recordings found.</p>`;
+
+    const html = wrapHtml(
+      'Yoluno — Voice Recordings Export',
+      `Exported on ${formatDate(new Date().toISOString())}`,
+      body
+    );
+
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="yoluno-voice-recordings-${new Date().toISOString().split('T')[0]}.html"`);
+    markExported(userId);
+    res.send(html);
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * GET /api/data-export/summary
+ * Export a lightweight account summary as HTML.
+ */
+router.get('/summary', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = req.user!.id;
+    if (!checkExportRateLimit(userId, 'summary')) {
+      res.status(429).json({ error: 'Export limit reached. Please wait 1 hour between exports.' });
+      return;
+    }
+
+    const user = (await query('SELECT id, email, email_verified, created_at FROM users WHERE id = $1', [userId])).rows[0];
+    const children = (await query('SELECT * FROM child_profiles WHERE user_id = $1', [userId])).rows;
+
+    const counts = await Promise.all([
+      safeQuery('SELECT COUNT(*)::int as c FROM stories s JOIN child_profiles cp ON s.child_profile_id = cp.id WHERE cp.user_id = $1', [userId]),
+      safeQuery('SELECT COUNT(*)::int as c FROM journeys j JOIN child_profiles cp ON j.child_profile_id = cp.id WHERE cp.user_id = $1', [userId]),
+      safeQuery('SELECT COUNT(*)::int as c FROM buddy_messages bm JOIN child_profiles cp ON bm.child_profile_id = cp.id WHERE cp.user_id = $1', [userId]),
+      safeQuery('SELECT COUNT(*)::int as c FROM family_members WHERE user_id = $1', [userId]),
+      safeQuery('SELECT COUNT(*)::int as c FROM safety_reports WHERE user_id = $1', [userId]),
+      safeQuery('SELECT COUNT(*)::int as c FROM badges_earned be JOIN child_profiles cp ON be.child_profile_id = cp.id WHERE cp.user_id = $1', [userId]),
+    ]);
+
+    const storyCount = counts[0].rows[0]?.c || 0;
+    const journeyCount = counts[1].rows[0]?.c || 0;
+    const messageCount = counts[2].rows[0]?.c || 0;
+    const familyCount = counts[3].rows[0]?.c || 0;
+    const reportCount = counts[4].rows[0]?.c || 0;
+    const badgeCount = counts[5].rows[0]?.c || 0;
+
+    let body = `
+      <div class="stat-card"><div class="stat-value">${children.length}</div><div class="stat-label">Children</div></div>
+      <div class="stat-card"><div class="stat-value">${storyCount}</div><div class="stat-label">Stories</div></div>
+      <div class="stat-card"><div class="stat-value">${journeyCount}</div><div class="stat-label">Journeys</div></div>
+      <div class="stat-card"><div class="stat-value">${messageCount}</div><div class="stat-label">Messages</div></div>
+      <div class="stat-card"><div class="stat-value">${familyCount}</div><div class="stat-label">Family Members</div></div>
+      <div class="stat-card"><div class="stat-value">${badgeCount}</div><div class="stat-label">Badges</div></div>
+      <div class="stat-card"><div class="stat-value">${reportCount}</div><div class="stat-label">Safety Reports</div></div>
+    `;
+
+    body += `<h2>Account</h2><div class="card"><p><strong>Email:</strong> ${escapeHtml(user?.email || '—')}</p><p><strong>Account ID:</strong> ${user?.id || '—'}</p><p><strong>Created:</strong> ${formatDate(user?.created_at)}</p><p><strong>Email verified:</strong> ${user?.email_verified ? 'Yes' : 'No'}</p></div>`;
+
+    body += `<h2>Children</h2>`;
+    for (const child of children) {
+      body += `<div class="card"><strong>${escapeHtml(child.name)}</strong><p class="meta">Age ${child.age} · ${child.gender || '—'}</p></div>`;
+    }
+    if (children.length === 0) body += `<p class="empty">No children profiles found.</p>`;
+
+    const html = wrapHtml(
+      'Yoluno — Account Summary',
+      `Exported on ${formatDate(new Date().toISOString())} for ${escapeHtml(user?.email || '—')}`,
+      body
+    );
+
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="yoluno-summary-${new Date().toISOString().split('T')[0]}.html"`);
+    markExported(userId);
+    res.send(html);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// ─── Delete endpoints ───
+
+/**
+ * DELETE /api/data-export/conversations
+ * Permanently delete all chat sessions, messages, and safety reports for the user.
+ * Requires confirmation text "DELETE" in the request body.
+ */
+router.delete('/conversations', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = req.user!.id;
+    const { confirmation } = req.body;
+    if (confirmation !== 'DELETE') {
+      res.status(400).json({ error: 'Please type DELETE to confirm' });
+      return;
+    }
+
+    // Delete messages first (references sessions), then sessions, then safety reports
+    const msgResult = await query(
+      `DELETE FROM buddy_messages bm
+       USING child_profiles cp
+       WHERE bm.child_profile_id = cp.id AND cp.user_id = $1`,
+      [userId]
+    );
+    const sessionResult = await query(
+      `DELETE FROM chat_sessions cs
+       USING child_profiles cp
+       WHERE cs.child_profile_id = cp.id AND cp.user_id = $1`,
+      [userId]
+    );
+    await query('DELETE FROM safety_reports WHERE user_id = $1', [userId]);
+
+    // Reset buddy message counts
+    await safeQuery(
+      `UPDATE chat_buddies cb SET message_count = 0, total_messages = 0
+       FROM child_profiles cp
+       WHERE cb.child_profile_id = cp.id AND cp.user_id = $1`,
+      [userId]
+    );
+
+    markDeleted(userId, `Deleted all conversations (${msgResult.rowCount || 0} messages, ${sessionResult.rowCount || 0} sessions)`);
+
+    res.json({
+      deleted: {
+        messages: msgResult.rowCount || 0,
+        sessions: sessionResult.rowCount || 0,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * DELETE /api/data-export/voice-recordings
+ * Permanently delete all voice clips and family member recordings for the user.
+ * Requires confirmation text "DELETE" in the request body.
+ */
+router.delete('/voice-recordings', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = req.user!.id;
+    const { confirmation } = req.body;
+    if (confirmation !== 'DELETE') {
+      res.status(400).json({ error: 'Please type DELETE to confirm' });
+      return;
+    }
+
+    // Delete voice clip tags first (FK to voice_clips)
+    await safeQuery(
+      `DELETE FROM voice_clip_tags vct
+       USING voice_clips vc
+       WHERE vct.voice_clip_id = vc.id AND vc.user_id = $1`,
+      [userId]
+    );
+
+    const clipResult = await query(
+      'DELETE FROM voice_clips WHERE user_id = $1',
+      [userId]
+    );
+
+    // Delete family member recordings
+    const famResult = await safeQuery(
+      `DELETE FROM family_member_recordings fmr
+       USING family_members fm
+       WHERE fmr.family_member_id = fm.id AND fm.user_id = $1`,
+      [userId]
+    );
+
+    markDeleted(userId, `Deleted all voice recordings (${clipResult.rowCount || 0} clips)`);
+
+    res.json({
+      deleted: {
+        voice_clips: clipResult.rowCount || 0,
+        family_recordings: famResult.rows ? (famResult as any).rowCount || 0 : 0,
+      },
+    });
   } catch (error) {
     next(error);
   }

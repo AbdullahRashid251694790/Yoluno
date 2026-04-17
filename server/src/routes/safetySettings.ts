@@ -19,9 +19,12 @@ interface SafetySettings {
   weekly_summary: boolean;
   notify_on_journey: boolean;
   notify_on_story: boolean;
+  auto_delete_days: number | null;
+  last_export_at: string | null;
+  last_delete_at: string | null;
 }
 
-const COLS = 'notify_on_redirect, notify_on_report, weekly_summary, notify_on_journey, notify_on_story';
+const COLS = 'notify_on_redirect, notify_on_report, weekly_summary, notify_on_journey, notify_on_story, auto_delete_days, last_export_at, last_delete_at';
 
 /**
  * GET /api/safety-settings
@@ -58,18 +61,19 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
 router.put('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = req.user!.id;
-    const { notify_on_redirect, notify_on_report, weekly_summary, notify_on_journey, notify_on_story } = req.body;
+    const { notify_on_redirect, notify_on_report, weekly_summary, notify_on_journey, notify_on_story, auto_delete_days } = req.body;
 
     // Upsert
     const settings = await queryOne<SafetySettings>(
-      `INSERT INTO user_safety_settings (user_id, notify_on_redirect, notify_on_report, weekly_summary, notify_on_journey, notify_on_story)
-       VALUES ($1, $2, $3, $4, $5, $6)
+      `INSERT INTO user_safety_settings (user_id, notify_on_redirect, notify_on_report, weekly_summary, notify_on_journey, notify_on_story, auto_delete_days)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
        ON CONFLICT (user_id) DO UPDATE SET
          notify_on_redirect = COALESCE($2, user_safety_settings.notify_on_redirect),
          notify_on_report = COALESCE($3, user_safety_settings.notify_on_report),
          weekly_summary = COALESCE($4, user_safety_settings.weekly_summary),
          notify_on_journey = COALESCE($5, user_safety_settings.notify_on_journey),
          notify_on_story = COALESCE($6, user_safety_settings.notify_on_story),
+         auto_delete_days = $7,
          updated_at = now()
        RETURNING ${COLS}`,
       [
@@ -79,6 +83,7 @@ router.put('/', async (req: Request, res: Response, next: NextFunction) => {
         weekly_summary ?? true,
         notify_on_journey ?? true,
         notify_on_story ?? false,
+        auto_delete_days ?? null,
       ]
     );
 

@@ -203,6 +203,8 @@ async function start() {
 
       // Weekly safety email cron — runs every Monday at 8 AM UTC
       scheduleWeeklyReport();
+      // Auto-delete old conversations — runs daily at 3 AM UTC
+      scheduleAutoDelete();
     });
   } catch (error) {
     console.error('Failed to start server:', error);
@@ -320,6 +322,46 @@ function scheduleWeeklyReport() {
   // Also check once on startup (in case server restarts on Monday morning)
   setTimeout(check, 10_000);
   console.log('Weekly safety report cron scheduled (Monday 8 AM UTC)');
+}
+
+/**
+ * Auto-delete cron — runs once daily at 3 AM UTC.
+ * Deletes buddy_messages older than the configured auto_delete_days
+ * for each user who has this setting enabled.
+ */
+function scheduleAutoDelete() {
+  const run = async () => {
+    const now = new Date();
+    if (now.getUTCHours() !== 3) return; // Only run at 3 AM UTC
+
+    try {
+      const users = await pool.query(
+        'SELECT user_id, auto_delete_days FROM user_safety_settings WHERE auto_delete_days IS NOT NULL'
+      );
+
+      for (const row of users.rows) {
+        const days = row.auto_delete_days;
+        if (!days || days <= 0) continue;
+
+        const result = await pool.query(
+          `DELETE FROM buddy_messages bm
+           USING child_profiles cp
+           WHERE bm.child_profile_id = cp.id
+             AND cp.user_id = $1
+             AND bm.created_at < NOW() - ($2 || ' days')::interval`,
+          [row.user_id, String(days)]
+        );
+        if (result.rowCount && result.rowCount > 0) {
+          console.log(`[auto-delete] Purged ${result.rowCount} messages for user ${row.user_id} (>${days} days old)`);
+        }
+      }
+    } catch (err) {
+      console.error('[auto-delete] Error:', (err as Error).message);
+    }
+  };
+
+  setInterval(run, 60 * 60 * 1000); // Check every hour
+  console.log('Auto-delete cron scheduled (daily 3 AM UTC)');
 }
 
 // Graceful shutdown

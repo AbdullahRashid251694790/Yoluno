@@ -10,9 +10,10 @@
 import { useState, useEffect, type ComponentType } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useChildProfiles } from '@/hooks/queries';
 import { validatePassword } from '@/lib/utils';
 import { apiClient, getErrorMessage } from '@/integrations/api/client';
-import { ChevronRight, Download, LogOut, Trash2, Eye, EyeOff, CreditCard } from 'lucide-react';
+import { ChevronRight, Download, LogOut, Trash2, Eye, EyeOff, CreditCard, AlertTriangle, X } from 'lucide-react';
 import { toast } from 'sonner';
 
 const F = "'DM Sans', sans-serif";
@@ -53,6 +54,97 @@ function SectionTitle({ title, subtitle }: { title: string; subtitle: string }) 
   );
 }
 
+/* ─── Destructive action confirmation modal with 5s countdown ─── */
+function ConfirmDeleteModal({
+  title,
+  description,
+  onConfirm,
+  onClose,
+  isLoading,
+}: {
+  title: string;
+  description: string;
+  onConfirm: () => void;
+  onClose: () => void;
+  isLoading: boolean;
+}) {
+  const [typed, setTyped] = useState('');
+  const [countdown, setCountdown] = useState<number | null>(null);
+
+  // Start 5s countdown once DELETE is typed
+  useEffect(() => {
+    if (typed === 'DELETE' && countdown === null) {
+      setCountdown(5);
+    } else if (typed !== 'DELETE') {
+      setCountdown(null);
+    }
+  }, [typed]);
+
+  useEffect(() => {
+    if (countdown === null || countdown <= 0) return;
+    const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [countdown]);
+
+  const canDelete = typed === 'DELETE' && countdown === 0 && !isLoading;
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: 'rgba(0,0,0,0.45)' }}
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-2xl shadow-xl w-full max-w-md p-7"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-start justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <AlertTriangle size={20} style={{ color: '#E8946A' }} />
+            <h3 style={{ fontFamily: F, fontSize: 20, fontWeight: 600, color: '#2A2926' }}>{title}</h3>
+          </div>
+          <button onClick={onClose} className="p-1 rounded-lg hover:bg-gray-100" style={{ color: '#9B978E' }}>
+            <X size={16} />
+          </button>
+        </div>
+        <p style={{ fontFamily: F, fontSize: 14, color: '#6B675E', lineHeight: 1.6, marginBottom: 16 }}>
+          {description}
+        </p>
+        <div className="mb-5">
+          <label style={{ fontFamily: F, fontSize: 13, color: '#6B675E', display: 'block', marginBottom: 4 }}>
+            Type <strong>DELETE</strong> to confirm
+          </label>
+          <input
+            type="text"
+            value={typed}
+            onChange={(e) => setTyped(e.target.value)}
+            placeholder="DELETE"
+            className="w-full rounded-lg border px-4 py-2.5 text-sm"
+            style={{ borderColor: '#E8E6E1', fontFamily: F, color: '#2A2926', outline: 'none' }}
+          />
+        </div>
+        <div className="flex justify-end gap-3">
+          <button
+            onClick={onClose}
+            className="px-5 py-2 rounded-full text-sm font-medium border transition hover:bg-gray-50"
+            style={{ borderColor: '#E8E6E1', color: '#6B675E', fontFamily: F }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={!canDelete}
+            className="px-5 py-2 rounded-full text-sm font-semibold text-white transition hover:-translate-y-0.5 disabled:opacity-40 disabled:cursor-not-allowed"
+            style={{ background: '#E8946A', fontFamily: F }}
+          >
+            {isLoading ? 'Deleting...' : countdown !== null && countdown > 0 ? `Wait ${countdown}s...` : 'Delete Permanently'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function SettingsPage() {
   const { user, signOut, updatePassword } = useAuth();
 
@@ -64,6 +156,13 @@ export function SettingsPage() {
       .then((mod) => setSeedButton(() => mod.SeedDemoButton))
       .catch(() => { /* file not present — skip */ });
   }, []);
+
+  // Child profiles for the "delete child" selector
+  const { data: childProfiles = [] } = useChildProfiles(user?.id);
+
+  // Timestamps for last export/delete
+  const [lastExport, setLastExport] = useState<string | null>(null);
+  const [lastDelete, setLastDelete] = useState<string | null>(null);
 
   // Password change state
   const [showPassword, setShowPassword] = useState(false);
@@ -78,9 +177,9 @@ export function SettingsPage() {
   const [isDeleting, setIsDeleting] = useState(false);
 
   // Data export state
-  const [isExporting, setIsExporting] = useState(false);
+  const [isExporting, setIsExporting] = useState<string | null>(null);
 
-  // Auto-delete setting (UI-only for now)
+  // Auto-delete setting — wired to user_safety_settings.auto_delete_days
   const [autoDelete, setAutoDelete] = useState('Never');
 
   // Notification toggles — safety/redirections/weekly are wired to user_safety_settings API
@@ -106,6 +205,15 @@ export function SettingsPage() {
           journeys: d.notify_on_journey ?? true,
           stories: d.notify_on_story ?? false,
         }));
+        // Timestamps
+        if (d.last_export_at) setLastExport(d.last_export_at);
+        if (d.last_delete_at) setLastDelete(d.last_delete_at);
+        // Map auto_delete_days to dropdown label
+        const days = d.auto_delete_days;
+        if (days === 30) setAutoDelete('After 30 days');
+        else if (days === 60) setAutoDelete('After 60 days');
+        else if (days === 90) setAutoDelete('After 90 days');
+        else setAutoDelete('Never');
       })
       .catch(() => {});
   }, []);
@@ -175,23 +283,96 @@ export function SettingsPage() {
     }
   }
 
-  async function handleExportData() {
-    setIsExporting(true);
+  async function handleExportData(type: string, endpoint: string, filename: string) {
+    setIsExporting(type);
     try {
-      const response = await apiClient.get('/data-export', { responseType: 'blob' });
+      const response = await apiClient.get(endpoint, { responseType: 'blob' });
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const a = document.createElement('a');
       a.href = url;
-      a.download = `yoluno-data-${new Date().toISOString().split('T')[0]}.html`;
+      a.download = `${filename}-${new Date().toISOString().split('T')[0]}.html`;
       document.body.appendChild(a);
       a.click();
       a.remove();
       window.URL.revokeObjectURL(url);
+      setLastExport(new Date().toISOString());
       toast.success('Data exported successfully');
+    } catch (err: any) {
+      if (err?.response?.status === 429) {
+        toast.error('Export limit reached. Please wait 1 hour between exports.');
+      } else {
+        toast.error(getErrorMessage(err));
+      }
+    } finally {
+      setIsExporting(null);
+    }
+  }
+
+  async function handleAutoDeleteChange(value: string) {
+    setAutoDelete(value);
+    const daysMap: Record<string, number | null> = {
+      'Never': null,
+      'After 30 days': 30,
+      'After 60 days': 60,
+      'After 90 days': 90,
+    };
+    try {
+      await apiClient.put('/safety-settings', { auto_delete_days: daysMap[value] });
+      toast.success(value === 'Never' ? 'Auto-delete disabled' : `Conversations will auto-delete ${value.toLowerCase()}`);
+    } catch {
+      toast.error('Failed to save auto-delete setting');
+    }
+  }
+
+  // ─── Delete data state ───
+  const [deleteModal, setDeleteModal] = useState<'conversations' | 'voice' | 'child' | null>(null);
+  const [isDeletingData, setIsDeletingData] = useState(false);
+  const [selectedChildToDelete, setSelectedChildToDelete] = useState<string>('');
+
+  async function handleDeleteConversations() {
+    setIsDeletingData(true);
+    try {
+      const res = await apiClient.delete('/data-export/conversations', { data: { confirmation: 'DELETE' } });
+      setLastDelete(new Date().toISOString());
+      toast.success(`Deleted ${res.data.deleted.messages} messages and ${res.data.deleted.sessions} sessions`);
+      setDeleteModal(null);
     } catch (err) {
       toast.error(getErrorMessage(err));
     } finally {
-      setIsExporting(false);
+      setIsDeletingData(false);
+    }
+  }
+
+  async function handleDeleteVoiceRecordings() {
+    setIsDeletingData(true);
+    try {
+      const res = await apiClient.delete('/data-export/voice-recordings', { data: { confirmation: 'DELETE' } });
+      setLastDelete(new Date().toISOString());
+      toast.success(`Deleted ${res.data.deleted.voice_clips} voice clips`);
+      setDeleteModal(null);
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    } finally {
+      setIsDeletingData(false);
+    }
+  }
+
+  async function handleDeleteChildProfile() {
+    if (!selectedChildToDelete) {
+      toast.error('Please select a child profile to delete');
+      return;
+    }
+    setIsDeletingData(true);
+    try {
+      await apiClient.delete(`/child-profiles/${selectedChildToDelete}`);
+      setLastDelete(new Date().toISOString());
+      toast.success('Child profile and all their data deleted');
+      setDeleteModal(null);
+      setSelectedChildToDelete('');
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    } finally {
+      setIsDeletingData(false);
     }
   }
 
@@ -318,7 +499,7 @@ export function SettingsPage() {
             <p style={{ fontFamily: F, fontSize: 14, color: '#6B675E', marginBottom: 10 }}>Automatically delete conversation logs after a set period</p>
             <select
               value={autoDelete}
-              onChange={(e) => setAutoDelete(e.target.value)}
+              onChange={(e) => handleAutoDeleteChange(e.target.value)}
               className="rounded-lg border px-4 py-2.5 text-sm bg-white cursor-pointer"
               style={{ borderColor: '#E8E6E1', fontFamily: F, color: '#2A2926' }}
             >
@@ -334,30 +515,31 @@ export function SettingsPage() {
             <p style={{ fontFamily: F, fontSize: 15, fontWeight: 600, color: '#2A2926', marginBottom: 4 }}>Export Data</p>
             <p style={{ fontFamily: F, fontSize: 14, color: '#6B675E', marginBottom: 12 }}>Download your family's data in readable formats</p>
             <div className="flex flex-wrap gap-3">
-              <button
-                onClick={handleExportData}
-                disabled={isExporting}
-                className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium border transition hover:-translate-y-0.5 disabled:opacity-50"
-                style={{ borderColor: '#3ECDC6', color: '#3ECDC6', fontFamily: F, background: 'transparent' }}
-              >
-                <Download size={14} /> {isExporting ? 'Exporting...' : 'Export Everything'}
-              </button>
-              <button className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium border transition hover:-translate-y-0.5" style={{ borderColor: '#3ECDC6', color: '#3ECDC6', fontFamily: F, background: 'transparent' }}>
-                <Download size={14} /> Export Conversations
-              </button>
-              <button className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium border transition hover:-translate-y-0.5" style={{ borderColor: '#3ECDC6', color: '#3ECDC6', fontFamily: F, background: 'transparent' }}>
-                <Download size={14} /> Export Stories
-              </button>
-              <button className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium border transition hover:-translate-y-0.5" style={{ borderColor: '#3ECDC6', color: '#3ECDC6', fontFamily: F, background: 'transparent' }}>
-                <Download size={14} /> Export Voice Recordings
-              </button>
-              <button className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium border transition hover:-translate-y-0.5" style={{ borderColor: '#3ECDC6', color: '#3ECDC6', fontFamily: F, background: 'transparent' }}>
-                <Download size={14} /> Export Account Summary
-              </button>
+              {[
+                { label: 'Export Everything', type: 'all', endpoint: '/data-export', filename: 'yoluno-data' },
+                { label: 'Export Conversations', type: 'conversations', endpoint: '/data-export/conversations', filename: 'yoluno-conversations' },
+                { label: 'Export Stories', type: 'stories', endpoint: '/data-export/stories', filename: 'yoluno-stories' },
+                { label: 'Export Voice Recordings', type: 'voice', endpoint: '/data-export/voice-recordings', filename: 'yoluno-voice-recordings' },
+              ].map((btn) => (
+                <button
+                  key={btn.type}
+                  onClick={() => handleExportData(btn.type, btn.endpoint, btn.filename)}
+                  disabled={isExporting !== null}
+                  className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium border transition hover:-translate-y-0.5 disabled:opacity-50"
+                  style={{ borderColor: '#3ECDC6', color: '#3ECDC6', fontFamily: F, background: 'transparent' }}
+                >
+                  <Download size={14} /> {isExporting === btn.type ? 'Exporting...' : btn.label}
+                </button>
+              ))}
             </div>
             <p style={{ fontFamily: F, fontSize: 12, color: '#9B978E', marginTop: 10 }}>
               Exports include all data across all children. Files are delivered in PDF, MP3, and text formats.
             </p>
+            {lastExport && (
+              <p style={{ fontFamily: F, fontSize: 12, color: '#3ECDC6', marginTop: 6 }}>
+                Last exported: {new Date(lastExport).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
+              </p>
+            )}
           </div>
 
           {/* Delete data */}
@@ -365,16 +547,33 @@ export function SettingsPage() {
             <p style={{ fontFamily: F, fontSize: 15, fontWeight: 600, color: '#2A2926', marginBottom: 4 }}>Delete Data</p>
             <p style={{ fontFamily: F, fontSize: 14, color: '#6B675E', marginBottom: 10 }}>Permanently remove specific data types</p>
             <div className="flex flex-col gap-2">
-              {['Delete all conversations', 'Delete all voice recordings', "Delete a child's profile and all their data"].map((action) => (
-                <button
-                  key={action}
-                  className="flex items-center gap-1.5 text-sm font-medium text-left"
-                  style={{ color: '#E8946A', fontFamily: F }}
-                >
-                  {action} <ChevronRight size={13} />
-                </button>
-              ))}
+              <button
+                onClick={() => setDeleteModal('conversations')}
+                className="flex items-center gap-1.5 text-sm font-medium text-left"
+                style={{ color: '#E8946A', fontFamily: F }}
+              >
+                Delete all conversations <ChevronRight size={13} />
+              </button>
+              <button
+                onClick={() => setDeleteModal('voice')}
+                className="flex items-center gap-1.5 text-sm font-medium text-left"
+                style={{ color: '#E8946A', fontFamily: F }}
+              >
+                Delete all voice recordings <ChevronRight size={13} />
+              </button>
+              <button
+                onClick={() => setDeleteModal('child')}
+                className="flex items-center gap-1.5 text-sm font-medium text-left"
+                style={{ color: '#E8946A', fontFamily: F }}
+              >
+                Delete a child's profile and all their data <ChevronRight size={13} />
+              </button>
             </div>
+            {lastDelete && (
+              <p style={{ fontFamily: F, fontSize: 12, color: '#E8946A', marginTop: 10 }}>
+                Last deleted: {new Date(lastDelete).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
+              </p>
+            )}
           </div>
         </SectionCard>
 
@@ -387,7 +586,7 @@ export function SettingsPage() {
               { label: 'Data Practices', to: '/data-practices' },
               { label: 'Safety Charter', to: '/safety-charter' },
               { label: 'How AI Works in Yoluno', to: '/how-ai-works' },
-              { label: 'Terms of Service', to: '#' },
+              /* { label: 'Terms of Service', to: '/terms-of-service' }, — no page yet */
             ].map((link) => (
               <Link
                 key={link.label}
@@ -479,6 +678,88 @@ export function SettingsPage() {
                 style={{ background: '#E8946A', fontFamily: F }}
               >
                 {isDeleting ? 'Deleting...' : 'Delete My Account'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Conversations Modal */}
+      {deleteModal === 'conversations' && (
+        <ConfirmDeleteModal
+          title="Delete All Conversations"
+          description="This will permanently delete all chat sessions, messages, and safety reports for every child. This action cannot be undone."
+          onConfirm={handleDeleteConversations}
+          onClose={() => setDeleteModal(null)}
+          isLoading={isDeletingData}
+        />
+      )}
+
+      {/* Delete Voice Recordings Modal */}
+      {deleteModal === 'voice' && (
+        <ConfirmDeleteModal
+          title="Delete All Voice Recordings"
+          description="This will permanently delete all voice clips and family member recordings. Audio files will be removed from storage. This action cannot be undone."
+          onConfirm={handleDeleteVoiceRecordings}
+          onClose={() => setDeleteModal(null)}
+          isLoading={isDeletingData}
+        />
+      )}
+
+      {/* Delete Child Profile Modal */}
+      {deleteModal === 'child' && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.45)' }}
+          onClick={() => setDeleteModal(null)}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-xl w-full max-w-md p-7"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <AlertTriangle size={20} style={{ color: '#E8946A' }} />
+                <h3 style={{ fontFamily: F, fontSize: 20, fontWeight: 600, color: '#2A2926' }}>Delete Child Profile</h3>
+              </div>
+              <button onClick={() => setDeleteModal(null)} className="p-1 rounded-lg hover:bg-gray-100" style={{ color: '#9B978E' }}>
+                <X size={16} />
+              </button>
+            </div>
+            <p style={{ fontFamily: F, fontSize: 14, color: '#6B675E', lineHeight: 1.6, marginBottom: 16 }}>
+              This will permanently delete the selected child's profile and all their data — conversations, stories, journeys, badges, mood check-ins, and shared moments. This cannot be undone.
+            </p>
+            <div className="mb-5">
+              <label style={{ fontFamily: F, fontSize: 13, color: '#6B675E', display: 'block', marginBottom: 4 }}>
+                Select child to delete
+              </label>
+              <select
+                value={selectedChildToDelete}
+                onChange={(e) => setSelectedChildToDelete(e.target.value)}
+                className="w-full rounded-lg border px-4 py-2.5 text-sm bg-white cursor-pointer"
+                style={{ borderColor: '#E8E6E1', fontFamily: F, color: '#2A2926' }}
+              >
+                <option value="">— Choose a child —</option>
+                {childProfiles.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name} (Age {c.age})</option>
+                ))}
+              </select>
+            </div>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setDeleteModal(null)}
+                className="px-5 py-2 rounded-full text-sm font-medium border transition hover:bg-gray-50"
+                style={{ borderColor: '#E8E6E1', color: '#6B675E', fontFamily: F }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteChildProfile}
+                disabled={!selectedChildToDelete || isDeletingData}
+                className="px-5 py-2 rounded-full text-sm font-semibold text-white transition hover:-translate-y-0.5 disabled:opacity-40 disabled:cursor-not-allowed"
+                style={{ background: '#E8946A', fontFamily: F }}
+              >
+                {isDeletingData ? 'Deleting...' : 'Delete Profile'}
               </button>
             </div>
           </div>
