@@ -1,168 +1,146 @@
 /**
  * Kids Home Dashboard
  *
- * Central hub for children with buddy preview, activity cards,
- * daily challenges, and gamification elements.
+ * Central hub for children — redesigned to match loveable KidsMainDashboard.
+ * 2x2 space cards (Chat/Stories/Journeys/Family), "What's happening" suggestions,
+ * mood-aware gradients and greetings.
+ *
+ * Gamification elements (streak, stars, missions, badges, rewards) kept in code
+ * but commented out of the UI.
  */
 
-import { useEffect, useMemo, useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
-import { cn } from '@/lib/utils';
+import { useEffect, useState, useMemo } from 'react';
+import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import { useChild } from '@/contexts/ChildContext';
 import { useChildProfile } from '@/hooks/queries';
+/* Gamification hooks — kept for re-enabling later
 import { useGamificationStats, useChildBadges } from '@/hooks/queries/useGamification';
 import { useRewardCount } from '@/hooks/queries/useJourneyRewards';
-import { useChatBuddy } from '@/hooks/queries/useBuddyChat';
 import { useDailyMissions, useClaimMissionBonus } from '@/hooks/queries/useDailyMissions';
-import { ErrorState } from '@/components/shared';
-import { ChatAvatar } from '@/components/chat/ChatAvatar';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import {
-  MessageCircle,
-  BookOpen,
-  Map,
-  Users,
-  Trophy,
-  Flame,
-  ArrowLeft,
-  Star,
-  Sparkles,
-  Gift,
-} from 'lucide-react';
-import { PasswordChangeRequestButton } from '@/components/kids/PasswordChangeRequestButton';
+*/
+import { useChatBuddy } from '@/hooks/queries/useBuddyChat';
+import { useChildSharedMoments } from '@/hooks/queries/useSharedMoments';
+import { useTodaysMood } from '@/hooks/queries/useMoodCheckin';
 import { KidNotificationBell } from '@/components/kids/KidNotificationBell';
-import type { AvatarExpression } from '@/types/domain';
-import lunoAvatar from '@/assets/landing/luno.png';
+import { PasswordChangeRequestButton } from '@/components/kids/PasswordChangeRequestButton';
+import lunoHero from '@/assets/landing/luno-hero.png';
+import lunoChat from '@/assets/landing/luno-chat.png';
+import lumiStories from '@/assets/landing/lumi-stories.png';
+import loloJourneys from '@/assets/landing/lolo-journeys.png';
+import lotiFamily from '@/assets/landing/loti-family.png';
 
-// Badge emoji mapping (matches KidsBadges page)
-const BADGE_EMOJIS: Record<string, string> = {
-  first_chat: '💬', chat_explorer: '🗣️', chat_master: '🏆',
-  storyteller: '📝', story_collector: '📚', story_master: '🌟',
-  journey_starter: '🚀', journey_finisher: '🏁', journey_explorer: '🧭',
-  streak_3: '🔥', streak_7: '⚡', streak_14: '💪', streak_30: '👑',
-  points_100: '⭐', points_500: '🌟', points_1000: '💫', points_5000: '🏅',
-  family_first: '👨‍👩‍👧', family_explorer: '👨‍👩‍👧‍👦', family_champion: '🏠',
-  mood_first: '😊', mood_explorer: '🌈', mood_master: '🧘',
+const GUIDE_IMAGES: Record<string, string> = {
+  chat: lunoChat,
+  stories: lumiStories,
+  journeys: loloJourneys,
+  family: lotiFamily,
 };
 
-// Time-aware greeting
-function getGreeting(): { text: string; emoji: string } {
-  const hour = new Date().getHours();
-  if (hour < 12) return { text: 'Good morning', emoji: '☀️' };
-  if (hour < 17) return { text: 'Good afternoon', emoji: '🌤️' };
-  if (hour < 20) return { text: 'Good evening', emoji: '🌅' };
-  return { text: 'Good night', emoji: '🌙' };
+const MOOD_GRADIENTS: Record<string, string> = {
+  happy: 'linear-gradient(165deg, #E8F6F4 0%, #F3EFF8 40%, #FEF0EA 70%, #FDF6E8 100%)',
+  excited: 'linear-gradient(165deg, #E8F6F4 0%, #F3EFF8 40%, #FEF0EA 70%, #FDF6E8 100%)',
+  tired: 'linear-gradient(165deg, #FDF6E8 0%, #FEF0EA 40%, #F3EFF8 70%, #F5F3EE 100%)',
+  sad: 'linear-gradient(165deg, #FDF6E8 0%, #FEF0EA 40%, #F3EFF8 70%, #F5F3EE 100%)',
+  worried: 'linear-gradient(165deg, #FDF6E8 0%, #FEF0EA 40%, #F3EFF8 70%, #F5F3EE 100%)',
+  angry: 'linear-gradient(165deg, #FDF6E8 0%, #FEF0EA 40%, #F3EFF8 70%, #F5F3EE 100%)',
+  calm: 'linear-gradient(165deg, #FAFAF7 0%, #F5F3EE 50%, #E8F6F4 100%)',
+  notsure: 'linear-gradient(165deg, #FAFAF7 0%, #F5F3EE 50%, #E8F6F4 100%)',
+};
+
+const LUNO_GREETINGS: Record<string, string> = {
+  happy: "Let's make today awesome! Where do you want to go?",
+  excited: "I can feel the energy! What should we explore?",
+  tired: "Let's take it easy. Something gentle sounds nice.",
+  sad: "I'm glad you're here. Let's find something good.",
+  worried: "I'm here. Let's do something together.",
+  angry: "It's okay. Want to try something that helps?",
+  calm: "Nice and easy. What sounds good?",
+  notsure: "No worries. Let's just see what happens.",
+};
+
+function getTimeOfDay() {
+  const h = new Date().getHours();
+  if (h >= 6 && h < 12) return 'morning';
+  if (h >= 12 && h < 17) return 'afternoon';
+  if (h >= 17 && h < 21) return 'evening';
+  return 'night';
 }
 
-// Get buddy expression based on time of day
-function getBuddyExpression(): AvatarExpression {
-  const hour = new Date().getHours();
-  if (hour >= 21 || hour < 6) return 'sleepy';
-  if (hour < 12) return 'excited';
-  return 'happy';
+function getGreeting(time: string, name: string) {
+  if (time === 'morning') return `Good morning, ${name}!`;
+  if (time === 'afternoon') return `Good afternoon, ${name}!`;
+  if (time === 'evening') return `Good evening, ${name}!`;
+  return `Time to wind down, ${name}`;
 }
 
-// Activity card data with character guides
-const activities = [
-  {
-    id: 'chat',
-    title: 'Chat',
-    description: "Let's talk!",
-    icon: MessageCircle,
-    color: 'from-lumi to-primary/10',
-    bgColor: 'bg-lumi/10',
-    path: '/chat',
-  },
-  {
-    id: 'stories',
-    title: 'Stories',
-    description: 'Read & create',
-    icon: BookOpen,
-    color: 'from-lumi/10 to-lumi',
-    bgColor: 'bg-lumi/10',
-    path: '/stories',
-  },
-  {
-    id: 'journeys',
-    title: 'Journeys',
-    description: 'Goals & habits',
-    icon: Map,
-    color: 'from-primary to-primary',
-    bgColor: 'bg-primary/10',
-    path: '/journeys',
-  },
-  {
-    id: 'family',
-    title: 'Family',
-    description: 'Family tree',
-    icon: Users,
-    color: 'from-gold/50 to-gold/50',
-    bgColor: 'bg-gold/10',
-    path: '/family',
-  },
+const SPACES = [
+  { key: 'chat', name: 'Chat', guide: 'Luno', color: '#3ECDC6', softColor: '#B4DED7', bgTint: '#E8F6F4', subtitle: 'Ask anything you\'re curious about' },
+  { key: 'stories', name: 'Stories', guide: 'Lumi', color: '#B8A5D4', softColor: '#D4C8E8', bgTint: '#F3EFF8', subtitle: 'Create a new story or continue one' },
+  { key: 'journeys', name: 'Journeys', guide: 'Lolo', color: '#E8946A', softColor: '#F0C4AD', bgTint: '#FEF0EA', subtitle: 'Explore a new journey' },
+  { key: 'family', name: 'Family', guide: 'Loti', color: '#D4A843', softColor: '#E8D5A0', bgTint: '#FDF6E8', subtitle: 'See your family\'s world' },
 ];
 
-// Mission type to route mapping
-const MISSION_ROUTES: Record<string, string> = {
-  chat: '/chat',
-  story: '/stories',
-  journey_step: '/journeys',
-  family: '/family',
+const FLOAT_ELEMENTS = Array.from({ length: 12 }, (_, i) => ({
+  id: i,
+  type: i % 3 === 0 ? 'star' : i % 3 === 1 ? 'cloud' : 'sparkle',
+  left: `${5 + Math.random() * 90}%`,
+  top: `${5 + Math.random() * 90}%`,
+  size: 6 + Math.random() * 10,
+  delay: Math.random() * 20,
+  duration: 22 + Math.random() * 12,
+  opacity: 0.12 + Math.random() * 0.06,
+}));
+
+const MOMENT_STYLES: Record<string, { bg: string; color: string; icon: string }> = {
+  journey_complete: { bg: '#FEF0EA', color: '#E8946A', icon: '🧭' },
+  story_created: { bg: '#F3EFF8', color: '#B8A5D4', icon: '📖' },
+  story_read: { bg: '#F3EFF8', color: '#B8A5D4', icon: '📖' },
+  curiosity: { bg: '#E8F6F4', color: '#3ECDC6', icon: '?' },
+  family_listen: { bg: '#FDF6E8', color: '#D4A843', icon: '💛' },
+  mood_checkin: { bg: '#F5F3EE', color: '#9B978E', icon: '😊' },
 };
 
 export function KidsHomePage() {
   const { childId } = useParams<{ childId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { enterKidsMode, exitKidsMode } = useChild();
   const { data: child, isLoading, isError } = useChildProfile(childId);
-
-  // Fetch real gamification data from database
-  const { data: gamificationData } = useGamificationStats(childId);
-  const { data: badgesData } = useChildBadges(childId);
-  const { data: rewardCountData } = useRewardCount(childId);
   const { data: buddy } = useChatBuddy(childId);
-  const buddyName = buddy?.buddy_name || 'Luno';
+  const { data: sharedMoments = [] } = useChildSharedMoments(childId);
+  const { data: todaysMood } = useTodaysMood(childId);
 
-  const { data: missionsData, isError: missionsError } = useDailyMissions(childId);
-  const claimBonus = useClaimMissionBonus();
+  const mood = (location.state as any)?.mood || 'happy';
+  const time = useMemo(() => getTimeOfDay(), []);
 
-  const greeting = useMemo(() => getGreeting(), []);
-  const buddyExpression = useMemo(() => getBuddyExpression(), []);
-
-  // Extract real stats from API response
-  const streakCount = gamificationData?.stats?.current_streak ?? 0;
-  const starCount = gamificationData?.stats?.total_points ?? 0;
-  const unnotifiedBadgeCount = gamificationData?.unnotifiedBadges?.length ?? 0;
-  const earnedBadges = badgesData?.earned ?? [];
-  const recentBadges = earnedBadges.slice(0, 3);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   useEffect(() => {
-    if (child) {
-      enterKidsMode(child);
-    }
-    return () => {
-      exitKidsMode();
-    };
+    if (child) enterKidsMode(child);
+    return () => { exitKidsMode(); };
   }, [child, enterKidsMode, exitKidsMode]);
 
-  const [showSwitchConfirm, setShowSwitchConfirm] = useState(false);
+  const gradient = MOOD_GRADIENTS[mood] || MOOD_GRADIENTS.happy;
+  const lunoGreeting = LUNO_GREETINGS[mood] || LUNO_GREETINGS.happy;
+  const isNight = time === 'night';
 
-  const handleBack = () => {
-    setShowSwitchConfirm(true);
-  };
+  // At night, reorder: Stories & Family first
+  const orderedSpaces = isNight
+    ? [SPACES[1], SPACES[3], SPACES[0], SPACES[2]]
+    : SPACES;
 
-  const confirmSwitch = () => {
-    setShowSwitchConfirm(false);
-    navigate('/play');
-  };
+  const suggestions = [
+    { icon: '📖', text: 'Your story with Lumi is waiting to continue', space: 'stories' },
+    { icon: '🧭', text: `${child?.name || 'Your'} journeys — ready when you are`, space: 'journeys' },
+    { icon: '💛', text: 'See what your family has shared', space: 'family' },
+  ];
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-kids-gradient flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={{ background: gradient, fontFamily: "'DM Sans', sans-serif" }}>
         <div className="text-center">
-          <ChatAvatar expression="thinking" size="xl" />
-          <p className="mt-4 text-body-lg font-medium text-primary">Getting ready...</p>
+          <div style={{ fontSize: 48 }} className="animate-bounce mb-4">✨</div>
+          <p style={{ fontSize: 18, fontWeight: 600, color: '#3ECDC6' }}>Getting ready...</p>
         </div>
       </div>
     );
@@ -170,48 +148,51 @@ export function KidsHomePage() {
 
   if (isError || !child) {
     return (
-      <ErrorState
-        title="Oops!"
-        message="We couldn't find your profile."
-        onRetry={() => navigate('/play')}
-        retryLabel="Go Back"
-        fullPage
-      />
+      <div className="min-h-screen flex items-center justify-center" style={{ background: gradient, fontFamily: "'DM Sans', sans-serif" }}>
+        <div className="text-center">
+          <p style={{ fontSize: 48 }} className="mb-4">😅</p>
+          <p style={{ fontSize: 20, fontWeight: 600, color: '#2A2926', marginBottom: 8 }}>Oops!</p>
+          <p style={{ fontSize: 14, color: '#6B675E', marginBottom: 20 }}>We couldn't find your profile.</p>
+          <button onClick={() => navigate('/play')} className="px-6 py-2.5 rounded-full text-white font-semibold" style={{ background: '#3ECDC6', fontSize: 15 }}>Go Back</button>
+        </div>
+      </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-kids-gradient safe-area-inset">
-      {/* Header */}
-      <header className="flex items-center justify-between px-4 py-4">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={handleBack}
-          className="rounded-full bg-white/50 backdrop-blur-sm hover:bg-white/70"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-
-        <div className="flex items-center gap-3">
-          {/* Streak counter */}
-          {streakCount > 0 && (
-            <div className="flex items-center gap-1.5 rounded-full bg-gold/10 px-3 py-1.5">
-              <Flame className="h-4 w-4 text-gold" />
-              <span className="text-body-sm font-bold text-gold">{streakCount}</span>
-            </div>
+    <div
+      className="kids-home-scope min-h-screen relative overflow-hidden flex flex-col"
+      style={{ background: gradient, fontFamily: "'DM Sans', sans-serif" }}
+    >
+      {/* Floating bg */}
+      {FLOAT_ELEMENTS.map((el) => (
+        <div key={el.id} className="absolute pointer-events-none" style={{ left: el.left, top: el.top, opacity: el.opacity, animation: `kidsFloat ${el.duration}s ease-in-out ${el.delay}s infinite alternate` }}>
+          {el.type === 'star' && (
+            <svg width={el.size} height={el.size} viewBox="0 0 24 24" fill="none">
+              <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 16.8l-6.2 4.5 2.4-7.4L2 9.4h7.6L12 2z" fill="#D4A843" opacity="0.6" />
+            </svg>
           )}
+          {el.type === 'cloud' && <div style={{ width: el.size * 2.5, height: el.size, borderRadius: el.size, background: 'rgba(180,222,215,0.4)', filter: 'blur(4px)' }} />}
+          {el.type === 'sparkle' && <div style={{ width: el.size * 0.6, height: el.size * 0.6, borderRadius: '50%', background: 'rgba(184,165,212,0.5)', filter: 'blur(1px)', animation: `kidsTwinkle ${3 + Math.random() * 2}s ease-in-out infinite` }} />}
+        </div>
+      ))}
 
-          {/* Star counter */}
-          <div className="flex items-center gap-1.5 rounded-full bg-lala/10 px-3 py-1.5">
-            <Star className="h-4 w-4 text-lala fill-lala" />
-            <span className="text-body-sm font-bold text-lala">{starCount}</span>
-          </div>
-
-          {/* Kid Notifications */}
+      {/* Top bar */}
+      <header className="relative z-10 flex items-center justify-between px-6 pt-5 pb-2">
+        <button
+          onClick={() => setShowConfirm(true)}
+          className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-white/40 transition-colors"
+          aria-label="Go back"
+        >
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <path d="M13 4l-6 6 6 6" stroke="#2A2926" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+        <span style={{ fontSize: 20, fontWeight: 600, color: '#2A2926' }}>
+          {getGreeting(time, child.name)}
+        </span>
+        <div className="flex items-center gap-2">
           <KidNotificationBell childId={childId!} />
-
-          {/* Password Change Request (Settings gear icon) */}
           <PasswordChangeRequestButton
             childId={childId!}
             childName={child.name}
@@ -220,271 +201,207 @@ export function KidsHomePage() {
         </div>
       </header>
 
-      {/* Main content */}
-      <main className="px-4 pb-8">
-        {/* Greeting */}
-        <div className="text-center mb-6">
-          <p className="text-body-lg text-muted-foreground">
-            {greeting.emoji} {greeting.text}
+      {/* Main */}
+      <main className="flex-1 flex flex-col items-center px-6 relative z-10">
+        <div className="max-w-[520px] w-full flex flex-col items-center">
+          {/* Luno */}
+          <div className="mb-1 flex flex-col items-center" style={{ animation: 'lunoBreath 4s ease-in-out infinite' }}>
+            <img src={lunoHero} alt="Luno" className="drop-shadow-2xl" style={{ width: 100, height: 100, objectFit: 'contain' }} />
+          </div>
+          <p className="text-center mb-6" style={{ fontSize: 17, color: '#6B675E', maxWidth: 380, lineHeight: 1.5 }}>
+            {lunoGreeting}
           </p>
-          <h1 className="text-h3 font-display font-bold text-foreground mt-1">
-            {child.name}!
-          </h1>
-        </div>
 
-        {/* Buddy Section */}
-        <Card className="mb-6 overflow-hidden border-0 bg-white/70 backdrop-blur-sm shadow-lg">
-          <CardContent className="p-6">
-            <div className="flex flex-col items-center text-center">
-              <ChatAvatar
-                expression={buddyExpression}
-                size="xl"
-                showName
-                buddyName={buddyName}
-              />
-
-              <p className="mt-4 text-body-lg text-muted-foreground">
-                "Ready for an adventure today?"
-              </p>
-
-              <Link to={`/kids/${childId}/chat`} className="w-full mt-4">
-                <Button
-                  size="lg"
-                  className="w-full text-body-lg font-semibold rounded-full bg-gradient-to-r from-primary to-child-secondary hover:opacity-90 transition-opacity touch-target-kids"
+          {/* 2x2 Space Cards */}
+          <div className="grid grid-cols-2 gap-4 w-full mb-8">
+            {orderedSpaces.map((space, i) => {
+              const dimmed = isNight && (space.key === 'chat' || space.key === 'journeys');
+              return (
+                <button
+                  key={space.key}
+                  onClick={() => navigate(`/kids/${childId}/${space.key}`, { state: { mood } })}
+                  className="flex flex-col items-center text-center focus:outline-none group"
+                  style={{
+                    background: `linear-gradient(145deg, #FFFFFF 60%, ${space.bgTint} 100%)`,
+                    border: `2px solid ${space.softColor}`,
+                    borderRadius: 20,
+                    padding: '24px 16px 20px',
+                    boxShadow: '0 4px 16px rgba(42,41,38,0.08)',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease-out',
+                    opacity: dimmed ? 0.6 : 1,
+                    animation: `kidsFadeIn 0.4s ease-out ${i * 0.08}s both`,
+                  }}
+                  onMouseEnter={(e) => {
+                    const el = e.currentTarget as HTMLElement;
+                    el.style.transform = 'scale(1.05)';
+                    el.style.borderColor = space.color;
+                    el.style.boxShadow = '0 8px 28px rgba(42,41,38,0.12)';
+                  }}
+                  onMouseLeave={(e) => {
+                    const el = e.currentTarget as HTMLElement;
+                    el.style.transform = 'scale(1)';
+                    el.style.borderColor = space.softColor;
+                    el.style.boxShadow = '0 4px 16px rgba(42,41,38,0.08)';
+                  }}
+                  aria-label={`Go to ${space.name} with ${space.guide}`}
                 >
-                  <Sparkles className="mr-2 h-5 w-5" />
-                  Let's Chat!
-                </Button>
-              </Link>
-            </div>
-          </CardContent>
-        </Card>
+                  <div
+                    className="rounded-full flex items-center justify-center mb-3 overflow-hidden"
+                    style={{ width: 60, height: 60, background: space.bgTint }}
+                  >
+                    <img src={GUIDE_IMAGES[space.key]} alt={space.guide} style={{ width: 52, height: 52, objectFit: 'contain' }} />
+                  </div>
+                  <span style={{ fontSize: 18, fontWeight: 600, color: '#2A2926', marginBottom: 4 }}>{space.name}</span>
+                  <span style={{ fontSize: 13, color: '#6B675E', lineHeight: 1.4 }}>{space.subtitle}</span>
+                </button>
+              );
+            })}
+          </div>
 
-        {/* Activity Cards */}
-        <div className="grid grid-cols-2 gap-4 mb-6">
-          {activities.map((activity) => {
-            const Icon = activity.icon;
-            const isChat = activity.id === 'chat';
-            const href = isChat
-              ? `/kids/${childId}/chat`
-              : `/kids/${childId}${activity.path}`;
+          {/* What's happening */}
+          <div className="w-full mb-6">
+            <h3 style={{ fontSize: 16, fontWeight: 600, color: '#2A2926', marginBottom: 12 }}>
+              What's happening today
+            </h3>
+            <div className="flex flex-col gap-2">
+              {suggestions.map((s, i) => (
+                <button
+                  key={i}
+                  onClick={() => navigate(`/kids/${childId}/${s.space}`, { state: { mood } })}
+                  className="w-full flex items-center gap-3 text-left hover:bg-white/60 transition-colors"
+                  style={{
+                    background: 'rgba(255,255,255,0.5)',
+                    borderRadius: 12,
+                    padding: '14px 16px',
+                    border: '1px solid rgba(232,230,225,0.6)',
+                    cursor: 'pointer',
+                    animation: `kidsFadeIn 0.4s ease-out ${0.4 + i * 0.08}s both`,
+                  }}
+                >
+                  <span style={{ fontSize: 18 }}>{s.icon}</span>
+                  <span style={{ fontSize: 14, color: '#2A2926', fontWeight: 500 }}>{s.text}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* My Moments */}
+          {(() => {
+            // Build moments from shared_moments + today's mood
+            const moments: { id: string; name: string; type: string; date: string }[] = [];
+
+            for (const m of sharedMoments.slice(0, 8)) {
+              moments.push({
+                id: m.id,
+                name: m.title,
+                type: m.moment_type,
+                date: new Date(m.shared_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+              });
+            }
+
+            if (todaysMood) {
+              moments.push({
+                id: 'mood-today',
+                name: `Feeling ${todaysMood.mood || 'good'} today`,
+                type: 'mood_checkin',
+                date: 'Today',
+              });
+            }
+
+            if (moments.length === 0) return null;
 
             return (
-              <Link key={activity.id} to={href}>
-                <Card className="group overflow-hidden border-0 bg-white/70 backdrop-blur-sm shadow-md hover:shadow-lg transition-shadow cursor-pointer h-full">
-                  <CardContent className="p-4 flex flex-col items-center text-center">
-                    <div className="mb-2 group-hover:scale-110 transition-transform">
-                      <ChatAvatar
-                        buddyName={activity.id === 'chat' ? 'Luno' : activity.id === 'stories' ? 'Lumi' : activity.id === 'journeys' ? 'Lolo' : 'Loti'}
-                        expression={activity.id === 'chat' ? 'happy' : activity.id === 'stories' ? 'excited' : activity.id === 'journeys' ? 'curious' : 'caring'}
-                        size="sm"
-                      />
-                    </div>
-                    <h3 className="font-display font-bold text-foreground">
-                      {activity.title}
-                    </h3>
-                    <p className="text-caption text-muted-foreground mt-0.5">
-                      {activity.description}
-                    </p>
-                  </CardContent>
-                </Card>
-              </Link>
-            );
-          })}
-        </div>
-
-        {/* Daily Missions */}
-        {missionsData ? (
-          <Card className="mb-6 overflow-hidden border-0 shadow-warm">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-caption font-bold text-primary uppercase tracking-wide">
-                  Today's Missions
-                </p>
-                <p className="text-caption text-muted-foreground">
-                  {missionsData.missions.filter((m) => m.completed).length}/{missionsData.missions.length} done
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                {missionsData.missions.map((mission, i) => (
-                  <Link
-                    key={i}
-                    to={`/kids/${childId}${MISSION_ROUTES[mission.type] || '/chat'}`}
-                    className="block"
-                  >
-                    <div className={cn(
-                      'flex items-center gap-3 rounded-2xl p-3 border-2',
-                      mission.completed
-                        ? 'bg-primary/10 border-primary/20'
-                        : 'bg-card border-border hover:border-primary/30'
-                    )}>
-                      <span className="text-body-lg">{mission.emoji}</span>
-                      <p className={cn(
-                        'flex-1 text-body-sm font-medium',
-                        mission.completed ? 'text-primary line-through' : 'text-foreground'
-                      )}>
-                        {mission.title}
-                      </p>
-                      {mission.completed ? (
-                        <span className="text-primary text-body-lg">✓</span>
-                      ) : (
-                        <span className="text-caption text-muted-foreground">Go →</span>
-                      )}
-                    </div>
-                  </Link>
-                ))}
-              </div>
-
-              {missionsData.allCompleted && !missionsData.bonusAwarded && (
-                <Button
-                  className="w-full mt-3"
-                  size="sm"
-                  onClick={() => childId && claimBonus.mutate(childId)}
-                  disabled={claimBonus.isPending}
-                >
-                  {claimBonus.isPending ? 'Claiming...' : '🎉 Claim 15 Bonus Points!'}
-                </Button>
-              )}
-
-              {missionsData.bonusAwarded && (
-                <p className="text-center text-caption text-primary font-bold mt-3">
-                  ⭐ Daily Champion! All missions complete!
-                </p>
-              )}
-            </CardContent>
-          </Card>
-        ) : (
-          <Card className="mb-6 overflow-hidden border-0 shadow-warm">
-            <CardContent className="p-4">
-              <p className="text-caption font-bold text-primary uppercase tracking-wide mb-2">
-                Today's Missions
-              </p>
-              <p className="text-body-sm text-muted-foreground">Loading your missions...</p>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Badges Teaser */}
-        <Link to={`/kids/${childId}/badges`}>
-          <Card className="overflow-hidden border-0 bg-white/70 backdrop-blur-sm shadow-md hover:shadow-lg transition-shadow mb-4">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Trophy className="h-6 w-6 text-lala" />
-                  <div>
-                    <h3 className="font-display font-bold text-foreground">My Badges</h3>
-                    <p className="text-caption text-muted-foreground">
-                      {unnotifiedBadgeCount > 0
-                        ? `${unnotifiedBadgeCount} new to collect!`
-                        : earnedBadges.length > 0
-                        ? `${earnedBadges.length} earned`
-                        : 'Start collecting!'}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex gap-1.5">
-                  {recentBadges.length > 0 ? (
-                    <>
-                      {recentBadges.map((badge, i) => (
+              <div className="w-full mb-6" style={{ animation: 'kidsFadeIn 0.4s ease-out 0.5s both' }}>
+                <h3 style={{ fontSize: 16, fontWeight: 600, color: '#2A2926', marginBottom: 12 }}>
+                  My Moments ✨
+                </h3>
+                <div className="flex gap-3 overflow-x-auto pb-3 kids-moments-scroll">
+                  {moments.map((m) => {
+                    const s = MOMENT_STYLES[m.type] || MOMENT_STYLES.curiosity;
+                    return (
+                      <div
+                        key={m.id}
+                        className="flex-shrink-0 flex flex-col items-center text-center"
+                        style={{
+                          width: 160,
+                          height: 180,
+                          background: '#FFFFFF',
+                          borderRadius: 16,
+                          border: '1px solid #E8E6E1',
+                          padding: 16,
+                          boxShadow: '0 2px 8px rgba(42,41,38,0.06)',
+                        }}
+                      >
                         <div
-                          key={badge.id}
-                          className="h-8 w-8 rounded-full flex items-center justify-center bg-lala/10 border-2 border-white"
+                          className="rounded-full flex items-center justify-center mb-3"
+                          style={{ width: 60, height: 60, background: s.bg }}
                         >
-                          <span className="text-body-lg">
-                            {badge.badge?.name ? (BADGE_EMOJIS[badge.badge.name] || '🏅') : '🏆'}
-                          </span>
+                          <span style={{ fontSize: s.icon.length > 1 ? 24 : 22, fontWeight: 700, color: s.color }}>{s.icon}</span>
                         </div>
-                      ))}
-                      <div className="h-8 w-8 rounded-full flex items-center justify-center bg-muted border-2 border-white">
-                        <span className="text-body-sm font-medium text-muted-foreground">+</span>
+                        <span style={{
+                          fontSize: 14, fontWeight: 600, color: '#2A2926', lineHeight: 1.3,
+                          display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+                        }}>
+                          {m.name}
+                        </span>
+                        <span style={{ fontSize: 11, color: '#9B978E', marginTop: 'auto' }}>{m.date}</span>
                       </div>
-                    </>
-                  ) : (
-                    <>
-                      {['🎯', '⭐', '🏅', '?'].map((emoji, i) => (
-                        <div
-                          key={i}
-                          className={`h-8 w-8 rounded-full flex items-center justify-center text-body-lg border-2 border-white ${
-                            i === 3 ? 'bg-muted' : 'bg-lala/10'
-                          }`}
-                        >
-                          {emoji}
-                        </div>
-                      ))}
-                    </>
-                  )}
+                    );
+                  })}
                 </div>
+                <button
+                  onClick={() => navigate(`/kids/${childId}/moments`, { state: { mood } })}
+                  className="mt-2"
+                  style={{ fontSize: 13, color: '#3ECDC6', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer' }}
+                >
+                  See all →
+                </button>
               </div>
-            </CardContent>
-          </Card>
-        </Link>
+            );
+          })()}
 
-        {/* Journey Rewards Teaser */}
-        <Link to={`/kids/${childId}/rewards`}>
-          <Card className="overflow-hidden border-0 bg-gradient-to-r from-primary/10 to-lolo/10 shadow-md hover:shadow-lg transition-shadow">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Gift className="h-6 w-6 text-primary" />
-                  <div>
-                    <h3 className="font-display font-bold text-foreground">My Rewards</h3>
-                    <p className="text-caption text-muted-foreground">
-                      {rewardCountData?.unviewed && rewardCountData.unviewed > 0
-                        ? `${rewardCountData.unviewed} new to see!`
-                        : rewardCountData?.total && rewardCountData.total > 0
-                        ? `${rewardCountData.total} treasure${rewardCountData.total !== 1 ? 's' : ''} earned`
-                        : 'Complete journeys to earn!'}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  {rewardCountData?.unviewed && rewardCountData.unviewed > 0 && (
-                    <span className="flex items-center justify-center h-6 w-6 rounded-full bg-primary/50 text-white text-caption font-bold animate-pulse">
-                      {rewardCountData.unviewed}
-                    </span>
-                  )}
-                  <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-primary/20 to-lolo/20 flex items-center justify-center">
-                    <span className="text-body-lg">🎁</span>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </Link>
+          {/* Gamification sections — commented out of UI, backend still active
+          {/* Daily Missions *}
+          {/* Badges Teaser *}
+          {/* Journey Rewards Teaser *}
+          {/* Streak & Star counters (were in header) *}
+          */}
+        </div>
       </main>
 
-      {/* Switch profile confirmation modal */}
-      {showSwitchConfirm && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm px-6"
-          onClick={() => setShowSwitchConfirm(false)}
-        >
+      {/* Footer */}
+      <footer className="relative z-10 py-5 text-center">
+        <span style={{ fontSize: 12, color: '#9B978E' }}>Made with 💛 for curious minds</span>
+      </footer>
+
+      {/* Switch profile confirmation */}
+      {showConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm px-6" onClick={() => setShowConfirm(false)}>
           <div
-            className="bg-white rounded-3xl p-8 max-w-md w-full text-center shadow-2xl"
+            className="bg-white rounded-2xl p-8 max-w-sm w-full text-center"
+            style={{ boxShadow: '0 16px 48px rgba(42,41,38,0.15)' }}
             onClick={(e) => e.stopPropagation()}
           >
-            <img
-              src={lunoAvatar}
-              alt="Luno"
-              className="w-28 h-28 object-contain mx-auto mb-4 animate-float drop-shadow-lg"
-            />
-            <h3 className="text-h4 font-bold text-foreground mb-2">
+            <span style={{ fontSize: 40, display: 'block', marginBottom: 12 }}>🌊</span>
+            <h3 style={{ fontSize: 20, fontWeight: 600, color: '#2A2926', marginBottom: 8 }}>
               Want to switch?
             </h3>
-            <p className="text-body-sm text-muted-foreground mb-6">
+            <p style={{ fontSize: 15, color: '#6B675E', marginBottom: 24 }}>
               Your place is saved. You can come back anytime.
             </p>
             <div className="flex gap-3">
               <button
-                onClick={() => setShowSwitchConfirm(false)}
-                className="flex-1 py-3 rounded-xl font-semibold border-2 border-border text-foreground bg-white hover:bg-muted/50 transition-colors"
+                onClick={() => setShowConfirm(false)}
+                className="flex-1 py-3 rounded-xl font-semibold"
+                style={{ border: '1.5px solid #E8E6E1', color: '#2A2926', fontSize: 15, background: '#FFFFFF' }}
               >
                 Stay here
               </button>
               <button
-                onClick={confirmSwitch}
-                className="flex-1 py-3 rounded-xl font-semibold text-white bg-primary hover:bg-primary/90 transition-colors"
+                onClick={() => { setShowConfirm(false); navigate('/play'); }}
+                className="flex-1 py-3 rounded-xl font-semibold text-white"
+                style={{ background: '#3ECDC6', fontSize: 15, border: 'none' }}
               >
                 Switch
               </button>
@@ -492,6 +409,33 @@ export function KidsHomePage() {
           </div>
         </div>
       )}
+
+      <style>{`
+        .kids-moments-scroll::-webkit-scrollbar { height: 4px; }
+        .kids-moments-scroll::-webkit-scrollbar-track { background: transparent; }
+        .kids-moments-scroll::-webkit-scrollbar-thumb { background: #E8E6E1; border-radius: 4px; }
+        .kids-moments-scroll::-webkit-scrollbar-thumb:hover { background: #D4D1CC; }
+        .kids-moments-scroll { scrollbar-width: thin; scrollbar-color: #E8E6E1 transparent; }
+        .kids-home-scope h1,
+        .kids-home-scope h2,
+        .kids-home-scope h3 { font-family: 'DM Serif Display', Georgia, serif !important; }
+        @keyframes kidsFloat {
+          0% { transform: translateY(0) translateX(0); }
+          100% { transform: translateY(-20px) translateX(10px); }
+        }
+        @keyframes kidsTwinkle {
+          0%, 100% { opacity: 0.2; transform: scale(0.8); }
+          50% { opacity: 0.5; transform: scale(1.2); }
+        }
+        @keyframes lunoBreath {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-6px); }
+        }
+        @keyframes kidsFadeIn {
+          from { opacity: 0; transform: translateY(16px) scale(0.95); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+      `}</style>
     </div>
   );
 }

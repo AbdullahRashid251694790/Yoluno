@@ -30,6 +30,7 @@ import { ForgotPasswordPage } from '@/pages/ForgotPassword';
 import { ResetPasswordPage } from '@/pages/ResetPassword';
 import { VerifyEmailPage } from '@/pages/VerifyEmail';
 import { KidsBadgesPage } from '@/pages/KidsBadges';
+import { KidsMomentsPage } from '@/pages/KidsMoments';
 import { NotFoundPage } from '@/pages/NotFound';
 
 // Landing pages (lazy-loaded)
@@ -243,6 +244,15 @@ export default function App() {
                   element={
                     <ProtectedRoute>
                       <KidsBadgesPage />
+                    </ProtectedRoute>
+                  }
+                />
+
+                <Route
+                  path="/kids/:childId/moments"
+                  element={
+                    <ProtectedRoute>
+                      <KidsMomentsPage />
                     </ProtectedRoute>
                   }
                 />
