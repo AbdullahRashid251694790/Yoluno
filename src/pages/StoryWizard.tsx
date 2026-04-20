@@ -1,728 +1,516 @@
 /**
- * Story Wizard Page
+ * Story Wizard Page (parent-facing)
  *
- * Multi-step story creation wizard with theme, characters, mood, values selection.
+ * Uses the exact same 6-step flow as the kids story creator:
+ *   Theme → Character → Setting → [Family?] → Length → Narrator → Generate
+ *
+ * After the story is generated successfully, the parent is returned to
+ * /dashboard/stories with a toast — NOT sent into kids mode.
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useChildProfile, queryKeys } from '@/hooks/queries';
-import { generateStory, getThemeSuggestions, storyMoods, storyValues, type StoryCharacter } from '@/services/storyGeneration';
-import { type TTSVoice, getRecommendedVoice, CHARACTER_VOICES } from '@/services/textToSpeech';
-import { ChatAvatar } from '@/components/chat/ChatAvatar';
-import { LoadingState, ErrorState } from '@/components/shared';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
+import { generateStory, type StoryCharacter } from '@/services/storyGeneration';
+import { type TTSVoice } from '@/services/textToSpeech';
 import { toast } from 'sonner';
-import {
-  ArrowLeft,
-  ArrowRight,
-  Sparkles,
-  Wand2,
-  Users,
-  Palette,
-  Heart,
-  BookOpen,
-  Loader2,
-  Check,
-  Volume2,
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { ShareWithParentButton } from '@/components/kids/ShareWithParentButton';
+import lumiStories from '@/assets/landing/lumi-stories.png';
+import lunoHero from '@/assets/landing/luno-hero.png';
+import lumiHome from '@/assets/landing/lumi-home.png';
+import loloHome from '@/assets/landing/lolo-home.png';
+import lotiHome from '@/assets/landing/loti-home.png';
 
-const STEPS = ['Theme', 'Characters', 'Mood', 'Values', 'Generate'];
+const THEME_OPTIONS = [
+  'An adventure',
+  'Something funny',
+  'A magical tale',
+  'A scary-but-not-too-scary story',
+  'Something about my life',
+  'Surprise me!',
+];
 
-// Theme emojis for visual appeal
-const themeEmojis: Record<string, string> = {
-  friendship: '🤝',
-  kindness: '💝',
-  adventure: '🗺️',
-  animals: '🐾',
-  nature: '🌳',
-  bedtime: '🌙',
-  colors: '🌈',
-  shapes: '🔷',
-  family: '👨‍👩‍👧',
-  space: '🚀',
-  dinosaurs: '🦕',
-  magic: '✨',
-  sports: '⚽',
-  science: '🔬',
-  mystery: '🔍',
-  fantasy: '🏰',
-  history: '📜',
-  invention: '💡',
-  courage: '🦁',
-};
-
-// Mood emojis
-const moodEmojis: Record<string, string> = {
-  adventurous: '🌟',
-  calm: '😌',
-  funny: '😄',
-  magical: '✨',
-  exciting: '🎉',
-  peaceful: '🕊️',
-  mysterious: '🔮',
-};
-
-// Value emojis
-const valueEmojis: Record<string, string> = {
-  kindness: '💕',
-  honesty: '💎',
-  courage: '🦁',
-  friendship: '🤝',
-  perseverance: '💪',
-  respect: '🙏',
-  responsibility: '⭐',
-  gratitude: '🙏',
-  empathy: '❤️',
-  creativity: '🎨',
-};
-
-// Voice options mapped to characters
-const voiceOptions = CHARACTER_VOICES.map((v) => ({
-  value: v.voiceId,
-  label: v.character,
-  description: v.description,
-}));
-
-interface StoryWizardState {
-  theme: string;
-  customTheme: string;
-  characters: StoryCharacter[];
-  customCharacter: string;
-  customCharacterGender?: 'boy' | 'girl';
-  mood: string;
-  values: string[];
-  includeFamily: boolean;
-  storyLength: 'short' | 'medium' | 'long';
-  narratorVoice: TTSVoice;
+// Built dynamically per child — the first option uses the child's name
+function getCharacterOptions(childName: string | undefined): string[] {
+  return [
+    childName || 'Me!',
+    'A brave animal',
+    'A magical creature',
+    "Someone new — I'll describe them",
+    'You choose, Lumi!',
+  ];
 }
+
+const SETTING_OPTIONS = [
+  'A forest',
+  'Outer space',
+  'Under the ocean',
+  'A magical kingdom',
+  'My neighbourhood',
+  'Surprise me!',
+];
+
+const LENGTH_OPTIONS: { key: 'short' | 'medium' | 'long'; label: string; desc: string }[] = [
+  { key: 'short', label: 'Short', desc: '5 pages' },
+  { key: 'medium', label: 'Medium', desc: '6 pages' },
+  { key: 'long', label: 'Long', desc: '8 pages' },
+];
+
+const NARRATORS: { voice: TTSVoice; name: string; image: string; color: string; bg: string }[] = [
+  { voice: 'echo',    name: 'Luno', image: lunoHero,  color: '#3ECDC6', bg: '#E8F6F4' },
+  { voice: 'shimmer', name: 'Lumi', image: lumiHome,  color: '#B8A5D4', bg: '#F3EFF8' },
+  { voice: 'fable',   name: 'Lolo', image: loloHome,  color: '#E8946A', bg: '#FEF0EA' },
+  { voice: 'nova',    name: 'Loti', image: lotiHome,  color: '#D4A843', bg: '#FDF6E8' },
+];
+
+const themeToMood: Record<string, string> = {
+  'An adventure': 'adventurous',
+  'Something funny': 'funny',
+  'A magical tale': 'magical',
+  'A scary-but-not-too-scary story': 'mysterious',
+  'Something about my life': 'calm',
+  'Surprise me!': 'adventurous',
+};
+
+const LOADING_MESSAGES = [
+  'Mixing up some magic words...',
+  'Sprinkling story dust...',
+  'Waking up the characters...',
+  'Painting the adventure...',
+  'Adding a sprinkle of wonder...',
+  'The story fairies are busy...',
+];
+
+type Screen = 'theme' | 'character' | 'setting' | 'family' | 'length' | 'narrator' | 'loading';
 
 export function StoryWizardPage() {
   const { childId } = useParams<{ childId: string }>();
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const fromDashboard = searchParams.get('from') === 'dashboard';
-  const { data: child, isLoading, isError } = useChildProfile(childId);
+  const { data: child, isLoading: childLoading } = useChildProfile(childId);
 
-  const [currentStep, setCurrentStep] = useState(0);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [generatedStory, setGeneratedStory] = useState<{
-    id?: string;
-    title: string;
-    content: string;
-    moral: string;
-    illustrationUrl?: string | null;
-    coverImageUrl?: string | null;
-    hasPages?: boolean;
-    pageCount?: number;
-  } | null>(null);
+  const [screen, setScreen] = useState<Screen>('theme');
+  const [theme, setTheme] = useState('');
+  const [character, setCharacter] = useState('');
+  const [customCharacterName, setCustomCharacterName] = useState('');
+  const [showCustomCharacterInput, setShowCustomCharacterInput] = useState(false);
+  const [setting, setSetting] = useState('');
+  const [includeFamily, setIncludeFamily] = useState(false);
+  const [storyLength, setStoryLength] = useState<'short' | 'medium' | 'long'>('medium');
+  const [narratorVoice, setNarratorVoice] = useState<TTSVoice>('shimmer');
+  const [loadingMsgIndex, setLoadingMsgIndex] = useState(0);
 
-  const [wizardState, setWizardState] = useState<StoryWizardState>({
-    theme: '',
-    customTheme: '',
-    characters: [],
-    customCharacter: '',
-    customCharacterGender: undefined,
-    mood: 'adventurous',
-    values: [],
-    includeFamily: false,
-    storyLength: 'medium',
-    narratorVoice: child ? getRecommendedVoice(child.age) : 'nova',
-  });
+  // Rotate loading messages
+  useEffect(() => {
+    if (screen !== 'loading') return;
+    const interval = setInterval(() => {
+      setLoadingMsgIndex((i) => (i + 1) % LOADING_MESSAGES.length);
+    }, 2500);
+    return () => clearInterval(interval);
+  }, [screen]);
 
-  const themes = child ? getThemeSuggestions(child.age) : [];
+  const exitTo = fromDashboard ? '/dashboard/stories' : `/kids/${childId}/stories`;
+  const handleClose = () => navigate(exitTo);
 
-  const handleBack = () => {
-    if (currentStep > 0) {
-      setCurrentStep(currentStep - 1);
+  const handleTheme = (t: string) => {
+    setTheme(t);
+    setScreen('character');
+  };
+
+  const handleCharacter = (c: string) => {
+    if (c === "Someone new — I'll describe them") {
+      setCharacter(c);
+      setShowCustomCharacterInput(true);
+      return;
+    }
+    setCharacter(c);
+    setShowCustomCharacterInput(false);
+    setScreen('setting');
+  };
+
+  const handleCustomCharacterConfirm = () => {
+    if (!customCharacterName.trim()) return;
+    setCharacter(customCharacterName.trim());
+    setShowCustomCharacterInput(false);
+    setScreen('setting');
+  };
+
+  // True when the child (by name) was chosen as the main character
+  const isChildMain = !!child?.name && character === child.name;
+
+  const handleSetting = (s: string) => {
+    setSetting(s);
+    if (isChildMain) {
+      setScreen('family');
     } else {
-      navigate(fromDashboard ? '/dashboard/stories' : `/kids/${childId}/stories`);
+      setIncludeFamily(false);
+      setScreen('length');
     }
   };
 
-  const handleNext = () => {
-    if (currentStep < STEPS.length - 1) {
-      setCurrentStep(currentStep + 1);
-    }
+  const handleFamily = (include: boolean) => {
+    setIncludeFamily(include);
+    setScreen('length');
   };
 
-  const canProceed = () => {
-    switch (currentStep) {
-      case 0: // Theme
-        return wizardState.theme !== '' || wizardState.customTheme !== '';
-      case 1: // Characters
-        return true; // Optional
-      case 2: // Mood
-        return wizardState.mood !== '';
-      case 3: // Values
-        return true; // Optional
-      case 4: // Generate
-        return true;
-      default:
-        return true;
-    }
+  const handleLength = (len: 'short' | 'medium' | 'long') => {
+    setStoryLength(len);
+    setScreen('narrator');
   };
 
-  const handleGenerate = async () => {
+  const handleNarrator = async (voice: TTSVoice) => {
+    setNarratorVoice(voice);
+    setScreen('loading');
+    await generate(voice);
+  };
+
+  const generate = async (voice: TTSVoice) => {
     if (!childId) return;
-
-    setIsGenerating(true);
     try {
+      const characters: StoryCharacter[] = [];
+      let characterPhrase = '';
+      if (isChildMain && child?.name) {
+        characters.push({ name: child.name });
+        characterPhrase = `featuring ${child.name}`;
+      } else if (character === 'A brave animal') {
+        characterPhrase = 'about a brave animal character (Lumi, please invent the animal and give it a name)';
+      } else if (character === 'A magical creature') {
+        characterPhrase = 'about a magical creature character (Lumi, please invent the creature and give it a name)';
+      } else if (character === 'You choose, Lumi!' || character === '') {
+        characterPhrase = '(Lumi, please invent a wonderful main character)';
+      } else {
+        characters.push({ name: character });
+        characterPhrase = `featuring ${character}`;
+      }
+
+      const themeString = `${theme} ${characterPhrase} set in ${setting.toLowerCase()}`;
+      const mood = themeToMood[theme] || 'adventurous';
+
       const story = await generateStory({
         childProfileId: childId,
-        theme: wizardState.customTheme || wizardState.theme,
-        characters: wizardState.characters.length > 0 ? wizardState.characters : undefined,
-        mood: wizardState.mood,
-        values: wizardState.values.length > 0 ? wizardState.values : undefined,
-        storyLength: wizardState.storyLength,
-        includeFamily: wizardState.includeFamily,
-        narratorVoice: wizardState.narratorVoice,
+        theme: themeString,
+        characters,
+        mood,
+        values: [],
+        storyLength,
+        includeFamily,
+        narratorVoice: voice,
+        createdBy: 'parent',
       });
 
-      setGeneratedStory({
-        id: story.id,
-        title: story.title,
-        content: story.content,
-        moral: story.moral,
-        illustrationUrl: story.illustrationUrl,
-        coverImageUrl: story.cover_image_url,
-        hasPages: story.has_pages,
-        pageCount: story.pages?.length,
-      });
+      // Invalidate stories cache so the list refreshes
+      queryClient.invalidateQueries({ queryKey: queryKeys.stories.all });
 
-      // Store voice preference for this story in localStorage
-      if (story.id) {
-        const voicePrefs = JSON.parse(localStorage.getItem('storyVoicePrefs') || '{}');
-        voicePrefs[story.id] = wizardState.narratorVoice;
-        localStorage.setItem('storyVoicePrefs', JSON.stringify(voicePrefs));
-      }
-
-      console.log('Story generated:', { story, id: story.id, warning: story.warning, childId, voice: wizardState.narratorVoice });
-
-      // Invalidate stories cache so the list updates
-      console.log('Invalidating stories cache for childId:', childId);
-      await queryClient.invalidateQueries({
-        queryKey: queryKeys.stories.listByChild(childId),
-      });
-
-      if (story.warning) {
-        // Story was saved but illustration failed
-        toast.success('Story created!', {
-          description: `"${story.title}" saved (illustration unavailable).`,
-        });
-      } else {
-        toast.success('Story created!', {
-          description: `"${story.title}" has been saved to your library!`,
-        });
-      }
-    } catch (error: any) {
-      console.error('Failed to generate story:', error);
-      const message = error?.message || '';
-      if (message.includes('limit') || message.includes('429')) {
-        toast.error('Story limit reached', {
-          description: 'You can create up to 3 stories per month per child.',
-        });
-      } else {
-        toast.error('Failed to generate story', {
-          description: 'Please try again.',
-        });
-      }
-    } finally {
-      setIsGenerating(false);
+      toast.success(`"${story.title}" created! Illustrations are being drawn in the background.`);
+      navigate(exitTo);
+    } catch (err: any) {
+      toast.error(err?.response?.data?.error || 'Failed to create story — please try again');
+      navigate(exitTo);
     }
   };
 
-  const handleFinish = () => {
-    navigate(fromDashboard ? '/dashboard/stories' : `/kids/${childId}/stories`);
-  };
-
-  const toggleValue = (value: string) => {
-    setWizardState((prev) => ({
-      ...prev,
-      values: prev.values.includes(value)
-        ? prev.values.filter((v) => v !== value)
-        : [...prev.values, value].slice(0, 3), // Max 3 values
-    }));
-  };
-
-  const addCharacter = () => {
-    if (wizardState.customCharacter.trim()) {
-      setWizardState((prev) => ({
-        ...prev,
-        characters: [
-          ...prev.characters,
-          {
-            name: prev.customCharacter.trim(),
-            gender: prev.customCharacterGender,
-          },
-        ].slice(0, 5),
-        customCharacter: '',
-        customCharacterGender: undefined,
-      }));
-    }
-  };
-
-  const removeCharacter = (index: number) => {
-    setWizardState((prev) => ({
-      ...prev,
-      characters: prev.characters.filter((_, i) => i !== index),
-    }));
-  };
-
-  if (isLoading) {
-    return <LoadingState message="Loading..." fullPage />;
-  }
-
-  if (isError || !child) {
+  if (childLoading) {
     return (
-      <ErrorState
-        title="Child not found"
-        message="The child profile could not be loaded."
-        onRetry={() => navigate('/dashboard')}
-        retryLabel="Back to Dashboard"
-        fullPage
-      />
+      <div
+        className="min-h-screen flex items-center justify-center"
+        style={{
+          background: 'linear-gradient(165deg, #F3EFF8 0%, #E8F6F4 30%, #FDF6E8 70%, #FEF0EA 100%)',
+          fontFamily: "'DM Sans', sans-serif",
+        }}
+      >
+        <div className="text-center">
+          <div style={{ fontSize: 48 }} className="animate-bounce mb-4">📖</div>
+          <p style={{ fontSize: 16, color: '#B8A5D4', fontWeight: 600 }}>Loading...</p>
+        </div>
+      </div>
     );
   }
 
-  const progress = ((currentStep + 1) / STEPS.length) * 100;
-  const isLastStep = currentStep === STEPS.length - 1;
-
-  // Render step content
-  const renderStepContent = () => {
-    switch (currentStep) {
-      case 0: // Theme
-        return (
-          <div className="space-y-4">
-            <p className="text-muted-foreground text-body-sm">
-              What should the story be about?
-            </p>
-            <div className="grid grid-cols-3 gap-3">
-              {themes.map((theme) => (
-                <button
-                  key={theme}
-                  onClick={() => setWizardState((prev) => ({ ...prev, theme, customTheme: '' }))}
-                  className={cn(
-                    'flex flex-col items-center gap-2 rounded-xl border-2 p-4 transition-all hover:scale-105',
-                    wizardState.theme === theme
-                      ? 'border-primary bg-primary/10'
-                      : 'border-muted hover:border-primary/50'
-                  )}
-                >
-                  <span className="text-h4">{themeEmojis[theme] || '📖'}</span>
-                  <span className="text-body-sm font-medium capitalize">{theme}</span>
-                </button>
-              ))}
-            </div>
-            <div className="pt-4">
-              <Label htmlFor="customTheme">Or enter your own theme:</Label>
-              <Input
-                id="customTheme"
-                placeholder="e.g., underwater adventure, robot friends..."
-                value={wizardState.customTheme}
-                onChange={(e) =>
-                  setWizardState((prev) => ({ ...prev, customTheme: e.target.value, theme: '' }))
-                }
-                className="mt-2"
-              />
-            </div>
-          </div>
-        );
-
-      case 1: // Characters
-        return (
-          <div className="space-y-4">
-            <p className="text-muted-foreground text-body-sm">
-              Who should be in the story? (Optional)
-            </p>
-            <div className="flex gap-2">
-              <Input
-                placeholder="Add a character name..."
-                value={wizardState.customCharacter}
-                onChange={(e) =>
-                  setWizardState((prev) => ({ ...prev, customCharacter: e.target.value }))
-                }
-                onKeyDown={(e) => e.key === 'Enter' && addCharacter()}
-              />
-            </div>
-            {wizardState.customCharacter.trim() && (
-              <div className="flex items-center gap-2">
-                <span className="text-body-sm text-muted-foreground">Gender:</span>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setWizardState((prev) => ({
-                      ...prev,
-                      customCharacterGender: prev.customCharacterGender === 'boy' ? undefined : 'boy',
-                    }))
-                  }
-                  className={cn(
-                    'px-3 py-1 rounded-full text-body-sm border-2 transition-all',
-                    wizardState.customCharacterGender === 'boy'
-                      ? 'border-primary bg-primary/5 text-primary'
-                      : 'border-muted hover:border-primary'
-                  )}
-                >
-                  👦 Boy
-                </button>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setWizardState((prev) => ({
-                      ...prev,
-                      customCharacterGender: prev.customCharacterGender === 'girl' ? undefined : 'girl',
-                    }))
-                  }
-                  className={cn(
-                    'px-3 py-1 rounded-full text-body-sm border-2 transition-all',
-                    wizardState.customCharacterGender === 'girl'
-                      ? 'border-lolo bg-lolo/10 text-lolo'
-                      : 'border-muted hover:border-lolo'
-                  )}
-                >
-                  👧 Girl
-                </button>
-                <Button onClick={addCharacter} size="sm" disabled={!wizardState.customCharacter.trim()}>
-                  Add
-                </Button>
-              </div>
-            )}
-            {wizardState.characters.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {wizardState.characters.map((char, index) => (
-                  <span
-                    key={index}
-                    className={cn(
-                      'inline-flex items-center gap-1 rounded-full px-3 py-1 text-body-sm',
-                      char.gender === 'boy' && 'bg-primary/10 text-primary',
-                      char.gender === 'girl' && 'bg-lolo/10 text-lolo',
-                      !char.gender && 'bg-primary/10'
-                    )}
-                  >
-                    {char.gender === 'boy' && '👦 '}
-                    {char.gender === 'girl' && '👧 '}
-                    {char.name}
-                    <button
-                      onClick={() => removeCharacter(index)}
-                      className="ml-1 text-muted-foreground hover:text-foreground"
-                    >
-                      ×
-                    </button>
-                  </span>
-                ))}
-              </div>
-            )}
-            <div className="flex items-center space-x-2 pt-4">
-              <Checkbox
-                id="includeFamily"
-                checked={wizardState.includeFamily}
-                onCheckedChange={(checked) =>
-                  setWizardState((prev) => ({ ...prev, includeFamily: !!checked }))
-                }
-              />
-              <Label htmlFor="includeFamily" className="text-body-sm">
-                Include family members in the story
-              </Label>
-            </div>
-          </div>
-        );
-
-      case 2: // Mood
-        return (
-          <div className="space-y-4">
-            <p className="text-muted-foreground text-body-sm">
-              What feeling should the story have?
-            </p>
-            <div className="grid grid-cols-2 gap-3">
-              {storyMoods.map((mood) => (
-                <button
-                  key={mood}
-                  onClick={() => setWizardState((prev) => ({ ...prev, mood }))}
-                  className={cn(
-                    'flex items-center gap-3 rounded-xl border-2 p-4 transition-all hover:scale-105',
-                    wizardState.mood === mood
-                      ? 'border-primary bg-primary/10'
-                      : 'border-muted hover:border-primary/50'
-                  )}
-                >
-                  <span className="text-h4">{moodEmojis[mood] || '📖'}</span>
-                  <span className="font-medium capitalize">{mood}</span>
-                </button>
-              ))}
-            </div>
-            <div className="pt-4">
-              <Label>Story Length</Label>
-              <div className="mt-2 flex gap-2">
-                {(['short', 'medium', 'long'] as const).map((length) => (
-                  <Button
-                    key={length}
-                    variant={wizardState.storyLength === length ? 'default' : 'outline'}
-                    onClick={() => setWizardState((prev) => ({ ...prev, storyLength: length }))}
-                    className="flex-1 capitalize"
-                  >
-                    {length}
-                  </Button>
-                ))}
-              </div>
-            </div>
-            <div className="pt-4">
-              <Label className="flex items-center gap-2">
-                <Volume2 className="h-4 w-4" />
-                Narrator Voice
-              </Label>
-              <p className="text-muted-foreground text-caption mt-1 mb-2">
-                Choose a voice for reading the story aloud
-              </p>
-              <div className="grid grid-cols-2 gap-3">
-                {voiceOptions.map((voice) => (
-                  <button
-                    key={voice.value}
-                    onClick={() => setWizardState((prev) => ({ ...prev, narratorVoice: voice.value }))}
-                    className={cn(
-                      'flex items-center gap-3 rounded-xl border-2 p-3 transition-all hover:scale-[1.02]',
-                      wizardState.narratorVoice === voice.value
-                        ? 'border-primary bg-primary/10'
-                        : 'border-muted hover:border-primary/50'
-                    )}
-                  >
-                    <ChatAvatar buddyName={voice.label} expression="neutral" size="sm" />
-                    <div className="text-left">
-                      <span className="text-body-sm font-medium block">{voice.label}</span>
-                      <span className="text-caption text-muted-foreground">{voice.description}</span>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        );
-
-      case 3: // Values
-        return (
-          <div className="space-y-4">
-            <p className="text-muted-foreground text-body-sm">
-              What lessons should the story teach? (Pick up to 3)
-            </p>
-            <div className="grid grid-cols-2 gap-3">
-              {storyValues.map((value) => (
-                <button
-                  key={value}
-                  onClick={() => toggleValue(value)}
-                  disabled={
-                    wizardState.values.length >= 3 && !wizardState.values.includes(value)
-                  }
-                  className={cn(
-                    'flex items-center gap-3 rounded-xl border-2 p-3 transition-all',
-                    wizardState.values.includes(value)
-                      ? 'border-primary bg-primary/10'
-                      : 'border-muted hover:border-primary/50',
-                    wizardState.values.length >= 3 &&
-                      !wizardState.values.includes(value) &&
-                      'opacity-50 cursor-not-allowed'
-                  )}
-                >
-                  <span className="text-body-lg">{valueEmojis[value] || '⭐'}</span>
-                  <span className="text-body-sm font-medium capitalize">{value}</span>
-                  {wizardState.values.includes(value) && (
-                    <Check className="ml-auto h-4 w-4 text-primary" />
-                  )}
-                </button>
-              ))}
-            </div>
-          </div>
-        );
-
-      case 4: // Generate
-        return (
-          <div className="space-y-6">
-            {generatedStory ? (
-              <div className="space-y-4">
-                <div className="rounded-xl bg-gradient-to-r from-lolo/10/10 to-primary/10/10 p-4">
-                  <h3 className="text-body-lg font-bold">{generatedStory.title}</h3>
-                  {generatedStory.hasPages && generatedStory.pageCount && (
-                    <p className="text-body-sm text-muted-foreground mt-1">
-                      {generatedStory.pageCount} pages with illustrations generating...
-                    </p>
-                  )}
-                </div>
-                {(generatedStory.coverImageUrl || generatedStory.illustrationUrl) && (
-                  <div className="rounded-xl overflow-hidden border-2 border-primary/20">
-                    <img
-                      src={generatedStory.coverImageUrl || generatedStory.illustrationUrl!}
-                      alt={`Cover for ${generatedStory.title}`}
-                      className="w-full h-auto max-h-[250px] object-cover"
-                    />
-                  </div>
-                )}
-                <div className="max-h-[200px] overflow-y-auto rounded-lg bg-muted/50 p-4">
-                  <p className="whitespace-pre-wrap text-body-sm leading-relaxed">
-                    {generatedStory.content}
-                  </p>
-                </div>
-                <div className="rounded-lg bg-primary/10 p-3 text-center">
-                  <p className="text-body-sm text-primary">
-                    Your storybook is ready! Illustrations are being created in the background.
-                  </p>
-                  <p className="text-caption text-primary/70 mt-1">
-                    This may take a few minutes. You can close this page and come back later.
-                  </p>
-                </div>
-                {/* Share with parent button moved to My Moments page
-                {childId && !fromDashboard && (
-                  <ShareWithParentButton
-                    childId={childId}
-                    momentType="story_created"
-                    title={`New Story — ${generatedStory.title}`}
-                    context={`${child?.name || 'Your child'} created "${generatedStory.title}" with Lumi`}
-                    referenceId={generatedStory.id}
-                    className="w-full"
-                    label="Share with your parent"
-                  />
-                )}
-                */}
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <p className="text-muted-foreground text-body-sm">
-                  Ready to create the story! Here's what we'll make:
-                </p>
-                <div className="rounded-xl bg-muted/50 p-4 space-y-2">
-                  <div className="flex items-center gap-2">
-                    <Palette className="h-4 w-4 text-primary" />
-                    <span className="text-body-sm">
-                      <strong>Theme:</strong>{' '}
-                      {wizardState.customTheme || wizardState.theme || 'Not selected'}
-                    </span>
-                  </div>
-                  {wizardState.characters.length > 0 && (
-                    <div className="flex items-center gap-2">
-                      <Users className="h-4 w-4 text-primary" />
-                      <span className="text-body-sm">
-                        <strong>Characters:</strong> {wizardState.characters.map(c => c.name).join(', ')}
-                      </span>
-                    </div>
-                  )}
-                  <div className="flex items-center gap-2">
-                    <Wand2 className="h-4 w-4 text-primary" />
-                    <span className="text-body-sm">
-                      <strong>Mood:</strong> {wizardState.mood}
-                    </span>
-                  </div>
-                  {wizardState.values.length > 0 && (
-                    <div className="flex items-center gap-2">
-                      <Heart className="h-4 w-4 text-primary" />
-                      <span className="text-body-sm">
-                        <strong>Values:</strong> {wizardState.values.join(', ')}
-                      </span>
-                    </div>
-                  )}
-                  <div className="flex items-center gap-2">
-                    <BookOpen className="h-4 w-4 text-primary" />
-                    <span className="text-body-sm">
-                      <strong>Length:</strong> {wizardState.storyLength}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Volume2 className="h-4 w-4 text-primary" />
-                    <span className="text-body-sm">
-                      <strong>Narrator:</strong> {voiceOptions.find(v => v.value === wizardState.narratorVoice)?.label || wizardState.narratorVoice}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        );
-
-      default:
-        return null;
-    }
-  };
-
-  const stepIcons = [Palette, Users, Wand2, Heart, BookOpen];
-  const StepIcon = stepIcons[currentStep];
-
   return (
-    <div className="min-h-screen bg-gradient-to-b  p-4">
-      <div className="mx-auto max-w-2xl">
-        {/* Header */}
-        <div className="mb-8">
-          {!generatedStory && (
-            <Button variant="ghost" size="sm" onClick={handleBack} className="text-muted-foreground">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              {currentStep > 0 ? 'Back' : 'Cancel'}
-            </Button>
-          )}
+    <div
+      className="min-h-screen flex items-center justify-center px-6"
+      style={{
+        background: 'linear-gradient(165deg, #F3EFF8 0%, #E8F6F4 30%, #FDF6E8 70%, #FEF0EA 100%)',
+        fontFamily: "'DM Sans', sans-serif",
+      }}
+    >
+      <div
+        className="bg-white rounded-2xl p-8 max-w-md w-full text-center"
+        style={{ boxShadow: '0 16px 48px rgba(42,41,38,0.15)' }}
+      >
+        {/* Lumi avatar */}
+        <div className="mb-4" style={{ animation: 'lumiBreath 4s ease-in-out infinite' }}>
+          <img
+            src={lumiStories}
+            alt="Lumi"
+            className="mx-auto drop-shadow-2xl"
+            style={{ width: 80, height: 80, objectFit: 'contain' }}
+          />
         </div>
 
-        {/* Progress */}
-        <div className="mb-8">
-          <div className="mb-2 flex justify-between text-body-sm">
-            <span>
-              Step {currentStep + 1} of {STEPS.length}
-            </span>
-            <span>{STEPS[currentStep]}</span>
-          </div>
-          <Progress value={progress} className="h-2" />
-        </div>
+        {child && (
+          <p className="mb-3" style={{ fontSize: 13, color: '#9B978E' }}>
+            Creating a story for <strong style={{ color: '#B8A5D4' }}>{child.name}</strong>
+          </p>
+        )}
 
-        {/* Step content */}
-        <Card className="border-0 shadow-xl bg-white">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-foreground">
-              <StepIcon className="h-5 w-5 text-primary" />
-              Create a Story for {child.name}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="min-h-[300px]">{renderStepContent()}</div>
-          </CardContent>
-        </Card>
+        {/* Theme */}
+        {screen === 'theme' && (
+          <>
+            <p className="mb-6" style={{ fontSize: 18, fontWeight: 600, color: '#2A2926' }}>
+              What kind of story shall we make today?
+            </p>
+            <div className="flex flex-col gap-2">
+              {THEME_OPTIONS.map((opt) => (
+                <OptionButton key={opt} label={opt} onClick={() => handleTheme(opt)} />
+              ))}
+            </div>
+            <CancelButton onClick={handleClose} />
+          </>
+        )}
 
-        {/* Navigation */}
-        <div className="mt-6 flex justify-end gap-3">
-          {isLastStep ? (
-            generatedStory ? (
-              <Button onClick={handleFinish} className="gap-2">
-                <Check className="h-4 w-4" />
-                Done
-              </Button>
-            ) : (
-              <Button
-                onClick={handleGenerate}
-                disabled={isGenerating}
-                className="gap-2"
+        {/* Character */}
+        {screen === 'character' && !showCustomCharacterInput && (
+          <>
+            <p className="mb-6" style={{ fontSize: 18, fontWeight: 600, color: '#2A2926' }}>
+              Who's the main character?
+            </p>
+            <div className="flex flex-col gap-2">
+              {getCharacterOptions(child?.name).map((opt) => (
+                <OptionButton key={opt} label={opt} onClick={() => handleCharacter(opt)} />
+              ))}
+            </div>
+            <BackCancel onBack={() => setScreen('theme')} onCancel={handleClose} />
+          </>
+        )}
+
+        {/* Custom character input */}
+        {screen === 'character' && showCustomCharacterInput && (
+          <>
+            <p className="mb-4" style={{ fontSize: 18, fontWeight: 600, color: '#2A2926' }}>
+              What's their name?
+            </p>
+            <input
+              type="text"
+              value={customCharacterName}
+              onChange={(e) => setCustomCharacterName(e.target.value)}
+              placeholder="Type a name..."
+              autoFocus
+              onKeyDown={(e) => { if (e.key === 'Enter') handleCustomCharacterConfirm(); }}
+              className="w-full rounded-xl px-4 py-3 mb-4 outline-none"
+              style={{ border: '1.5px solid #E8E6E1', fontSize: 15, color: '#2A2926', background: '#F5F3EE' }}
+            />
+            <button
+              onClick={handleCustomCharacterConfirm}
+              disabled={!customCharacterName.trim()}
+              className="w-full py-3 rounded-xl text-white font-semibold transition hover:opacity-90 disabled:opacity-40"
+              style={{ background: '#B8A5D4', fontSize: 15, border: 'none' }}
+            >
+              Continue →
+            </button>
+            <BackCancel onBack={() => setShowCustomCharacterInput(false)} onCancel={handleClose} />
+          </>
+        )}
+
+        {/* Setting */}
+        {screen === 'setting' && (
+          <>
+            <p className="mb-6" style={{ fontSize: 18, fontWeight: 600, color: '#2A2926' }}>
+              Where does it happen?
+            </p>
+            <div className="flex flex-col gap-2">
+              {SETTING_OPTIONS.map((opt) => (
+                <OptionButton key={opt} label={opt} onClick={() => handleSetting(opt)} />
+              ))}
+            </div>
+            <BackCancel onBack={() => setScreen('character')} onCancel={handleClose} />
+          </>
+        )}
+
+        {/* Include family */}
+        {screen === 'family' && (
+          <>
+            <p className="mb-2" style={{ fontSize: 18, fontWeight: 600, color: '#2A2926' }}>
+              Should your family be in the story?
+            </p>
+            <p className="mb-6" style={{ fontSize: 13, color: '#9B978E', fontStyle: 'italic' }}>
+              Lumi will include real family members you've added
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => handleFamily(true)}
+                className="flex-1 py-4 rounded-xl font-semibold text-white transition hover:opacity-90"
+                style={{ background: '#B8A5D4', fontSize: 15, border: 'none' }}
               >
-                {isGenerating ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Creating Magic...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="h-4 w-4" />
-                    Generate Story
-                  </>
-                )}
-              </Button>
-            )
-          ) : (
-            <Button onClick={handleNext} disabled={!canProceed()} className="gap-2">
-              Next
-              <ArrowRight className="h-4 w-4" />
-            </Button>
-          )}
-        </div>
+                💛 Yes, include them
+              </button>
+              <button
+                onClick={() => handleFamily(false)}
+                className="flex-1 py-4 rounded-xl font-semibold transition hover:bg-gray-50"
+                style={{ border: '1.5px solid #E8E6E1', color: '#2A2926', fontSize: 15, background: '#FFFFFF' }}
+              >
+                No, not this time
+              </button>
+            </div>
+            <BackCancel onBack={() => setScreen('setting')} onCancel={handleClose} />
+          </>
+        )}
+
+        {/* Length */}
+        {screen === 'length' && (
+          <>
+            <p className="mb-6" style={{ fontSize: 18, fontWeight: 600, color: '#2A2926' }}>
+              How long should it be?
+            </p>
+            <div className="flex flex-col gap-2">
+              {LENGTH_OPTIONS.map((opt) => (
+                <button
+                  key={opt.key}
+                  onClick={() => handleLength(opt.key)}
+                  className="w-full py-3 px-4 rounded-xl text-left transition-all"
+                  style={{ background: '#FFFFFF', border: '1.5px solid #E8E6E1', cursor: 'pointer' }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLElement).style.borderColor = '#B8A5D4';
+                    (e.currentTarget as HTMLElement).style.background = '#F3EFF8';
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLElement).style.borderColor = '#E8E6E1';
+                    (e.currentTarget as HTMLElement).style.background = '#FFFFFF';
+                  }}
+                >
+                  <p style={{ fontSize: 15, fontWeight: 600, color: '#2A2926' }}>{opt.label}</p>
+                  <p style={{ fontSize: 12, color: '#9B978E', marginTop: 2 }}>{opt.desc}</p>
+                </button>
+              ))}
+            </div>
+            <BackCancel
+              onBack={() => setScreen(isChildMain ? 'family' : 'setting')}
+              onCancel={handleClose}
+            />
+          </>
+        )}
+
+        {/* Narrator */}
+        {screen === 'narrator' && (
+          <>
+            <p className="mb-2" style={{ fontSize: 18, fontWeight: 600, color: '#2A2926' }}>
+              Who should read it?
+            </p>
+            <p className="mb-6" style={{ fontSize: 13, color: '#9B978E', fontStyle: 'italic' }}>
+              Pick a narrator voice
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              {NARRATORS.map((n) => (
+                <button
+                  key={n.voice}
+                  onClick={() => handleNarrator(n.voice)}
+                  className="flex flex-col items-center p-4 rounded-xl transition-all hover:scale-105"
+                  style={{
+                    background: '#FFFFFF',
+                    border: `1.5px solid ${n.color}`,
+                    boxShadow: `0 2px 8px ${n.color}30`,
+                    cursor: 'pointer',
+                  }}
+                >
+                  <div
+                    className="rounded-full flex items-center justify-center mb-2 overflow-hidden"
+                    style={{ width: 56, height: 56, background: n.bg }}
+                  >
+                    <img src={n.image} alt={n.name} style={{ width: 48, height: 48, objectFit: 'contain' }} />
+                  </div>
+                  <span style={{ fontSize: 15, fontWeight: 600, color: n.color }}>{n.name}</span>
+                </button>
+              ))}
+            </div>
+            <BackCancel onBack={() => setScreen('length')} onCancel={handleClose} />
+          </>
+        )}
+
+        {/* Loading */}
+        {screen === 'loading' && (
+          <>
+            <p className="mb-2" style={{ fontSize: 22, fontWeight: 600, color: '#2A2926' }}>
+              Lumi is dreaming up the story...
+            </p>
+            <p className="mb-6" style={{ fontSize: 14, color: '#9B978E', fontStyle: 'italic', minHeight: 20 }}>
+              {LOADING_MESSAGES[loadingMsgIndex]}
+            </p>
+            <div className="flex gap-1.5 justify-center">
+              {[0, 1, 2].map((i) => (
+                <div
+                  key={i}
+                  style={{
+                    width: 10,
+                    height: 10,
+                    borderRadius: '50%',
+                    background: '#B8A5D4',
+                    animation: `dotPulse 1.2s ease-in-out ${i * 0.2}s infinite`,
+                  }}
+                />
+              ))}
+            </div>
+            <p className="mt-6" style={{ fontSize: 12, color: '#9B978E' }}>
+              This usually takes about a minute. Don't close the window!
+            </p>
+          </>
+        )}
       </div>
+
+      <style>{`
+        @keyframes lumiBreath {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-6px); }
+        }
+        @keyframes dotPulse {
+          0%, 100% { opacity: 0.3; transform: scale(0.8); }
+          50% { opacity: 1; transform: scale(1.2); }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+// ─── Shared UI helpers ──────────────────────────────────────────────────────
+
+function OptionButton({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className="w-full py-3 px-4 rounded-xl text-left transition-all"
+      style={{ background: '#FFFFFF', border: '1.5px solid #E8E6E1', fontSize: 15, color: '#2A2926', cursor: 'pointer' }}
+      onMouseEnter={(e) => {
+        (e.currentTarget as HTMLElement).style.borderColor = '#B8A5D4';
+        (e.currentTarget as HTMLElement).style.background = '#F3EFF8';
+      }}
+      onMouseLeave={(e) => {
+        (e.currentTarget as HTMLElement).style.borderColor = '#E8E6E1';
+        (e.currentTarget as HTMLElement).style.background = '#FFFFFF';
+      }}
+    >
+      {label}
+    </button>
+  );
+}
+
+function CancelButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button onClick={onClick} className="mt-4" style={{ fontSize: 13, color: '#9B978E', background: 'none', border: 'none', cursor: 'pointer' }}>
+      Cancel
+    </button>
+  );
+}
+
+function BackCancel({ onBack, onCancel }: { onBack: () => void; onCancel: () => void }) {
+  return (
+    <div className="flex justify-between mt-4 px-2">
+      <button onClick={onBack} style={{ fontSize: 13, color: '#B8A5D4', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 500 }}>
+        ← Back
+      </button>
+      <button onClick={onCancel} style={{ fontSize: 13, color: '#9B978E', background: 'none', border: 'none', cursor: 'pointer' }}>
+        Cancel
+      </button>
     </div>
   );
 }

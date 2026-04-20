@@ -673,7 +673,7 @@ export function SafetyDashboardPage() {
                 {
                   key: 'notifyReport' as const,
                   label: 'Notify me when a safety report is generated',
-                  desc: 'Receive an email alert for safety reports',
+                  desc: 'Get a dashboard notification when Luno flags a concern (self-harm, bullying, etc.)',
                 },
                 {
                   key: 'weeklySummary' as const,

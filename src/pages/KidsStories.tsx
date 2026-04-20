@@ -36,6 +36,17 @@ function themeColor(theme: string | null, idx: number): string {
   return THEME_COLORS[idx % THEME_COLORS.length];
 }
 
+// Extract a short 1-word label from a theme string (strip articles, take first meaningful word)
+function shortTheme(theme: string | null): string {
+  if (!theme) return '';
+  const cleaned = theme.replace(/[!?.,]/g, '').trim();
+  const words = cleaned.split(/\s+/);
+  const STOP = new Set(['a', 'an', 'the', 'some', 'something', 'surprise', 'me']);
+  // Take the first non-stop word, or fall back to the first word
+  const pick = words.find((w) => !STOP.has(w.toLowerCase())) || words[0] || '';
+  return pick.replace(/-.*$/, ''); // "scary-but-not-too-scary" → "scary"
+}
+
 const FLOAT_ELEMENTS = Array.from({ length: 10 }, (_, i) => ({
   id: i,
   type: i % 3 === 0 ? 'star' : i % 3 === 1 ? 'sparkle' : 'feather',
@@ -171,12 +182,6 @@ export function KidsStoriesPage() {
     });
   };
 
-  const STORY_STARTERS = [
-    { label: 'An adventure', icon: '🧭', borderColor: '#B8A5D4' },
-    { label: 'Something funny', icon: '😂', borderColor: '#E8946A' },
-    { label: 'A magical tale', icon: '✨', borderColor: '#D4A843' },
-  ];
-
   const storyList = stories || [];
   const isEmpty = !isLoading && storyList.length === 0;
 
@@ -261,30 +266,6 @@ export function KidsStoriesPage() {
             <p className="text-center mb-8" style={{ fontSize: 16, color: '#6B675E', maxWidth: 400, lineHeight: 1.5 }}>
               What kind of story do you want to make? You choose what happens — and Lumi helps bring it to life.
             </p>
-            <div className="flex gap-4 mb-6 flex-wrap justify-center">
-              {STORY_STARTERS.map((s) => (
-                <button
-                  key={s.label}
-                  onClick={() => setIsCreatorOpen(true)}
-                  className="flex flex-col items-center justify-center w-[140px] py-5 rounded-2xl transition-all hover:scale-105"
-                  style={{
-                    background: '#FFFFFF',
-                    border: `1.5px solid ${s.borderColor}`,
-                    boxShadow: '0 2px 8px rgba(42,41,38,0.06)',
-                    cursor: 'pointer',
-                  }}
-                >
-                  <span style={{ fontSize: 32, marginBottom: 8 }}>{s.icon}</span>
-                  <span style={{ fontSize: 14, fontWeight: 500, color: '#2A2926' }}>{s.label}</span>
-                </button>
-              ))}
-            </div>
-            <button
-              onClick={() => setIsCreatorOpen(true)}
-              style={{ fontSize: 14, color: '#B8A5D4', background: 'none', border: 'none', cursor: 'pointer' }}
-            >
-              Or just start from scratch
-            </button>
           </div>
         ) : (
           /* Story grid */
@@ -362,7 +343,7 @@ export function KidsStoriesPage() {
                             className="px-2 py-0.5 rounded-full capitalize"
                             style={{ fontSize: 11, background: '#F3EFF8', color: '#B8A5D4', fontWeight: 500 }}
                           >
-                            {story.theme}
+                            {shortTheme(story.theme)}
                           </span>
                         </div>
                       )}

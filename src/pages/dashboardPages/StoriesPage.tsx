@@ -37,6 +37,16 @@ function formatRelativeDate(dateStr: string): string {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
+// Extract a short 1-word label from a theme string (strip articles, take first meaningful word)
+function shortTheme(theme: string | null | undefined): string {
+  if (!theme) return '';
+  const cleaned = theme.replace(/[!?.,]/g, '').trim();
+  const words = cleaned.split(/\s+/);
+  const STOP = new Set(['a', 'an', 'the', 'some', 'something', 'surprise', 'me']);
+  const pick = words.find((w) => !STOP.has(w.toLowerCase())) || words[0] || '';
+  return pick.replace(/-.*$/, '');
+}
+
 export function StoriesPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -250,7 +260,7 @@ export function StoriesPage() {
             );
             const isFav = localFavorites.has(story.id);
             const tags = [
-              story.theme,
+              shortTheme(story.theme),
               story.mood,
               ...(story.values?.slice(0, 1) || []),
             ].filter(Boolean) as string[];

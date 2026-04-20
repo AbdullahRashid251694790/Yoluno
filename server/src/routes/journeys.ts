@@ -4,6 +4,7 @@ import { query, queryOne } from '../config/database.js';
 import { requireAuth } from '../middleware/auth.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { logActivityForChild, awardJourneyCompletionBadge } from '../helpers/gamification.js';
+import { resetDailyJourneys } from './childProfiles.js';
 import type { Journey, JourneyStep, ChildProfile } from '../types/index.js';
 
 const router = Router();
@@ -27,6 +28,8 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
 
     if (childId) {
       await verifyChildAccess(childId as string, req.user!.id);
+      // Safety net: ensure daily routines are reset before fetching
+      await resetDailyJourneys(childId as string);
     }
 
     let queryText = `

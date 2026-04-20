@@ -205,6 +205,8 @@ async function start() {
       scheduleWeeklyReport();
       // Auto-delete old conversations — runs daily at 3 AM UTC
       scheduleAutoDelete();
+      // Reset daily-routine journeys — runs daily at 12:05 AM UTC
+      scheduleDailyJourneyReset();
     });
   } catch (error) {
     console.error('Failed to start server:', error);
@@ -251,7 +253,8 @@ function scheduleWeeklyReport() {
             severity: string; issue_summary: string; ai_analysis: string | null;
             child_name: string | null; created_at: string;
           }>(
-            `SELECT sr.severity, sr.issue_summary, sr.ai_analysis,
+            `SELECT sr.severity, sr.issue_summary,
+                    sr.full_context->>'ai_analysis' as ai_analysis,
                     cp.name as child_name, sr.created_at::text
              FROM safety_reports sr
              LEFT JOIN child_profiles cp ON sr.child_profile_id = cp.id
@@ -362,6 +365,50 @@ function scheduleAutoDelete() {
 
   setInterval(run, 60 * 60 * 1000); // Check every hour
   console.log('Auto-delete cron scheduled (daily 3 AM UTC)');
+}
+
+/**
+ * Daily-routine journey reset cron — runs each hour, fires shortly after midnight UTC.
+ * Resets ALL stale completed daily-routine journeys across every child.
+ * The UPDATE targets only journeys with status='completed' AND completed_at<CURRENT_DATE
+ * AND a template with is_auto_assign=true, so it's fully idempotent and cannot
+ * create duplicates — it only flips existing rows back to active + resets steps.
+ */
+function scheduleDailyJourneyReset() {
+  const run = async () => {
+    const now = new Date();
+    // Fire in the 0:05–0:59 UTC window once per day
+    if (now.getUTCHours() !== 0) return;
+
+    try {
+      const updated = await pool.query(
+        `UPDATE journeys j
+         SET status = 'active', progress = 0, completed_at = NULL, updated_at = NOW()
+         FROM journey_templates jt
+         WHERE j.template_id::text = jt.id::text
+           AND jt.is_auto_assign = true
+           AND j.status = 'completed'
+           AND j.completed_at < CURRENT_DATE
+         RETURNING j.id`
+      );
+      if (updated.rowCount && updated.rowCount > 0) {
+        const ids = updated.rows.map((r) => r.id);
+        // Reset all steps for those journeys
+        await pool.query(
+          `UPDATE journey_steps SET progress = 0, completed_at = NULL, updated_at = NOW()
+           WHERE journey_id = ANY($1::uuid[])`,
+          [ids]
+        );
+        console.log(`[daily-journey-reset] Reset ${updated.rowCount} daily routine journeys`);
+      }
+    } catch (err) {
+      console.error('[daily-journey-reset] Error:', (err as Error).message);
+    }
+  };
+
+  setInterval(run, 60 * 60 * 1000); // Check every hour
+  setTimeout(run, 15_000); // Also on startup
+  console.log('Daily journey reset cron scheduled (daily after 0 AM UTC)');
 }
 
 // Graceful shutdown

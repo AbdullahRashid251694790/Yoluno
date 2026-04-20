@@ -75,8 +75,9 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
     const story = await queryOne<Story>(
       `INSERT INTO stories (
         id, child_profile_id, title, content, theme, mood,
-        values, word_count, cover_image_url, has_pages, narrator_voice, created_by
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+        values, word_count, cover_image_url, has_pages, narrator_voice, created_by,
+        main_character_description
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
       RETURNING *`,
       [
         storyId,
@@ -91,6 +92,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
         true,
         narratorVoice,
         created_by,
+        storyContent.mainCharacterDescription,
       ]
     );
 
@@ -115,7 +117,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
 
     // Generate cover + page illustrations in the background
     const io = req.app.get('io') as Server | undefined;
-    generateAllIllustrations(storyId, child_profile_id, storyContent.title, theme, mood, io).catch((error) => {
+    generateAllIllustrations(storyId, child_profile_id, storyContent.title, theme, mood, storyContent.mainCharacterDescription, io).catch((error) => {
       console.error('Background illustration generation failed:', error);
     });
 
@@ -291,9 +293,10 @@ router.post('/:storyId/regenerate-illustrations', async (req: Request, res: Resp
       [storyId]
     );
 
-    // Start regenerating illustrations
+    // Start regenerating illustrations (reuse stored main character description for consistency)
     const io = req.app.get('io') as Server | undefined;
-    generateAllIllustrations(storyId, story.child_profile_id, story.title, story.theme ?? undefined, story.mood ?? undefined, io).catch((error) => {
+    const mainChar = (story as any).main_character_description ?? null;
+    generateAllIllustrations(storyId, story.child_profile_id, story.title, story.theme ?? undefined, story.mood ?? undefined, mainChar, io).catch((error) => {
       console.error('Background illustration regeneration failed:', error);
     });
 
@@ -332,6 +335,7 @@ async function generateStoryWithPages(params: StoryGenerationParams): Promise<{
   fullContent: string;
   pages: PageContent[];
   wordCount: number;
+  mainCharacterDescription: string | null;
 }> {
   const {
     childName,
@@ -349,12 +353,22 @@ async function generateStoryWithPages(params: StoryGenerationParams): Promise<{
 
   const totalWords = pageCount * wordsPerPage;
 
-  // Build pronoun guidance for the main character (the child)
+  // Determine if the child is the protagonist or just the audience.
+  // If the caller passed characters and none match the child's name, the
+  // child is the READER and the chosen character(s) are the protagonist(s).
+  const childIsProtagonist =
+    !characters ||
+    characters.length === 0 ||
+    characters.some((c) => c.name.toLowerCase().includes(childName.toLowerCase()));
+
+  // Build pronoun guidance for the main character (only when it's the child)
   let pronounGuidance = '';
-  if (childGender === 'boy') {
-    pronounGuidance = `Use he/him pronouns for ${childName}.`;
-  } else if (childGender === 'girl') {
-    pronounGuidance = `Use she/her pronouns for ${childName}.`;
+  if (childIsProtagonist) {
+    if (childGender === 'boy') {
+      pronounGuidance = `Use he/him pronouns for ${childName}.`;
+    } else if (childGender === 'girl') {
+      pronounGuidance = `Use she/her pronouns for ${childName}.`;
+    }
   }
 
   const systemPrompt = `You are a children's story writer creating personalized, age-appropriate stories formatted as picture book pages.
@@ -364,10 +378,15 @@ Use age-appropriate vocabulary for a ${childAge}-year-old.
 Never include scary, violent, or inappropriate content.
 ${pronounGuidance}
 
-IMPORTANT: Every story MUST have a completely unique and creative title. Never reuse titles like "The Whispering Woods" or "The Enchanted Forest". Be inventive — use the child's name, the theme, and unexpected word combinations to create a one-of-a-kind title. Examples of creative titles: "The Day ${childName} Found a Cloud", "${childName}'s Secret Rainbow Machine", "The Tiny Dragon Who Loved Pancakes".`;
+IMPORTANT: Every story MUST have a completely unique and creative title. Never reuse titles like "The Whispering Woods" or "The Enchanted Forest". Be inventive — use the theme, the main character, and unexpected word combinations to create a one-of-a-kind title.${childIsProtagonist ? ` Examples of creative titles when the child is the hero: "The Day ${childName} Found a Cloud", "${childName}'s Secret Rainbow Machine".` : ` Examples of creative titles when the hero is not the child: "The Tiny Dragon Who Loved Pancakes", "Sparkle the Brave Fox and the Moon Cave".`}`;
 
-  let userPrompt = `Write a children's story for a ${childAge}-year-old child named ${childName}.
-The story should have exactly ${pageCount} pages, with about ${wordsPerPage} words per page (total ~${totalWords} words).
+  let userPrompt = childIsProtagonist
+    ? `Write a children's story for a ${childAge}-year-old child named ${childName}. ${childName} should be the main character.
+The story should have exactly ${pageCount} pages, with about ${wordsPerPage} words per page (total ~${totalWords} words).`
+    : `Write a children's story FOR a ${childAge}-year-old child named ${childName} — but ${childName} is NOT a character in the story. The story features the character(s) described below as the main character(s). ${childName} is the reader/audience only — do NOT mention ${childName} in the story, do NOT make ${childName} appear as a character.
+The story should have exactly ${pageCount} pages, with about ${wordsPerPage} words per page (total ~${totalWords} words).`;
+
+  userPrompt += `
 
 Each page should:
 - End at a natural pause point (like a cliffhanger or scene change)
@@ -382,7 +401,9 @@ Each page should:
       if (char.gender === 'girl') return `${char.name} (she/her)`;
       return char.name;
     });
-    userPrompt += `\nCharacters: ${characterDescriptions.join(', ')}`;
+    userPrompt += childIsProtagonist
+      ? `\nCharacters: ${characterDescriptions.join(', ')}`
+      : `\nMain character(s): ${characterDescriptions.join(', ')}. The story MUST be about these characters — ${childName} does not appear.`;
   }
   if (values && values.length > 0) userPrompt += `\nValues to incorporate: ${values.join(', ')}`;
   if (interests.length > 0) userPrompt += `\nThe child is interested in: ${interests.join(', ')}`;
@@ -394,6 +415,8 @@ Each page should:
 
 Format your response EXACTLY as:
 TITLE: [Story Title]
+
+CHARACTER: [A detailed visual description of the main character — species/type, age, hair color and style, eye color, skin tone, clothing, distinguishing features. Write it as one concise sentence so the same character can be drawn consistently across every page illustration. Example: "A 7-year-old boy with short curly brown hair, brown eyes, warm tan skin, wearing a blue t-shirt, denim shorts, and red sneakers." For animal/creature characters: describe species, colors, size, and any unique features.]
 
 PAGE 1:
 [Page 1 content - 2-4 sentences ending at a natural pause]
@@ -432,8 +455,12 @@ ILLUSTRATION: [Description]
     const text = data.choices[0]?.message?.content || '';
 
     // Parse title
-    const titleMatch = text.match(/TITLE:\s*(.+?)(?:\n|PAGE)/i);
+    const titleMatch = text.match(/TITLE:\s*(.+?)(?:\n|PAGE|CHARACTER)/i);
     const title = titleMatch?.[1]?.trim() || 'A Special Story';
+
+    // Parse main character visual description (used to keep character consistent across pages)
+    const characterMatch = text.match(/CHARACTER:\s*(.+?)(?:\n\s*\n|\nPAGE)/is);
+    const mainCharacterDescription = characterMatch?.[1]?.trim().replace(/\s+/g, ' ') || null;
 
     // Parse pages
     const pages: PageContent[] = [];
@@ -481,7 +508,7 @@ ILLUSTRATION: [Description]
     const fullContent = pages.map(p => p.content).join('\n\n');
     const wordCount = fullContent.split(/\s+/).length;
 
-    return { title, fullContent, pages, wordCount };
+    return { title, fullContent, pages, wordCount, mainCharacterDescription };
   } catch (error) {
     console.error('Error generating story:', error);
     throw new AppError(500, 'Failed to generate story');
@@ -493,9 +520,11 @@ async function generateIllustration(
   theme: string | undefined,
   mood: string | undefined,
   childProfileId: string,
-  type: 'cover' | 'page' = 'page'
+  type: 'cover' | 'page' = 'page',
+  mainCharacter?: string | null
 ): Promise<string | null> {
   const fullPrompt = `Children's book illustration: ${prompt}
+${mainCharacter ? `MAIN CHARACTER (keep appearance IDENTICAL across every page — same face, hair, skin, clothing, proportions): ${mainCharacter}` : ''}
 Style: Colorful, friendly, whimsical, picture book style, digital art.
 ${theme ? `Theme: ${theme}.` : ''}
 ${mood ? `Mood: ${mood}.` : ''}
@@ -577,6 +606,7 @@ async function generateAllIllustrations(
   title: string,
   theme: string | undefined,
   mood: string | undefined,
+  mainCharacter?: string | null,
   io?: Server
 ): Promise<void> {
   // Generate cover image first
@@ -586,7 +616,8 @@ async function generateAllIllustrations(
       theme,
       mood,
       childProfileId,
-      'cover'
+      'cover',
+      mainCharacter
     );
     if (coverUrl) {
       await query(
@@ -625,7 +656,8 @@ async function generateAllIllustrations(
           theme,
           mood,
           childProfileId,
-          'page'
+          'page',
+          mainCharacter
         );
         if (illustrationUrl) break;
         if (attempt < maxRetries) {

@@ -61,6 +61,18 @@ export function ContentLibraryPage() {
   const deleteContent = useDeleteContent();
   const [isExporting, setIsExporting] = useState(false);
 
+  const escapeHtml = (s: string) =>
+    String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+  const shortTheme = (theme: string | null | undefined): string => {
+    if (!theme) return '';
+    const cleaned = String(theme).replace(/[!?.,]/g, '').trim();
+    const words = cleaned.split(/\s+/);
+    const STOP = new Set(['a', 'an', 'the', 'some', 'something', 'surprise', 'me']);
+    const pick = words.find((w) => !STOP.has(w.toLowerCase())) || words[0] || '';
+    return pick.replace(/-.*$/, '');
+  };
+
   const handleExportAll = async () => {
     setIsExporting(true);
     try {
@@ -78,6 +90,108 @@ export function ContentLibraryPage() {
       toast.error('Failed to export data');
     } finally {
       setIsExporting(false);
+    }
+  };
+
+  const handlePrintStory = async (item: { id: string; title: string; content: string; metadata?: any }) => {
+    try {
+      // Try to fetch pages (storybook format has illustrations per page)
+      let pagesHtml = '';
+      try {
+        const pagesRes = await apiClient.get<{ pages: Array<{ page_number: number; content: string; illustration_url: string | null }> }>(
+          `/generate-story/${item.id}/pages`
+        );
+        const pages = pagesRes.data?.pages ?? [];
+        if (pages.length > 0) {
+          pagesHtml = pages.map((p) => {
+            const imgUrl = getUploadUrl(p.illustration_url);
+            return `
+            <section class="page">
+              ${imgUrl ? `<img src="${escapeHtml(imgUrl)}" alt="Page ${p.page_number}" class="illustration" crossorigin="anonymous"/>` : ''}
+              <p class="page-text">${escapeHtml(p.content)}</p>
+              <p class="page-num">— ${p.page_number} —</p>
+            </section>`;
+          }).join('');
+        }
+      } catch {
+        // Fall through to plain content below
+      }
+
+      const coverUrl = getUploadUrl(item.metadata?.cover_image_url || item.metadata?.illustration_url);
+
+      // Fallback: just render the full content text
+      if (!pagesHtml) {
+        const paragraphs = (item.content || '').split(/\n\n+/).map((p) => `<p>${escapeHtml(p)}</p>`).join('');
+        pagesHtml = `<section class="page"><div class="page-text">${paragraphs}</div></section>`;
+      }
+
+      const theme = item.metadata?.theme ? String(item.metadata.theme) : '';
+      const createdAt = item.metadata?.created_at ? new Date(item.metadata.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : '';
+
+      const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>${escapeHtml(item.title)}</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: 'DM Sans', 'Segoe UI', system-ui, sans-serif; color: #2A2926; background: #FAFAF7; padding: 40px; max-width: 800px; margin: 0 auto; line-height: 1.7; }
+  .cover { text-align: center; padding: 60px 20px; margin-bottom: 30px; page-break-after: always; }
+  .cover-img { width: 100%; max-width: 520px; max-height: 520px; object-fit: contain; border-radius: 16px; margin-bottom: 28px; }
+  h1 { font-family: 'DM Serif Display', Georgia, serif; font-size: 36px; color: #2A2926; margin: 0 0 16px; line-height: 1.2; }
+  .subtitle { font-size: 15px; color: #9B978E; margin: 0 0 8px; }
+  .theme-pill { display: inline-block; background: #F3EFF8; color: #B8A5D4; padding: 6px 16px; border-radius: 999px; font-size: 13px; font-weight: 600; margin-top: 12px; }
+  .page { padding: 24px 0; margin-bottom: 20px; page-break-inside: avoid; }
+  .illustration { width: 100%; max-height: 400px; object-fit: contain; border-radius: 12px; margin-bottom: 20px; }
+  .page-text { font-size: 18px; color: #2A2926; margin: 0 0 12px; }
+  .page-text p { margin: 0 0 12px; }
+  .page-num { text-align: center; font-size: 12px; color: #9B978E; margin-top: 16px; }
+  footer { text-align: center; font-size: 12px; color: #9B978E; padding: 24px 0; border-top: 1px solid #E8E6E1; margin-top: 40px; }
+  @media print {
+    body { background: #FFFFFF; padding: 20px; }
+    .page { page-break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+  <div class="cover">
+    ${coverUrl ? `<img src="${escapeHtml(coverUrl)}" alt="${escapeHtml(item.title)}" class="cover-img" crossorigin="anonymous"/>` : ''}
+    <h1>${escapeHtml(item.title)}</h1>
+    ${createdAt ? `<p class="subtitle">Created ${escapeHtml(createdAt)}</p>` : ''}
+    ${theme ? `<span class="theme-pill">${escapeHtml(theme)}</span>` : ''}
+  </div>
+  ${pagesHtml}
+  <footer>Printed from Yoluno — a safe world for kids</footer>
+  <script>
+    (function() {
+      var imgs = Array.prototype.slice.call(document.images);
+      if (imgs.length === 0) { window.print(); return; }
+      var remaining = imgs.length;
+      var done = function() {
+        remaining -= 1;
+        if (remaining <= 0) setTimeout(function(){ window.print(); }, 200);
+      };
+      imgs.forEach(function(img) {
+        if (img.complete) { done(); return; }
+        img.addEventListener('load', done);
+        img.addEventListener('error', done);
+      });
+      setTimeout(function(){ if (remaining > 0) window.print(); }, 8000);
+    })();
+  </script>
+</body>
+</html>`;
+
+      const printWindow = window.open('', '_blank', 'width=900,height=700');
+      if (!printWindow) {
+        toast.error('Please allow pop-ups to print');
+        return;
+      }
+      printWindow.document.write(html);
+      printWindow.document.close();
+      printWindow.focus();
+    } catch {
+      toast.error('Could not prepare story for printing');
     }
   };
 
@@ -286,7 +400,9 @@ export function ContentLibraryPage() {
                       <p className="text-[13px] mb-3 line-clamp-2" style={{ color: '#6B675E', lineHeight: 1.5 }}>{item.content}</p>
                       <div className="flex flex-wrap items-center gap-2 mb-3 text-[12px]" style={{ color: '#9B978E' }}>
                         {item.metadata?.theme && (
-                          <span className="px-2.5 py-0.5 rounded-full" style={{ background: '#F5F3EE' }}>{String(item.metadata.theme)}</span>
+                          <span className="px-2.5 py-0.5 rounded-full capitalize" style={{ background: '#F3EFF8', color: '#B8A5D4', fontWeight: 500 }}>
+                            {shortTheme(String(item.metadata.theme))}
+                          </span>
                         )}
                         {typeof item.metadata?.word_count === 'number' && <span>{item.metadata.word_count} words</span>}
                         <span>·</span>
@@ -294,7 +410,13 @@ export function ContentLibraryPage() {
                       </div>
                       <div className="flex gap-2">
                         <button className="px-3 py-1.5 rounded-full text-[12px] hover:bg-[#F5F3EE] transition" style={{ border: '1px solid #E8E6E1', color: '#6B675E', fontWeight: 500 }}>Read</button>
-                        <button className="flex items-center gap-1 px-3 py-1.5 rounded-full text-[12px] hover:bg-[#F5F3EE] transition" style={{ border: '1px solid #E8E6E1', color: '#6B675E', fontWeight: 500 }}><Printer size={11} /> Print</button>
+                        <button
+                          onClick={() => handlePrintStory(item)}
+                          className="flex items-center gap-1 px-3 py-1.5 rounded-full text-[12px] hover:bg-[#F5F3EE] transition"
+                          style={{ border: '1px solid #E8E6E1', color: '#6B675E', fontWeight: 500 }}
+                        >
+                          <Printer size={11} /> Print
+                        </button>
                       </div>
                     </div>
                   </>

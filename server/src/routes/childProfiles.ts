@@ -55,7 +55,7 @@ async function assignDefaultJourneys(childId: string, childAge: number): Promise
 }
 
 /** Reset completed auto-assigned (daily routine) journeys if they were completed before today */
-async function resetDailyJourneys(childId: string): Promise<void> {
+export async function resetDailyJourneys(childId: string): Promise<void> {
   try {
     // Find completed journeys whose template is auto-assign and completed before today
     const staleJourneys = await query<{ id: string }>(
@@ -130,6 +130,10 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
        ORDER BY created_at DESC`,
       [req.user!.id]
     );
+    // Reset stale daily routine journeys for every child (fire-and-forget, idempotent)
+    for (const child of result.rows) {
+      resetDailyJourneys(child.id).catch(() => {});
+    }
     const profiles = await Promise.all(result.rows.map(resolveAvatarUrl));
     res.json(profiles);
   } catch (error) {
