@@ -1,24 +1,23 @@
 /**
- * Kids Family Tree Page — Premium Edition
+ * Kids Family Page
  *
- * Rich, layered, animated family tree with depth, glow effects,
- * decorative frames, and premium glassmorphism.
+ * Outer layout (gradient background, floating elements, Loti greeting,
+ * voice messages strip) matches loveable KidsFamilyPage.
+ * The inner tree structure is the premium tree layout with side-split
+ * generations and animated connectors (the previous design).
+ * Member detail card is still the existing FamilyMemberDetail component.
  */
 
 import { useMemo, useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { apiClient } from '@/integrations/api/client';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { apiClient, getUploadUrl } from '@/integrations/api/client';
 import { useChildProfile, useFamilyMembers } from '@/hooks/queries';
 import { useChildProfiles } from '@/hooks/queries/useChildProfiles';
 import { useAuth } from '@/contexts/AuthContext';
-import { LoadingSpinner, ErrorState } from '@/components/shared';
-import { Button } from '@/components/ui/button';
-import { ArrowLeft, Trees, Mic, Play, Pause } from 'lucide-react';
 import { FamilyMemberDetail, type RelationType } from '@/components/kids/family';
-import type { FamilyMemberRow, ChildProfileRow as ChildProfile } from '@/types/database';
+import lotiFamily from '@/assets/landing/loti-family.png';
 import { cn } from '@/lib/utils';
-import { ChatAvatar } from '@/components/chat/ChatAvatar';
-import { getUploadUrl } from '@/integrations/api/client';
+import type { FamilyMemberRow, ChildProfileRow as ChildProfile } from '@/types/database';
 import type { VoiceClip } from '@/services/voiceVault';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -37,7 +36,6 @@ const LABELS: Record<string, string> = {
 function getLabel(m: FamilyMemberRow): string {
   const s = (m as any).specific_relationship;
   if (s && LABELS[s]) return LABELS[s];
-  // Fallback: try to detect from connection_description
   const desc = (m.connection_description || '').toLowerCase();
   if (desc.includes('uncle') || desc.includes('brother')) {
     const r = m.relationship?.toLowerCase() || '';
@@ -55,11 +53,20 @@ function getLabel(m: FamilyMemberRow): string {
   return r.charAt(0).toUpperCase() + r.slice(1);
 }
 
-function getSide(m: FamilyMemberRow): string { return (m as any).side || 'direct'; }
+function getSide(m: FamilyMemberRow): string {
+  return (m as any).side || 'direct';
+}
+
 function getRelType(m: FamilyMemberRow): RelationType {
   const r = m.relationship;
-  if (r === 'parent' || r === 'step_parent' || r === 'grandparent' || r === 'sibling' || r === 'aunt_uncle' || r === 'cousin') return r === 'step_parent' ? 'parent' : r;
+  if (r === 'parent' || r === 'step_parent' || r === 'grandparent' || r === 'sibling' || r === 'aunt_uncle' || r === 'cousin') {
+    return r === 'step_parent' ? 'parent' : r;
+  }
   return 'other';
+}
+
+function getInitial(name: string): string {
+  return (name || '?').charAt(0).toUpperCase();
 }
 
 // ─── Premium Person Card ─────────────────────────────────────────────────────
@@ -71,12 +78,11 @@ interface PersonProps {
   isMe?: boolean;
   isDeceased?: boolean;
   color: string;
-  glow: string;
   delay?: number;
   onClick?: () => void;
 }
 
-function Person({ name, label, photoUrl, isMe, isDeceased, color, glow, delay = 0, onClick }: PersonProps) {
+function Person({ name, label, photoUrl, isMe, isDeceased, color, delay = 0, onClick }: PersonProps) {
   const resolved = photoUrl ? (photoUrl.startsWith('http') ? photoUrl : getUploadUrl(photoUrl)) : null;
   const sz = isMe ? 96 : 76;
 
@@ -84,73 +90,80 @@ function Person({ name, label, photoUrl, isMe, isDeceased, color, glow, delay = 
     <button
       onClick={onClick}
       className="flex flex-col items-center gap-2 group outline-none"
-      style={{ animation: `fade-in-up 0.7s cubic-bezier(0.16,1,0.3,1) ${delay}s both` }}
+      style={{ animation: `fadeInUp 0.7s cubic-bezier(0.16,1,0.3,1) ${delay}s both` }}
     >
-      {/* Frame */}
       <div className="relative" style={{ width: sz, height: sz }}>
-        {/* Animated glow ring */}
-        <div
-          className="absolute -inset-[6px] rounded-full transition-all duration-500 group-hover:scale-105"
-          style={{
-            background: `conic-gradient(from 0deg, ${color}00, ${color}80, ${color}00, ${color}60, ${color}00)`,
-            opacity: isMe ? 0.8 : 0,
-            animation: isMe ? 'spin 6s linear infinite' : undefined,
-          }}
-        />
-        <div
-          className="absolute -inset-[6px] rounded-full opacity-0 group-hover:opacity-100 transition-all duration-500"
-          style={{
-            background: `conic-gradient(from 0deg, ${color}00, ${color}80, ${color}00, ${color}60, ${color}00)`,
-            animation: 'spin 4s linear infinite',
-          }}
-        />
-
         {/* Photo container */}
         <div
           className={cn(
-            'relative w-full h-full rounded-full overflow-hidden z-10 transition-all duration-500',
-            'group-hover:scale-105 group-hover:-translate-y-1 group-active:scale-95',
-            'shadow-[0_4px_20px_rgba(0,0,0,0.15)]',
-            'group-hover:shadow-[0_8px_32px_rgba(0,0,0,0.2)]',
+            'relative w-full h-full rounded-full overflow-hidden transition-all duration-300',
+            'group-hover:-translate-y-1 group-active:scale-95',
             isDeceased && 'opacity-40 grayscale',
           )}
-          style={{ border: `3px solid ${color}` }}
+          style={{
+            background: '#FDF6E8',
+            border: isMe ? '3px solid #D4A843' : '2px solid #FDF6E8',
+            boxShadow: isMe
+              ? '0 4px 12px rgba(212,168,67,0.2)'
+              : '0 2px 8px rgba(42,41,38,0.06)',
+          }}
         >
           {resolved ? (
             <img src={resolved} alt={name} className="w-full h-full object-cover" />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-body-lg font-black"
-              style={{ background: `linear-gradient(135deg, ${color}30, ${color}10)`, color }}>
-              {name.charAt(0).toUpperCase()}
+            <div
+              className="w-full h-full flex items-center justify-center"
+              style={{
+                color: isMe ? '#D4A843' : '#2A2926',
+                fontSize: isMe ? 28 : 22,
+                fontWeight: 600,
+              }}
+            >
+              {getInitial(name)}
             </div>
           )}
         </div>
 
         {/* Me crown */}
         {isMe && (
-          <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-20 text-h4 drop-shadow-lg"
-            style={{ animation: 'float 2.5s ease-in-out infinite' }}>
+          <div
+            className="absolute -top-2 -right-1 z-20 drop-shadow-lg"
+            style={{ fontSize: 18, animation: 'crownFloat 2.5s ease-in-out infinite' }}
+          >
             👑
           </div>
         )}
       </div>
 
-      {/* Name */}
-      <div className="text-center">
-        <p className={cn(
-          'font-bold leading-tight',
-          isMe ? 'text-body-sm' : 'text-caption',
-        )} style={{ color: isMe ? color : undefined }}>
+      {/* Name + label */}
+      <div className="text-center mt-1">
+        <p
+          style={{
+            fontSize: isMe ? 14 : 13,
+            fontWeight: 700,
+            color: isMe ? color : '#2A2926',
+            lineHeight: 1.2,
+          }}
+        >
           {name}
         </p>
-        <p className="text-[10px] font-semibold mt-0.5 px-2 py-0.5 rounded-full inline-block"
-          style={{ background: `${color}15`, color }}>
+        <p
+          className="mt-1 inline-block"
+          style={{
+            fontSize: 10,
+            fontWeight: 600,
+            padding: '2px 10px',
+            borderRadius: 999,
+            background: `${color}20`,
+            color,
+          }}
+        >
           {label}
         </p>
       </div>
 
       {isDeceased && (
-        <p className="text-[9px] text-muted-foreground/60 -mt-1">In loving memory 💕</p>
+        <p style={{ fontSize: 9, color: '#9B978E', marginTop: -2 }}>In loving memory 💕</p>
       )}
     </button>
   );
@@ -159,9 +172,9 @@ function Person({ name, label, photoUrl, isMe, isDeceased, color, glow, delay = 
 // ─── Generation Row ──────────────────────────────────────────────────────────
 
 interface GenRowProps {
-  title: string;
-  emoji: string;
-  color: string;
+  title?: string;
+  emoji?: string;
+  color?: string;
   delay?: number;
   children?: React.ReactNode;
   split?: boolean;
@@ -169,22 +182,59 @@ interface GenRowProps {
   rightTitle?: string;
   leftChildren?: React.ReactNode;
   rightChildren?: React.ReactNode;
+  leftColor?: string;
+  rightColor?: string;
 }
 
-function GenRow({ title, emoji, color, delay = 0, children, split, leftTitle, rightTitle, leftChildren, rightChildren }: GenRowProps) {
+function GenRow({
+  title, emoji, color, delay = 0, children,
+  split, leftTitle, rightTitle, leftChildren, rightChildren, leftColor, rightColor,
+}: GenRowProps) {
+  const cardStyle: React.CSSProperties = {
+    background: 'rgba(255,255,255,0.7)',
+    backdropFilter: 'blur(8px)',
+    WebkitBackdropFilter: 'blur(8px)',
+    borderRadius: 24,
+    padding: 20,
+    border: '1px solid rgba(212,168,67,0.15)',
+    boxShadow: '0 4px 16px rgba(42,41,38,0.05)',
+  };
+
   if (split) {
     return (
-      <div style={{ animation: `fade-in-up 0.6s cubic-bezier(0.16,1,0.3,1) ${delay}s both` }}>
+      <div style={{ animation: `fadeInUp 0.6s cubic-bezier(0.16,1,0.3,1) ${delay}s both` }}>
         <div className="flex gap-3">
           {leftChildren && (
-            <div className="flex-1 glass-card rounded-3xl p-4">
-              <p className="text-[9px] font-black uppercase tracking-[0.3em] text-center mb-3 text-primary">{leftTitle}</p>
+            <div className="flex-1" style={cardStyle}>
+              <p
+                className="text-center mb-3"
+                style={{
+                  fontSize: 9,
+                  fontWeight: 800,
+                  letterSpacing: 2.5,
+                  textTransform: 'uppercase',
+                  color: leftColor || '#D4A843',
+                }}
+              >
+                {leftTitle}
+              </p>
               <div className="flex justify-center gap-4 flex-wrap">{leftChildren}</div>
             </div>
           )}
           {rightChildren && (
-            <div className="flex-1 glass-card rounded-3xl p-4">
-              <p className="text-[9px] font-black uppercase tracking-[0.3em] text-center mb-3 text-lolo">{rightTitle}</p>
+            <div className="flex-1" style={cardStyle}>
+              <p
+                className="text-center mb-3"
+                style={{
+                  fontSize: 9,
+                  fontWeight: 800,
+                  letterSpacing: 2.5,
+                  textTransform: 'uppercase',
+                  color: rightColor || '#D4A843',
+                }}
+              >
+                {rightTitle}
+              </p>
               <div className="flex justify-center gap-4 flex-wrap">{rightChildren}</div>
             </div>
           )}
@@ -194,12 +244,22 @@ function GenRow({ title, emoji, color, delay = 0, children, split, leftTitle, ri
   }
 
   return (
-    <div style={{ animation: `fade-in-up 0.6s cubic-bezier(0.16,1,0.3,1) ${delay}s both` }}>
-      <div className="glass-card rounded-3xl p-5">
+    <div style={{ animation: `fadeInUp 0.6s cubic-bezier(0.16,1,0.3,1) ${delay}s both` }}>
+      <div style={cardStyle}>
         <div className="flex items-center justify-center gap-2 mb-4">
-          <span className="text-body-lg">{emoji}</span>
-          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary">{title}</p>
-          <span className="text-body-lg">{emoji}</span>
+          {emoji && <span style={{ fontSize: 16 }}>{emoji}</span>}
+          <p
+            style={{
+              fontSize: 11,
+              fontWeight: 800,
+              letterSpacing: 2.5,
+              textTransform: 'uppercase',
+              color: color || '#D4A843',
+            }}
+          >
+            {title}
+          </p>
+          {emoji && <span style={{ fontSize: 16 }}>{emoji}</span>}
         </div>
         <div className="flex justify-center gap-5 flex-wrap">{children}</div>
       </div>
@@ -209,30 +269,40 @@ function GenRow({ title, emoji, color, delay = 0, children, split, leftTitle, ri
 
 // ─── Connector ───────────────────────────────────────────────────────────────
 
-function Connector({ color = '#3DD6C8', delay = 0 }: { color?: string; delay?: number }) {
+function Connector({ delay = 0 }: { color?: string; delay?: number }) {
   return (
-    <div className="flex justify-center py-2" style={{ animation: `fade-in-up 0.3s ease-out ${delay}s both` }}>
-      <svg width="40" height="32" viewBox="0 0 40 32">
-        <path d="M20 0 C20 8, 12 12, 12 16 C12 20, 20 24, 20 32" fill="none" stroke={color} strokeWidth="2" opacity="0.3" strokeDasharray="4 3">
-          <animate attributeName="stroke-dashoffset" from="0" to="-14" dur="2s" repeatCount="indefinite" />
-        </path>
-        <path d="M20 0 C20 8, 28 12, 28 16 C28 20, 20 24, 20 32" fill="none" stroke={color} strokeWidth="2" opacity="0.3" strokeDasharray="4 3">
-          <animate attributeName="stroke-dashoffset" from="0" to="-14" dur="2s" repeatCount="indefinite" />
-        </path>
-        <circle cx="20" cy="16" r="3" fill={color} opacity="0.5">
-          <animate attributeName="r" values="2;4;2" dur="2s" repeatCount="indefinite" />
-          <animate attributeName="opacity" values="0.3;0.7;0.3" dur="2s" repeatCount="indefinite" />
-        </circle>
-      </svg>
+    <div
+      className="flex justify-center my-2"
+      style={{ animation: `fadeInUp 0.3s ease-out ${delay}s both` }}
+    >
+      <span style={{ fontSize: 14, color: '#D4A843', opacity: 0.5 }}>✦</span>
     </div>
   );
 }
+
+// ─── Floating bg elements ────────────────────────────────────────────────────
+
+const FLOAT_ELEMENTS = Array.from({ length: 14 }, (_, i) => ({
+  id: i,
+  type: i % 4 === 0 ? 'heart' : i % 4 === 1 ? 'star' : i % 4 === 2 ? 'sparkle' : 'dot',
+  left: `${5 + Math.random() * 90}%`,
+  top: `${5 + Math.random() * 90}%`,
+  size: 6 + Math.random() * 10,
+  delay: Math.random() * 20,
+  duration: 22 + Math.random() * 12,
+  opacity: 0.08 + Math.random() * 0.06,
+}));
+
+const AVATAR_COLORS = ['#E8F6F4', '#FDF6E8', '#F3EFF8', '#FEF0EA', '#F5F3EE'];
 
 // ─── Main Page ───────────────────────────────────────────────────────────────
 
 export function KidsFamilyPage() {
   const { childId } = useParams<{ childId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+  const mood = (location.state as any)?.mood || 'happy';
+
   const { user } = useAuth();
   const { data: child, isLoading: childLoading } = useChildProfile(childId);
   const { data: siblings = [], isLoading: siblingsLoading } = useChildProfiles(user?.id);
@@ -242,24 +312,26 @@ export function KidsFamilyPage() {
     member: FamilyMemberRow | ChildProfile;
     type: RelationType;
   } | null>(null);
-  const [activeTab, setActiveTab] = useState<'tree' | 'voices'>('tree');
+
   const [voiceClips, setVoiceClips] = useState<VoiceClip[]>([]);
-  const [voicesLoading, setVoicesLoading] = useState(false);
   const [playingClipId, setPlayingClipId] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  const handleBack = () => navigate(`/kids/${childId}`);
-
-  // Fetch voice clips when switching to voices tab
   useEffect(() => {
-    if (activeTab === 'voices' && user?.id) {
-      setVoicesLoading(true);
-      apiClient.get('/voice-vault', { params: { limit: 100 } })
-        .then((r) => setVoiceClips(r.data?.items || []))
-        .catch(() => setVoiceClips([]))
-        .finally(() => setVoicesLoading(false));
+    if (!user?.id) return;
+    apiClient
+      .get('/voice-vault', { params: { limit: 100 } })
+      .then((r) => setVoiceClips(r.data?.items || []))
+      .catch(() => setVoiceClips([]));
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (childId) {
+      apiClient.post(`/daily-missions/${childId}/log-visit/family_explored`).catch(() => {});
     }
-  }, [activeTab, user?.id]);
+  }, [childId]);
+
+  const handleBack = () => navigate(`/kids/${childId}`, { state: { mood } });
 
   const handlePlayVoice = (clip: VoiceClip) => {
     if (playingClipId === clip.id) {
@@ -280,293 +352,473 @@ export function KidsFamilyPage() {
       setPlayingClipId(null);
       audioRef.current = null;
     });
-    // Record play
     apiClient.post(`/voice-vault/${clip.id}/play`, { childId }).catch(() => {});
   };
 
-  // Group voice clips by family member
-  const voicesByMember = useMemo(() => {
-    const groups: Record<string, { name: string; clips: VoiceClip[] }> = {};
-    for (const clip of voiceClips) {
-      const key = clip.family_member_id || 'general';
-      const name = clip.family_member_name || 'General';
-      if (!groups[key]) groups[key] = { name, clips: [] };
-      groups[key].clips.push(clip);
-    }
-    return Object.values(groups);
-  }, [voiceClips]);
-
-  // Log family visit for daily mission tracking
-  useEffect(() => {
-    if (childId) {
-      apiClient.post(`/daily-missions/${childId}/log-visit/family_explored`).catch(() => {});
-    }
-  }, [childId]);
-
+  // Build the tree (Dad's parents / Mom's parents, Parents, Dad's aunts/uncles / Mom's aunts/uncles, Me+siblings, Cousins, Other)
   const tree = useMemo(() => {
-    const pg: FamilyMemberRow[] = [], mg: FamilyMemberRow[] = [],
-      parents: FamilyMemberRow[] = [], pe: FamilyMemberRow[] = [],
-      me: FamilyMemberRow[] = [], cousins: FamilyMemberRow[] = [],
-      other: FamilyMemberRow[] = [];
+    const pg: FamilyMemberRow[] = [];
+    const mg: FamilyMemberRow[] = [];
+    const parents: FamilyMemberRow[] = [];
+    const pe: FamilyMemberRow[] = [];
+    const me: FamilyMemberRow[] = [];
+    const cousins: FamilyMemberRow[] = [];
+    const other: FamilyMemberRow[] = [];
+
     const cs = siblings.filter((s) => s.id !== childId);
 
     for (const m of familyMembers) {
-      const side = getSide(m), rel = m.relationship;
-      if (rel === 'grandparent') { (side === 'maternal' ? mg : pg).push(m); }
-      else if (rel === 'parent' || rel === 'step_parent') { parents.push(m); }
-      else if (rel === 'aunt_uncle') { (side === 'maternal' ? me : side === 'paternal' ? pe : other).push(m); }
-      else if (rel === 'cousin') { cousins.push(m); }
-      else if (rel !== 'sibling') { other.push(m); }
+      const side = getSide(m);
+      const rel = m.relationship;
+      if (rel === 'grandparent') {
+        (side === 'maternal' ? mg : pg).push(m);
+      } else if (rel === 'parent' || rel === 'step_parent') {
+        parents.push(m);
+      } else if (rel === 'aunt_uncle') {
+        (side === 'maternal' ? me : side === 'paternal' ? pe : other).push(m);
+      } else if (rel === 'cousin') {
+        cousins.push(m);
+      } else if (rel !== 'sibling') {
+        other.push(m);
+      }
     }
     return { pg, mg, parents, pe, me, cs, cousins, other };
   }, [familyMembers, siblings, childId]);
 
-  const totalMembers = familyMembers.length + tree.cs.length + 1;
-  const isLoading = childLoading || siblingsLoading || familyLoading;
   const hasFamily = familyMembers.length > 0 || tree.cs.length > 0;
+  const voiceMessages = voiceClips.filter((c) => c.family_member_id);
+  const hasVoice = voiceMessages.length > 0;
 
-  if (isLoading) return <div className="min-h-screen bg-kids-gradient flex items-center justify-center"><LoadingSpinner /></div>;
-  if (!child) return <ErrorState title="Oops!" message="We couldn't find your profile." onRetry={handleBack} retryLabel="Go Back" fullPage />;
+  const greeting = (() => {
+    if (hasVoice) return 'Your family left something special for you. Want to listen?';
+    if (hasFamily) return 'These are the people who love you most. Tap anyone to learn about them.';
+    return "This is your family's special place.";
+  })();
+
+  const pageBg = 'linear-gradient(165deg, #FDF6E8 0%, #FEF0EA 30%, #F3EFF8 60%, #E8F6F4 100%)';
+
+  // Tree colors
+  const GOLD = '#D4A843';
+  const TEAL = '#3ECDC6';
+  const CORAL = '#E8946A';
+  const PURPLE = '#B8A5D4';
+
+  if (childLoading || siblingsLoading || familyLoading) {
+    return (
+      <div
+        className="min-h-screen flex items-center justify-center"
+        style={{ background: pageBg, fontFamily: "'DM Sans', sans-serif" }}
+      >
+        <div className="text-center">
+          <div style={{ fontSize: 48 }} className="animate-bounce mb-4">🏠</div>
+          <p style={{ fontSize: 18, fontWeight: 600, color: GOLD }}>Loading your family...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!child) {
+    return (
+      <div
+        className="min-h-screen flex items-center justify-center"
+        style={{ background: pageBg, fontFamily: "'DM Sans', sans-serif" }}
+      >
+        <div className="text-center">
+          <p style={{ fontSize: 48 }} className="mb-4">😅</p>
+          <p style={{ fontSize: 20, fontWeight: 600, color: '#2A2926', marginBottom: 8 }}>Oops!</p>
+          <p style={{ fontSize: 14, color: '#6B675E', marginBottom: 20 }}>We couldn't find your profile.</p>
+          <button
+            onClick={handleBack}
+            className="px-6 py-2.5 rounded-full text-white font-semibold"
+            style={{ background: GOLD, fontSize: 15 }}
+          >
+            Go Back
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   let d = 0;
-  const nd = () => { d += 0.1; return d; };
-
-  // Use CSS variable-based colors
-  const PRIMARY = 'hsl(174, 60%, 51%)';
-  const GOLD_C = 'hsl(40, 55%, 55%)';
-  const LOLO_C = 'hsl(18, 76%, 60%)';
-  const LUMI_C = 'hsl(270, 60%, 70%)';
+  const nd = () => {
+    d += 0.08;
+    return d;
+  };
 
   return (
-    <div className="min-h-screen bg-kids-family safe-area-inset relative overflow-hidden">
-      {/* Header */}
-      <header className="bg-card/95 backdrop-blur-md sticky top-0 z-30 border-b border-border shadow-warm">
-        <div className="flex items-center gap-3 px-4 py-3">
-          <Button variant="ghost" size="icon" onClick={handleBack} className="rounded-full">
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <ChatAvatar buddyName="Loti" expression="caring" size="sm" />
-          <div className="flex-1">
-            <h1 className="text-body-lg font-display font-bold text-foreground">
-              Loti's World 💛
-            </h1>
-            <p className="text-[11px] text-muted-foreground">{totalMembers} family members</p>
-          </div>
+    <div
+      className="kids-family-scope min-h-screen relative overflow-hidden flex flex-col"
+      style={{ background: pageBg, fontFamily: "'DM Sans', sans-serif" }}
+    >
+      {/* Floating elements */}
+      {FLOAT_ELEMENTS.map((el) => (
+        <div
+          key={el.id}
+          className="absolute pointer-events-none"
+          style={{
+            left: el.left,
+            top: el.top,
+            opacity: el.opacity,
+            animation: `kidsFloat ${el.duration}s ease-in-out ${el.delay}s infinite alternate`,
+          }}
+        >
+          {el.type === 'heart' && (
+            <svg width={el.size} height={el.size} viewBox="0 0 24 24" fill="none">
+              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="#D4A843" opacity="0.4" />
+            </svg>
+          )}
+          {el.type === 'star' && (
+            <svg width={el.size} height={el.size} viewBox="0 0 24 24" fill="none">
+              <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 16.8l-6.2 4.5 2.4-7.4L2 9.4h7.6L12 2z" fill="#D4A843" opacity="0.4" />
+            </svg>
+          )}
+          {el.type === 'sparkle' && (
+            <div style={{ width: el.size * 0.6, height: el.size * 0.6, borderRadius: '50%', background: 'rgba(212,168,67,0.3)', filter: 'blur(1px)', animation: `kidsTwinkle ${3 + Math.random() * 2}s ease-in-out infinite` }} />
+          )}
+          {el.type === 'dot' && (
+            <div style={{ width: el.size * 0.4, height: el.size * 0.4, borderRadius: '50%', background: 'rgba(232,148,106,0.3)' }} />
+          )}
         </div>
-        {/* Tab Navigation */}
-        <div className="flex px-4 pb-2 gap-2">
-          <button
-            onClick={() => setActiveTab('tree')}
-            className={cn(
-              'flex items-center gap-1.5 px-4 py-1.5 rounded-full text-caption font-bold transition-all',
-              activeTab === 'tree'
-                ? 'bg-lala text-white'
-                : 'bg-lala/10 text-lala hover:bg-lala/20'
-            )}
-          >
-            <Trees className="h-3.5 w-3.5" />
-            Family Tree
-          </button>
-          <button
-            onClick={() => setActiveTab('voices')}
-            className={cn(
-              'flex items-center gap-1.5 px-4 py-1.5 rounded-full text-caption font-bold transition-all',
-              activeTab === 'voices'
-                ? 'bg-lala text-white'
-                : 'bg-lala/10 text-lala hover:bg-lala/20'
-            )}
-          >
-            <Mic className="h-3.5 w-3.5" />
-            Voice Vault
-          </button>
+      ))}
+
+      {/* Top bar */}
+      <header className="relative z-10 flex items-center justify-between px-5 pt-5 pb-2">
+        <button
+          onClick={handleBack}
+          className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-white/40 transition-colors"
+          aria-label="Go back"
+        >
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <path d="M13 4l-6 6 6 6" stroke="#2A2926" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+        <div className="flex items-center gap-2">
+          <img src={lotiFamily} alt="Loti" style={{ width: 32, height: 32, objectFit: 'contain' }} />
+          <span style={{ fontSize: 20, fontWeight: 600, color: '#2A2926' }}>My Family</span>
         </div>
+        <div className="w-10" />
       </header>
 
-      {activeTab === 'tree' && !hasFamily && (
-        <div className="relative z-10 px-6 pt-12 flex flex-col items-center">
-          <div className="glass-card rounded-3xl p-14 text-center">
-            <div className="flex justify-center mb-5">
-              <ChatAvatar buddyName="Loti" expression="caring" size="xl" showName />
-            </div>
-            <p className="text-body-lg font-display font-bold text-primary mb-2">Your tree is growing!</p>
-            <p className="text-muted-foreground text-body-sm">Ask your parent to add family members</p>
-          </div>
-        </div>
-      )}
-
-      {activeTab === 'tree' && hasFamily && (
-        <div className="relative z-10 px-4 pb-16 pt-6 space-y-1 max-w-lg mx-auto scrollbar-hide">
-
-          {/* Grandparents */}
-          {(tree.pg.length > 0 || tree.mg.length > 0) && (
-            <>
-              <GenRow title="" emoji="" color="" delay={nd()} split
-                leftTitle="Dad's Parents" rightTitle="Mom's Parents"
-                leftChildren={tree.pg.length > 0 ? tree.pg.map((m) => (
-                  <Person key={m.id} name={m.name} label={getLabel(m)} photoUrl={m.photo_url}
-                    isDeceased={!m.is_alive} color={PRIMARY} glow={PRIMARY} delay={nd()}
-                    onClick={() => setSelectedMember({ member: m, type: 'grandparent' })} />
-                )) : undefined}
-                rightChildren={tree.mg.length > 0 ? tree.mg.map((m) => (
-                  <Person key={m.id} name={m.name} label={getLabel(m)} photoUrl={m.photo_url}
-                    isDeceased={!m.is_alive} color={LOLO_C} glow={LOLO_C} delay={nd()}
-                    onClick={() => setSelectedMember({ member: m, type: 'grandparent' })} />
-                )) : undefined}
-              />
-              <Connector color={GOLD_C} delay={nd()} />
-            </>
-          )}
-
-          {/* Parents */}
-          {tree.parents.length > 0 && (
-            <>
-              <GenRow title="Parents" emoji="💛" color={GOLD_C} delay={nd()}>
-                {tree.parents.map((m) => (
-                  <Person key={m.id} name={m.name} label={getLabel(m)} photoUrl={m.photo_url}
-                    isDeceased={!m.is_alive} color={GOLD_C} glow={GOLD_C} delay={nd()}
-                    onClick={() => setSelectedMember({ member: m, type: 'parent' })} />
-                ))}
-              </GenRow>
-              <Connector color={PRIMARY} delay={nd()} />
-            </>
-          )}
-
-          {/* Aunts & Uncles */}
-          {(tree.pe.length > 0 || tree.me.length > 0) && (
-            <>
-              <GenRow title="" emoji="" color="" delay={nd()} split
-                leftTitle="Dad's Side" rightTitle="Mom's Side"
-                leftChildren={tree.pe.length > 0 ? tree.pe.map((m) => (
-                  <Person key={m.id} name={m.name} label={getLabel(m)} photoUrl={m.photo_url}
-                    isDeceased={!m.is_alive} color={PRIMARY} glow={PRIMARY} delay={nd()}
-                    onClick={() => setSelectedMember({ member: m, type: 'aunt_uncle' })} />
-                )) : undefined}
-                rightChildren={tree.me.length > 0 ? tree.me.map((m) => (
-                  <Person key={m.id} name={m.name} label={getLabel(m)} photoUrl={m.photo_url}
-                    isDeceased={!m.is_alive} color={LOLO_C} glow={LOLO_C} delay={nd()}
-                    onClick={() => setSelectedMember({ member: m, type: 'aunt_uncle' })} />
-                )) : undefined}
-              />
-              <Connector color={LUMI_C} delay={nd()} />
-            </>
-          )}
-
-          {/* Me + Siblings */}
-          <GenRow title="That's Us!" emoji="⭐" color={PRIMARY} delay={nd()}>
-            {tree.cs.map((sibling) => (
-              <Person key={sibling.id} name={sibling.name} label="Sibling"
-                photoUrl={(sibling as any).avatarUrl || (sibling as any).custom_avatar_url}
-                color={LUMI_C} glow={LUMI_C} delay={nd()}
-                onClick={() => setSelectedMember({ member: sibling, type: 'sibling' })} />
-            ))}
-            <Person
-              name={child.name} label="That's Me!" isMe
-              photoUrl={(child as any).avatarUrl || (child as any).custom_avatar_url}
-              color={GOLD_C} glow={GOLD_C} delay={nd()}
-              onClick={() => setSelectedMember({ member: child, type: 'self' })}
+      {/* Main */}
+      <main className="flex-1 flex flex-col items-center px-5 pb-8 relative z-10">
+        <div className="max-w-[600px] w-full flex flex-col items-center">
+          {/* Loti greeting */}
+          <div
+            className="flex flex-col items-center my-5"
+            style={{ animation: 'lotiBreath 4s ease-in-out infinite' }}
+          >
+            <img
+              src={lotiFamily}
+              alt="Loti"
+              className="drop-shadow-2xl mb-3"
+              style={{ width: 90, height: 90, objectFit: 'contain' }}
             />
-          </GenRow>
+            <p className="text-center" style={{ fontSize: 17, color: '#6B675E', maxWidth: 380, lineHeight: 1.5 }}>
+              {greeting}
+            </p>
+          </div>
 
-          {/* Cousins */}
-          {tree.cousins.length > 0 && (
-            <>
-              <Connector color={PRIMARY} delay={nd()} />
-              <GenRow title="Cousins" emoji="🎮" color={PRIMARY} delay={nd()}>
-                {tree.cousins.map((m) => (
-                  <Person key={m.id} name={m.name} label={getLabel(m)} photoUrl={m.photo_url}
-                    isDeceased={!m.is_alive} color={PRIMARY} glow={PRIMARY} delay={nd()}
-                    onClick={() => setSelectedMember({ member: m, type: 'cousin' })} />
-                ))}
-              </GenRow>
-            </>
-          )}
-
-          {/* Other */}
-          {tree.other.length > 0 && (
-            <>
-              <Connector color={PRIMARY} delay={nd()} />
-              <GenRow title="Family" emoji="💜" color={LUMI_C} delay={nd()}>
-                {tree.other.map((m) => (
-                  <Person key={m.id} name={m.name} label={getLabel(m)} photoUrl={m.photo_url}
-                    isDeceased={!m.is_alive} color={LUMI_C} glow={LUMI_C} delay={nd()}
-                    onClick={() => setSelectedMember({ member: m, type: getRelType(m) })} />
-                ))}
-              </GenRow>
-            </>
-          )}
-        </div>
-      )}
-
-      {/* Voice Vault Tab */}
-      {activeTab === 'voices' && (
-        <div className="relative z-10 px-4 pb-16 pt-6 max-w-lg mx-auto">
-          {voicesLoading ? (
-            <div className="flex justify-center py-12">
-              <LoadingSpinner />
-            </div>
-          ) : voiceClips.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="flex justify-center mb-4">
-                <ChatAvatar buddyName="Loti" expression="caring" size="xl" showName />
+          {/* Empty state */}
+          {!hasFamily && (
+            <div className="flex flex-col items-center text-center mt-4">
+              <div
+                className="rounded-full flex items-center justify-center mb-5"
+                style={{ width: 120, height: 120, background: 'linear-gradient(135deg, #D4A843, #E8C040)', boxShadow: '0 8px 32px rgba(212,168,67,0.2)' }}
+              >
+                <span style={{ fontSize: 60 }}>🏠</span>
               </div>
-              <p className="text-body-lg font-display font-bold text-foreground mb-2">No voices yet!</p>
-              <p className="text-muted-foreground text-body-sm">Ask your parent to record family voices</p>
+              <h2 style={{ fontSize: 24, fontWeight: 600, color: '#2A2926', marginBottom: 8 }}>
+                Your family space is getting ready
+              </h2>
+              <p style={{ fontSize: 16, color: '#6B675E', maxWidth: 380, lineHeight: 1.5 }}>
+                Ask your parent to add your family members — grandparents, aunts, uncles, and anyone special. Loti will help you learn all about them.
+              </p>
             </div>
-          ) : (
-            <div className="space-y-4">
-              {voicesByMember.map((group) => (
-                <div key={group.name} className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow-sm">
-                  <h3 className="text-body-sm font-display font-bold text-foreground mb-3 flex items-center gap-2">
-                    <Mic className="h-4 w-4 text-lala" />
-                    {group.name}
-                  </h3>
-                  <div className="space-y-2">
-                    {group.clips.map((clip) => (
-                      <button
-                        key={clip.id}
-                        onClick={() => handlePlayVoice(clip)}
-                        className={cn(
-                          'w-full flex items-center gap-3 p-3 rounded-xl transition-all',
-                          playingClipId === clip.id
-                            ? 'bg-lala/15 border border-lala/30'
-                            : 'bg-lala/5 hover:bg-lala/10'
-                        )}
+          )}
+
+          {/* Voice Messages strip */}
+          {hasVoice && (
+            <div className="w-full mb-6" style={{ animation: 'kidsFadeIn 0.4s ease-out both' }}>
+              <h3 style={{ fontSize: 18, fontWeight: 600, color: '#2A2926', marginBottom: 12 }}>
+                Messages for you
+              </h3>
+              <div className="flex gap-3 overflow-x-auto pb-2 family-voices-scroll">
+                {voiceMessages.map((vm) => {
+                  const isPlaying = playingClipId === vm.id;
+                  const memberName = vm.family_member_name || 'Family';
+                  const initial = getInitial(memberName);
+                  const colorIdx = memberName.charCodeAt(0) % AVATAR_COLORS.length;
+                  return (
+                    <button
+                      key={vm.id}
+                      onClick={() => handlePlayVoice(vm)}
+                      className="flex-shrink-0 flex items-center gap-3 transition-all hover:scale-[1.02]"
+                      style={{
+                        background: '#FFFFFF',
+                        borderRadius: 16,
+                        padding: '14px 18px',
+                        border: '1.5px solid #FDF6E8',
+                        boxShadow: '0 2px 8px rgba(42,41,38,0.04)',
+                        cursor: 'pointer',
+                        minWidth: 260,
+                      }}
+                    >
+                      <div
+                        className="rounded-full flex items-center justify-center flex-shrink-0"
+                        style={{
+                          width: 40,
+                          height: 40,
+                          background: AVATAR_COLORS[colorIdx],
+                          border: '2px solid #FDF6E8',
+                        }}
                       >
-                        <div className={cn(
-                          'w-10 h-10 rounded-full flex items-center justify-center shrink-0',
-                          playingClipId === clip.id ? 'bg-lala text-white' : 'bg-lala/20 text-lala'
-                        )}>
-                          {playingClipId === clip.id
-                            ? <Pause className="h-5 w-5" />
-                            : <Play className="h-5 w-5 ml-0.5" />
-                          }
-                        </div>
-                        <div className="flex-1 text-left min-w-0">
-                          <p className="text-body-sm font-medium text-foreground truncate">{clip.title}</p>
-                          {clip.description && (
-                            <p className="text-caption text-muted-foreground truncate">{clip.description}</p>
-                          )}
-                          <p className="text-[10px] text-muted-foreground/50 mt-0.5">
-                            {clip.duration_seconds ? `${Math.round(clip.duration_seconds)}s` : ''}
-                            {clip.category ? ` · ${clip.category}` : ''}
-                          </p>
-                        </div>
-                      </button>
+                        <span style={{ fontSize: 15, fontWeight: 600, color: '#2A2926' }}>{initial}</span>
+                      </div>
+                      <div className="flex-1 text-left min-w-0">
+                        <span className="block truncate" style={{ fontSize: 14, fontWeight: 600, color: '#2A2926' }}>
+                          {vm.title}
+                        </span>
+                        <span style={{ fontSize: 12, color: '#9B978E' }}>
+                          {memberName}
+                          {vm.duration_seconds ? ` · ${Math.round(vm.duration_seconds)}s` : ''}
+                        </span>
+                      </div>
+                      <div
+                        className="flex-shrink-0 rounded-full flex items-center justify-center transition-all"
+                        style={{
+                          width: 44,
+                          height: 44,
+                          background: isPlaying ? '#E8C040' : GOLD,
+                          boxShadow: '0 2px 8px rgba(212,168,67,0.3)',
+                        }}
+                      >
+                        {isPlaying ? (
+                          <svg width="16" height="16" viewBox="0 0 16 16" fill="white">
+                            <rect x="3" y="2" width="4" height="12" rx="1" />
+                            <rect x="9" y="2" width="4" height="12" rx="1" />
+                          </svg>
+                        ) : (
+                          <svg width="16" height="16" viewBox="0 0 16 16" fill="white">
+                            <path d="M4 2l10 6-10 6V2z" />
+                          </svg>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Premium family tree */}
+          {hasFamily && (
+            <div className="w-full space-y-1">
+              {/* Grandparents — single row (both sides together, labels show side) */}
+              {(tree.pg.length > 0 || tree.mg.length > 0) && (
+                <>
+                  <GenRow title="Grandparents" emoji="💛" color={GOLD} delay={nd()}>
+                    {tree.pg.map((m) => (
+                      <Person
+                        key={m.id}
+                        name={m.name}
+                        label={`${getLabel(m)} · Dad's side`}
+                        photoUrl={m.photo_url}
+                        isDeceased={!m.is_alive}
+                        color={TEAL}
+                        delay={nd()}
+                        onClick={() => setSelectedMember({ member: m, type: 'grandparent' })}
+                      />
                     ))}
-                  </div>
-                </div>
-              ))}
+                    {tree.mg.map((m) => (
+                      <Person
+                        key={m.id}
+                        name={m.name}
+                        label={`${getLabel(m)} · Mom's side`}
+                        photoUrl={m.photo_url}
+                        isDeceased={!m.is_alive}
+                        color={CORAL}
+                        delay={nd()}
+                        onClick={() => setSelectedMember({ member: m, type: 'grandparent' })}
+                      />
+                    ))}
+                  </GenRow>
+                  <Connector color={GOLD} delay={nd()} />
+                </>
+              )}
+
+              {/* Parents */}
+              {tree.parents.length > 0 && (
+                <>
+                  <GenRow title="Parents" emoji="💛" color={GOLD} delay={nd()}>
+                    {tree.parents.map((m) => (
+                      <Person
+                        key={m.id}
+                        name={m.name}
+                        label={getLabel(m)}
+                        photoUrl={m.photo_url}
+                        isDeceased={!m.is_alive}
+                        color={GOLD}
+                        delay={nd()}
+                        onClick={() => setSelectedMember({ member: m, type: 'parent' })}
+                      />
+                    ))}
+                  </GenRow>
+                  <Connector color={TEAL} delay={nd()} />
+                </>
+              )}
+
+              {/* Aunts & Uncles — single row (both sides together, labels show side) */}
+              {(tree.pe.length > 0 || tree.me.length > 0) && (
+                <>
+                  <GenRow title="Aunts & Uncles" emoji="💜" color={PURPLE} delay={nd()}>
+                    {tree.pe.map((m) => (
+                      <Person
+                        key={m.id}
+                        name={m.name}
+                        label={`${getLabel(m)} · Dad's side`}
+                        photoUrl={m.photo_url}
+                        isDeceased={!m.is_alive}
+                        color={TEAL}
+                        delay={nd()}
+                        onClick={() => setSelectedMember({ member: m, type: 'aunt_uncle' })}
+                      />
+                    ))}
+                    {tree.me.map((m) => (
+                      <Person
+                        key={m.id}
+                        name={m.name}
+                        label={`${getLabel(m)} · Mom's side`}
+                        photoUrl={m.photo_url}
+                        isDeceased={!m.is_alive}
+                        color={CORAL}
+                        delay={nd()}
+                        onClick={() => setSelectedMember({ member: m, type: 'aunt_uncle' })}
+                      />
+                    ))}
+                  </GenRow>
+                  <Connector color={PURPLE} delay={nd()} />
+                </>
+              )}
+
+              {/* That's Us! — siblings + me */}
+              <GenRow title="That's Us!" emoji="⭐" color={GOLD} delay={nd()}>
+                {tree.cs.map((sibling) => (
+                  <Person
+                    key={sibling.id}
+                    name={sibling.name}
+                    label="Sibling"
+                    photoUrl={(sibling as any).avatarUrl || (sibling as any).custom_avatar_url}
+                    color={PURPLE}
+                    delay={nd()}
+                    onClick={() => setSelectedMember({ member: sibling, type: 'sibling' })}
+                  />
+                ))}
+                <Person
+                  name={child.name}
+                  label="That's Me!"
+                  isMe
+                  photoUrl={(child as any).avatarUrl || (child as any).custom_avatar_url}
+                  color={GOLD}
+                  delay={nd()}
+                  onClick={() => setSelectedMember({ member: child, type: 'self' })}
+                />
+              </GenRow>
+
+              {/* Cousins */}
+              {tree.cousins.length > 0 && (
+                <>
+                  <Connector color={TEAL} delay={nd()} />
+                  <GenRow title="Cousins" emoji="🎮" color={TEAL} delay={nd()}>
+                    {tree.cousins.map((m) => (
+                      <Person
+                        key={m.id}
+                        name={m.name}
+                        label={getLabel(m)}
+                        photoUrl={m.photo_url}
+                        isDeceased={!m.is_alive}
+                        color={TEAL}
+                        delay={nd()}
+                        onClick={() => setSelectedMember({ member: m, type: 'cousin' })}
+                      />
+                    ))}
+                  </GenRow>
+                </>
+              )}
+
+              {/* Other */}
+              {tree.other.length > 0 && (
+                <>
+                  <Connector color={PURPLE} delay={nd()} />
+                  <GenRow title="Family" emoji="💜" color={PURPLE} delay={nd()}>
+                    {tree.other.map((m) => (
+                      <Person
+                        key={m.id}
+                        name={m.name}
+                        label={getLabel(m)}
+                        photoUrl={m.photo_url}
+                        isDeceased={!m.is_alive}
+                        color={PURPLE}
+                        delay={nd()}
+                        onClick={() => setSelectedMember({ member: m, type: getRelType(m) })}
+                      />
+                    ))}
+                  </GenRow>
+                </>
+              )}
             </div>
           )}
         </div>
-      )}
+      </main>
 
+      {/* Footer */}
+      <footer className="relative z-10 py-5 text-center">
+        <span style={{ fontSize: 12, color: '#9B978E' }}>Made with 💛 for curious minds</span>
+      </footer>
+
+      {/* Member detail modal — existing card, unchanged */}
       <FamilyMemberDetail
         member={selectedMember?.member || null}
         type={selectedMember?.type || 'other'}
         isOpen={!!selectedMember}
         onClose={() => setSelectedMember(null)}
       />
+
+      <style>{`
+        .kids-family-scope h1,
+        .kids-family-scope h2,
+        .kids-family-scope h3 { font-family: 'DM Serif Display', Georgia, serif !important; }
+        .family-voices-scroll::-webkit-scrollbar { height: 4px; }
+        .family-voices-scroll::-webkit-scrollbar-track { background: transparent; }
+        .family-voices-scroll::-webkit-scrollbar-thumb { background: #E8E6E1; border-radius: 4px; }
+        .family-voices-scroll { scrollbar-width: thin; scrollbar-color: #E8E6E1 transparent; }
+        @keyframes kidsFloat {
+          0% { transform: translateY(0) translateX(0); }
+          100% { transform: translateY(-20px) translateX(10px); }
+        }
+        @keyframes kidsTwinkle {
+          0%, 100% { opacity: 0.2; transform: scale(0.8); }
+          50% { opacity: 0.5; transform: scale(1.2); }
+        }
+        @keyframes lotiBreath {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-6px); }
+        }
+        @keyframes kidsFadeIn {
+          from { opacity: 0; transform: translateY(16px) scale(0.95); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes fadeInUp {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes ringSpin {
+          to { transform: rotate(360deg); }
+        }
+        @keyframes crownFloat {
+          0%, 100% { transform: translateX(-50%) translateY(0); }
+          50% { transform: translateX(-50%) translateY(-4px); }
+        }
+      `}</style>
     </div>
   );
 }

@@ -470,7 +470,7 @@ export function DashboardHome() {
                       What they explored
                     </p>
                     <div className="flex flex-wrap gap-1.5">
-                      {childData.chat_topics.map((topic) => (
+                      {childData.chat_topics.slice(0, 4).map((topic) => (
                         <span
                           key={topic}
                           className="px-3 py-1 rounded-full text-[13px]"
@@ -479,6 +479,14 @@ export function DashboardHome() {
                           {topic}
                         </span>
                       ))}
+                      {childData.chat_topics.length > 4 && (
+                        <span
+                          className="px-3 py-1 rounded-full text-[13px]"
+                          style={{ background: '#E8F6F4', color: '#3ECDC6', fontWeight: 500 }}
+                        >
+                          +{childData.chat_topics.length - 4} more
+                        </span>
+                      )}
                     </div>
                   </div>
                 )}

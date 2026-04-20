@@ -5,7 +5,7 @@
  * Shows photo, name, relationship, multiple stories, hobbies, and video carousel.
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -13,10 +13,11 @@ import {
 import { Button } from '@/components/ui/button';
 import { apiClient, getUploadUrl } from '@/integrations/api/client';
 import { cn } from '@/lib/utils';
-import { X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Play, Pause } from 'lucide-react';
 import type { FamilyMemberRow } from '@/types/database';
 import type { ChildProfileRow as ChildProfile } from '@/types/database';
 import type { RelationType } from './FamilyMemberCard';
+import type { VoiceClip } from '@/services/voiceVault';
 
 interface FamilyMemberDetailProps {
   member: FamilyMemberRow | ChildProfile | null;
@@ -65,13 +66,17 @@ export function FamilyMemberDetail({ member, type, isOpen, onClose }: FamilyMemb
   const age = !isFamilyMember(member) ? (member as any).age : null;
   const gender = !isFamilyMember(member) ? (member as any).gender : null;
 
-  // Fetch multiple videos, stories, and photos for family members
+  // Fetch multiple videos, stories, photos, and voice clips for family members
   const [videos, setVideos] = useState<{ id: string; video_url: string; title: string | null; created_at: string }[]>([]);
   const [stories, setStories] = useState<{ id: string; content: string; created_at: string }[]>([]);
   const [photos, setPhotos] = useState<{ id: string; photo_url: string; caption: string | null; created_at: string }[]>([]);
+  const [voices, setVoices] = useState<VoiceClip[]>([]);
   const [videoIndex, setVideoIndex] = useState(0);
   const [photoIndex, setPhotoIndex] = useState(0);
   const [storyIndex, setStoryIndex] = useState(0);
+  const [voiceIndex, setVoiceIndex] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     if (isOpen && isFamilyMember(member)) {
@@ -87,21 +92,56 @@ export function FamilyMemberDetail({ member, type, isOpen, onClose }: FamilyMemb
         setPhotos(r.data || []);
         setPhotoIndex(0);
       }).catch(() => setPhotos([]));
+      apiClient.get('/voice-vault', { params: { familyMemberId: member.id, limit: 50 } }).then((r) => {
+        setVoices(r.data?.items || []);
+        setVoiceIndex(0);
+      }).catch(() => setVoices([]));
     } else {
       setVideos([]);
       setStories([]);
       setPhotos([]);
+      setVoices([]);
       setVideoIndex(0);
       setPhotoIndex(0);
       setStoryIndex(0);
+      setVoiceIndex(0);
     }
   }, [isOpen, member]);
+
+  // Stop audio when modal closes or clip changes
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
+    setIsPlaying(false);
+  }, [isOpen, voiceIndex]);
+
+  const togglePlay = () => {
+    const clip = voices[voiceIndex];
+    if (!clip) return;
+    if (isPlaying && audioRef.current) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+      return;
+    }
+    if (!audioRef.current) {
+      const audio = new Audio(getUploadUrl(clip.audio_url));
+      audio.addEventListener('ended', () => {
+        setIsPlaying(false);
+        audioRef.current = null;
+      });
+      audioRef.current = audio;
+    }
+    audioRef.current.play();
+    setIsPlaying(true);
+  };
 
   // Fallback: use old single fun_facts if no stories in new table
   const funFacts = isFamilyMember(member) ? member.fun_facts : null;
   const allStories = stories.length > 0 ? stories : (funFacts ? [{ id: 'legacy', content: funFacts, created_at: '' }] : []);
 
-  const hasDetails = connectionDescription || occupation || (hobbies && hobbies.length > 0) || allStories.length > 0 || videos.length > 0 || photos.length > 0 || age;
+  const hasDetails = connectionDescription || occupation || (hobbies && hobbies.length > 0) || allStories.length > 0 || videos.length > 0 || photos.length > 0 || voices.length > 0 || age;
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -203,6 +243,73 @@ export function FamilyMemberDetail({ member, type, isOpen, onClose }: FamilyMemb
                         {hobby}
                       </span>
                     ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Voice Clips Carousel */}
+              {voices.length > 0 && (
+                <div className="bg-white rounded-2xl p-4 shadow-sm">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-h4">🎙️</span>
+                      <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                        {voices.length === 1 ? 'Voice Message' : `Voice Messages (${voiceIndex + 1}/${voices.length})`}
+                      </p>
+                    </div>
+                    {voices.length > 1 && (
+                      <div className="flex gap-1">
+                        <button
+                          onClick={() => setVoiceIndex((i) => (i - 1 + voices.length) % voices.length)}
+                          className="w-7 h-7 rounded-full bg-muted flex items-center justify-center hover:bg-muted-foreground/20"
+                        >
+                          <ChevronLeft className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => setVoiceIndex((i) => (i + 1) % voices.length)}
+                          className="w-7 h-7 rounded-full bg-muted flex items-center justify-center hover:bg-muted-foreground/20"
+                        >
+                          <ChevronRight className="h-4 w-4" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                  <div
+                    className="flex items-center gap-3 rounded-xl p-3"
+                    style={{ background: '#FDF6E8' }}
+                  >
+                    <button
+                      onClick={togglePlay}
+                      className="flex-shrink-0 rounded-full flex items-center justify-center transition-all hover:scale-105"
+                      style={{
+                        width: 36,
+                        height: 36,
+                        background: isPlaying ? '#E8C040' : '#D4A843',
+                        boxShadow: '0 2px 8px rgba(212,168,67,0.3)',
+                      }}
+                    >
+                      {isPlaying ? (
+                        <Pause className="h-3.5 w-3.5 text-white" />
+                      ) : (
+                        <Play className="h-3.5 w-3.5 text-white ml-0.5" />
+                      )}
+                    </button>
+                    <div className="flex-1 min-w-0 text-left">
+                      <p className="text-body-sm font-semibold text-foreground truncate">
+                        {voices[voiceIndex]?.title || 'Voice message'}
+                      </p>
+                      {voices[voiceIndex]?.description && (
+                        <p className="text-caption text-muted-foreground truncate">
+                          {voices[voiceIndex].description}
+                        </p>
+                      )}
+                      <p className="text-[10px] text-muted-foreground/60 mt-0.5">
+                        {voices[voiceIndex]?.duration_seconds
+                          ? `${Math.round(voices[voiceIndex].duration_seconds!)}s`
+                          : ''}
+                        {voices[voiceIndex]?.category ? ` · ${voices[voiceIndex].category}` : ''}
+                      </p>
+                    </div>
                   </div>
                 </div>
               )}

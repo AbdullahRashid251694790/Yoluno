@@ -25,7 +25,6 @@ import { useStoriesByChild } from '@/hooks/queries/useStories';
 import { useJourneys } from '@/hooks/queries/useJourneys';
 import { useVoiceClips } from '@/hooks/queries/useVoiceVault';
 import { KidNotificationBell } from '@/components/kids/KidNotificationBell';
-import { PasswordChangeRequestButton } from '@/components/kids/PasswordChangeRequestButton';
 import lunoHero from '@/assets/landing/luno-hero.png';
 import lunoChat from '@/assets/landing/luno-chat.png';
 import lumiStories from '@/assets/landing/lumi-stories.png';
@@ -263,11 +262,6 @@ export function KidsHomePage() {
         </span>
         <div className="flex items-center gap-2">
           <KidNotificationBell childId={childId!} />
-          <PasswordChangeRequestButton
-            childId={childId!}
-            childName={child.name}
-            className="rounded-full bg-white/50 backdrop-blur-sm hover:bg-white/70"
-          />
         </div>
       </header>
 
@@ -440,7 +434,12 @@ export function KidsHomePage() {
             style={{ boxShadow: '0 16px 48px rgba(42,41,38,0.15)' }}
             onClick={(e) => e.stopPropagation()}
           >
-            <span style={{ fontSize: 40, display: 'block', marginBottom: 12 }}>🌊</span>
+            <img
+              src={lunoHero}
+              alt="Luno"
+              className="mx-auto drop-shadow-lg mb-3"
+              style={{ width: 80, height: 80, objectFit: 'contain' }}
+            />
             <h3 style={{ fontSize: 20, fontWeight: 600, color: '#2A2926', marginBottom: 8 }}>
               Want to switch?
             </h3>

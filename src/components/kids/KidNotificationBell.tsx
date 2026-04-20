@@ -7,7 +7,7 @@
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, BookOpen, Check, X, Users } from 'lucide-react';
+import { Bell, BookOpen, Check, Users, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Popover,
@@ -22,6 +22,7 @@ import {
   useKidUnreadCount,
   useMarkKidNotificationRead,
   useMarkAllKidNotificationsRead,
+  useDeleteKidNotification,
   useAddKidNotificationToCache,
 } from '@/hooks/queries';
 import { useSocket, joinChildRoom } from '@/integrations/api/socket';
@@ -39,6 +40,7 @@ export function KidNotificationBell({ childId }: KidNotificationBellProps) {
   const { data: unreadCount = 0 } = useKidUnreadCount(childId);
   const markAsRead = useMarkKidNotificationRead(childId);
   const markAllAsRead = useMarkAllKidNotificationsRead(childId);
+  const deleteNotification = useDeleteKidNotification(childId);
   const addToCache = useAddKidNotificationToCache(childId);
   const socket = useSocket();
 
@@ -130,11 +132,10 @@ export function KidNotificationBell({ childId }: KidNotificationBellProps) {
           ) : (
             <div className="divide-y">
               {notifications.map((notification) => (
-                <button
+                <div
                   key={notification.id}
-                  onClick={() => handleNotificationClick(notification)}
                   className={cn(
-                    'w-full px-4 py-3 text-left hover:bg-muted/50 transition-colors',
+                    'px-4 py-3 hover:bg-muted/50 transition-colors',
                     !notification.is_read && 'bg-primary/5'
                   )}
                 >
@@ -143,21 +144,56 @@ export function KidNotificationBell({ childId }: KidNotificationBellProps) {
                       {getIcon(notification.notification_type)}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className={cn(
-                        'text-body-sm',
-                        !notification.is_read && 'font-bold'
-                      )}>
-                        {notification.title}
-                      </p>
-                      <p className="text-caption text-muted-foreground line-clamp-2 mt-0.5">
-                        {notification.message}
-                      </p>
-                      <p className="text-caption text-muted-foreground/70 mt-1">
-                        {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
-                      </p>
+                      <button
+                        onClick={() => handleNotificationClick(notification)}
+                        className="w-full text-left"
+                      >
+                        <p className={cn(
+                          'text-body-sm',
+                          !notification.is_read && 'font-bold'
+                        )}>
+                          {notification.title}
+                        </p>
+                        <p className="text-caption text-muted-foreground line-clamp-2 mt-0.5">
+                          {notification.message}
+                        </p>
+                        <p className="text-caption text-muted-foreground/70 mt-1">
+                          {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
+                        </p>
+                      </button>
+                      <div className="flex items-center gap-2 mt-2">
+                        {!notification.is_read && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-auto py-1 px-2 text-caption"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              markAsRead.mutate(notification.id);
+                            }}
+                            disabled={markAsRead.isPending}
+                          >
+                            <Check className="h-3 w-3 mr-1" />
+                            Mark read
+                          </Button>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-auto py-1 px-2 text-caption text-destructive hover:text-destructive hover:bg-destructive/10"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteNotification.mutate(notification.id);
+                          }}
+                          disabled={deleteNotification.isPending}
+                        >
+                          <Trash2 className="h-3 w-3 mr-1" />
+                          Delete
+                        </Button>
+                      </div>
                     </div>
                   </div>
-                </button>
+                </div>
               ))}
             </div>
           )}

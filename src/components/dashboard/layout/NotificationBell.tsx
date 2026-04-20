@@ -180,7 +180,7 @@ export function NotificationBell() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-auto py-1 px-2 text-caption text-destructive hover:text-destructive"
+                          className="h-auto py-1 px-2 text-caption text-destructive hover:text-destructive hover:bg-destructive/10"
                           onClick={() => handleDelete(notification.id)}
                           disabled={deleteNotification.isPending}
                         >

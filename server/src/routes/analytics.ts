@@ -424,7 +424,7 @@ router.get(
              WHERE t.is_active = true
              GROUP BY t.name
              ORDER BY MAX(bm.created_at) DESC
-             LIMIT 5`,
+             LIMIT 4`,
             [child.id]
           );
 
