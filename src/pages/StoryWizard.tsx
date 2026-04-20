@@ -576,6 +576,7 @@ export function StoryWizardPage() {
                     This may take a few minutes. You can close this page and come back later.
                   </p>
                 </div>
+                {/* Share with parent button moved to My Moments page
                 {childId && !fromDashboard && (
                   <ShareWithParentButton
                     childId={childId}
@@ -587,6 +588,7 @@ export function StoryWizardPage() {
                     label="Share with your parent"
                   />
                 )}
+                */}
               </div>
             ) : (
               <div className="space-y-4">

@@ -275,6 +275,38 @@ router.put('/:journeyId/steps/:stepId', async (req: Request, res: Response, next
             console.error('Error sending journey notification:', (err as Error).message);
           }
         })();
+
+        // Auto-create a Growth Journal moment (dedup by journey id)
+        (async () => {
+          try {
+            const existing = await queryOne<{ id: string }>(
+              `SELECT id FROM shared_moments
+               WHERE child_profile_id = $1 AND moment_type = 'journey_complete' AND reference_id = $2::uuid`,
+              [journey.child_profile_id, req.params.journeyId]
+            );
+            if (existing) return;
+
+            const stepCount = await queryOne<{ count: string }>(
+              'SELECT COUNT(*)::text as count FROM journey_steps WHERE journey_id = $1',
+              [req.params.journeyId]
+            );
+
+            await query(
+              `INSERT INTO shared_moments
+                 (child_profile_id, user_id, moment_type, title, context, reference_id, is_seen, is_auto)
+               VALUES ($1, $2, 'journey_complete', $3, $4, $5, true, true)`,
+              [
+                journey.child_profile_id,
+                req.user!.id,
+                `Completed ${journey.title}`,
+                `Finished all ${stepCount?.count || 'the'} steps of ${journey.title}.`,
+                req.params.journeyId,
+              ]
+            );
+          } catch (err) {
+            console.error('Error creating journey moment:', (err as Error).message);
+          }
+        })();
       }
     }
 

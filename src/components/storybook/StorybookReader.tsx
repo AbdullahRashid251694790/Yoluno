@@ -347,7 +347,7 @@ export function StorybookReader({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="max-w-2xl mx-auto space-y-4">
-          {/* Share with parent — only on the final story page */}
+          {/* Share with parent button moved to My Moments page
           {childId && currentPage === totalPages - 1 && totalPages > 1 && (
             <div className="flex justify-center">
               <ShareWithParentButton
@@ -361,6 +361,7 @@ export function StorybookReader({
               />
             </div>
           )}
+          */}
 
           {/* Audio controls (only show on story pages) */}
           {currentPage > 0 && currentPageData && (

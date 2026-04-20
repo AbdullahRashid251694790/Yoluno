@@ -21,6 +21,9 @@ import { useDailyMissions, useClaimMissionBonus } from '@/hooks/queries/useDaily
 import { useChatBuddy } from '@/hooks/queries/useBuddyChat';
 import { useChildSharedMoments } from '@/hooks/queries/useSharedMoments';
 import { useTodaysMood } from '@/hooks/queries/useMoodCheckin';
+import { useStoriesByChild } from '@/hooks/queries/useStories';
+import { useJourneys } from '@/hooks/queries/useJourneys';
+import { useVoiceClips } from '@/hooks/queries/useVoiceVault';
 import { KidNotificationBell } from '@/components/kids/KidNotificationBell';
 import { PasswordChangeRequestButton } from '@/components/kids/PasswordChangeRequestButton';
 import lunoHero from '@/assets/landing/luno-hero.png';
@@ -109,8 +112,12 @@ export function KidsHomePage() {
   const { data: buddy } = useChatBuddy(childId);
   const { data: sharedMoments = [] } = useChildSharedMoments(childId);
   const { data: todaysMood } = useTodaysMood(childId);
+  const { data: stories = [] } = useStoriesByChild(childId);
+  const { data: journeys = [] } = useJourneys(childId);
+  const { data: voiceClipsResp } = useVoiceClips({ childId, limit: 20 });
 
-  const mood = (location.state as any)?.mood || 'happy';
+  // Priority: location state (from mood-check flow) > today's logged mood > happy default
+  const mood = (location.state as any)?.mood || todaysMood?.mood || 'happy';
   const time = useMemo(() => getTimeOfDay(), []);
 
   const [showConfirm, setShowConfirm] = useState(false);
@@ -129,11 +136,74 @@ export function KidsHomePage() {
     ? [SPACES[1], SPACES[3], SPACES[0], SPACES[2]]
     : SPACES;
 
-  const suggestions = [
-    { icon: '📖', text: 'Your story with Lumi is waiting to continue', space: 'stories' },
-    { icon: '🧭', text: `${child?.name || 'Your'} journeys — ready when you are`, space: 'journeys' },
-    { icon: '💛', text: 'See what your family has shared', space: 'family' },
-  ];
+  // Dynamic "What's happening" suggestions
+  const suggestions = (() => {
+    const items: { icon: string; text: string; space: string }[] = [];
+
+    // 1. Stories — "continue" if any exist, otherwise "create your first"
+    items.push({
+      icon: '📖',
+      text: stories.length > 0
+        ? 'Your story with Lumi is waiting to continue'
+        : 'Create your first story with Lumi',
+      space: 'stories',
+    });
+
+    // 2. Journeys — only show active/in-progress journey, otherwise default
+    const activeJourney = journeys
+      .filter((j: any) => j.status !== 'completed')
+      .slice()
+      .sort((a: any, b: any) => {
+        const aDate = new Date(a.createdAt || 0).getTime();
+        const bDate = new Date(b.createdAt || 0).getTime();
+        return bDate - aDate;
+      })[0];
+
+    if (activeJourney) {
+      const currentDay = (activeJourney.currentStep ?? 0) + 1;
+      const total = activeJourney.totalSteps ?? 0;
+      items.push({
+        icon: '🧭',
+        text: total > 0
+          ? `${activeJourney.title} — Day ${Math.min(currentDay, total)} of ${total}`
+          : activeJourney.title,
+        space: 'journeys',
+      });
+    } else {
+      items.push({
+        icon: '🧭',
+        text: `${child?.name || 'Your'} journeys — ready when you are`,
+        space: 'journeys',
+      });
+    }
+
+    // 3. Family — show "new recording" if any clip added in last 7 days, otherwise default
+    const familyClips = (voiceClipsResp?.items || []).filter((c: any) => c.family_member_id);
+    const newestFamilyClip = familyClips
+      .slice()
+      .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0];
+
+    const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+    const isRecent = newestFamilyClip &&
+      (Date.now() - new Date(newestFamilyClip.created_at).getTime()) < SEVEN_DAYS_MS;
+
+    if (isRecent) {
+      const memberName = newestFamilyClip.family_member_name || 'A family member';
+      items.push({
+        icon: '💛',
+        text: `${memberName} recorded something new for you`,
+        space: 'family',
+      });
+    } else {
+      items.push({
+        icon: '💛',
+        text: 'See what your family has shared',
+        space: 'family',
+      });
+    }
+
+    return items;
+  })();
 
   if (isLoading) {
     return (
@@ -288,26 +358,13 @@ export function KidsHomePage() {
 
           {/* My Moments */}
           {(() => {
-            // Build moments from shared_moments + today's mood
-            const moments: { id: string; name: string; type: string; date: string }[] = [];
-
-            for (const m of sharedMoments.slice(0, 8)) {
-              moments.push({
-                id: m.id,
-                name: m.title,
-                type: m.moment_type,
-                date: new Date(m.shared_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-              });
-            }
-
-            if (todaysMood) {
-              moments.push({
-                id: 'mood-today',
-                name: `Feeling ${todaysMood.mood || 'good'} today`,
-                type: 'mood_checkin',
-                date: 'Today',
-              });
-            }
+            // Moments come from the shared_moments table (auto-populated by backend)
+            const moments = sharedMoments.slice(0, 8).map((m) => ({
+              id: m.id,
+              name: m.title,
+              type: m.moment_type,
+              date: new Date(m.shared_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+            }));
 
             if (moments.length === 0) return null;
 

@@ -212,6 +212,33 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
       }
     })();
 
+    // Auto-create a Growth Journal moment (dedup by story id)
+    (async () => {
+      try {
+        const existing = await queryOne<{ id: string }>(
+          `SELECT id FROM shared_moments
+           WHERE child_profile_id = $1 AND moment_type = 'story_created' AND reference_id = $2::uuid`,
+          [child_profile_id, id]
+        );
+        if (existing) return;
+
+        await query(
+          `INSERT INTO shared_moments
+             (child_profile_id, user_id, moment_type, title, context, reference_id, is_seen, is_auto)
+           VALUES ($1, $2, 'story_created', $3, $4, $5, true, true)`,
+          [
+            child_profile_id,
+            req.user!.id,
+            `Created "${title}"`,
+            `Created a new story: "${title}"${theme ? ` — a ${theme} adventure` : ''}.`,
+            id,
+          ]
+        );
+      } catch (err) {
+        console.error('Error creating story moment:', (err as Error).message);
+      }
+    })();
+
     res.status(201).json(result);
   } catch (error) {
     next(error);

@@ -458,6 +458,28 @@ router.patch('/:childId/sessions/:sessionId', async (req: Request, res: Response
   }
 });
 
+// DELETE /api/buddy-chat/:childId/sessions/:sessionId - Delete a chat session
+router.delete('/:childId/sessions/:sessionId', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { childId, sessionId } = req.params;
+    await verifyChildAccess(childId, req.user!.id);
+
+    // Messages CASCADE via session_id FK; shared_moments with reference_id=sessionId stay
+    const result = await query(
+      `DELETE FROM chat_sessions WHERE id = $1 AND child_profile_id = $2`,
+      [sessionId, childId]
+    );
+
+    if (result.rowCount === 0) {
+      throw new AppError(404, 'Session not found');
+    }
+
+    res.json({ ok: true });
+  } catch (error) {
+    next(error);
+  }
+});
+
 // POST /api/buddy-chat/:childId/sessions/:sessionId/send - Send message in session
 router.post('/:childId/sessions/:sessionId/send', upload.single('image'), async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -618,7 +640,33 @@ router.post('/:childId/sessions/:sessionId/send', upload.single('image'), async 
     } else {
       // Normal flow: check task completion + generate AI response
       taskCompletion = await checkTaskCompletion(childId, message, imageKey, imageAnalysis);
-      buddyResponse = await generateBuddyResponse(childId, message, child, inputSafety, imageAnalysis, taskCompletion, sessionId);
+
+      // Quick-action: "Explore a topic" — pick a random allowed topic for this
+      // child and expand the prompt so Luno asks "Want to learn about X?".
+      // The child's saved message stays as "Explore a topic" (clean UI).
+      let promptForAI = message;
+      if (message.trim().toLowerCase() === 'explore a topic') {
+        const allowed = await query<{ name: string }>(
+          `SELECT t.name FROM topics t
+           LEFT JOIN child_topic_settings cts
+             ON cts.topic_id = t.id AND cts.child_profile_id = $1
+           WHERE t.is_active = true
+             AND (cts.is_allowed IS NULL OR cts.is_allowed = true)
+             AND t.age_appropriate_min <= $2
+             AND t.age_appropriate_max >= $2
+           ORDER BY random()
+           LIMIT 1`,
+          [childId, child.age]
+        );
+        const topicName = allowed.rows[0]?.name;
+        if (topicName) {
+          promptForAI = `The child wants to explore a random topic. You picked "${topicName}". Respond with exactly one short question: "Want to learn about ${topicName}?" — nothing else, no extra text, no preamble. Wait for their yes or no before explaining anything.`;
+        } else {
+          promptForAI = 'The child wants to explore a topic but no specific topic is configured. Ask them in one short sentence what they feel like learning about.';
+        }
+      }
+
+      buddyResponse = await generateBuddyResponse(childId, promptForAI, child, inputSafety, imageAnalysis, taskCompletion, sessionId);
     }
 
     // Save buddy response with session_id
@@ -1335,7 +1383,7 @@ async function generateBuddyResponse(
           ...history,
           { role: 'user', content: userContent },
         ],
-        max_tokens: 1000,
+        max_tokens: 450,
         // Age-based temperature: younger = more playful/creative, older = more focused/precise
         temperature: child.age <= 6 ? 0.9 : child.age <= 9 ? 0.7 : 0.5,
       }),
@@ -1474,26 +1522,26 @@ HOW YOU SPEAK:
 - Age-appropriate for a ${child.age}-year-old
 - Be direct and get to the point quickly
 
-RESPONSE LENGTH — THIS IS CRITICAL:
-- For simple/casual questions ("hi", "can you do X", "what's your name", emotions): Give a DIRECT, concise answer in 2-3 sentences. No poetry, no metaphors, no rambling. Get to the point.
-- For knowledge requests ("tell me about Kenya", "what is space", "how do planes fly"): Give a FULL, rich, informative response with multiple interesting facts, vivid descriptions, and real details. Aim for 150-250 words of actual content. Teach them something real.
-- For stories: Medium length, engaging narrative
-- NEVER pad short answers with fluff. If the answer is simple, keep it simple.
+RESPONSE LENGTH — THIS IS CRITICAL. MATCH YOUR LENGTH TO THE QUESTION:
+- Simple/casual questions ("hi", "how are you", "what's your name", emotions, one-word greetings): 1-2 short sentences. Nothing more.
+- Quick factual questions ("what color is the sun", "how many planets"): 2-3 sentences. Direct answer + one interesting detail.
+- Open knowledge requests ("tell me about X", "teach me something", "how do X work"): 80-150 words MAX. Pick 2-3 key facts. Do NOT write paragraph after paragraph. Do NOT produce bullet lists longer than 3 items.
+- Stories: 100-200 words, short engaging narrative.
+- NEVER pad answers with fluff, metaphors, or preambles ("What a great question!", "I would love to teach you!").
+- NEVER start by restating the question. Just answer.
+- NEVER write multiple paragraphs unless the child asks a follow-up showing they want more.
 
-FORMATTING:
-- For knowledge responses, use markdown to make content readable:
-  - Use **bold** for key terms and important words
-  - Use numbered lists (1. 2. 3.) when listing steps or ordered items
-  - Use bullet points (-) when listing facts or features
-  - Use line breaks between sections for readability
-- For comparisons, use a proper markdown table. Each row MUST be on its own line. Example:
+FORMATTING — KEEP IT TIGHT:
+- Default: plain conversational prose. NO markdown for casual chat.
+- Use **bold** sparingly — only for 1-2 key terms max, not every other word.
+- Bullets only if listing 3 items max. Write each bullet on its own line with a SINGLE newline between them. NEVER put a blank line between bullets — that produces ugly loose-list rendering.
+- NEVER insert blank lines anywhere. Use exactly ONE newline between paragraphs, between a paragraph and a list, and between list items.
+- NEVER use markdown headings (#).
+- For comparisons, use a proper markdown table, rows on their own lines:
 
 | Feature | Cats | Dogs |
 | --- | --- | --- |
 | Sound | Meow | Bark |
-| Size | Small | Varies |
-- For casual chat, do NOT use markdown — just plain conversational text
-- NEVER use markdown headings (#)
 
 ENDING EVERY RESPONSE:
 - ALWAYS end with ONE open-ended question on a new line to keep the conversation going
@@ -1941,6 +1989,25 @@ function levenshtein(a: string, b: string): number {
   return dp[m][n];
 }
 
+// Common English stop words that should never trigger banned-topic matching.
+// Topic names like "What Do You Want to Be?" contain these, as do most
+// child messages — matching on them produces guaranteed false positives.
+const STOP_WORDS = new Set([
+  'a', 'an', 'the', 'and', 'or', 'but', 'if', 'so', 'as', 'of', 'on', 'in', 'at',
+  'to', 'for', 'from', 'by', 'with', 'about', 'into', 'over', 'this', 'that',
+  'these', 'those', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'am',
+  'do', 'does', 'did', 'done', 'doing', 'have', 'has', 'had', 'having',
+  'can', 'could', 'should', 'would', 'will', 'shall', 'may', 'might', 'must',
+  'i', 'me', 'my', 'mine', 'we', 'us', 'our', 'ours', 'you', 'your', 'yours',
+  'he', 'him', 'his', 'she', 'her', 'hers', 'it', 'its', 'they', 'them', 'their',
+  'what', 'which', 'who', 'whom', 'whose', 'when', 'where', 'why', 'how',
+  'not', 'no', 'yes', 'all', 'any', 'some', 'each', 'every', 'other',
+  'more', 'most', 'much', 'many', 'few', 'less', 'least', 'too', 'very',
+  'just', 'only', 'also', 'then', 'than', 'now', 'here', 'there',
+  'tell', 'show', 'give', 'make', 'want', 'need', 'like', 'know', 'think',
+  'see', 'look', 'come', 'go', 'get', 'got', 'let', 'put', 'take', 'say',
+]);
+
 async function fuzzyBannedCheck(
   childId: string,
   message: string
@@ -1957,26 +2024,31 @@ async function fuzzyBannedCheck(
     );
 
     const lowerMsg = message.toLowerCase();
-    const msgWords = lowerMsg.split(/\s+/).filter(w => w.length >= 3);
+    // Filter message words: min 5 chars AND not a stop word
+    const msgWords = lowerMsg
+      .split(/\s+/)
+      .map(w => w.replace(/[^\w]/g, '')) // strip punctuation
+      .filter(w => w.length >= 5 && !STOP_WORDS.has(w));
 
     for (const banned of bannedResult.rows) {
-      const topicWords = banned.topic_name.toLowerCase().split(/[\s&,]+/).filter(w => w.length >= 3);
+      // Filter topic words the same way — only distinctive words count
+      const topicWords = banned.topic_name
+        .toLowerCase()
+        .split(/[\s&,\-—?!.]+/)
+        .map(w => w.replace(/[^\w]/g, ''))
+        .filter(w => w.length >= 5 && !STOP_WORDS.has(w));
+
+      if (topicWords.length === 0) continue;
+
       for (const tw of topicWords) {
         for (const mw of msgWords) {
-          // 1) 3-char prefix match (both words must be >= 4 chars to avoid false positives)
-          if (tw.length >= 4 && mw.length >= 4 && mw.slice(0, 3) === tw.slice(0, 3)) {
-            // If prefixes match, allow up to 2 edits for words of similar length
+          // Prefix + Levenshtein match: must share 3-char prefix, then be within
+          // edit distance 1 (short words) or 2 (longer words).
+          if (mw.slice(0, 3) === tw.slice(0, 3)) {
             const dist = levenshtein(mw, tw);
-            const maxDist = Math.max(tw.length, mw.length) <= 5 ? 1 : 2;
+            const maxDist = Math.max(tw.length, mw.length) <= 6 ? 1 : 2;
             if (dist <= maxDist) {
               console.log(`[checkBannedTopics] Fuzzy match: "${mw}" ≈ "${tw}" (distance ${dist}) for topic "${banned.topic_name}"`);
-              return { topicName: banned.topic_name, categoryName: banned.category_name };
-            }
-          }
-          // 2) Direct Levenshtein for short words (3-5 chars) — allow 1 edit
-          if (tw.length >= 3 && tw.length <= 5 && mw.length >= 3 && mw.length <= 5) {
-            if (levenshtein(mw, tw) <= 1) {
-              console.log(`[checkBannedTopics] Fuzzy match (short): "${mw}" ≈ "${tw}" for topic "${banned.topic_name}"`);
               return { topicName: banned.topic_name, categoryName: banned.category_name };
             }
           }

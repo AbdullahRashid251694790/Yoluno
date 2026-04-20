@@ -1,17 +1,16 @@
 /**
  * Kids Moments Page
  *
- * Full view of a child's moments — shared moments + mood check-ins.
- * Matches loveable KidsMomentsPage exactly. "Show Dad" button uses
- * the existing ShareWithParent/shared_moments system.
+ * Full view of a child's moments — reads from the shared_moments table which
+ * is auto-populated by the backend (curiosity, family_listen, mood_checkin,
+ * journey_complete, story_created) plus any manually-shared moments.
  */
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useChildProfile } from '@/hooks/queries';
 import { useChildSharedMoments } from '@/hooks/queries/useSharedMoments';
-import { useCreateSharedMoment } from '@/hooks/queries/useSharedMoments';
-import { useTodaysMood } from '@/hooks/queries/useMoodCheckin';
+import { useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/integrations/api/client';
 import { toast } from 'sonner';
 
@@ -56,58 +55,41 @@ export function KidsMomentsPage() {
 
   const { data: child } = useChildProfile(childId);
   const { data: sharedMoments = [] } = useChildSharedMoments(childId);
-  const { data: todaysMood } = useTodaysMood(childId);
-  const createShare = useCreateSharedMoment();
+  const queryClient = useQueryClient();
 
   const [localSharedIds, setLocalSharedIds] = useState<Set<string>>(new Set());
+  const [sharingIds, setSharingIds] = useState<Set<string>>(new Set());
 
-  // Build moments list from real data
-  const moments: MomentItem[] = [];
-
-  for (const m of sharedMoments) {
-    moments.push({
-      id: m.id,
-      name: m.title,
-      type: m.moment_type,
-      date: new Date(m.shared_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-      context: m.context || m.title,
-      reflection: m.reflection || undefined,
-      shared: m.is_seen || localSharedIds.has(m.id),
-      referenceId: m.reference_id || undefined,
-      childProfileId: m.child_profile_id,
-      momentType: m.moment_type,
-    });
-  }
-
-  if (todaysMood) {
-    moments.push({
-      id: 'mood-today',
-      name: 'Checked In',
-      type: 'mood_checkin',
-      date: 'Today',
-      context: `You told Luno you were feeling ${todaysMood.mood || 'something'} today.`,
-      reflection: undefined,
-      shared: true,
-      childProfileId: childId || '',
-      momentType: 'mood_checkin',
-    });
-  }
+  // All moments come from the shared_moments table (auto-populated by backend)
+  const moments: MomentItem[] = sharedMoments.map((m) => ({
+    id: m.id,
+    name: m.title,
+    type: m.moment_type,
+    date: new Date(m.shared_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+    context: m.context || m.title,
+    reflection: m.reflection || undefined,
+    shared: !m.is_auto || localSharedIds.has(m.id),
+    referenceId: m.reference_id || undefined,
+    childProfileId: m.child_profile_id,
+    momentType: m.moment_type,
+  }));
 
   const handleShare = async (moment: MomentItem) => {
     if (!childId) return;
+    setSharingIds((prev) => new Set([...prev, moment.id]));
     try {
-      await createShare.mutateAsync({
-        child_profile_id: childId,
-        moment_type: moment.momentType as any,
-        title: moment.name,
-        context: moment.context,
-        reflection: moment.reflection,
-        reference_id: moment.referenceId,
-      });
+      await apiClient.post(`/shared-moments/${moment.id}/share`);
       setLocalSharedIds((prev) => new Set([...prev, moment.id]));
+      queryClient.invalidateQueries({ queryKey: ['sharedMoments'] });
       toast.success('Shared with your parent!');
     } catch {
-      // mutation hook handles error
+      toast.error('Could not share right now');
+    } finally {
+      setSharingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(moment.id);
+        return next;
+      });
     }
   };
 
@@ -224,7 +206,7 @@ export function KidsMomentsPage() {
                 ) : (
                   <button
                     onClick={() => handleShare(m)}
-                    disabled={createShare.isPending}
+                    disabled={sharingIds.has(m.id)}
                     className="transition hover:bg-[#FDF6E8]"
                     style={{
                       border: '1.5px solid #D4A843',
@@ -237,7 +219,7 @@ export function KidsMomentsPage() {
                       cursor: 'pointer',
                     }}
                   >
-                    {createShare.isPending ? 'Sharing...' : 'Share with parent'}
+                    {sharingIds.has(m.id) ? 'Sharing...' : 'Share with parent'}
                   </button>
                 )}
               </div>

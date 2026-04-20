@@ -103,6 +103,7 @@ export function KidsJourneyDetailPage() {
                     <p className="text-body-sm text-lolo">Great job finishing all steps!</p>
                   </div>
                 </div>
+                {/* Share with parent button moved to My Moments page
                 {childId && (
                   <ShareWithParentButton
                     childId={childId}
@@ -114,6 +115,7 @@ export function KidsJourneyDetailPage() {
                     label="Share with your parent"
                   />
                 )}
+                */}
               </div>
             )}
           </CardContent>

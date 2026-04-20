@@ -17,7 +17,7 @@ router.use(requireAuth);
 
 const createSchema = z.object({
   child_profile_id: z.string().uuid(),
-  moment_type: z.enum(['journey_complete', 'story_created', 'story_read']),
+  moment_type: z.enum(['journey_complete', 'story_created', 'story_read', 'curiosity', 'family_listen', 'mood_checkin']),
   title: z.string().min(1).max(200),
   context: z.string().max(500).optional(),
   reflection: z.string().max(500).optional(),
@@ -28,7 +28,7 @@ interface SharedMomentRow {
   id: string;
   child_profile_id: string;
   user_id: string;
-  moment_type: 'journey_complete' | 'story_created' | 'story_read';
+  moment_type: 'journey_complete' | 'story_created' | 'story_read' | 'curiosity' | 'family_listen' | 'mood_checkin';
   title: string;
   context: string | null;
   reflection: string | null;
@@ -147,6 +147,32 @@ router.post(
     }
   }
 );
+
+/**
+ * POST /api/shared-moments/:id/share
+ * Promote an auto-created moment to a manually-shared one so it appears
+ * on the parent dashboard. Flips is_auto → false and is_seen → false.
+ */
+router.post('/:id/share', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = req.user!.id;
+    const row = await queryOne<SharedMomentRow>(
+      `UPDATE shared_moments sm
+       SET is_auto = false, is_seen = false, shared_at = NOW()
+       WHERE sm.id = $1 AND sm.user_id = $2
+       RETURNING sm.id, sm.child_profile_id, sm.user_id, sm.moment_type,
+                 sm.title, sm.context, sm.reflection, sm.reference_id,
+                 sm.is_seen, sm.is_auto, sm.shared_at::text`,
+      [req.params.id, userId]
+    );
+    if (!row) {
+      throw new AppError(404, 'Shared moment not found');
+    }
+    res.json(row);
+  } catch (error) {
+    next(error);
+  }
+});
 
 /**
  * PATCH /api/shared-moments/:id/seen

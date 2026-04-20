@@ -335,6 +335,29 @@ export function useUpdateChatSession() {
 }
 
 /**
+ * Mutation hook to delete a chat session
+ */
+export function useDeleteChatSession() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ childId, sessionId }: { childId: string; sessionId: string }) =>
+      buddyChatService.deleteSession(childId, sessionId),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.buddyChat.sessions(variables.childId),
+      });
+    },
+    onError: (error) => {
+      handleError(error, {
+        context: 'useDeleteChatSession',
+        userMessage: 'Failed to delete chat session',
+      });
+    },
+  });
+}
+
+/**
  * Mutation hook to send a message within a session
  */
 export function useSendSessionMessage() {

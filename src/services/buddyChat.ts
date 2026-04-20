@@ -423,6 +423,20 @@ export async function updateChatSession(
 }
 
 /**
+ * Delete a chat session (cascades to messages)
+ */
+export async function deleteChatSession(childId: string, sessionId: string): Promise<void> {
+  try {
+    await apiClient.delete(`/buddy-chat/${childId}/sessions/${sessionId}`);
+  } catch (error) {
+    throw handleError(error, {
+      context: 'buddyChat.deleteSession',
+      strategy: 'throw',
+    });
+  }
+}
+
+/**
  * Send a message within a specific session
  */
 export async function sendSessionMessage(
@@ -478,5 +492,6 @@ export const buddyChatService = {
   getSession: getChatSession,
   getSessionMessages,
   updateSession: updateChatSession,
+  deleteSession: deleteChatSession,
   sendSessionMessage,
 };
