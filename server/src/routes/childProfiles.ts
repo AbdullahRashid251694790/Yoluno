@@ -195,14 +195,21 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
   }
 });
 
+// Age bracket used to decide whether changing age should re-seed journeys
+function ageBracket(age: number): 'young' | 'mid' | 'older' {
+  if (age <= 6) return 'young';
+  if (age <= 9) return 'mid';
+  return 'older';
+}
+
 // PUT /api/child-profiles/:id
 router.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { name, age, gender, avatar_id, custom_avatar_url, interests, learning_style, pin_hash, session_time_limit_minutes } = req.body;
 
-    // Verify ownership
-    const existing = await queryOne<ChildProfile>(
-      'SELECT id FROM child_profiles WHERE id = $1 AND user_id = $2',
+    // Verify ownership and capture current age for bracket-change detection
+    const existing = await queryOne<{ id: string; age: number }>(
+      'SELECT id, age FROM child_profiles WHERE id = $1 AND user_id = $2',
       [req.params.id, req.user!.id]
     );
 
@@ -226,6 +233,14 @@ router.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
        RETURNING *`,
       [name, age, gender, avatar_id, custom_avatar_url, interests, learning_style, pin_hash, session_time_limit_minutes ?? null, req.params.id]
     );
+
+    // Re-seed age-appropriate journeys if the child crossed an age bracket
+    // (assignDefaultJourneys is idempotent via template_id dedup)
+    if (typeof age === 'number' && ageBracket(age) !== ageBracket(existing.age)) {
+      assignDefaultJourneys(req.params.id, age).catch((err) => {
+        console.error('Failed to re-seed journeys after age change:', err);
+      });
+    }
 
     res.json(result);
   } catch (error) {

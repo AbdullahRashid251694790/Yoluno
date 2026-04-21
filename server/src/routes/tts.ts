@@ -37,6 +37,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
         speed,
         response_format: 'mp3',
       }),
+      signal: AbortSignal.timeout(30000),
     });
 
     if (!response.ok) {

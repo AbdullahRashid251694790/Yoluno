@@ -445,6 +445,7 @@ ILLUSTRATION: [Description]
         max_tokens: 4000,
         temperature: 0.95,
       }),
+      signal: AbortSignal.timeout(60000),
     });
 
     if (!response.ok) {
@@ -545,6 +546,7 @@ ${type === 'cover' ? 'Cover illustration — eye-catching and magical.' : ''}`;
           { role: 'user', content: fullPrompt },
         ],
       }),
+      signal: AbortSignal.timeout(90000),
     });
 
     if (!response.ok) {

@@ -59,6 +59,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
         max_tokens: 500,
         temperature: 0.1,
       }),
+      signal: AbortSignal.timeout(45000),
     });
 
     if (!response.ok) {

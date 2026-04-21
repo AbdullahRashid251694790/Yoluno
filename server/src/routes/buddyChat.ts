@@ -464,7 +464,7 @@ router.delete('/:childId/sessions/:sessionId', async (req: Request, res: Respons
     const { childId, sessionId } = req.params;
     await verifyChildAccess(childId, req.user!.id);
 
-    // Messages CASCADE via session_id FK; shared_moments with reference_id=sessionId stay
+    // Messages CASCADE via session_id FK; shared_moments cleaned by trigger in migration 068
     const result = await query(
       `DELETE FROM chat_sessions WHERE id = $1 AND child_profile_id = $2`,
       [sessionId, childId]
@@ -845,6 +845,7 @@ Do NOT use emojis. Do NOT include your name at the start. Do NOT use quotation m
           max_tokens: 200,
           temperature: 0.8,
         }),
+        signal: AbortSignal.timeout(30000),
       });
 
       if (!response.ok) {
@@ -939,6 +940,7 @@ Rules:
         max_tokens: 20,
         temperature: 0.3,
       }),
+      signal: AbortSignal.timeout(15000),
     });
 
     if (!response.ok) return;
@@ -989,6 +991,7 @@ async function analyzeImage(imageBuffer: Buffer, mimeType: string): Promise<stri
         ],
         max_tokens: 150,
       }),
+      signal: AbortSignal.timeout(30000),
     });
 
     if (!response.ok) {
@@ -1387,6 +1390,7 @@ async function generateBuddyResponse(
         // Age-based temperature: younger = more playful/creative, older = more focused/precise
         temperature: child.age <= 6 ? 0.9 : child.age <= 9 ? 0.7 : 0.5,
       }),
+      signal: AbortSignal.timeout(30000),
     });
 
     if (!response.ok) {
@@ -2024,33 +2028,40 @@ async function fuzzyBannedCheck(
     );
 
     const lowerMsg = message.toLowerCase();
-    // Filter message words: min 5 chars AND not a stop word
+    // Filter message words: min 3 chars (to cover short banned topics like "guns")
+    // AND not a stop word. Stop-word filter is the main defense against false
+    // positives — shortening the length gate only recovers typo tolerance for
+    // short banned topic names.
     const msgWords = lowerMsg
       .split(/\s+/)
       .map(w => w.replace(/[^\w]/g, '')) // strip punctuation
-      .filter(w => w.length >= 5 && !STOP_WORDS.has(w));
+      .filter(w => w.length >= 3 && !STOP_WORDS.has(w));
 
     for (const banned of bannedResult.rows) {
-      // Filter topic words the same way — only distinctive words count
       const topicWords = banned.topic_name
         .toLowerCase()
         .split(/[\s&,\-—?!.]+/)
         .map(w => w.replace(/[^\w]/g, ''))
-        .filter(w => w.length >= 5 && !STOP_WORDS.has(w));
+        .filter(w => w.length >= 3 && !STOP_WORDS.has(w));
 
       if (topicWords.length === 0) continue;
 
       for (const tw of topicWords) {
         for (const mw of msgWords) {
-          // Prefix + Levenshtein match: must share 3-char prefix, then be within
-          // edit distance 1 (short words) or 2 (longer words).
-          if (mw.slice(0, 3) === tw.slice(0, 3)) {
-            const dist = levenshtein(mw, tw);
-            const maxDist = Math.max(tw.length, mw.length) <= 6 ? 1 : 2;
-            if (dist <= maxDist) {
-              console.log(`[checkBannedTopics] Fuzzy match: "${mw}" ≈ "${tw}" (distance ${dist}) for topic "${banned.topic_name}"`);
-              return { topicName: banned.topic_name, categoryName: banned.category_name };
-            }
+          // Length-similarity guard: words can only match if lengths are within 2
+          if (Math.abs(mw.length - tw.length) > 2) continue;
+
+          // Prefix requirement: 3 chars for longer words, 2 for shorter (≤5)
+          const prefixLen = Math.min(tw.length, mw.length) >= 5 ? 3 : 2;
+          if (mw.slice(0, prefixLen) !== tw.slice(0, prefixLen)) continue;
+
+          const dist = levenshtein(mw, tw);
+          const maxLen = Math.max(tw.length, mw.length);
+          // Stricter edit distance for short words (higher false-positive risk)
+          const maxDist = maxLen <= 6 ? 1 : 2;
+          if (dist <= maxDist) {
+            console.log(`[checkBannedTopics] Fuzzy match: "${mw}" ≈ "${tw}" (distance ${dist}) for topic "${banned.topic_name}"`);
+            return { topicName: banned.topic_name, categoryName: banned.category_name };
           }
         }
       }
@@ -2101,6 +2112,7 @@ Write 2-3 short sentences. No emojis. Do NOT include your name at the start.`;
         max_tokens: 200,
         temperature: 0.7,
       }),
+      signal: AbortSignal.timeout(20000),
     });
 
     if (response.ok) {

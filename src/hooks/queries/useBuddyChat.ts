@@ -75,13 +75,13 @@ export function useSendBuddyMessage() {
       const previous = queryClient.getQueryData(
         queryKeys.buddyChat.messages(variables.childId)
       );
-      // Optimistically add the user's message
+      // Optimistically add the user's message (crypto.randomUUID avoids ID collisions on rapid sends)
       queryClient.setQueryData(
         queryKeys.buddyChat.messages(variables.childId),
         (old: any[] | undefined) => [
           ...(old || []),
           {
-            id: `optimistic-${Date.now()}`,
+            id: `optimistic-${crypto.randomUUID()}`,
             child_profile_id: variables.childId,
             chat_buddy_id: '',
             role: 'child',
@@ -384,7 +384,7 @@ export function useSendSessionMessage() {
         (old: any[] | undefined) => [
           ...(old || []),
           {
-            id: `optimistic-${Date.now()}`,
+            id: `optimistic-${crypto.randomUUID()}`,
             child_profile_id: variables.childId,
             chat_buddy_id: '',
             role: 'child',

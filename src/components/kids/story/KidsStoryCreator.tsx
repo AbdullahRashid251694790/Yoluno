@@ -136,9 +136,16 @@ export function KidsStoryCreator({ childId, onClose, onSuccess }: KidsStoryCreat
     setScreen('setting');
   };
 
+  const sanitizeCharacterName = (raw: string): string => {
+    // Strip control chars/newlines, collapse whitespace, cap at 40 chars
+    // eslint-disable-next-line no-control-regex
+    return raw.replace(/[\x00-\x1F\x7F]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 40);
+  };
+
   const handleCustomCharacterConfirm = () => {
-    if (!customCharacterName.trim()) return;
-    setCharacter(customCharacterName.trim());
+    const cleaned = sanitizeCharacterName(customCharacterName);
+    if (!cleaned) return;
+    setCharacter(cleaned);
     setShowCustomCharacterInput(false);
     setScreen('setting');
   };
@@ -309,6 +316,7 @@ export function KidsStoryCreator({ childId, onClose, onSuccess }: KidsStoryCreat
               onChange={(e) => setCustomCharacterName(e.target.value)}
               placeholder="Type a name..."
               autoFocus
+              maxLength={40}
               onKeyDown={(e) => { if (e.key === 'Enter') handleCustomCharacterConfirm(); }}
               className="w-full rounded-xl px-4 py-3 mb-4 outline-none"
               style={{ border: '1.5px solid #E8E6E1', fontSize: 15, color: '#2A2926', background: '#F5F3EE' }}

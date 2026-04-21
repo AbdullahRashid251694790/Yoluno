@@ -107,8 +107,8 @@ router.post('/login', async (req: Request, res: Response, next: NextFunction) =>
       throw new AppError(401, 'Invalid email or password');
     }
 
-    // Block unverified users
-    if (!user.email_verified) {
+    // Block unverified users (strict: only true passes; NULL and false both blocked)
+    if (user.email_verified !== true) {
       res.status(403).json({
         error: 'EMAIL_NOT_VERIFIED',
         message: 'Please verify your email before signing in. Check your inbox for the verification link.',

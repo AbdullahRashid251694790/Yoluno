@@ -161,7 +161,7 @@ function SafetyReportsInline({
   const markReviewed = useMarkSafetyReportReviewed();
 
   const filtered = filter === 'unread'
-    ? reports.filter((r) => !r.is_reviewed && !r.reviewed)
+    ? reports.filter((r) => !r.reviewed)
     : reports;
 
   // Exclude yellow (redirections — shown in their own section above)
@@ -523,7 +523,7 @@ export function SafetyDashboardPage() {
               When your child's curiosity crossed a boundary, here's what happened
             </p>
 
-            {childReports.filter((r: any) => isTopicRedirect(r) && !r.reviewed && !r.is_reviewed).length === 0 ? (
+            {childReports.filter((r: any) => isTopicRedirect(r) && !r.reviewed).length === 0 ? (
               <div
                 className="bg-white rounded-xl border p-8 text-center"
                 style={{ borderColor: '#E8E6E1' }}
@@ -536,7 +536,7 @@ export function SafetyDashboardPage() {
             ) : (
               <div className="flex flex-col gap-4">
                 {childReports
-                  .filter((r: any) => isTopicRedirect(r) && !r.reviewed && !r.is_reviewed)
+                  .filter((r: any) => isTopicRedirect(r) && !r.reviewed)
                   .slice(0, 10)
                   .map((r: any) => (
                     <div

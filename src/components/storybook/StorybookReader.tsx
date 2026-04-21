@@ -47,6 +47,7 @@ export function StorybookReader({
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [showVoiceSelector, setShowVoiceSelector] = useState(false);
   const [autoPlayOnStart, setAutoPlayOnStart] = useState(false);
+  const [isRegenerating, setIsRegenerating] = useState(false);
   const [narratorVoice, setNarratorVoice] = useState<NarratorVoice>({
     type: 'ai',
     voiceId: initialVoice,
@@ -119,6 +120,21 @@ export function StorybookReader({
       })
       .catch(() => {});
   }, [childId, storyId, currentPage, totalPages]);
+
+  // Regenerate failed illustrations (resets failed → pending, server re-queues them)
+  const handleRegenerateIllustrations = useCallback(async () => {
+    if (isRegenerating) return;
+    setIsRegenerating(true);
+    try {
+      await apiClient.post(`/generate-story/${storyId}/regenerate-illustrations`);
+      // Invalidate so the reader picks up the new 'pending' status and resumes polling
+      queryClient.invalidateQueries({ queryKey: queryKeys.storyPages.forStory(storyId) });
+    } catch (error) {
+      console.error('Failed to regenerate illustrations:', error);
+    } finally {
+      setIsRegenerating(false);
+    }
+  }, [storyId, isRegenerating, queryClient]);
 
   // Preload adjacent page images so transitions are instant
   useEffect(() => {
@@ -336,6 +352,8 @@ export function StorybookReader({
               pageNumber={currentPage}
               totalPages={totalPages - 1}
               isActive={!isTransitioning}
+              onRegenerate={currentPageData?.illustration_status === 'failed' ? handleRegenerateIllustrations : undefined}
+              isRegenerating={isRegenerating}
             />
           )}
         </div>

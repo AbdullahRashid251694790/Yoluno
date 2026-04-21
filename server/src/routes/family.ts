@@ -333,6 +333,7 @@ If a field is not mentioned, use null for strings or empty array for hobbies.`;
         max_tokens: 500,
         temperature: 0.3,
       }),
+      signal: AbortSignal.timeout(30000),
     });
 
     if (!response.ok) {

@@ -797,6 +797,7 @@ Remember: Respond with ONLY the JSON object, no other text.`;
           max_tokens: 2000,
           temperature: 0.5,
         }),
+        signal: AbortSignal.timeout(45000),
       });
 
       if (!response.ok) {

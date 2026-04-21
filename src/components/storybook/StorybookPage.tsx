@@ -4,7 +4,7 @@
  * Single page of the storybook with illustration and text.
  */
 
-import { Loader2, ImageOff } from 'lucide-react';
+import { Loader2, ImageOff, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getUploadUrl } from '@/integrations/api/client';
 import type { StoryPage } from '@/services/storyPages';
@@ -14,6 +14,8 @@ interface StorybookPageProps {
   pageNumber: number;
   totalPages: number;
   isActive: boolean;
+  onRegenerate?: () => void;
+  isRegenerating?: boolean;
 }
 
 export function StorybookPage({
@@ -21,6 +23,8 @@ export function StorybookPage({
   pageNumber,
   totalPages,
   isActive,
+  onRegenerate,
+  isRegenerating,
 }: StorybookPageProps) {
   const illustrationUrl = page.illustration_url
     ? getUploadUrl(page.illustration_url)
@@ -57,9 +61,28 @@ export function StorybookPage({
           </div>
         ) : (
           <div className="w-full aspect-square flex items-center justify-center bg-gradient-to-br from-muted to-muted-foreground/30">
-            <div className="text-center text-muted-foreground">
+            <div className="text-center text-muted-foreground px-4">
               <ImageOff className="h-12 w-12 mx-auto mb-2" />
-              <p className="text-body-sm">Illustration unavailable</p>
+              <p className="text-body-sm mb-3">Illustration unavailable</p>
+              {onRegenerate && (
+                <button
+                  onClick={onRegenerate}
+                  disabled={isRegenerating}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-primary text-primary-foreground text-body-sm font-medium hover:opacity-90 disabled:opacity-60 transition"
+                >
+                  {isRegenerating ? (
+                    <>
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      Trying...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="h-3.5 w-3.5" />
+                      Try again
+                    </>
+                  )}
+                </button>
+              )}
             </div>
           </div>
         )}
