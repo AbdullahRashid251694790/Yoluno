@@ -530,7 +530,7 @@ Style: Colorful, friendly, whimsical, picture book style, digital art.
 ${theme ? `Theme: ${theme}.` : ''}
 ${mood ? `Mood: ${mood}.` : ''}
 No text or words in the image. Warm and inviting atmosphere.
-${type === 'cover' ? 'Cover illustration — eye-catching and magical.' : ''}`;
+${type === 'cover' ? "Cover illustration — eye-catching and magical. Use a predominantly lavender-purple color palette as the cover's primary identity — lavender, lilac, dusty violet, warm purple tones. Mood and scene can still shift tone and brightness within this purple range." : ''}`;
 
   try {
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {

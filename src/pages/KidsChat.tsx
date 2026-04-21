@@ -131,15 +131,15 @@ export function KidsChatPage() {
           },
         }
       );
-    } else if (!currentSessionId && sessions.length > 0) {
-      activateSession(sessions[0].id);
-    } else if (
-      !currentSessionId &&
-      sessions.length === 0 &&
-      !moodParam &&
-      !createSession.isPending
-    ) {
-      createSession.mutate({ childId }, { onSuccess: (s) => activateSession(s.id) });
+    } else if (!currentSessionId && !moodParam && !createSession.isPending) {
+      // Clicking the chatbot always lands in a fresh chat. If an empty session
+      // already exists, reuse it instead of creating duplicates.
+      const emptySession = sessions.find((s) => s.message_count === 0);
+      if (emptySession) {
+        activateSession(emptySession.id);
+      } else {
+        createSession.mutate({ childId }, { onSuccess: (s) => activateSession(s.id) });
+      }
     }
   }, [childId, sessions, currentSessionId, moodParam, isLoading]);
 

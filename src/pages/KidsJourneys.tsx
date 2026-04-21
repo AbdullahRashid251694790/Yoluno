@@ -78,7 +78,7 @@ export function KidsJourneysPage() {
   const hasCompleted = completedJourneys.length > 0;
   const isEmpty = !hasActive && !hasCompleted;
 
-  const [activeTab, setActiveTab] = useState<TabKey>(hasActive ? 'active' : 'done');
+  const [activeTab, setActiveTab] = useState<TabKey>('active');
   const [requested, setRequested] = useState(false);
 
   const greeting = (() => {
