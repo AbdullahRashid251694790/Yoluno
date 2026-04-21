@@ -1,17 +1,17 @@
 import React from "react";
 import PageCTA from "@/components/landing/PageCTA";
 import { Link } from "react-router-dom";
-import chatScreenshotImg from "@/assets/landing/chat-screenshot.png";
-import moodCheckinImg from "@/assets/landing/mood-checkin.png";
+const chatScreenshotImg = "/landing/chat.png";
+const moodCheckinImg = "/landing/mood.png";
 import { Button } from "@/components/ui/button";
 import AnimatedSection from "@/components/landing/AnimatedSection";
 import lunoImg from "@/assets/landing/luno.png";
 import loloImg from "@/assets/landing/lolo.png";
 import lumiImg from "@/assets/landing/lumi.png";
 import lalaImg from "@/assets/landing/lala.png";
-import parentDashboardImg from "@/assets/landing/parent-dashboard-features.png";
-import journeysIslandImg from "@/assets/landing/island-journeys.png";
-import familyIslandImg from "@/assets/landing/island-family.png";
+const parentDashboardImg = "/landing/kid-home.png";
+const journeysIslandImg = "/landing/journey.png";
+const familyIslandImg = "/landing/family.png";
 import chatIslandImg from "@/assets/landing/island-chat-feature.png";
 import storiesIslandImg from "@/assets/landing/island-stories-feature.png";
 import storiesScreenshotImg from "@/assets/landing/stories-screenshot.png";
@@ -417,7 +417,7 @@ export default function FeaturesPage() {
               Your Parent Dashboard gives you full visibility — conversation summaries, topics explored, time spent, and anything flagged. You choose how closely you follow along.
             </p>
             <div className="rounded-2xl overflow-hidden shadow-warm border border-border max-w-2xl mx-auto">
-              <img src={parentDashboardImg} alt="Yoluno Parent Dashboard" className="w-full h-auto" loading="lazy" />
+              <img src={parentDashboardImg} alt="Yoluno kids home screen" className="w-full h-auto" loading="lazy" />
             </div>
             <Button variant="outline" size="lg" className="mt-8" asChild>
               <Link to="/for-parents">Learn More About Parent Controls →</Link>

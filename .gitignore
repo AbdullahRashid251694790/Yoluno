@@ -16,6 +16,10 @@ dist/
 # OS files
 .DS_Store
 Thumbs.db
+desktop.ini
+
+# Local archive of unused assets (kept locally for reference, not deployed)
+extras/
 
 # Logs
 *.log

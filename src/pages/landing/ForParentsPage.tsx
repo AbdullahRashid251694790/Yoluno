@@ -3,9 +3,9 @@ import PageCTA from "@/components/landing/PageCTA";
 import { Button } from "@/components/ui/button";
 import { MessageCircle, Shield, Eye, ChevronRight } from "lucide-react";
 import AnimatedSection from "@/components/landing/AnimatedSection";
-import parentDashboardImg from "@/assets/landing/parent-dashboard-forparents.png";
+const parentDashboardImg = "/landing/topics.png";
 import walledGardenImg from "@/assets/landing/walled-garden.png";
-import safetyLunoChatImg from "@/assets/landing/safety-luno-chat.png";
+const safetyLunoChatImg = "/landing/safety.png";
 
 const designedAgainst = [
   "No connection to the open internet — there is no pathway in or out",
@@ -102,7 +102,7 @@ export default function ForParentsPage() {
 
           <AnimatedSection delay={0.3}>
             <div className="rounded-2xl overflow-hidden shadow-warm border border-border mb-8">
-              <img src={parentDashboardImg} alt="Yoluno Parent Dashboard" className="w-full h-auto" loading="lazy" />
+              <img src={parentDashboardImg} alt="Parent-controlled topic settings — allow and block topics per child" className="w-full h-auto" loading="lazy" />
             </div>
           </AnimatedSection>
 
@@ -147,7 +147,7 @@ export default function ForParentsPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <AnimatedSection>
               <div className="rounded-2xl overflow-hidden shadow-warm border border-border">
-                <img src={safetyLunoChatImg} alt="Yoluno Safety & Luno Chat settings dashboard" className="w-full h-auto" loading="lazy" />
+                <img src={safetyLunoChatImg} alt="Yoluno safety dashboard — flagged conversations and redirections" className="w-full h-auto" loading="lazy" />
               </div>
             </AnimatedSection>
             <AnimatedSection delay={0.15}>

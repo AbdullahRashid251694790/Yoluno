@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import AnimatedSection from "@/components/landing/AnimatedSection";
-import parentDashboard from "@/assets/landing/parent-dashboard.png";
+const parentDashboard = "/landing/kid-home.png";
 
 const trustItems = [
   { icon: "🏡", label: "Closed Environment", desc: "No open internet. Every experience is designed within safety boundaries you control. The English National Curriculum — Key Stage 1 through Key Stage 4 — is built into Yoluno, so your child's exploration supports what they're learning at school." },
@@ -17,7 +17,7 @@ export default function TrustSection() {
           {/* Left — Dashboard Image */}
           <AnimatedSection>
             <div className="rounded-2xl overflow-hidden shadow-warm border border-border">
-              <img src={parentDashboard} alt="Yoluno Parent Dashboard showing children's moods, weekly progress, and quick actions" className="w-full h-auto" />
+              <img src={parentDashboard} alt="Yoluno kids home screen — calm space with four exploration areas" className="w-full h-auto" />
             </div>
           </AnimatedSection>
 
