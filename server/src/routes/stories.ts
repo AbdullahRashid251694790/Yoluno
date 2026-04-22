@@ -340,6 +340,45 @@ router.post('/:storyId/progress', async (req: Request, res: Response, next: Next
       [child_profile_id, storyId, last_page_read, total_pages]
     );
 
+    // When a kid finishes a PARENT-created story, auto-create a story_read
+    // moment so they can share the milestone. Kid-created stories already
+    // got a story_created moment at creation, so they're skipped here to
+    // avoid double-moments for the same story. Fire-and-forget: failures
+    // here must never break the progress upsert.
+    if (total_pages > 0 && last_page_read >= total_pages) {
+      (async () => {
+        try {
+          const story = await queryOne<{ title: string; theme: string | null; created_by: string | null }>(
+            `SELECT title, theme, created_by FROM stories WHERE id = $1`,
+            [storyId]
+          );
+          if (!story || story.created_by !== 'parent') return;
+
+          const existing = await queryOne<{ id: string }>(
+            `SELECT id FROM shared_moments
+             WHERE child_profile_id = $1 AND moment_type = 'story_read' AND reference_id = $2::uuid`,
+            [child_profile_id, storyId]
+          );
+          if (existing) return;
+
+          await query(
+            `INSERT INTO shared_moments
+               (child_profile_id, user_id, moment_type, title, context, reference_id, is_seen, is_auto)
+             VALUES ($1, $2, 'story_read', $3, $4, $5, true, true)`,
+            [
+              child_profile_id,
+              userId,
+              `Read "${story.title}"`,
+              `Finished reading "${story.title}"${story.theme ? ` — a ${story.theme} adventure` : ''}.`,
+              storyId,
+            ]
+          );
+        } catch (err) {
+          console.error('Error creating story_read moment:', (err as Error).message);
+        }
+      })();
+    }
+
     res.json({ ok: true });
   } catch (error) {
     next(error);

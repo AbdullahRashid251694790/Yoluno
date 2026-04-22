@@ -121,59 +121,64 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
       console.error('Background illustration generation failed:', error);
     });
 
-    // Notify parent if they opted in
-    (async () => {
-      try {
-        const prefs = await queryOne<{ notify_on_story: boolean }>(
-          'SELECT notify_on_story FROM user_safety_settings WHERE user_id = $1',
-          [req.user!.id]
-        );
-        if (prefs?.notify_on_story !== true) return;
-        const childInfo = await queryOne<{ name: string }>(
-          'SELECT name FROM child_profiles WHERE id = $1',
-          [child_profile_id]
-        );
-        await query(
-          `INSERT INTO parent_notifications (user_id, child_profile_id, notification_type, title, message)
-           VALUES ($1, $2, 'story_created', $3, $4)`,
-          [
-            req.user!.id,
-            child_profile_id,
-            `${childInfo?.name || 'Your child'} created a new story!`,
-            `${childInfo?.name || 'Your child'} just created "${storyContent.title}". Check it out in the Stories section!`,
-          ]
-        );
-      } catch (err) {
-        console.error('Error sending story notification:', (err as Error).message);
-      }
-    })();
+    // Parent-created stories skip the notification and moment entirely —
+    // the parent is the originator, so there's nothing for the child to
+    // "share" and no new event to notify the parent about.
+    if (created_by !== 'parent') {
+      // Notify parent if they opted in
+      (async () => {
+        try {
+          const prefs = await queryOne<{ notify_on_story: boolean }>(
+            'SELECT notify_on_story FROM user_safety_settings WHERE user_id = $1',
+            [req.user!.id]
+          );
+          if (prefs?.notify_on_story !== true) return;
+          const childInfo = await queryOne<{ name: string }>(
+            'SELECT name FROM child_profiles WHERE id = $1',
+            [child_profile_id]
+          );
+          await query(
+            `INSERT INTO parent_notifications (user_id, child_profile_id, notification_type, title, message)
+             VALUES ($1, $2, 'story_created', $3, $4)`,
+            [
+              req.user!.id,
+              child_profile_id,
+              `${childInfo?.name || 'Your child'} created a new story!`,
+              `${childInfo?.name || 'Your child'} just created "${storyContent.title}". Check it out in the Stories section!`,
+            ]
+          );
+        } catch (err) {
+          console.error('Error sending story notification:', (err as Error).message);
+        }
+      })();
 
-    // Auto-create a Growth Journal moment (dedup by story id)
-    (async () => {
-      try {
-        const existing = await queryOne<{ id: string }>(
-          `SELECT id FROM shared_moments
-           WHERE child_profile_id = $1 AND moment_type = 'story_created' AND reference_id = $2::uuid`,
-          [child_profile_id, storyId]
-        );
-        if (existing) return;
+      // Auto-create a Growth Journal moment (dedup by story id)
+      (async () => {
+        try {
+          const existing = await queryOne<{ id: string }>(
+            `SELECT id FROM shared_moments
+             WHERE child_profile_id = $1 AND moment_type = 'story_created' AND reference_id = $2::uuid`,
+            [child_profile_id, storyId]
+          );
+          if (existing) return;
 
-        await query(
-          `INSERT INTO shared_moments
-             (child_profile_id, user_id, moment_type, title, context, reference_id, is_seen, is_auto)
-           VALUES ($1, $2, 'story_created', $3, $4, $5, true, true)`,
-          [
-            child_profile_id,
-            req.user!.id,
-            `Created "${storyContent.title}"`,
-            `Created a new story with Lumi: "${storyContent.title}"${theme ? ` — a ${theme} adventure` : ''}.`,
-            storyId,
-          ]
-        );
-      } catch (err) {
-        console.error('Error creating story moment:', (err as Error).message);
-      }
-    })();
+          await query(
+            `INSERT INTO shared_moments
+               (child_profile_id, user_id, moment_type, title, context, reference_id, is_seen, is_auto)
+             VALUES ($1, $2, 'story_created', $3, $4, $5, true, true)`,
+            [
+              child_profile_id,
+              req.user!.id,
+              `Created "${storyContent.title}"`,
+              `Created a new story with Lumi: "${storyContent.title}"${theme ? ` — a ${theme} adventure` : ''}.`,
+              storyId,
+            ]
+          );
+        } catch (err) {
+          console.error('Error creating story moment:', (err as Error).message);
+        }
+      })();
+    }
 
     res.status(201).json({
       story: {
