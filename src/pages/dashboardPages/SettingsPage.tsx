@@ -586,7 +586,6 @@ export function SettingsPage() {
               { label: 'Data Practices', to: '/data-practices' },
               { label: 'Safety Charter', to: '/safety-charter' },
               { label: 'How AI Works in Yoluno', to: '/how-ai-works' },
-              /* { label: 'Terms of Service', to: '/terms-of-service' }, — no page yet */
             ].map((link) => (
               <Link
                 key={link.label}
