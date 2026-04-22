@@ -9,20 +9,9 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { query, queryOne } from '../config/database.js';
 import { requireAuth } from '../middleware/auth.js';
 import { AppError } from '../middleware/errorHandler.js';
-import { z } from 'zod';
-import { validateBody } from '../utils/validation.js';
 
 const router = Router();
 router.use(requireAuth);
-
-const createSchema = z.object({
-  child_profile_id: z.string().uuid(),
-  moment_type: z.enum(['journey_complete', 'story_created', 'story_read', 'curiosity', 'family_listen', 'mood_checkin']),
-  title: z.string().min(1).max(200),
-  context: z.string().max(500).optional(),
-  reflection: z.string().max(500).optional(),
-  reference_id: z.string().uuid().optional(),
-});
 
 interface SharedMomentRow {
   id: string;
@@ -78,75 +67,6 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
     next(error);
   }
 });
-
-/**
- * POST /api/shared-moments
- * Create a new shared moment — called from kids flows when a child taps
- * "Share with parent". The child must belong to the authenticated parent
- * (we rely on the same session since kids mode runs under the parent auth).
- */
-router.post(
-  '/',
-  validateBody(createSchema),
-  async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const userId = req.user!.id;
-      const {
-        child_profile_id,
-        moment_type,
-        title,
-        context,
-        reflection,
-        reference_id,
-      } = req.body;
-
-      // Verify the child belongs to this user
-      const child = await queryOne<{ id: string }>(
-        'SELECT id FROM child_profiles WHERE id = $1 AND user_id = $2',
-        [child_profile_id, userId]
-      );
-      if (!child) {
-        throw new AppError(404, 'Child profile not found');
-      }
-
-      // Prevent duplicates — if same child + type + reference already shared, return existing
-      if (reference_id) {
-        const existing = await queryOne<SharedMomentRow>(
-          `SELECT id, child_profile_id, user_id, moment_type, title, context, reflection,
-                  reference_id, is_seen, shared_at::text
-           FROM shared_moments
-           WHERE child_profile_id = $1 AND moment_type = $2 AND reference_id = $3`,
-          [child_profile_id, moment_type, reference_id]
-        );
-        if (existing) {
-          res.status(200).json({ ...existing, already_shared: true });
-          return;
-        }
-      }
-
-      const row = await queryOne<SharedMomentRow>(
-        `INSERT INTO shared_moments
-           (child_profile_id, user_id, moment_type, title, context, reflection, reference_id)
-         VALUES ($1, $2, $3, $4, $5, $6, $7)
-         RETURNING id, child_profile_id, user_id, moment_type, title, context, reflection,
-                   reference_id, is_seen, shared_at::text`,
-        [
-          child_profile_id,
-          userId,
-          moment_type,
-          title,
-          context || null,
-          reflection || null,
-          reference_id || null,
-        ]
-      );
-
-      res.status(201).json(row);
-    } catch (error) {
-      next(error);
-    }
-  }
-);
 
 /**
  * POST /api/shared-moments/:id/share

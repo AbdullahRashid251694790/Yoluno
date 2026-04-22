@@ -10,7 +10,6 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { ChildProvider } from '@/contexts/ChildContext';
-import { ChatProvider } from '@/contexts/ChatContext';
 
 // Pages
 import { LoginPage } from '@/pages/Login';
@@ -100,8 +99,7 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <ChildProvider>
-          <ChatProvider>
-            <BrowserRouter>
+          <BrowserRouter>
               <ScrollToTop />
               <KidsScreenTimeTracker />
               <Routes>
@@ -260,9 +258,8 @@ export default function App() {
                 {/* 404 */}
                 <Route path="*" element={<NotFoundPage />} />
               </Routes>
-            </BrowserRouter>
-            <Toaster position="top-right" richColors />
-          </ChatProvider>
+          </BrowserRouter>
+          <Toaster position="top-right" richColors />
         </ChildProvider>
       </AuthProvider>
     </QueryClientProvider>

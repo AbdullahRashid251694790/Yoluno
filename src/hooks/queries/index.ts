@@ -24,7 +24,6 @@ export {
   useStory,
   useFavoriteStories,
   useRecentStories,
-  useCreateStory,
   useUpdateStory,
   useDeleteStory,
   useToggleFavorite,

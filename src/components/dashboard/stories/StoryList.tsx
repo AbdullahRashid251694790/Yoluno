@@ -63,7 +63,7 @@ export function StoryList() {
                     key={story.id}
                     story={story}
                     onRead={() => {
-                      // TODO: Open story reader
+                      /* Story reader is rendered elsewhere; no-op here. */
                     }}
                     onToggleFavorite={() =>
                       handleToggleFavorite(story.id, story.is_favorite)

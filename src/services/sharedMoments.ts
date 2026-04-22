@@ -5,7 +5,7 @@
  * story creations, story reads) that surface on the parent dashboard.
  */
 
-import { apiGet, apiPost } from '@/lib/api';
+import { apiGet } from '@/lib/api';
 import { apiClient } from '@/integrations/api/client';
 
 const CONTEXT = 'sharedMoments';
@@ -25,15 +25,6 @@ export interface SharedMoment {
   is_auto: boolean;
   shared_at: string;
   child_name: string;
-}
-
-export interface CreateSharedMomentInput {
-  child_profile_id: string;
-  moment_type: SharedMomentType;
-  title: string;
-  context?: string;
-  reflection?: string;
-  reference_id?: string;
 }
 
 export async function listSharedMoments(): Promise<SharedMoment[]> {
@@ -59,16 +50,6 @@ export async function listChildSharedMoments(childId: string): Promise<SharedMom
   );
 }
 
-export async function createSharedMoment(
-  input: CreateSharedMomentInput
-): Promise<SharedMoment> {
-  return apiPost<SharedMoment>(
-    '/shared-moments',
-    `${CONTEXT}.create`,
-    input
-  );
-}
-
 export async function markSharedMomentSeen(id: string): Promise<void> {
   await apiClient.patch(`/shared-moments/${id}/seen`);
 }
@@ -76,6 +57,5 @@ export async function markSharedMomentSeen(id: string): Promise<void> {
 export const sharedMomentsService = {
   listSharedMoments,
   listChildSharedMoments,
-  createSharedMoment,
   markSharedMomentSeen,
 };

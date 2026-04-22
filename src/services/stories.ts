@@ -5,8 +5,8 @@
  * Refactored to use generic API wrapper for DRY compliance.
  */
 
-import { apiGet, apiGetOrNull, apiPost, apiPut, apiDelete } from '@/lib/api';
-import type { StoryRow, StoryInsert, StoryUpdate } from '@/types/database';
+import { apiGet, apiGetOrNull, apiPut, apiDelete } from '@/lib/api';
+import type { StoryRow, StoryUpdate } from '@/types/database';
 
 export interface StoryWithDetails extends StoryRow {
   childName?: string;
@@ -38,10 +38,6 @@ export async function getStoriesByChild(childId: string): Promise<StoryWithDetai
 
 export async function getStoryById(id: string): Promise<StoryWithDetails | null> {
   return apiGetOrNull<StoryWithDetails>(`/stories/${id}`, `${CONTEXT}.getStoryById`);
-}
-
-export async function createStory(story: StoryInsert): Promise<StoryRow> {
-  return apiPost<StoryRow>('/stories', `${CONTEXT}.createStory`, story);
 }
 
 export async function updateStory(id: string, updates: StoryUpdate): Promise<StoryRow> {
@@ -82,7 +78,6 @@ export async function getRecentStories(
 export const storiesService = {
   getByChild: getStoriesByChild,
   getById: getStoryById,
-  create: createStory,
   update: updateStory,
   delete: deleteStory,
   toggleFavorite,

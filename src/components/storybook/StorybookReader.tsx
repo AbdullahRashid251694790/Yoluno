@@ -20,7 +20,6 @@ import { NarratorVoiceSelector, type NarratorVoice } from './NarratorVoiceSelect
 import { cn } from '@/lib/utils';
 import { getUploadUrl } from '@/integrations/api/client';
 import { apiClient } from '@/integrations/api/client';
-import { ShareWithParentButton } from '@/components/kids/ShareWithParentButton';
 
 interface StorybookReaderProps {
   storyId: string;
@@ -365,22 +364,6 @@ export function StorybookReader({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="max-w-2xl mx-auto space-y-4">
-          {/* Share with parent button moved to My Moments page
-          {childId && currentPage === totalPages - 1 && totalPages > 1 && (
-            <div className="flex justify-center">
-              <ShareWithParentButton
-                childId={childId}
-                momentType="story_read"
-                title={`Finished reading — ${storyTitle}`}
-                context={`${storyTitle} — all ${totalPages - 1} pages read`}
-                referenceId={storyId}
-                label="Share with your parent"
-                className="shadow-lg"
-              />
-            </div>
-          )}
-          */}
-
           {/* Audio controls (only show on story pages) */}
           {currentPage > 0 && currentPageData && (
             <StorybookAudioControls

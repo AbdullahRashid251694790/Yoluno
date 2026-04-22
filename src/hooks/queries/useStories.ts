@@ -9,7 +9,7 @@ import { useQuery } from '@tanstack/react-query';
 import { queryKeys } from './keys';
 import { createMutationHook } from './useMutationFactory';
 import { storiesService } from '@/services/stories';
-import type { StoryInsert, StoryUpdate, StoryRow } from '@/types/database';
+import type { StoryUpdate, StoryRow } from '@/types/database';
 
 // Query hooks
 export function useStoriesByChild(childId: string | undefined) {
@@ -49,16 +49,6 @@ export function useRecentStories(userId: string | undefined, limit = 10) {
 }
 
 // Mutation hooks using factory
-export const useCreateStory = createMutationHook<StoryRow, StoryInsert>({
-  mutationFn: storiesService.create,
-  context: 'useCreateStory',
-  userMessage: 'Failed to create story',
-  invalidateKeys: (data) => [
-    queryKeys.stories.listByChild(data.child_profile_id),
-    queryKeys.stories.recent(''),
-  ],
-});
-
 export const useUpdateStory = createMutationHook<StoryRow, { id: string; updates: StoryUpdate }>({
   mutationFn: ({ id, updates }) => storiesService.update(id, updates),
   context: 'useUpdateStory',

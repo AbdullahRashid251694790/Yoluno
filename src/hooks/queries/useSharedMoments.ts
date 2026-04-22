@@ -9,7 +9,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   sharedMomentsService,
   type SharedMoment,
-  type CreateSharedMomentInput,
 } from '@/services/sharedMoments';
 import { handleError } from '@/lib/errors';
 
@@ -29,26 +28,6 @@ export function useChildSharedMoments(childId: string | undefined) {
     queryFn: () => sharedMomentsService.listChildSharedMoments(childId!),
     enabled: !!childId,
     staleTime: 30 * 1000,
-  });
-}
-
-export function useCreateSharedMoment() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (input: CreateSharedMomentInput) =>
-      sharedMomentsService.createSharedMoment(input),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: QUERY_KEY });
-    },
-    onError: (error) => {
-      // Log the full error so devtools shows the actual status + body,
-      // not just the user-friendly toast message.
-      console.error('[useCreateSharedMoment] failed:', error);
-      handleError(error, {
-        context: 'useCreateSharedMoment',
-        userMessage: 'Could not share that with your parent.',
-      });
-    },
   });
 }
 
@@ -80,4 +59,4 @@ export function useMarkSharedMomentSeen() {
   });
 }
 
-export type { SharedMoment, CreateSharedMomentInput };
+export type { SharedMoment };

@@ -34,31 +34,6 @@ export const updateChildSchema = createChildSchema.partial().extend({
 
 export type UpdateChildFormData = z.infer<typeof updateChildSchema>;
 
-// Story Creation Schema
-export const createStorySchema = z.object({
-  theme: z
-    .string()
-    .min(10, 'Theme must be at least 10 characters')
-    .max(200, 'Theme must be less than 200 characters'),
-  characters: z
-    .array(
-      z.object({
-        name: z.string().min(1).max(50),
-        role: z.enum(['main', 'supporting']),
-        description: z.string().max(100).optional(),
-      })
-    )
-    .min(1, 'At least one character is required')
-    .max(5, 'Maximum 5 characters allowed'),
-  mood: z.enum(['adventurous', 'calm', 'funny', 'magical', 'educational']),
-  values: z.array(z.string()).max(3, 'Maximum 3 values allowed'),
-  storyLength: z.enum(['short', 'medium', 'long']),
-  illustrationStyle: z.enum(['cartoon', 'watercolor', 'storybook', 'minimalist']),
-  narrationVoice: z.enum(['alloy', 'nova', 'shimmer']),
-});
-
-export type CreateStoryFormData = z.infer<typeof createStorySchema>;
-
 // Family Member Schema
 export const createFamilyMemberSchema = z.object({
   name: z

@@ -15,7 +15,6 @@ import { useQueryClient } from '@tanstack/react-query';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useChild } from '@/contexts/ChildContext';
-import { useChat } from '@/contexts/ChatContext';
 import { useChildProfile } from '@/hooks/queries';
 import { queryKeys } from '@/hooks/queries/keys';
 import {
@@ -71,7 +70,6 @@ export function KidsChatPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { enterKidsMode, exitKidsMode } = useChild();
-  const { startSession, endSession } = useChat();
   const { data: child, isLoading, isError } = useChildProfile(childId);
   const { data: sessions = [] } = useChatSessions(childId);
   const createSession = useCreateChatSession();
@@ -147,13 +145,11 @@ export function KidsChatPage() {
   useEffect(() => {
     if (child && childId) {
       enterKidsMode(child);
-      startSession(childId);
     }
     return () => {
-      endSession();
       exitKidsMode();
     };
-  }, [child, childId, enterKidsMode, exitKidsMode, startSession, endSession]);
+  }, [child, childId, enterKidsMode, exitKidsMode]);
 
   // Real-time socket updates
   useEffect(() => {
