@@ -575,7 +575,7 @@ export function KidsChatPage() {
               </div>
             </div>
           ) : (
-            <div className="max-w-[640px] mx-auto flex flex-col gap-4">
+            <div className="max-w-[640px] lg:max-w-[780px] mx-auto flex flex-col gap-4">
               {messages.map((msg: BuddyMessage) => {
                 const isChild = msg.role === 'child';
                 return (
@@ -661,7 +661,7 @@ export function KidsChatPage() {
           className="border-t px-4 py-3"
           style={{ background: '#FFFFFF', borderColor: '#E8E6E1' }}
         >
-          <div className="max-w-[640px] mx-auto flex items-center gap-3">
+          <div className="max-w-[640px] lg:max-w-[780px] mx-auto flex items-center gap-3">
             <input
               ref={inputRef}
               type="text"

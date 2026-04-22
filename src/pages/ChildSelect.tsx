@@ -211,6 +211,7 @@ export function ChildSelectPage() {
                     className="flex flex-col items-center text-center focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
                     style={{
                       width: 180,
+                      maxWidth: 'calc(100vw - 48px)',
                       height: 240,
                       background: '#FFFFFF',
                       border: `2px solid ${isHovered ? colors.color : 'transparent'}`,

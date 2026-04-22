@@ -280,14 +280,13 @@ export function KidsStoriesPage() {
                   <button
                     key={story.id}
                     onClick={() => setSelectedStory(story)}
-                    className="flex flex-col overflow-hidden rounded-2xl text-left group focus:outline-none"
+                    className="flex flex-col overflow-hidden rounded-2xl text-left group focus:outline-none w-[calc(50%-10px)] max-w-[200px] sm:w-[200px]"
                     style={{
                       background: '#FFFFFF',
                       boxShadow: '0 4px 16px rgba(42,41,38,0.1)',
                       cursor: 'pointer',
                       transition: 'all 0.3s ease-out',
                       animation: `kidsFadeIn 0.4s ease-out ${i * 0.06}s both`,
-                      width: 200,
                     }}
                     onMouseEnter={(e) => {
                       (e.currentTarget as HTMLElement).style.transform = 'scale(1.03)';

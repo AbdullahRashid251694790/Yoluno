@@ -399,7 +399,7 @@ export function DashboardHome() {
 
       {/* Metric Cards */}
       {children.length > 0 && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           {metrics.map((m) => (
             <div key={m.label} className="rounded-2xl p-5" style={{ background: m.bg }}>
               <div className="flex items-center gap-2 mb-2">

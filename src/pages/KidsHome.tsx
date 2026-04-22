@@ -267,7 +267,7 @@ export function KidsHomePage() {
 
       {/* Main */}
       <main className="flex-1 flex flex-col items-center px-6 relative z-10">
-        <div className="max-w-[520px] w-full flex flex-col items-center">
+        <div className="max-w-[520px] md:max-w-[680px] lg:max-w-[820px] w-full flex flex-col items-center">
           {/* Luno */}
           <div className="mb-1 flex flex-col items-center" style={{ animation: 'lunoBreath 4s ease-in-out infinite' }}>
             <img src={lunoHero} alt="Luno" className="drop-shadow-2xl" style={{ width: 100, height: 100, objectFit: 'contain' }} />

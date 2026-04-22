@@ -302,7 +302,7 @@ export function InsightsPage() {
       </div>
 
       {/* Metric Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         <div className="rounded-2xl p-5" style={{ background: '#E8F6F4' }}>
           <div className="flex items-center gap-2 mb-2">
             <MessageCircle size={15} style={{ color: '#3ECDC6' }} />
