@@ -50,13 +50,13 @@ export default function Navbar() {
           scrolled || open ? "bg-card/95 backdrop-blur-md shadow-warm" : "bg-transparent"
         }`}
       >
-        <div className="container flex items-center justify-between h-16 md:h-20">
+        <div className="container flex items-center justify-between h-16 lg:h-20">
           <Link to="/" className="flex-shrink-0">
-            <img src={logo} alt="Yoluno" className="h-8 md:h-10" />
+            <img src={logo} alt="Yoluno" className="h-8 lg:h-10" />
           </Link>
 
-          {/* Desktop Nav */}
-          <nav className="hidden md:flex items-center gap-8">
+          {/* Desktop Nav — only shown at lg+ so iPad portrait keeps the hamburger */}
+          <nav className="hidden lg:flex items-center gap-8">
             {navLinks.map((link) => (
               <Link
                 key={link.to}
@@ -73,17 +73,17 @@ export default function Navbar() {
             ))}
           </nav>
 
-          <div className="hidden md:flex items-center gap-3">
+          <div className="hidden lg:flex items-center gap-3">
             <Button variant="outline" size="sm" asChild className="rounded-full border-[#E8B630] text-[#E8B630] hover:bg-[#E8B630]/10 font-body font-semibold">
               <Link to="/play">Kids Mode</Link>
             </Button>
             <Button size="sm" asChild><Link to="/dashboard">Parent Dashboard</Link></Button>
           </div>
 
-          {/* Mobile toggle */}
+          {/* Hamburger toggle — visible on phones AND tablet portrait */}
           <button
             onClick={() => setOpen(!open)}
-            className="md:hidden p-2 text-foreground"
+            className="lg:hidden p-2 text-foreground"
             aria-label="Toggle menu"
           >
             {open ? <X size={24} /> : <Menu size={24} />}
@@ -91,10 +91,10 @@ export default function Navbar() {
         </div>
       </header>
 
-      {/* Mobile overlay — rendered OUTSIDE the header so the header's
+      {/* Mobile/tablet overlay — rendered OUTSIDE the header so the header's
           transform animation doesn't constrain its fixed positioning. */}
       {open && (
-        <div className="md:hidden fixed inset-0 top-16 bg-background z-40 flex flex-col items-center pt-12 gap-6 overflow-y-auto">
+        <div className="lg:hidden fixed inset-0 top-16 bg-background z-40 flex flex-col items-center pt-12 gap-6 overflow-y-auto">
           {navLinks.map((link) => (
             <Link
               key={link.to}
