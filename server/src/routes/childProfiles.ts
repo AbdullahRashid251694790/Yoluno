@@ -57,10 +57,11 @@ async function assignDefaultJourneys(childId: string, childAge: number): Promise
 /** Reset completed auto-assigned (daily routine) journeys if they were completed before today */
 export async function resetDailyJourneys(childId: string): Promise<void> {
   try {
-    // Find completed journeys whose template is auto-assign and completed before today
+    // Find completed journeys whose template is auto-assign and completed before today.
+    // journeys.template_id is text but journey_templates.id is uuid — cast to match.
     const staleJourneys = await query<{ id: string }>(
       `SELECT j.id FROM journeys j
-       JOIN journey_templates jt ON j.template_id = jt.id
+       JOIN journey_templates jt ON jt.id::text = j.template_id
        WHERE j.child_profile_id = $1
          AND j.status = 'completed'
          AND jt.is_auto_assign = true
