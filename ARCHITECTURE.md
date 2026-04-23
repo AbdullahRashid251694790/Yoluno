@@ -1,31 +1,36 @@
-# Yoluno AI - Architecture & Technical Documentation
+# Yoluno — Architecture & Technical Documentation
 
-> A children's learning companion platform with AI-powered conversations, story generation, and family history integration.
+A child-safe AI learning companion. Parents configure boundaries and monitor activity; children chat with an age-adaptive AI buddy, create illustrated stories, follow gentle daily routines, and explore their family history.
 
 ## Table of Contents
 
 - [Overview](#overview)
 - [Tech Stack](#tech-stack)
-- [Architecture Diagram](#architecture-diagram)
-- [Frontend Architecture](#frontend-architecture)
-- [Backend Architecture (Supabase)](#backend-architecture-supabase)
+- [High-Level Architecture](#high-level-architecture)
+- [Frontend](#frontend)
+- [Backend](#backend)
+- [Database](#database)
 - [AI Integration](#ai-integration)
-- [Database Schema](#database-schema)
 - [Safety & Content Moderation](#safety--content-moderation)
-- [Refactoring Status](#refactoring-status)
-- [Project Specifications](#project-specifications)
+- [Real-time & Background Work](#real-time--background-work)
+- [Authentication & Sessions](#authentication--sessions)
+- [File Storage](#file-storage)
+- [Deployment](#deployment)
+- [Environment Variables](#environment-variables)
+- [Known Limitations](#known-limitations)
 
 ---
 
 ## Overview
 
-Yoluno AI is a child-safe learning companion that provides:
+Yoluno is deployed as two long-running services on Railway with a managed Postgres:
 
-- **AI Chat Companion**: Conversational AI with adaptive memory and personality modes
-- **Story Generation**: Personalized stories with AI-generated illustrations and narration
-- **Family History**: Connect children to their family heritage with photos, stories, and relationships
-- **Goal Journeys**: Habit-building and learning journeys with milestone tracking
-- **Parent Dashboard**: Complete oversight with guardrails, analytics, and content moderation
+- **Frontend** — React + Vite SPA served via `serve` on port 8080
+- **Backend** — Express + TypeScript API on port 3000
+- **Database** — Railway-managed PostgreSQL
+- **Object storage** — S3-compatible bucket (AWS S3 SDK v3)
+
+Users are parents with multiple child profiles beneath them. Parents log in with email/password; kids enter via a profile picker (optionally PIN-gated per child). Kids mode is a separate route tree with no links back to the parent dashboard.
 
 ---
 
@@ -33,787 +38,405 @@ Yoluno AI is a child-safe learning companion that provides:
 
 ### Frontend
 
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| React | 18.3.1 | UI Framework |
-| TypeScript | 5.8.3 | Type Safety |
-| Vite | 5.4.19 | Build Tool |
-| TanStack Query | 5.90.2 | Server State Management |
-| React Router | 6.30.1 | Routing |
-| Tailwind CSS | 3.4.17 | Styling |
-| shadcn/ui | - | Component Library (Radix UI) |
-| Framer Motion | 12.23.22 | Animations |
-| React Hook Form | 7.61.1 | Form Management |
-| Zod | 4.1.11 | Schema Validation |
+| Layer | Choice |
+|---|---|
+| Framework | React 18 + TypeScript |
+| Build | Vite 5 (SWC plugin) |
+| Routing | React Router 6 |
+| Server state | TanStack Query v5 |
+| Client state | React Context (Auth, Child) |
+| Styling | Tailwind CSS 3 + shadcn/ui (Radix primitives) |
+| Forms | React Hook Form + Zod |
+| Real-time | Socket.io client |
+| HTTP | Axios with interceptors (auto refresh) |
 
 ### Backend
 
-| Technology | Purpose |
-|------------|---------|
-| Supabase | BaaS (Database, Auth, Storage, Edge Functions) |
-| PostgreSQL | Primary Database |
-| Deno | Edge Functions Runtime |
+| Layer | Choice |
+|---|---|
+| Runtime | Node 18+ (native ESM) |
+| Framework | Express 4 |
+| Language | TypeScript with `tsx` in dev, `tsc` build in prod |
+| Database driver | `pg` pool (raw SQL, no ORM) |
+| Auth | JWT access token + httpOnly refresh cookie, Passport.js strategies |
+| Password hashing | bcryptjs (salt rounds = 12) |
+| Real-time | Socket.io server |
+| File uploads | Multer in-memory, uploaded to S3 via AWS SDK v3 |
+| Email | Resend |
+| Validation | Zod |
 
-### AI Services
+### External services
 
-| Provider | Models | Usage |
-|----------|--------|-------|
-| Google Gemini (via OpenRouter) | gemini-2.5-flash | Buddy Chat Conversations |
-| Google Gemini (via OpenRouter) | gemini-3-pro-image-preview | Story Generation & Illustrations |
-| OpenAI | tts-1 | Text-to-Speech |
-| OpenAI | whisper-1 | Speech-to-Text |
+| Service | Use |
+|---|---|
+| OpenRouter | Gateway to Google Gemini models (chat, story text, illustrations, audio transcription, family voice extraction) |
+| OpenAI | `tts-1` for story narration |
+| Resend | Transactional email (verification, password reset, weekly digest) |
+| AWS S3 (or compatible) | Images, voice clips, story illustrations |
+| Railway | Hosting, Postgres, cron (in-process) |
 
 ---
 
-## Architecture Diagram
+## High-Level Architecture
 
 ```
-┌────────────────────────────────────────────────────────────────────────────┐
-│                              FRONTEND (React + Vite)                        │
-├────────────────────────────────────────────────────────────────────────────┤
-│                                                                            │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐       │
-│  │   Pages     │  │ Components  │  │   Hooks     │  │  Services   │       │
-│  │             │  │             │  │             │  │             │       │
-│  │ • Dashboard │  │ • Chat      │  │ • Queries   │  │ • Child     │       │
-│  │ • Play      │  │ • Stories   │  │ • Mutations │  │ • Stories   │       │
-│  │ • Auth      │  │ • Journey   │  │ • Keys      │  │ • Family    │       │
-│  │ • Features  │  │ • Family    │  │             │  │ • Journeys  │       │
-│  └─────────────┘  └─────────────┘  └─────────────┘  └─────────────┘       │
-│                                                                            │
-│  ┌─────────────────────────────────────────────────────────────────────┐  │
-│  │                    State Management                                  │  │
-│  │  • TanStack Query (Server State)  • Context API (Auth, Mode)        │  │
-│  │  • IndexedDB Cache (Avatars)      • localStorage (Sessions)         │  │
-│  └─────────────────────────────────────────────────────────────────────┘  │
-└────────────────────────────────────────────────────────────────────────────┘
-                                      │
-                                      ▼
-┌────────────────────────────────────────────────────────────────────────────┐
-│                         SUPABASE BACKEND                                    │
-├────────────────────────────────────────────────────────────────────────────┤
-│                                                                            │
-│  ┌─────────────────────────────────────────────────────────────────────┐  │
-│  │                      Edge Functions (24)                             │  │
-│  │                                                                      │  │
-│  │  AI-POWERED                        NON-AI                           │  │
-│  │  ├─ child-chat (Core)              ├─ check-rate-limit              │  │
-│  │  ├─ generate-story                 ├─ analyze-session-patterns      │  │
-│  │  ├─ generate-story-illustrations   ├─ get-guardrail-settings        │  │
-│  │  ├─ generate-story-narration       ├─ get-family-context            │  │
-│  │  ├─ generate-avatar                └─ match-content                 │  │
-│  │  ├─ validate-child-message                                          │  │
-│  │  ├─ text-to-speech                                                  │  │
-│  │  ├─ transcribe-family-story                                         │  │
-│  │  ├─ process-family-photo                                            │  │
-│  │  └─ buddy-mission-encouragement                                     │  │
-│  └─────────────────────────────────────────────────────────────────────┘  │
-│                                                                            │
-│  ┌───────────────────┐  ┌───────────────────┐  ┌───────────────────┐     │
-│  │    PostgreSQL     │  │     Storage       │  │   Authentication  │     │
-│  │                   │  │                   │  │                   │     │
-│  │ • 40+ Tables      │  │ • family_photos   │  │ • JWT Auth        │     │
-│  │ • RPC Functions   │  │ • family_audio    │  │ • Service Roles   │     │
-│  │ • Row-Level Sec   │  │ • avatars         │  │ • Kids Sessions   │     │
-│  └───────────────────┘  └───────────────────┘  └───────────────────┘     │
-└────────────────────────────────────────────────────────────────────────────┘
-                                      │
-                                      ▼
-┌────────────────────────────────────────────────────────────────────────────┐
-│                          EXTERNAL AI SERVICES                               │
-├────────────────────────────────────────────────────────────────────────────┤
-│                                                                            │
-│  ┌─────────────────────────────────┐  ┌─────────────────────────────────┐ │
-│  │   OPENROUTER AI GATEWAY         │  │         OPENAI API              │ │
-│  │   (Google Gemini Models)        │  │                                 │ │
-│  │                                 │  │  • TTS (tts-1)                  │ │
-│  │  • gemini-2.5-flash             │  │    - Story narration            │ │
-│  │    - Buddy chat conversations   │  │    - Reward voice clips         │ │
-│  │    - Content validation         │  │                                 │ │
-│  │                                 │  │  • Whisper (whisper-1)          │ │
-│  │  • gemini-3-pro-image-preview   │  │    - Family story transcription │ │
-│  │    - Story generation           │  │    - Audio processing           │ │
-│  │    - Story illustrations        │  │                                 │ │
-│  │    - Avatar generation          │  │                                 │ │
-│  │                                 │  │                                 │ │
-│  └─────────────────────────────────┘  └─────────────────────────────────┘ │
-└────────────────────────────────────────────────────────────────────────────┘
+                ┌──────────────────────────────────────────┐
+                │                Frontend                  │
+                │  React + Vite (Railway, port 8080)       │
+                └──────┬───────────────────────┬───────────┘
+              REST API│                       │Socket.io
+                      ▼                       ▼
+                ┌──────────────────────────────────────────┐
+                │                Backend                   │
+                │  Express + Node (Railway, port 3000)     │
+                │                                          │
+                │  • Routes: ~30 files under src/routes/   │
+                │  • Middleware: auth, error handler, rate │
+                │  • Crons (in-process setInterval)        │
+                │  • Socket.io server                      │
+                └──┬───────────┬───────────┬──────────┬────┘
+                   │           │           │          │
+                   ▼           ▼           ▼          ▼
+              ┌────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐
+              │Postgres│ │   S3    │ │OpenRouter│ │ Resend  │
+              │Railway │ │         │ │ + OpenAI │ │         │
+              └────────┘ └─────────┘ └─────────┘ └─────────┘
 ```
 
 ---
 
-## Frontend Architecture
+## Frontend
 
-### Directory Structure
+### Directory structure
 
 ```
 src/
+├── pages/                    Route pages
+│   ├── Landing.tsx           Public home
+│   ├── landing/              Marketing pages (Features, Pricing, etc.)
+│   ├── Login.tsx, Signup.tsx, ForgotPassword.tsx, ResetPassword.tsx, VerifyEmail.tsx
+│   ├── ChildSelect.tsx       /play — profile picker
+│   ├── Dashboard.tsx         Parent shell (sidebar + Routes)
+│   ├── dashboardPages/       Children, Family, Stories, Journeys, Insights,
+│   │                         Topics, ContentLibrary, VoiceVault, Settings
+│   ├── SafetyDashboard.tsx   Parent safety views (lives under /dashboard/safety)
+│   ├── KidsHome.tsx, KidsChat.tsx, KidsStories.tsx, KidsJourneys.tsx,
+│   │   KidsJourneyDetail.tsx, KidsFamily.tsx, KidsMoments.tsx, KidsMoodCheck.tsx
+│   └── StoryWizard.tsx       Parent-side story creator
+│
 ├── components/
-│   ├── ui/                    # shadcn/ui components (48 files)
-│   ├── shared/                # NEW: Reusable patterns
-│   │   ├── dialogs/           # FormDialog, ConfirmDialog
-│   │   └── feedback/          # LoadingState, ErrorState, QueryState
-│   ├── dashboard/             # Parent dashboard (61 files)
-│   │   ├── family/            # Family tree components
-│   │   └── layout/            # Dashboard layout
-│   ├── chat/                  # Chat interface
-│   ├── stories/               # Story components
-│   ├── journey/               # Journey/goals components
-│   ├── kids/                  # Child-facing UI
-│   ├── landing/               # Marketing pages
-│   └── gamification/          # Badges, streaks
+│   ├── ui/                   shadcn primitives
+│   ├── shared/               Cross-cutting (LoadingState, ErrorState, ...)
+│   ├── chat/                 ChatAvatar, ChatSessionList, JourneyTasksPanel
+│   ├── dashboard/            children/ family/ journeys/ insights/ safety/ ...
+│   ├── kids/                 auth/ celebrations/ family/ story/
+│   ├── storybook/            StorybookReader, StorybookPage, audio controls
+│   └── landing/              Navbar, footer, hero sections
 │
-├── pages/                     # Route pages (18+)
-│   ├── dashboard/             # Parent dashboard routes
-│   ├── features/              # Feature pages
-│   └── legal/                 # Legal pages
-│
-├── hooks/
-│   ├── queries/               # NEW: Standardized React Query hooks
-│   │   ├── keys.ts            # Query key factory
-│   │   ├── useChildProfiles.ts
-│   │   ├── useStories.ts
-│   │   ├── useJourneys.ts
-│   │   ├── useGuardrails.ts
-│   │   ├── useAvatars.ts
-│   │   └── useFamily.ts
-│   └── dashboard/             # Legacy hooks (to migrate)
-│
-├── services/                  # NEW: Data access layer
-│   ├── childProfiles.ts       # Child profile CRUD
-│   ├── stories.ts             # Story operations
-│   ├── family.ts              # Family members & relationships
-│   ├── journeys.ts            # Goal journeys
-│   ├── guardrails.ts          # Safety settings
-│   ├── avatars.ts             # Avatar library
-│   └── cache/
-│       └── indexedDBCache.ts  # Unified caching
-│
-├── types/                     # NEW: Centralized types
-│   ├── database.ts            # Supabase type aliases
-│   ├── domain.ts              # Business domain types
-│   ├── api.ts                 # API & async state types
-│   └── forms.ts               # Zod schemas
-│
-├── lib/
-│   ├── utils.ts               # Utility functions
-│   ├── errors/                # NEW: Error handling
-│   │   ├── types.ts           # AppError, ErrorCode
-│   │   └── handler.ts         # handleError utility
-│   └── validation/            # Validation helpers
-│
-├── contexts/
-│   ├── KidsAuthContext.tsx    # Kids session management
-│   └── ModeContext.tsx        # Learning/Story mode toggle
-│
-└── integrations/
-    └── supabase/
-        ├── client.ts          # Supabase client config
-        └── types.ts           # Auto-generated DB types (2090 lines)
+├── contexts/                 AuthContext, ChildContext
+├── hooks/                    useIsMobile, useConfetti, useAudioRecorder
+│   └── queries/              TanStack Query hooks (one file per domain)
+├── services/                 Typed API clients wrapping apiClient
+├── integrations/api/         Axios client, Socket.io client
+├── types/                    Domain + database + form types
+└── lib/                      Utilities, error handler, format helpers
 ```
 
-### State Management
+### Routing model
 
-| Type | Technology | Usage |
-|------|------------|-------|
-| Server State | TanStack Query | Data fetching, caching, mutations |
-| Auth State | React Context | Kids sessions, parent auth |
-| UI State | React useState | Forms, modals, local UI |
-| Persistent Cache | IndexedDB | Avatar library, offline data |
-| Session Storage | localStorage | Kids session tokens |
+- `ProtectedRoute` wraps routes that require parent auth.
+- `PublicRoute` wraps login/signup — redirects authed users to `/dashboard`.
+- Kids mode lives under `/kids/:childId/*` and never links back to `/dashboard/*` (isolation by convention; see [Known Limitations](#known-limitations)).
 
-### Key Components
+### State management
 
-| Component | Location | Purpose |
-|-----------|----------|---------|
-| `ChatInterface` | `/components/chat/` | Main child chat UI |
-| `BuddyAvatar` | `/components/chat/` | Animated avatar with expressions |
-| `EnhancedStoryBuilder` | `/components/stories/` | Multi-step story wizard |
-| `FamilyTreeBuilder` | `/components/dashboard/family/` | Family tree visualization |
-| `JourneyProgressDashboard` | `/components/journey/` | Journey tracking |
-| `GuardrailSettingsPanel` | `/components/dashboard/` | Safety configuration |
+- **Auth state** (AuthContext): access token in memory, refresh cookie httpOnly. Axios interceptor auto-refreshes on 401.
+- **Active child** (ChildContext): persisted to localStorage so profile persists across tabs.
+- **Server state**: TanStack Query for everything hitting the API. `queryKeys` factory per domain in `src/hooks/queries/keys.ts`.
 
 ---
 
-## Backend Architecture (Supabase)
+## Backend
 
-### Edge Functions (24 Total)
+### Directory structure
 
-#### AI-Powered Functions
-
-| Function | AI Provider | Purpose |
-|----------|-------------|---------|
-| `buddy-chat` | Gemini 2.5 Flash (OpenRouter) | Main conversational AI with memory |
-| `generate-story` | Gemini 3 Pro Image Preview (OpenRouter) | Create personalized stories with illustrations |
-| `generate-story-narration` | OpenAI TTS | Audio narration for stories |
-| `generate-avatar` | Gemini 3 Pro Image Preview (OpenRouter) | Custom avatar generation |
-| `validate-child-message` | Gemini 2.5 Flash (OpenRouter) | Content safety validation |
-| `text-to-speech` | OpenAI TTS | General TTS conversion |
-| `transcribe-family-story` | OpenAI Whisper + Gemini | Audio transcription & summarization |
-| `transcribe-family-member` | OpenAI Whisper | Voice recording transcription |
-| `process-family-photo` | Gemini 2.5 Flash (OpenRouter) | Photo captions |
-| `buddy-mission-encouragement` | Gemini 2.5 Flash (OpenRouter) | Motivational messages |
-| `inject-habit-into-story` | Gemini 2.5 Flash (OpenRouter) | Habit integration in stories |
-| `generate-journey-steps` | Gemini 2.5 Flash (OpenRouter) | Journey step creation |
-
-#### Non-AI Functions
-
-| Function | Purpose |
-|----------|---------|
-| `check-rate-limit` | Message rate limiting |
-| `analyze-session-patterns` | Behavior anomaly detection (rule-based) |
-| `get-guardrail-settings` | Retrieve parent safety settings |
-| `get-family-context` | Family history for conversations |
-| `match-content` | Pre-written content matching |
-| `adapt-guardrails` | Dynamic guardrail adjustment |
-| `get-reward-voice-clip` | Parent voice clip retrieval |
-| `process-family-document` | Document processing |
-| `generate-website-image` | Marketing images |
-
-### Database Tables (Key Tables)
-
-#### Child & Profile
-```sql
-child_profiles        -- Child accounts (age, personality, avatar, streak)
-child_memory          -- Persistent memories (type, key, value, importance)
-child_badges          -- Earned achievements
-child_topics          -- Parent-approved topics
-avatar_library        -- Pre-designed avatars (4 expressions each)
-avatar_accessories    -- Unlockable cosmetics
+```
+server/src/
+├── index.ts                  Entry: Express setup, CORS, routes, crons
+├── config/
+│   ├── database.ts           pg pool
+│   └── passport.ts           JWT + local strategies
+├── middleware/
+│   ├── auth.ts               requireAuth
+│   ├── errorHandler.ts       central error shape
+│   └── rateLimiter.ts        express-rate-limit wrappers
+├── routes/                   ~30 route files (one per domain)
+│   ├── auth.ts               /api/auth/*
+│   ├── childProfiles.ts      /api/child-profiles/*
+│   ├── buddyChat.ts          /api/buddy-chat/* (largest — chat, safety, banned topics)
+│   ├── storyGeneration.ts    /api/generate-story/* (text + illustrations)
+│   ├── stories.ts            /api/stories/*
+│   ├── journeys.ts           /api/journeys/*
+│   ├── family.ts             /api/family/*
+│   ├── sharedMoments.ts      /api/shared-moments/*
+│   ├── safetySettings.ts     /api/safety-settings
+│   ├── notifications.ts      Parent notifications
+│   ├── kidNotifications.ts   Kid-side bell
+│   ├── topics.ts             Parent topic management (incl. AI topic generation)
+│   ├── analytics.ts          Parent insights
+│   ├── tts.ts                /api/tts (OpenAI)
+│   ├── transcribe.ts         /api/transcribe (Gemini audio)
+│   ├── upload.ts             /api/upload/:bucket (S3)
+│   ├── dataExport.ts         Granular data export + account deletion
+│   ├── weeklyReport.ts       Manual-trigger digest endpoint
+│   └── ...
+├── helpers/                  gamification, misc
+├── services/                 email.ts (Resend wrapper)
+├── socket/                   Socket.io handlers (join rooms, emit helpers)
+├── utils/                    jwt, storage (S3), validation, password
+└── types/                    Backend types mirroring DB
 ```
 
-#### Conversations
-```sql
-chat_messages         -- Message history (role, content, created_at)
-chat_session_metrics  -- Session analytics (anomaly_score, manipulation_attempts)
-conversation_summaries -- Daily AI-generated summaries
-conversation_stats    -- Topic engagement statistics
-```
+### Middleware order
 
-#### Family History
-```sql
-family_members        -- Family tree nodes (name, relationship, bio)
-family_relationships  -- Connections between members
-family_events         -- Timeline events
-family_photos         -- Photos with AI captions
-family_stories        -- Written/audio/document stories
-family_narratives     -- Member life stories
-family_history_access -- Child access control with age restrictions
-```
+1. `cors` — credentials: true, origin from `CORS_ORIGIN` env
+2. `helmet` — standard security headers
+3. `cookieParser` — for httpOnly refresh cookie
+4. `express.json({ limit: '10mb' })`
+5. Rate limiters on auth + reset endpoints (see [Known Limitations](#known-limitations) for gaps on other routes)
+6. Route handlers
+7. Central `errorHandler` — converts `AppError` to structured JSON response, hides stack in production
 
-#### Content & Safety
-```sql
-topic_content         -- Pre-approved Q&A content (reviewed by parents)
-custom_content        -- Parent-created custom Q&A
-guardrail_settings    -- Safety configuration per parent
-message_validation_logs -- Validation audit trail
-content_moderation_logs -- Flagged content
-parent_alerts         -- Safety notifications
-guardrail_learning_events -- Parent override decisions
-```
+---
 
-#### Journeys & Stories
-```sql
-goal_journeys         -- Active learning/habit journeys
-journey_steps         -- Individual journey milestones
-journey_templates     -- Reusable journey blueprints
-journey_progress_log  -- Step completion with reflections
-child_stories         -- Generated stories (content, scenes, illustrations)
-story_themes          -- Available story themes
-story_usage           -- Monthly generation quotas
-```
+## Database
 
-#### Voice & Audio
-```sql
-voice_vault_clips     -- Parent voice recordings for rewards
-```
+Schema is defined by **sequential SQL migrations** in `server/migrations/NNN_*.sql`. No ORM, no migration tool — migrations run via a simple script (`npm run migrate`) that executes files in filename order inside a transaction.
 
-### Storage Buckets
+### Core tables
 
-| Bucket | Purpose |
-|--------|---------|
-| `family_photos` | Family photo uploads |
-| `family_audio` | Audio recordings for transcription |
-| `avatars` | Generated avatar images |
+| Table | Purpose |
+|---|---|
+| `users` | Parent accounts (email, password_hash, email_verified) |
+| `sessions` | Active refresh tokens (hashed) for revocation |
+| `child_profiles` | One row per child: name, age, gender, avatar, interests, session_time_limit_minutes, pin_hash |
+| `family_members` | Relatives (name, relationship, photos, voice messages, fun facts) |
+| `chat_sessions` | Per-child chat threads (title auto-generated from first message) |
+| `buddy_messages` | Individual chat messages, linked to session and child |
+| `chat_buddies` | Per-child buddy record (name, personality_traits JSON, use_custom_personality) |
+| `safety_reports` | Flagged conversations (severity yellow/red, issue_summary, full_context) |
+| `topics` / `child_topic_settings` | Built-in topic library + per-child allow/block |
+| `journey_templates` / `journey_template_steps` | Canonical daily routines (Morning, Bedtime, etc.) and custom |
+| `journeys` / `journey_steps` | Per-child journey instances, track completion |
+| `stories` / `story_pages` | Generated stories with per-page illustrations and status |
+| `story_reading_progress` | Per-child reading position for each story |
+| `shared_moments` | Kid-authored and auto-generated moments; shown on parent dashboard |
+| `parent_notifications` / `kid_notifications` | Bell streams |
+| `mood_checkins` | Daily mood logs per child |
+| `user_safety_settings` | Notification toggles + auto-delete policy |
+| `voice_clips` | Family-recorded voice clips referenced by family members |
+| `child_stats` | Per-child aggregate (total_points, total_stories, ...) |
+| `badges_earned` / `badge_definitions` | Gamification badges |
+| `activity_types` / `child_activities` | Point-awarding activity log |
 
-### RPC Functions
+### Notes on schema quirks
 
-```sql
-check_transcription_quota(p_parent_id, p_duration_minutes) -- Quota check
-check_storage_quota(p_parent_id, p_file_size_bytes)        -- Storage check
-update_child_streak(p_child_id)                            -- Streak update
-check_and_award_badges(p_child_id)                         -- Badge check
-check_and_award_journey_badges(p_child_id)                 -- Journey badges
-```
+- `journeys.template_id` is `text` while `journey_templates.id` is `uuid`. All JOINs between them explicitly cast (see `routes/journeys.ts`, `routes/childProfiles.ts`, `index.ts` cron). Historic migration choice we haven't retrofitted.
+- `shared_moments.reference_id` is a polymorphic `uuid` (points at session / story / journey / family_member depending on `moment_type`). Migration 068 installs per-table triggers to clean up orphan moments on cascade.
+- Most user-facing tables cascade-delete on `users.id` / `child_profiles.id` for account deletion to work cleanly.
 
 ---
 
 ## AI Integration
 
-### Child Chat System Flow
+All AI traffic except TTS goes through **OpenRouter**, which gives uniform billing + model swapping without per-provider SDKs.
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    CHILD CHAT FLOW                               │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│  1. CHILD MESSAGE                                                │
-│     │                                                            │
-│     ▼                                                            │
-│  2. PRE-VALIDATION (validate-child-message)                      │
-│     ├─ Custom blocked keywords                                   │
-│     ├─ AI-based intent analysis                                  │
-│     ├─ Manipulation detection                                    │
-│     └─ Returns: GREEN / YELLOW / RED                             │
-│     │                                                            │
-│     ▼                                                            │
-│  3. CONTEXT ASSEMBLY                                             │
-│     ├─ Child profile & personality mode                          │
-│     ├─ Persistent memories (top 10 by importance)                │
-│     ├─ Recent conversation history (3-day window)                │
-│     ├─ Daily conversation summaries                              │
-│     ├─ Approved topics list                                      │
-│     ├─ Family context (if family query detected)                 │
-│     └─ Pre-matched content (if available)                        │
-│     │                                                            │
-│     ▼                                                            │
-│  4. AI GENERATION (Gemini 2.5 Flash via OpenRouter)              │
-│     ├─ System prompt with personality mode                       │
-│     ├─ Age-appropriate language guidance                         │
-│     ├─ Topic adherence instructions                              │
-│     └─ Temperature: 0.8 (creative but controlled)                │
-│     │                                                            │
-│     ▼                                                            │
-│  5. RESPONSE VALIDATION                                          │
-│     ├─ Topic adherence check                                     │
-│     ├─ Age-appropriateness verification                          │
-│     └─ Returns: GREEN / YELLOW / RED                             │
-│     │                                                            │
-│     ▼                                                            │
-│  6. BACKGROUND TASKS                                             │
-│     ├─ Extract new memories                                      │
-│     ├─ Update session metrics                                    │
-│     └─ Generate daily summary (if 4+ messages)                   │
-│     │                                                            │
-│     ▼                                                            │
-│  7. RESPONSE TO CHILD                                            │
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
-```
+### Models currently used
 
-### Personality Modes
+| Purpose | Model | Location |
+|---|---|---|
+| Chat reply | `google/gemini-2.5-flash` | `routes/buddyChat.ts:1375` |
+| Chat greeting | `google/gemini-2.5-flash` | `routes/buddyChat.ts:832` |
+| Chat session title | `google/gemini-2.5-flash` | `routes/buddyChat.ts:913` |
+| Topic-redirect reply | `google/gemini-2.5-flash` | `routes/buddyChat.ts:2099` |
+| Image analysis in chat | `google/gemini-2.5-flash` (vision) | `routes/buddyChat.ts:966` |
+| Story text | `google/gemini-2.5-flash` | `routes/storyGeneration.ts:432` |
+| Story illustration | `google/gemini-3.1-flash-image-preview` | `routes/storyGeneration.ts:536` |
+| Audio transcription | `google/gemini-2.5-flash` (audio input) | `routes/transcribe.ts:32` |
+| Voice→family-member extract | `google/gemini-2.0-flash-001` | `routes/family.ts:320` |
+| AI-generated topic content | `google/gemini-2.5-flash` | `routes/topics.ts:784` |
+| Story narration (TTS) | `tts-1` (OpenAI direct) | `routes/tts.ts:27` |
 
-| Mode | Behavior |
-|------|----------|
-| `curious_explorer` | Asks "Why?" and "What if?" questions |
-| `patient_teacher` | Breaks answers into numbered steps |
-| `playful_friend` | Uses jokes, emojis, and fun examples |
-| `storyteller` | Weaves knowledge into narratives |
+Every AI fetch has `AbortSignal.timeout()` applied (15–90s depending on call type) so upstream hangs can't block the Express worker indefinitely.
 
-### Age Adaptations
+### Chat flow (simplified)
 
-| Age Range | Language Style |
-|-----------|----------------|
-| 5-7 years | Simple words (1-2 syllables), short sentences, 40-60 words |
-| 8-10 years | Moderate vocabulary, medium sentences, 60-80 words |
-| 11-12 years | Advanced vocabulary, complex explanations, 80-100 words |
+1. Kid sends a message to `POST /api/buddy-chat/:childId/sessions/:sessionId/send`
+2. Backend runs **safety analysis** on the input (see below)
+3. If the message references a banned topic, backend picks a redirect reply and returns early
+4. Otherwise, the full system prompt is assembled:
+   - Base persona + `personality_traits` sliders (Curious / Patient / Playful / Educational / Empathetic)
+   - Age-appropriate tone block (different vocab for 3–6, 7–9, 10–14)
+   - Recent conversation history
+   - Child's family context (from `family_members`)
+   - Current journey hints if applicable
+5. Gemini returns a response, which is saved as a `buddy_messages` row
+6. Backend emits a Socket.io event to the parent for the safety dashboard
+7. Session title auto-generates in the background after the first message
 
-### Memory System
+### Story generation flow
 
-```typescript
-// Persistent memories extracted from conversations
-interface ChildMemory {
-  type: 'preference' | 'fact' | 'interest' | 'learning_progress' | 'achievement';
-  key: string;           // e.g., "favorite_animal"
-  value: string;         // e.g., "dinosaurs"
-  importance_score: 1-10;
-  last_accessed_at: Date;
-}
-
-// Top 10 memories loaded per conversation
-// Importance score increased when referenced
-```
-
-### Story Generation Pipeline
-
-```
-1. Parent submits story form (theme, characters, mood, values)
-       │
-       ▼
-2. Check usage limits (story_usage table)
-       │
-       ▼
-3. If journey active → inject-habit-into-story
-       │
-       ▼
-4. generate-enhanced-story
-   ├─ Title
-   ├─ Full story content
-   └─ 3 scene descriptions
-       │
-       ▼
-5. generate-story-illustrations (per scene)
-   ├─ Style: cartoon / watercolor / storybook / minimalist
-   └─ Child-safe prompts enforced
-       │
-       ▼
-6. generate-story-narration
-   ├─ OpenAI TTS (tts-1)
-   └─ Voice: alloy / nova / shimmer
-       │
-       ▼
-7. Save to child_stories table
-       │
-       ▼
-8. Display in StoryPreview component
-```
+1. `POST /api/generate-story` returns the story text synchronously (single Gemini call, up to 4000 tokens)
+2. The story row is saved with `has_pages = true`; pages are seeded with `illustration_status = 'pending'`
+3. `generateAllIllustrations()` fires as a background task:
+   - Generate cover with lavender-purple palette emphasis
+   - 3s delay, then each page sequentially
+   - Per-page: up to 3 attempts; on failure, status flips to `'failed'`
+4. Frontend polls `GET /api/generate-story/:storyId/pages` every 4 s while pages are in progress
+5. When all pages complete, a kid bell notification fires
 
 ---
 
 ## Safety & Content Moderation
 
-### Three-Layer Validation System
+Three layers, in order:
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    SAFETY LAYERS                                 │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│  LAYER 1: PRE-AI FILTERING                                       │
-│  ├─ Custom blocked keywords (parent-defined)                     │
-│  ├─ Custom allowed phrases (parent-defined)                      │
-│  └─ Rate limiting (messages/minute, messages/hour)               │
-│                                                                  │
-│  LAYER 2: AI INPUT VALIDATION                                    │
-│  ├─ Topic relevance analysis                                     │
-│  ├─ Intent classification (genuine vs. manipulation)             │
-│  ├─ Jailbreak attempt detection                                  │
-│  └─ Age-appropriateness check                                    │
-│                                                                  │
-│  LAYER 3: AI OUTPUT VALIDATION                                   │
-│  ├─ Topic adherence verification                                 │
-│  ├─ Response safety scoring                                      │
-│  └─ Content appropriateness check                                │
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
-```
+### Layer 1 — Exact-substring banned topic check
 
-### Flag Levels
+`buddyChat.ts:1920-1940` — runs a SQL `ILIKE '%' || topic_name || '%'` against the child's disabled topics. Catches "I want to talk about guns" if the parent has blocked "guns".
 
-| Level | Color | Action |
-|-------|-------|--------|
-| Safe | GREEN | Proceed normally |
-| Ambiguous | YELLOW | Proceed with caution, may notify parent |
-| Dangerous | RED | Block completely, notify parent |
+### Layer 2 — Keyword expansion
 
-### Guardrail Settings (Parent Controls)
+Each topic can have `search_keywords` (array). Same query extends to `unnest(t.search_keywords)`. Adds coverage for colloquial/child terms without requiring the parent to list every variant.
 
-| Setting | Type | Description |
-|---------|------|-------------|
-| `strictness_level` | enum | low / medium / high |
-| `block_on_yellow` | boolean | Block ambiguous content |
-| `notify_on_yellow` | boolean | Alert parent on yellow flags |
-| `notify_on_green` | boolean | Log all interactions |
-| `messages_per_minute` | int | Rate limit |
-| `messages_per_hour` | int | Rate limit |
-| `max_response_length` | int | Character limit |
-| `preferred_ai_tone` | string | friendly / educational / encouraging |
-| `custom_blocked_keywords` | string[] | Parent-defined blocklist |
-| `custom_allowed_phrases` | string[] | Parent-defined allowlist |
-| `auto_expand_topics` | boolean | Allow topic exploration |
-| `learn_from_approvals` | boolean | Train from parent overrides |
+### Layer 3 — Fuzzy match with typo tolerance
 
-### Built-in Content Keywords
+`buddyChat.ts:2015-2067` — for misspelled banned topics ("dinasours", "violance"). Defense:
 
-```javascript
-const CONCERNING_KEYWORDS = [
-  'violence', 'weapon', 'hurt', 'kill', 'die', 'death',
-  'scary', 'nightmare', 'monster', 'blood',
-  'hate', 'stupid', 'dumb', 'idiot',
-  'drug', 'alcohol', 'beer', 'wine'
-];
-```
+- Stop-word blocklist (~90 common words) so "can you teach me" doesn't fuzzy-match "cats"
+- Length-similarity guard (words must be within 2 characters)
+- Prefix match (first 2–3 characters must agree)
+- Levenshtein distance ≤ 1 for short words, ≤ 2 for longer ones
+
+### Severity levels
+
+- **Green** — Safe, nothing flagged. Default.
+- **Yellow** — Topic redirect happened. Shown in the parent dashboard's "Redirections" section.
+- **Red** — Sensitive content detected (self-harm language, distress signals, etc.). Creates a `safety_reports` row, emits a socket event, optionally creates a parent bell notification.
+
+### Parent-controlled guardrails (`user_safety_settings`)
+
+- `notify_on_redirect` — dashboard bell on yellow events
+- `notify_on_report` — dashboard bell on red events
+- `weekly_summary` — include in the Monday 8 AM UTC digest email
+- `notify_on_journey` / `notify_on_story` — bells on kid actions
+- `auto_delete_days` — cron wipes old conversations after N days
 
 ---
 
-## Refactoring Status
+## Real-time & Background Work
 
-### Completed Phases
+### Socket.io
 
-| Phase | Description | Files Created |
-|-------|-------------|---------------|
-| **Phase 1** | Centralized Types | `/src/types/` (5 files) |
-| **Phase 2** | Service Layer | `/src/services/` (8 files) |
-| **Phase 3** | Query Hooks | `/src/hooks/queries/` (8 files) |
-| **Phase 4** | Shared Components | `/src/components/shared/` (9 files) |
+Each child has a room. Parents subscribe to their children's rooms on login and receive events:
 
-#### Phase 1: Centralized Types (`/src/types/`)
+- `new-message` — kid just sent a chat message
+- `safety-alert` — a yellow or red event just fired
+- `kid-notification` — kid-side bell update
 
-```
-types/
-├── database.ts    # Re-exports from Supabase with aliases
-│                  # ChildProfileRow, ChildStoryRow, etc.
-├── domain.ts      # Business types: PersonalityMode, AvatarExpression,
-│                  # StoryCharacter, JourneyWithSteps, etc.
-├── api.ts         # AsyncState<T>, ApiResponse, PaginatedResponse
-├── forms.ts       # Zod schemas: createChildSchema, createStorySchema
-└── index.ts       # Barrel export
-```
+### In-process crons
 
-#### Phase 2: Service Layer (`/src/services/`)
+Yoluno runs four recurring jobs in the server process via `setInterval`:
 
-```
-services/
-├── childProfiles.ts  # getChildProfiles, createChildProfile, updateChildAvatar
-├── stories.ts        # getStoriesByChild, createStory, toggleFavorite
-├── family.ts         # getFamilyMembers, createRelationship
-├── journeys.ts       # getActiveJourneys, completeStep
-├── guardrails.ts     # getGuardrailSettings, updateGuardrailSettings
-├── avatars.ts        # getAllAvatars, getAvatarsByCategory
-├── cache/
-│   └── indexedDBCache.ts  # Generic IndexedDB cache class
-└── index.ts          # Barrel export
-```
+| Job | Cadence | Purpose |
+|---|---|---|
+| Weekly report email | hourly check, fires Monday 8 AM UTC | Resend digest to all users with `weekly_summary = true` |
+| Auto-delete | hourly check, fires daily 3 AM UTC | Delete conversations older than each user's `auto_delete_days` setting |
+| Daily journey reset | hourly check, fires 12:05 AM UTC | Flip stale completed auto-assign journeys back to `active` |
+| (Fast-path lazy reset) | on child / journey list fetch | Same reset targeted to the one child, for instant recovery after UTC midnight |
 
-#### Phase 3: Query Hooks (`/src/hooks/queries/`)
+### Database triggers (migration 068)
 
-```
-hooks/queries/
-├── keys.ts               # Query key factory: queryKeys.childProfiles.all
-├── useChildProfiles.ts   # useChildProfiles, useCreateChildProfile
-├── useStories.ts         # useStoriesByChild, useToggleFavorite
-├── useJourneys.ts        # useActiveJourneys, useCompleteStep
-├── useGuardrails.ts      # useGuardrailSettings, useUpdateGuardrailSettings
-├── useAvatars.ts         # useAvatarLibrary (with IndexedDB caching)
-├── useFamily.ts          # useFamilyMembers, useCreateRelationship
-└── index.ts              # Barrel export
-```
+Four triggers keep `shared_moments` clean when referenced entities get deleted:
 
-#### Phase 4: Shared Components (`/src/components/shared/`)
-
-```
-components/shared/
-├── dialogs/
-│   ├── FormDialog.tsx       # Reusable form dialog wrapper
-│   ├── ConfirmDialog.tsx    # Confirmation dialog (destructive actions)
-│   └── index.ts
-├── feedback/
-│   ├── LoadingState.tsx     # Consistent loading indicator
-│   ├── ErrorState.tsx       # Error display with retry
-│   ├── EmptyState.tsx       # Empty state with action
-│   ├── QueryState.tsx       # React Query wrapper component
-│   └── index.ts
-└── index.ts
-```
-
-### Remaining Phases
-
-#### Phase 5: Standardize Error Handling
-
-**Status:** Pending
-
-**Tasks:**
-- [ ] Update 35+ components to use `handleError()` from `/src/lib/errors`
-- [ ] Replace 114 direct `toast.error()` calls with centralized handler
-- [ ] Replace 44 `console.error()` calls with proper error logging
-- [ ] Add error boundaries to major dashboard sections
-
-**Files to Update:**
-```
-/src/components/dashboard/CreateChildDialog.tsx
-/src/components/dashboard/EditChildProfileDialog.tsx
-/src/components/dashboard/family/*.tsx (14 files)
-/src/components/journey/*.tsx (6 files)
-/src/hooks/dashboard/*.tsx (9 files)
-```
-
-**Error Handler Usage:**
-```typescript
-import { handleError } from '@/lib/errors';
-
-// Instead of:
-toast.error("Failed to save");
-console.error(error);
-
-// Use:
-handleError(error, { userMessage: "Failed to save" });
-```
-
-#### Phase 6: Dashboard Reorganization
-
-**Status:** Pending
-
-**Current:** 61 files in `/src/components/dashboard/`
-
-**Target Structure:**
-```
-/src/components/dashboard/
-├── children/           # Child profile management (8 files)
-│   ├── ChildProfileCard.tsx
-│   ├── EnhancedChildCard.tsx
-│   ├── CreateChildDialog.tsx
-│   ├── EditChildProfileDialog.tsx
-│   └── index.ts
-├── family/             # Already exists (14 files)
-├── journeys/           # Journey components (4 files)
-│   ├── JourneyProgressDashboard.tsx
-│   ├── GoalJourneyManager.tsx
-│   └── index.ts
-├── stories/            # Story management (3 files)
-│   ├── StoryLibrary.tsx
-│   └── index.ts
-├── safety/             # Guardrails & moderation (5 files)
-│   ├── GuardrailSettingsPanel.tsx
-│   ├── ContentModerationLog.tsx
-│   ├── ParentAlertsPanel.tsx
-│   └── index.ts
-├── topics/             # Topic management (4 files)
-│   ├── TopicManager.tsx
-│   ├── TopicLibrary.tsx
-│   └── index.ts
-├── avatars/            # Avatar components (6 files)
-│   ├── AvatarSelector.tsx
-│   ├── AvatarCustomizer.tsx
-│   └── index.ts
-├── analytics/          # Insights & reports (5 files)
-│   ├── SessionMonitoringDashboard.tsx
-│   └── index.ts
-├── layout/             # Already exists (2 files)
-└── index.ts            # Re-exports for backwards compatibility
-```
-
-**Migration Strategy:**
-```typescript
-// Old imports continue to work via re-exports:
-import { CreateChildDialog } from '@/components/dashboard/CreateChildDialog';
-
-// New imports also work:
-import { CreateChildDialog } from '@/components/dashboard/children';
-```
+- `chat_sessions DELETE` → remove `curiosity` / `mood_checkin` / `deep_chat` moments
+- `stories DELETE` → remove `story_created` / `story_read` moments
+- `journeys DELETE` → remove `journey_complete` moments
+- `family_members DELETE` → remove `family_listen` moments
 
 ---
 
-## Project Specifications
+## Authentication & Sessions
 
-### Performance Targets
+- **Access token** — JWT, 1 h expiry, sent as `Authorization: Bearer <jwt>`
+- **Refresh token** — random UUID, 30 d expiry, httpOnly + Secure + SameSite=Lax cookie, bcrypt-hashed in `sessions` table
+- On each `/api/auth/refresh`, a new refresh token rotates in; old session row is updated
+- Password reset + email verification use separate random UUIDs with shorter expiries
+- Socket.io handshake uses the access token for room authorization
 
-| Metric | Target |
-|--------|--------|
-| First Contentful Paint | < 1.5s |
-| Time to Interactive | < 3s |
-| Lighthouse Score | > 90 |
-| Bundle Size (gzipped) | < 500KB initial |
+---
 
-### Browser Support
+## File Storage
 
-- Chrome 90+
-- Firefox 88+
-- Safari 14+
-- Edge 90+
+All uploads route through `POST /api/upload/:bucket` with Multer's memory storage. The handler validates MIME type against an allowlist and pushes to S3 via `PutObjectCommand`. Backend stores only the S3 key; frontend fetches signed URLs via `getUploadUrl()` helper.
 
-### Accessibility
+Buckets in use:
 
-- WCAG 2.1 AA compliance
-- Keyboard navigation support
-- Screen reader compatibility
-- Child-friendly UI patterns
+- `avatars` — child profile avatars
+- `story-illustrations` — AI-generated story images
+- `family-photos` — uploaded family member photos
+- `voice-clips` — recorded family voice messages
 
-### Security
+5 MB size cap on most endpoints; 50 MB on voice recordings.
 
-- Row-Level Security (RLS) on all tables
-- JWT-based authentication
-- Service role separation (client vs. server keys)
-- Content validation on all AI inputs/outputs
-- Rate limiting on all API endpoints
-- PIN-protected child sessions
+---
 
-### Subscription Tiers
+## Deployment
 
-| Feature | Free | Basic | Plus | Pro |
-|---------|------|-------|------|-----|
-| Stories/month | 5 | 20 | 50 | Unlimited |
-| Family photos | 10 | 100 | 500 | Unlimited |
-| Audio transcription | 5 min | 30 min | 120 min | 300 min |
-| Child profiles | 1 | 3 | 5 | 10 |
-| Custom content | 5 | 25 | 100 | Unlimited |
+Railway hosts three services sharing one private network:
+
+1. **`yoluno-frontend`** — runs `npm run build` then `npx serve dist -p 8080`
+2. **`yoluno-server`** — runs `npm run migrate && npm start`
+3. **`yoluno-postgres`** — Railway-managed Postgres
+
+The server runs `migrate.ts` on every boot, which applies any unrun migrations in filename order inside a single transaction. Failing migrations roll back cleanly without corrupting state.
+
+Health checks: frontend GET `/`, backend GET `/api/auth/session`.
 
 ---
 
 ## Environment Variables
 
-### Frontend (Vite)
-```env
-VITE_SUPABASE_URL=https://[project-id].supabase.co
-VITE_SUPABASE_PUBLISHABLE_KEY=eyJ...
-VITE_SUPABASE_PROJECT_ID=[project-id]
-```
+### Backend (`server/.env`)
 
-### Edge Functions (Deno)
-```env
-SUPABASE_URL=https://[project-id].supabase.co
-SUPABASE_SERVICE_ROLE_KEY=eyJ...
-OPENROUTER_API_KEY=sk-or-...
-OPENAI_API_KEY=sk-...
-```
+| Var | Purpose |
+|---|---|
+| `DATABASE_URL` | Postgres connection string |
+| `JWT_SECRET` | Access token signing key (required, no safe default) |
+| `FRONTEND_URL` | For CORS + email links |
+| `CORS_ORIGIN` | Allowed origin for CORS |
+| `OPENROUTER_API_KEY` | Gateway for all Gemini calls |
+| `OPENAI_API_KEY` | TTS narration |
+| `RESEND_API_KEY` | Email delivery |
+| `FROM_EMAIL` | Default sender |
+| `S3_ENDPOINT`, `S3_REGION`, `S3_BUCKET`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` | Object storage |
+| `CRON_SECRET` | Guard for manual cron-triggered endpoints |
+| `PORT` | Defaults to 3000 |
 
----
+### Frontend (`.env`)
 
-## Quick Start
-
-```bash
-# Install dependencies
-npm install
-
-# Start development server
-npm run dev
-
-# Build for production
-npm run build
-
-# Run linting
-npm run lint
-
-# Deploy Supabase functions
-supabase functions deploy
-```
+| Var | Purpose |
+|---|---|
+| `VITE_API_URL` | e.g. `http://localhost:3000/api` |
+| `VITE_SOCKET_URL` | e.g. `http://localhost:3000` |
 
 ---
 
-## Key Dependencies
+## Known Limitations
 
-### Frontend
-```json
-{
-  "@supabase/supabase-js": "^2.58.0",
-  "@tanstack/react-query": "^5.90.2",
-  "react": "^18.3.1",
-  "react-router-dom": "^6.30.1",
-  "framer-motion": "^12.23.22",
-  "tailwindcss": "^3.4.17",
-  "@xyflow/react": "^12.8.6",
-  "recharts": "^2.x",
-  "zod": "^4.1.11",
-  "react-hook-form": "^7.61.1"
-}
-```
-
-### Edge Functions (Deno)
-```typescript
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7';
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
-```
-
----
-
-## Contributing
-
-1. Follow established patterns in `/src/services/` for data access
-2. Use `/src/hooks/queries/` for React Query hooks
-3. Use `/src/types/` for type definitions
-4. Use `/src/components/shared/` for reusable UI patterns
-5. Use `/src/lib/errors/` for error handling
-6. Run `npm run lint` before committing
-
----
-
-*Last updated: December 2024*
+- **Kids-mode isolation is convention, not enforcement.** A kid who types `/dashboard` in the URL reaches the parent dashboard. A parent-PIN gate is planned but not built.
+- **No rate limiting on chat / story / TTS endpoints.** `express-rate-limit` is applied only to auth routes. A bot could burn OpenRouter credits.
+- **In-process crons are single-node.** If you scale to multiple backend instances, crons will fire N times. Needs a distributed lock table before horizontal scale.
+- **`journeys.template_id` is text, not uuid.** Every JOIN requires explicit casting. Worth a migration, never done.
+- **File upload + DB insert is not atomic.** S3 can succeed and DB write fail, leaving orphan files. No cleanup job yet.
+- **No structured logging.** Everything is `console.log/error`. Railway logs are searchable but not indexed by user / request.

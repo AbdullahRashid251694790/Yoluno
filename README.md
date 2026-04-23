@@ -145,20 +145,21 @@ yoluno/
 - Safety monitoring and content moderation
 - Voice vault for family recordings
 - Topic management and content library
-- Gamification overview (points, badges, streaks)
+- Gamification overview (points and badges)
 
 ### Kids Mode
 - AI chat buddy (Luno) with character world:
-  - **Lala** — family storyteller, knows family members
+  - **Loti** — family storyteller, knows family members
   - **Lolo** — adventure guide, tracks journeys
   - **Lumi** — storyteller star, creates and recalls stories
   - **Luno** — the main chat buddy, creative and comforting
-- Interactive story creation wizard
-- Learning journeys with step-by-step progress
-- Daily missions system
+- Interactive story creation wizard (6-step: theme → character → setting → family → length → narrator)
+- Storybook reader with per-page AI illustrations and voice narration
+- Learning journeys with step-by-step progress and daily routine resets
 - Mood check-ins
-- Family member profiles (kid-friendly view)
-- Rewards gallery and badge collection
+- Family member profiles (kid-friendly view) with voice messages
+- My Moments — auto-captured milestones for sharing with parents
+- Badge collection
 
 ### Safety
 - Real-time content safety detection (red/yellow/green flags)
@@ -171,10 +172,11 @@ yoluno/
 | Feature | Model | Provider |
 |---------|-------|----------|
 | Buddy Chat | `google/gemini-2.5-flash` | OpenRouter |
-| Story Generation | `google/gemini-2.5-flash` | OpenRouter |
-| Story Illustrations | `google/gemini-2.5-flash` (vision) | OpenRouter |
+| Story Text Generation | `google/gemini-2.5-flash` | OpenRouter |
+| Story Illustrations | `google/gemini-3.1-flash-image-preview` | OpenRouter |
+| Family Extraction (voice) | `google/gemini-2.0-flash-001` | OpenRouter |
+| Audio Transcription | `google/gemini-2.5-flash` (audio) | OpenRouter |
 | Text-to-Speech | `tts-1` | OpenAI |
-| Speech-to-Text | `whisper-1` | OpenAI |
 
 ## Deployment
 
