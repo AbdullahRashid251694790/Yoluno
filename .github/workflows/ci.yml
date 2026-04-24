@@ -19,7 +19,7 @@ jobs:
       - run: npm ci
       - run: npm run build
       - name: Run frontend tests
-        run: node --test --import tsx "src/lib/__tests__/*.test.ts"
+        run: node --test --import tsx src/lib/__tests__/*.test.ts
 
   backend:
     name: Backend (build + tests)
@@ -37,4 +37,4 @@ jobs:
       - run: npm ci
       - run: npm run build
       - name: Run backend tests
-        run: node --test --import tsx "src/__tests__/*.test.ts"
+        run: node --test --import tsx src/__tests__/*.test.ts
