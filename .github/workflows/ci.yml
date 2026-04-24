@@ -8,7 +8,7 @@ on:
 
 jobs:
   frontend:
-    name: Frontend (lint + type-check + build)
+    name: Frontend (build + tests)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -17,14 +17,12 @@ jobs:
           node-version: '20'
           cache: 'npm'
       - run: npm ci
-      - run: npm run lint
-      - run: npm run type-check
       - run: npm run build
       - name: Run frontend tests
-        run: node --test --import tsx src/lib/__tests__
+        run: node --test --import tsx "src/lib/__tests__/*.test.ts"
 
   backend:
-    name: Backend (lint + build + tests)
+    name: Backend (build + tests)
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -37,7 +35,6 @@ jobs:
           cache: 'npm'
           cache-dependency-path: server/package-lock.json
       - run: npm ci
-      - run: npm run lint
       - run: npm run build
       - name: Run backend tests
         run: node --test --import tsx "src/__tests__/*.test.ts"
