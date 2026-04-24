@@ -19,7 +19,7 @@ services:
   server:
     build:
       context: ./server
-      dockerfile: Dockerfile
+      dockerfile: ../docker/Dockerfile
     restart: unless-stopped
     depends_on:
       db:
