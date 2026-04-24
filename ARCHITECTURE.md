@@ -401,7 +401,7 @@ Railway hosts three services sharing one private network:
 
 The server runs `migrate.ts` on every boot, which applies any unrun migrations in filename order inside a single transaction. Failing migrations roll back cleanly without corrupting state.
 
-Health checks: frontend GET `/`, backend GET `/api/auth/session`.
+Health checks: frontend GET `/`, backend GET `/api/health`.
 
 ---
 

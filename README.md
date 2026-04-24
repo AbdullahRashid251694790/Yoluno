@@ -89,8 +89,6 @@ npm run dev
 | `npm run dev` | Start Vite dev server |
 | `npm run build` | Production build |
 | `npm run preview` | Preview production build |
-| `npm run lint` | Run ESLint |
-| `npm run type-check` | TypeScript type checking |
 
 ### Backend
 
@@ -100,6 +98,18 @@ npm run dev
 | `npm run build` | Compile TypeScript |
 | `npm run start` | Start production server |
 | `npm run migrate` | Run database migrations |
+
+### Tests
+
+Tests use Node's built-in test runner (no extra framework) and are invoked directly:
+
+```bash
+# Frontend tests
+node --test --import tsx src/lib/__tests__/*.test.ts
+
+# Backend tests
+cd server && node --test --import tsx src/__tests__/*.test.ts
+```
 
 ## Project Structure
 
@@ -121,17 +131,22 @@ yoluno/
 │   ├── types/                    # TypeScript definitions
 │   └── lib/                      # Utilities
 │
-└── server/                       # Backend (Express)
-    ├── src/
-    │   ├── routes/               # API route handlers (~36 files)
-    │   ├── config/               # Database pool, Passport
-    │   ├── middleware/            # Auth, error handling, logging
-    │   ├── helpers/              # Gamification logic
-    │   ├── services/             # Email (Resend)
-    │   ├── utils/                # JWT, S3, validation, password
-    │   ├── socket/               # Socket.io handlers
-    │   └── types/                # Backend type definitions
-    └── migrations/               # Sequential SQL migrations
+├── server/                       # Backend (Express)
+│   ├── src/
+│   │   ├── routes/               # API route handlers (~36 files)
+│   │   ├── __tests__/            # Backend tests (node:test)
+│   │   ├── config/               # Database pool, Passport
+│   │   ├── middleware/           # Auth, error handling, logging
+│   │   ├── helpers/              # Gamification logic
+│   │   ├── services/             # Email (Resend)
+│   │   ├── utils/                # JWT, S3, validation, password
+│   │   ├── socket/               # Socket.io handlers
+│   │   └── types/                # Backend type definitions
+│   └── migrations/               # Sequential SQL migrations
+│
+├── .github/workflows/            # CI (build + tests on push/PR)
+├── docker/Dockerfile             # Portable backend image (not used by Railway)
+└── docker-compose.yml            # Local backend + Postgres stack
 ```
 
 ## Features
@@ -184,4 +199,25 @@ Deployed on Railway.app with:
 - Frontend served via `npx serve dist`
 - Backend with auto-migration on start: `npm run migrate && npm start`
 - PostgreSQL managed by Railway
-- Health checks on `/` (frontend) and `/api/auth/session` (backend)
+- Health checks on `/` (frontend) and `/api/health` (backend)
+- Railway builds via Nixpacks — the `docker/Dockerfile` is kept out of the service root so it doesn't override that build strategy.
+
+## Local Development with Docker
+
+An alternative to running Postgres natively:
+
+```bash
+docker-compose up --build
+```
+
+This brings up the backend (from `docker/Dockerfile`) wired to a fresh Postgres 16. The frontend still runs directly via `npm run dev`.
+
+## CI
+
+GitHub Actions (`.github/workflows/ci.yml`) runs on every push and pull request to `main`:
+- Frontend: `npm ci` + `npm run build` + tests
+- Backend: `npm ci` + `npm run build` + tests
+
+## License
+
+Proprietary — all rights reserved. See [LICENSE](LICENSE).
